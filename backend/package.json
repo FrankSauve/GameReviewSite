@@ -1,0 +1,37 @@
+{
+  "name": "game-review-site",
+  "version": "1.0.0",
+  "description": "GraphQL API for a game review site backed by PostgreSQL via Prisma",
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@apollo/server": "^5.4.0",
+    "@as-integrations/express5": "^1.1.2",
+    "@prisma/client": "^6.4.0",
+    "bcryptjs": "^3.0.3",
+    "body-parser": "^1.20.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^5.0.0",
+    "graphql": "^16.11.0",
+    "jsonwebtoken": "^9.0.3",
+    "prisma": "^6.4.0"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^22.0.0",
+    "esbuild": "0.25.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

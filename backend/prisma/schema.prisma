@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+  // "native" resolves to the correct binary at generate time:
+  //   - macOS  → darwin-arm64 / darwin-x64  (local dev)
+  //   - Docker → linux-musl-openssl-3.0.x   (Alpine container)
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(uuid())
+  username  String    @unique
+  email     String    @unique
+  password  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  reviews   Review[]
+  comments  Comment[]
+}
+
+model Game {
+  id          String   @id @default(uuid())
+  rawgId      String?  @unique
+  title       String
+  genre       String?
+  platform    String?
+  description String?
+  coverUrl    String?
+  releaseYear Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  reviews     Review[]
+}
+
+model Review {
+  id        String    @id @default(uuid())
+  rating    Float
+  content   String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  userId    String
+  gameId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game      Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  comments  Comment[]
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  reviewId  String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+}
