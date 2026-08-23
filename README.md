@@ -15,7 +15,8 @@ A full-stack game review platform where users can search for games, write review
 | Reverse proxy  | SWAG (nginx) + authentik SSO     |
 
 See [docs/authentik-setup.md](docs/authentik-setup.md) for the authentik and
-reverse proxy setup, including 2FA.
+reverse proxy setup, including 2FA, and
+[docs/deployment.md](docs/deployment.md) for deploying behind SWAG.
 
 ---
 

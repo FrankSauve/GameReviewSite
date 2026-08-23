@@ -127,92 +127,38 @@ with a different device class — each stage checks only its own classes.
 
 ## Step 6 — SWAG proxy configuration
 
-Create `/config/nginx/proxy-confs/gamereviews.subdomain.conf`. Replace the
-`REPLACE_WITH_AUTH_PROXY_SECRET` placeholder with the value from step 1; this
-file lives in your SWAG config volume, not in the repository.
+The configuration is version-controlled at
+[`deploy/swag/gamereviews.subdomain.conf`](../deploy/swag/gamereviews.subdomain.conf).
+Copy it into place and substitute the secret from step 1:
 
-```nginx
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    http2 on;
-
-    server_name gamereviews.*;
-
-    include /config/nginx/ssl.conf;
-    set $upstream_app_frontend gamereviews-frontend;
-    set $upstream_app_backend  gamereviews-backend;
-
-    # Larger buffers: authentik's response headers can exceed the defaults.
-    proxy_buffers     8 16k;
-    proxy_buffer_size 32k;
-
-    # authentik outpost endpoints. Must stay unauthenticated.
-    include /config/nginx/authentik-server.conf;
-
-    # ── The SPA: public ──────────────────────────────────────────────────────
-    location / {
-        include /config/nginx/proxy.conf;
-        include /config/nginx/resolver.conf;
-        proxy_pass http://$upstream_app_frontend:8080;
-    }
-
-    # ── Public GraphQL: reads only, never authenticated ──────────────────────
-    location = /graphql {
-        include /config/nginx/proxy.conf;
-        include /config/nginx/resolver.conf;
-
-        # Strip anything a client tries to smuggle in. The backend ignores
-        # these on this path regardless, but do not rely on a single control.
-        proxy_set_header X-authentik-uid      "";
-        proxy_set_header X-authentik-username "";
-        proxy_set_header X-authentik-email    "";
-        proxy_set_header X-Proxy-Secret       "";
-
-        proxy_pass http://$upstream_app_backend:4000/graphql;
-    }
-
-    # ── Authenticated GraphQL: the me query and all mutations ────────────────
-    location = /graphql-auth {
-        include /config/nginx/proxy.conf;
-        include /config/nginx/resolver.conf;
-
-        auth_request /outpost.goauthentik.io/auth/nginx;
-
-        # Deliberately NOT @goauthentik_proxy_signin. This endpoint is only
-        # ever called by fetch(), and a 302 to an HTML login page would be
-        # followed silently and parsed as a GraphQL response. A plain 401 is
-        # what tells the app "you are signed out", which is a normal state
-        # here because reviews are public.
-        error_page 401 = @graphql_unauthenticated;
-
-        auth_request_set $authentik_uid      $upstream_http_x_authentik_uid;
-        auth_request_set $authentik_username $upstream_http_x_authentik_username;
-        auth_request_set $authentik_email    $upstream_http_x_authentik_email;
-        auth_request_set $set_cookie         $upstream_http_set_cookie;
-        add_header Set-Cookie $set_cookie;
-
-        # These overwrite any client-supplied values of the same name.
-        proxy_set_header X-authentik-uid      $authentik_uid;
-        proxy_set_header X-authentik-username $authentik_username;
-        proxy_set_header X-authentik-email    $authentik_email;
-        proxy_set_header X-Proxy-Secret       "REPLACE_WITH_AUTH_PROXY_SECRET";
-
-        proxy_pass http://$upstream_app_backend:4000/graphql-auth;
-    }
-
-    location @graphql_unauthenticated {
-        internal;
-        default_type application/json;
-        return 401 '{"errors":[{"message":"Not signed in","extensions":{"code":"UNAUTHENTICATED"}}]}';
-    }
-}
+```bash
+sed "s|REPLACE_WITH_AUTH_PROXY_SECRET|$AUTH_PROXY_SECRET|" \
+  deploy/swag/gamereviews.subdomain.conf \
+  > /path/to/swag/config/nginx/proxy-confs/gamereviews.subdomain.conf
 ```
+
+Three details in that file are load-bearing and worth understanding before you
+change it:
+
+- **`location = /graphql` blanks the identity headers.** The backend ignores
+  them on that path anyway, but a client should never get as far as having them
+  merely ignored.
+- **`location = /graphql-auth` does not use `@goauthentik_proxy_signin`.** SWAG's
+  stock `authentik-location.conf` redirects a 401 to the login page, which is
+  right for a whole-page request and wrong here: this endpoint is only ever
+  called by `fetch()`, which would follow the 302 and try to parse an HTML login
+  page as a GraphQL response. It returns a plain 401 instead, which the app
+  reads as "signed out" — a normal state, since reviews are public.
+- **Both `proxy_set_header` blocks overwrite client-supplied values.** That is
+  what stops someone sending their own `X-authentik-uid`.
 
 Reload SWAG afterwards: `docker exec swag nginx -s reload`, or restart the
 container.
 
 ## Step 7 — backend environment
+
+The production stack sets these for you from `.env`; see
+[docs/deployment.md](deployment.md). The values that matter here:
 
 ```env
 AUTH_PROXY_SECRET=<the value from step 1>
