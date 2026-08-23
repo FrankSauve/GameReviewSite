@@ -3,7 +3,8 @@ export const typeDefs = `#graphql
   type User {
     id: ID!
     username: String!
-    email: String!
+    # Only returned to the authenticated owner of the account; null otherwise.
+    email: String
     createdAt: String
     updatedAt: String
     reviews: [Review!]
@@ -164,7 +165,6 @@ export const typeDefs = `#graphql
     importGame(input: ImportGameInput!): Game!
     createGame(input: CreateGameInput!): Game!
     updateGame(id: ID!, input: UpdateGameInput!): Game!
-    deleteGame(id: ID!): Boolean!
 
     createReview(input: CreateReviewInput!): Review!
     updateReview(id: ID!, input: UpdateReviewInput!): Review!

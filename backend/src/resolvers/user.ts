@@ -66,6 +66,13 @@ export const userResolvers = {
   },
 
   User: {
+    /**
+     * Email addresses are private. Without this guard the public `users` and
+     * `user(id)` queries expose every account's email to anonymous callers.
+     */
+    email: (parent: User, _args: unknown, context: Context) =>
+      context.user?.id === parent.id ? parent.email : null,
+
     reviews: async (parent: User) => {
       const reviews = await prisma.review.findMany({
         where: { userId: parent.id },

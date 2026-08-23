@@ -113,7 +113,10 @@ export const gameResolvers = {
     createGame: async (
       _parent: unknown,
       { input }: { input: CreateGameInput },
+      context: Context,
     ) => {
+      requireAuth(context);
+
       const data: Omit<Game, "id" | "createdAt" | "updatedAt"> = {
         rawgId: null,
         title: validateString(input.title, "title", 200),
@@ -135,7 +138,9 @@ export const gameResolvers = {
     updateGame: async (
       _parent: unknown,
       { id, input }: { id: string; input: UpdateGameInput },
+      context: Context,
     ) => {
+      requireAuth(context);
       await requireGame(id);
       const data: Partial<Omit<Game, "id" | "createdAt" | "updatedAt">> = {};
       if (input.title !== undefined)
@@ -157,12 +162,6 @@ export const gameResolvers = {
           input.releaseYear != null ? validateYear(input.releaseYear) : null;
       const game = await prisma.game.update({ where: { id }, data });
       return serializeDates(game);
-    },
-
-    deleteGame: async (_parent: unknown, { id }: { id: string }) => {
-      await requireGame(id);
-      await prisma.game.delete({ where: { id } });
-      return true;
     },
   },
 

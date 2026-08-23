@@ -28,9 +28,15 @@ services:
     restart: unless-stopped
     environment:
       PORT: 4000
+      # The image defaults to production; this local stack overrides it so the
+      # Apollo sandbox and localhost CORS keep working.
+      NODE_ENV: ${NODE_ENV:-development}
       DATABASE_URL: postgresql://gamereview:gamereview@db:5432/gamereview
       JWT_SECRET: ${JWT_SECRET}
       RAWG_API_KEY: ${RAWG_API_KEY}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      # Ports are published straight to the host here, so no proxy hops.
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-0}
     ports:
       - "4000:4000"
     depends_on:

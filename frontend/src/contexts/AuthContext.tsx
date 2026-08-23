@@ -3,7 +3,8 @@ import { createContext, useContext, useState, type ReactNode } from "react";
 export interface AuthUser {
   id: string;
   username: string;
-  email: string;
+  // Only present when the server returns it for the account owner.
+  email?: string | null;
 }
 
 interface AuthContextValue {
