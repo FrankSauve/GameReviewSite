@@ -19,7 +19,7 @@ the query body — so the same schema is served on two paths:
 | `/outpost.goauthentik.io` | no (must not be) | — | the sign-in and sign-out flows |
 
 ```
-browser ──► SWAG ──┬─► /                → gamereviews-frontend:80
+browser ──► SWAG ──┬─► /                → gamereviews-frontend:8080
                    ├─► /graphql         → gamereviews-backend:4000   (identity headers stripped)
                    ├─► /graphql-auth    → auth_request to authentik,
                    │                      then gamereviews-backend:4000 with X-authentik-* headers
@@ -154,7 +154,7 @@ server {
     location / {
         include /config/nginx/proxy.conf;
         include /config/nginx/resolver.conf;
-        proxy_pass http://$upstream_app_frontend:80;
+        proxy_pass http://$upstream_app_frontend:8080;
     }
 
     # ── Public GraphQL: reads only, never authenticated ──────────────────────

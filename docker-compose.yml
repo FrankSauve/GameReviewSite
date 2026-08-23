@@ -42,6 +42,19 @@ services:
       TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-0}
     ports:
       - "4000:4000"
+    healthcheck:
+      # node -e rather than curl/wget: guaranteed present in the runtime image.
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       db:
         condition: service_healthy
@@ -63,9 +76,16 @@ services:
         VITE_API_URL: http://localhost:4000/graphql
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "3000:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     develop:
       watch:
         - path: ./frontend/src
