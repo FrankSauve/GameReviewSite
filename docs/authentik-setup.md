@@ -1,0 +1,314 @@
+# Setting up authentik in front of GameReviews
+
+This site has no login form and no password storage of its own. authentik
+authenticates people — 2FA included — and tells the API who they are through
+request headers. This guide covers the authentik objects to create, the SWAG
+reverse proxy configuration, and how to verify the result.
+
+## How it fits together
+
+Reviews are public. Writing is not. A single GraphQL endpoint cannot be
+selectively protected, because nginx's `auth_request` decides before it can see
+the query body — so the same schema is served on two paths:
+
+| Path | Guarded by authentik | Identity | Purpose |
+| ---- | -------------------- | -------- | ------- |
+| `/` | no | — | the SPA itself, readable by anyone |
+| `/graphql` | no | always anonymous | public reads |
+| `/graphql-auth` | yes | from the outpost | the `me` query and every mutation |
+| `/outpost.goauthentik.io` | no (must not be) | — | the sign-in and sign-out flows |
+
+```
+browser ──► SWAG ──┬─► /                → gamereviews-frontend:80
+                   ├─► /graphql         → gamereviews-backend:4000   (identity headers stripped)
+                   ├─► /graphql-auth    → auth_request to authentik,
+                   │                      then gamereviews-backend:4000 with X-authentik-* headers
+                   └─► /outpost.goauthentik.io → authentik-server:9000
+```
+
+The backend refuses to honour identity headers on `/graphql`, so even if the
+proxy were misconfigured, sending `X-authentik-uid` to the public path cannot
+authenticate anyone. That is deliberate redundancy: the proxy strips the
+headers *and* the application ignores them.
+
+## Prerequisites
+
+- A working authentik instance reachable by SWAG, with its container named
+  `authentik-server` on a shared user-defined bridge network.
+- SWAG with `authentik-server.conf` in place (rename
+  `/config/nginx/authentik-server.conf.sample`). This provides the
+  `/outpost.goauthentik.io` locations and the `@goauthentik_proxy_signin`
+  redirect target.
+- A DNS record for the site, for example `gamereviews.example.com`.
+
+## Step 1 — generate the proxy secret
+
+The backend only trusts identity headers on requests that carry a shared secret
+proving they came through SWAG. Generate one:
+
+```bash
+openssl rand -hex 32
+```
+
+Put it in the stack's `.env` as `AUTH_PROXY_SECRET`. The same value goes into
+the SWAG configuration in step 6. In production the backend refuses to start
+without it.
+
+## Step 2 — create the proxy provider
+
+In authentik, go to **Applications → Providers → Create** and choose
+**Proxy Provider**.
+
+| Field | Value |
+| ----- | ----- |
+| Name | `gamereviews-proxy` |
+| Authorization flow | your usual explicit or implicit consent flow |
+| Mode | **Forward auth (single application)** |
+| External host | `https://gamereviews.example.com` |
+
+The external host must match the URL people actually type, including the scheme
+and any non-standard port. The outpost compares incoming requests against it.
+
+Leave **Unauthenticated Paths** empty. Path exemptions are handled in nginx
+here, because only `/graphql-auth` is ever sent for authorisation in the first
+place.
+
+## Step 3 — create the application
+
+**Applications → Applications → Create**:
+
+| Field | Value |
+| ----- | ----- |
+| Name | `GameReviews` |
+| Slug | `gamereviews` |
+| Provider | `gamereviews-proxy` |
+
+Then bind whoever should be able to post reviews. Under the application's
+**Policy / Group / User Bindings** tab, bind a group such as `gamereviews-users`.
+Anyone not bound can still read the site — they simply cannot sign in, so they
+cannot write.
+
+## Step 4 — attach the provider to an outpost
+
+**Applications → Outposts**. Edit the **authentik Embedded Outpost** and add
+`GameReviews` to its applications. If you run a standalone outpost instead,
+add it there and point step 6's `proxy_pass` at that container on port 9000.
+
+The outpost must be healthy before anything else works. The Outposts list shows
+its last seen time and version.
+
+## Step 5 — require 2FA
+
+2FA is a property of the authentication flow, not of this application, so
+configuring it here applies to every app behind your authentik instance.
+
+If your authentication flow does not already validate a second factor, add an
+**Authenticator Validation** stage to it (**Flows and Stages → Stages →
+Create**):
+
+| Field | Value |
+| ----- | ----- |
+| Device classes | `TOTP`, and `WebAuthn` if you use passkeys or a security key |
+| Not configured action | **Configure** |
+| Configuration stages | your TOTP setup stage (and WebAuthn setup stage) |
+| Last validation threshold | `0` to prompt every login, or e.g. `hours=12` |
+
+Setting **Not configured action** to *Configure* is what makes 2FA mandatory
+rather than optional: a user without an enrolled authenticator is walked
+through enrolment mid-login instead of being let through. The alternatives are
+*Skip*, which silently allows single-factor logins, and *Deny*, which locks out
+anyone not already enrolled.
+
+Bind the stage to your authentication flow (**Flows → your flow → Stage
+Bindings**) after the Password stage and before the User Login stage.
+
+To require two different methods, add a second Authenticator Validation stage
+with a different device class — each stage checks only its own classes.
+
+## Step 6 — SWAG proxy configuration
+
+Create `/config/nginx/proxy-confs/gamereviews.subdomain.conf`. Replace the
+`REPLACE_WITH_AUTH_PROXY_SECRET` placeholder with the value from step 1; this
+file lives in your SWAG config volume, not in the repository.
+
+```nginx
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    http2 on;
+
+    server_name gamereviews.*;
+
+    include /config/nginx/ssl.conf;
+    set $upstream_app_frontend gamereviews-frontend;
+    set $upstream_app_backend  gamereviews-backend;
+
+    # Larger buffers: authentik's response headers can exceed the defaults.
+    proxy_buffers     8 16k;
+    proxy_buffer_size 32k;
+
+    # authentik outpost endpoints. Must stay unauthenticated.
+    include /config/nginx/authentik-server.conf;
+
+    # ── The SPA: public ──────────────────────────────────────────────────────
+    location / {
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+        proxy_pass http://$upstream_app_frontend:80;
+    }
+
+    # ── Public GraphQL: reads only, never authenticated ──────────────────────
+    location = /graphql {
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+
+        # Strip anything a client tries to smuggle in. The backend ignores
+        # these on this path regardless, but do not rely on a single control.
+        proxy_set_header X-authentik-uid      "";
+        proxy_set_header X-authentik-username "";
+        proxy_set_header X-authentik-email    "";
+        proxy_set_header X-Proxy-Secret       "";
+
+        proxy_pass http://$upstream_app_backend:4000/graphql;
+    }
+
+    # ── Authenticated GraphQL: the me query and all mutations ────────────────
+    location = /graphql-auth {
+        include /config/nginx/proxy.conf;
+        include /config/nginx/resolver.conf;
+
+        auth_request /outpost.goauthentik.io/auth/nginx;
+
+        # Deliberately NOT @goauthentik_proxy_signin. This endpoint is only
+        # ever called by fetch(), and a 302 to an HTML login page would be
+        # followed silently and parsed as a GraphQL response. A plain 401 is
+        # what tells the app "you are signed out", which is a normal state
+        # here because reviews are public.
+        error_page 401 = @graphql_unauthenticated;
+
+        auth_request_set $authentik_uid      $upstream_http_x_authentik_uid;
+        auth_request_set $authentik_username $upstream_http_x_authentik_username;
+        auth_request_set $authentik_email    $upstream_http_x_authentik_email;
+        auth_request_set $set_cookie         $upstream_http_set_cookie;
+        add_header Set-Cookie $set_cookie;
+
+        # These overwrite any client-supplied values of the same name.
+        proxy_set_header X-authentik-uid      $authentik_uid;
+        proxy_set_header X-authentik-username $authentik_username;
+        proxy_set_header X-authentik-email    $authentik_email;
+        proxy_set_header X-Proxy-Secret       "REPLACE_WITH_AUTH_PROXY_SECRET";
+
+        proxy_pass http://$upstream_app_backend:4000/graphql-auth;
+    }
+
+    location @graphql_unauthenticated {
+        internal;
+        default_type application/json;
+        return 401 '{"errors":[{"message":"Not signed in","extensions":{"code":"UNAUTHENTICATED"}}]}';
+    }
+}
+```
+
+Reload SWAG afterwards: `docker exec swag nginx -s reload`, or restart the
+container.
+
+## Step 7 — backend environment
+
+```env
+AUTH_PROXY_SECRET=<the value from step 1>
+TRUST_PROXY_HOPS=1
+NODE_ENV=production
+CORS_ORIGINS=
+```
+
+`TRUST_PROXY_HOPS=1` because SWAG proxies to the backend directly. Get this
+wrong and rate limiting keys on SWAG's container IP, so one abusive client
+locks out everyone. `CORS_ORIGINS` stays empty: everything is same-origin, so
+no CORS headers are needed at all.
+
+Do not publish the backend's port to the host. Header-based identity is only
+sound while the only route to the API is through the proxy.
+
+`AUTH_DEV_IDENTITY` must not be set. It is ignored whenever `NODE_ENV` is
+`production`, but leaving it in a production `.env` is asking for trouble the
+day someone changes `NODE_ENV`.
+
+## Step 8 — verify
+
+Public reads work without a session:
+
+```bash
+curl -s https://gamereviews.example.com/graphql \
+  -H 'content-type: application/json' \
+  -d '{"query":"{recentReviewsCount}"}'
+# {"data":{"recentReviewsCount":0}}
+```
+
+Writes are refused without one:
+
+```bash
+curl -s https://gamereviews.example.com/graphql \
+  -H 'content-type: application/json' \
+  -d '{"query":"mutation{createGame(input:{title:\"x\"}){id}}"}'
+# UNAUTHENTICATED
+```
+
+Header smuggling is refused — this must **not** return a user:
+
+```bash
+curl -s https://gamereviews.example.com/graphql \
+  -H 'content-type: application/json' \
+  -H 'X-authentik-uid: forged' -H 'X-authentik-username: admin' \
+  -d '{"query":"{me{username}}"}'
+# {"data":{"me":null}}
+```
+
+The authenticated endpoint answers 401 rather than redirecting:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' \
+  -X POST https://gamereviews.example.com/graphql-auth \
+  -H 'content-type: application/json' -d '{"query":"{me{id}}"}'
+# 401
+```
+
+Then in a browser: load the site signed out and confirm reviews render with a
+**Sign in** button. Click it, complete the authentik flow including the 2FA
+prompt, and confirm you land back where you started with your username in the
+navbar. Post a review, then use **Sign out** and confirm you are signed out of
+authentik itself, not just this app.
+
+## Troubleshooting
+
+| Symptom | Cause |
+| ------- | ----- |
+| Backend exits at startup complaining about `AUTH_PROXY_SECRET` | Not set. Intentional: it will not start in a state where headers are trusted without proof. |
+| Signed in, but the navbar still shows **Sign in** | `/graphql-auth` is returning 401. Check the outpost is healthy, that the provider's External host exactly matches the URL, and that your user is bound to the application. |
+| Signed in and `me` returns null with a 200 | Headers reached the backend but the secret did not match, so they were ignored. Compare the nginx literal with `AUTH_PROXY_SECRET`. |
+| Everyone gets rate limited at once | `TRUST_PROXY_HOPS` does not match the real number of proxies. |
+| `upstream sent too big header` | Raise `proxy_buffers` / `proxy_buffer_size`. |
+| A second account appeared as `yourname-a1b2c3` | An unrelated local row already held that username, so provisioning disambiguated it. |
+| Login redirect loops | The `/outpost.goauthentik.io` location is being authenticated. It must have `auth_request off`. |
+
+## Notes on the trust model
+
+Identity is asserted by headers, which is only safe under three conditions,
+all of which the configuration above establishes:
+
+1. The backend is unreachable except through SWAG.
+2. SWAG overwrites every `X-authentik-*` header and `X-Proxy-Secret` on the
+   authenticated path, so client-supplied values never survive, and blanks them
+   on the public path.
+3. The backend treats a missing or unverified header set as anonymous, never as
+   trusted.
+
+Point 3 matters more than it looks. authentik's CVE-2026-25748 was exactly this
+failure mode: a malformed cookie made the auth endpoint succeed without setting
+any `X-authentik-*` headers, and applications that treated "no header" as
+"trusted upstream" granted access. Here, no headers means no user, and every
+mutation calls `requireAuth`.
+
+What this design does not give you is per-request revocation. Once the outpost
+has issued its session cookie, it is valid until it expires or the user signs
+out; revoking access in authentik does not immediately kill an in-flight
+session. For a home server this is normally an acceptable trade.

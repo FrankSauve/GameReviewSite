@@ -12,10 +12,14 @@ RUN npm install \
 
 COPY . .
 
-# The app talks to a same-origin /graphql, which is what lets the authentik
+# The app talks to same-origin GraphQL paths, which is what lets the authentik
 # session cookie and the outpost's identity headers apply to API calls too.
+#   /graphql       public reads
+#   /graphql-auth  guarded by the authentik outpost
 ARG VITE_API_URL=/graphql
+ARG VITE_API_AUTH_URL=/graphql-auth
 ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_API_AUTH_URL=$VITE_API_AUTH_URL
 
 RUN npm run build
 

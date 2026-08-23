@@ -24,12 +24,18 @@ const AuthContext = createContext<AuthContextValue>({
 });
 
 /**
- * Identity comes from the authentik proxy outpost, which authenticates the
- * request before it ever reaches this app. There is no token to store: the
- * server tells us who we are via the `me` query.
+ * Identity comes from the authentik proxy outpost, which sits in front of the
+ * authenticated GraphQL endpoint. There is no token to store: the server tells
+ * us who we are via the `me` query.
+ *
+ * For a signed-out visitor that endpoint answers 401, which surfaces here as a
+ * network error. That is the expected anonymous path, not a failure — reviews
+ * are public, so the app carries on with `user: null`.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { data, loading } = useQuery<{ me: AuthUser | null }>(GET_ME);
+  const { data, loading } = useQuery<{ me: AuthUser | null }>(GET_ME, {
+    errorPolicy: "all",
+  });
 
   return (
     <AuthContext.Provider

@@ -9,9 +9,13 @@ A full-stack game review platform where users can search for games, write review
 | ORM            | Prisma                          |
 | Database       | PostgreSQL                      |
 | Frontend       | React + Vite + Tailwind CSS     |
-| Auth           | JWT + bcryptjs                  |
+| Auth           | authentik forward auth (2FA)    |
 | Game data      | RAWG API                        |
 | Container      | Docker + Docker Compose         |
+| Reverse proxy  | SWAG (nginx) + authentik SSO     |
+
+See [docs/authentik-setup.md](docs/authentik-setup.md) for the authentik and
+reverse proxy setup, including 2FA.
 
 ---
 
@@ -37,12 +41,16 @@ cp .env.example .env
 Edit `.env` and fill in the required values:
 
 ```env
-# Generate a strong secret with: openssl rand -hex 64
-JWT_SECRET=change-me-to-a-long-random-string
-
 # Get a free API key at https://rawg.io/apidocs
 RAWG_API_KEY=your-rawg-api-key-here
+
+# There is no authentik outpost in front of the local stack, so this fakes a
+# signed-in user. Ignored whenever NODE_ENV=production.
+AUTH_DEV_IDENTITY=dev-uid:devuser:dev@example.com
 ```
+
+Reviews are readable without signing in. Writing requires an identity, which in
+production comes from authentik and locally comes from `AUTH_DEV_IDENTITY`.
 
 ### 2. Start the full stack
 

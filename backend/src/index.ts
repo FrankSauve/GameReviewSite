@@ -21,6 +21,20 @@ import {
 
 const PORT = parseInt(process.env["PORT"] ?? "4000", 10);
 
+/**
+ * Reviews are public, writes are not, and a single GraphQL endpoint cannot be
+ * selectively gated by nginx's auth_request (it cannot read the query body).
+ * So the same schema is served twice:
+ *
+ *   /graphql       reachable by anyone, always anonymous, reads only
+ *   /graphql-auth  guarded by the authentik outpost, identity honoured
+ *
+ * Mutations reaching /graphql fail with UNAUTHENTICATED, which is what tells
+ * the client to sign in.
+ */
+const PUBLIC_PATH = "/graphql";
+const AUTHENTICATED_PATH = "/graphql-auth";
+
 // The schema is cyclic (Review → user → reviews → comments → review → …), so
 // an unbounded query can recurse until the process falls over. The deepest
 // query the frontend actually sends is 5 levels.
@@ -63,21 +77,27 @@ async function bootstrap(): Promise<void> {
   // CSP is disabled outside production so the Apollo Sandbox landing page works.
   app.use(helmet({ contentSecurityPolicy: isProduction }));
 
-  app.use(
-    "/graphql",
+  const middleware = (trustIdentity: boolean) => [
     cors({ origin: allowedOrigins() }),
     express.json({ limit: "100kb" }),
     generalLimiter,
     rawgLimiter,
-    expressMiddleware(server, { context: async ({ req }) => buildContext({ req }) })
-  );
+    expressMiddleware(server, {
+      context: async ({ req }) => buildContext({ req, trustIdentity }),
+    }),
+  ];
+
+  app.use(PUBLIC_PATH, ...middleware(false));
+  app.use(AUTHENTICATED_PATH, ...middleware(true));
 
   app.get("/health", (_req: Request, res: Response) => {
     res.json({ status: "ok" });
   });
 
   app.listen(PORT, () => {
-    console.log(`🎮  Game Review API ready at http://localhost:${PORT}/graphql`);
+    console.log(`🎮  Game Review API ready on port ${PORT}`);
+    console.log(`    public    ${PUBLIC_PATH}`);
+    console.log(`    authed    ${AUTHENTICATED_PATH}`);
   });
 
   const shutdown = async () => {
