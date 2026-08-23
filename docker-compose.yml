@@ -32,8 +32,11 @@ services:
       # Apollo sandbox and localhost CORS keep working.
       NODE_ENV: ${NODE_ENV:-development}
       DATABASE_URL: postgresql://gamereview:gamereview@db:5432/gamereview
-      JWT_SECRET: ${JWT_SECRET}
       RAWG_API_KEY: ${RAWG_API_KEY}
+      AUTH_PROXY_SECRET: ${AUTH_PROXY_SECRET:-}
+      # No authentik outpost in front of the local stack, so fake an identity.
+      # Ignored whenever NODE_ENV=production.
+      AUTH_DEV_IDENTITY: ${AUTH_DEV_IDENTITY:-dev-uid:devuser:dev@example.com}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       # Ports are published straight to the host here, so no proxy hops.
       TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-0}

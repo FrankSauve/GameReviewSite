@@ -1,18 +1,12 @@
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useApolloClient } from "@apollo/client";
 import { useAuth } from "../contexts/AuthContext";
 import { GameSearchBar } from "./GameSearchBar";
 
 export function Navbar() {
-  const navigate = useNavigate();
   const location = useLocation();
   const apollo = useApolloClient();
-  const { user, logout } = useAuth();
-
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+  const { user, signIn, signOut } = useAuth();
 
   return (
     <header className="sticky top-0 z-40 bg-gray-950/80 backdrop-blur-md border-b border-gray-800">
@@ -52,7 +46,7 @@ export function Navbar() {
               </span>
             </Link>
             <button
-              onClick={handleLogout}
+              onClick={() => signOut()}
               className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
             >
               Sign out
@@ -60,12 +54,12 @@ export function Navbar() {
           </div>
         ) : (
           <div className="flex items-center gap-2 shrink-0">
-            <Link to="/login" className="btn-secondary text-sm py-1.5 px-3">
+            <button
+              onClick={() => signIn()}
+              className="btn-primary text-sm py-1.5 px-3"
+            >
               Sign in
-            </Link>
-            <Link to="/register" className="btn-primary text-sm py-1.5 px-3">
-              Register
-            </Link>
+            </button>
           </div>
         )}
       </div>

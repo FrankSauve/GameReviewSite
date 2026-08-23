@@ -16,7 +16,7 @@ interface ImportResult {
 
 export function GameSearchBar() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signIn } = useAuth();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -69,7 +69,7 @@ export function GameSearchBar() {
       setOpen(false);
       setQuery("");
       if (!user) {
-        navigate("/login", { state: { from: "/" } });
+        signIn("/");
         return;
       }
       const result = await importGame({

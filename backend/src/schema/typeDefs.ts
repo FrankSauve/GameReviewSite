@@ -10,11 +10,6 @@ export const typeDefs = `#graphql
     reviews: [Review!]
   }
 
-  type AuthPayload {
-    token: String!
-    user: User!
-  }
-
   type Game {
     id: ID!
     rawgId: String
@@ -65,25 +60,7 @@ export const typeDefs = `#graphql
     review: Review
   }
 
-  # ── Auth inputs ──────────────────────────────────────────────────────────────
-
-  input RegisterInput {
-    username: String!
-    email: String!
-    password: String!
-  }
-
-  input LoginInput {
-    email: String!
-    password: String!
-  }
-
-  # ── Other inputs ─────────────────────────────────────────────────────────────
-
-  input UpdateUserInput {
-    username: String
-    email: String
-  }
+  # ── Inputs ───────────────────────────────────────────────────────────────────
 
   input CreateGameInput {
     title: String!
@@ -156,10 +133,6 @@ export const typeDefs = `#graphql
   # ── Mutations ────────────────────────────────────────────────────────────────
 
   type Mutation {
-    register(input: RegisterInput!): AuthPayload!
-    login(input: LoginInput!): AuthPayload!
-
-    updateUser(input: UpdateUserInput!): User!
     deleteUser: Boolean!
 
     importGame(input: ImportGameInput!): Game!

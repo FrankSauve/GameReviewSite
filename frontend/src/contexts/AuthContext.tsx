@@ -1,58 +1,45 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, type ReactNode } from "react";
+import { useQuery } from "@apollo/client";
+import { GET_ME } from "../graphql/mutations";
+import { startSignIn, startSignOut } from "../lib/authentik";
 
 export interface AuthUser {
   id: string;
   username: string;
-  // Only present when the server returns it for the account owner.
   email?: string | null;
 }
 
 interface AuthContextValue {
   user: AuthUser | null;
-  token: string | null;
-  login: (token: string, user: AuthUser) => void;
-  logout: () => void;
+  loading: boolean;
+  signIn: (returnTo?: string) => void;
+  signOut: () => void;
 }
-
-const TOKEN_KEY = "gamereviews-token";
-const USER_KEY = "gamereviews-user";
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
-  token: null,
-  login: () => undefined,
-  logout: () => undefined,
+  loading: true,
+  signIn: () => undefined,
+  signOut: () => undefined,
 });
 
+/**
+ * Identity comes from the authentik proxy outpost, which authenticates the
+ * request before it ever reaches this app. There is no token to store: the
+ * server tells us who we are via the `me` query.
+ */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(
-    () => localStorage.getItem(TOKEN_KEY)
-  );
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    try {
-      const stored = localStorage.getItem(USER_KEY);
-      return stored ? (JSON.parse(stored) as AuthUser) : null;
-    } catch {
-      return null;
-    }
-  });
-
-  const login = (newToken: string, newUser: AuthUser) => {
-    localStorage.setItem(TOKEN_KEY, newToken);
-    localStorage.setItem(USER_KEY, JSON.stringify(newUser));
-    setToken(newToken);
-    setUser(newUser);
-  };
-
-  const logout = () => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
-    setToken(null);
-    setUser(null);
-  };
+  const { data, loading } = useQuery<{ me: AuthUser | null }>(GET_ME);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user: data?.me ?? null,
+        loading,
+        signIn: startSignIn,
+        signOut: startSignOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

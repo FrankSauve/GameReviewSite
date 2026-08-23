@@ -12,9 +12,11 @@ datasource db {
 
 model User {
   id        String    @id @default(uuid())
+  // Stable subject identifier from authentik (X-authentik-uid). Nullable so
+  // rows created before the authentik migration can be adopted on first login.
+  authentikUid String? @unique
   username  String    @unique
-  email     String    @unique
-  password  String
+  email     String?   @unique
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   reviews   Review[]

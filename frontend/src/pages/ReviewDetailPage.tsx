@@ -48,7 +48,7 @@ function avatarGradient(username: string): string {
 
 export function ReviewDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
+  const { user, signIn } = useAuth();
 
   const { data, loading, error } = useQuery<{ review: ReviewDetail | null }>(
     GET_REVIEW,
@@ -355,7 +355,7 @@ export function ReviewDetailPage() {
           </form>
         ) : (
           <p className="text-sm text-gray-600 pt-2 border-t border-gray-800">
-            <Link to="/login" className="text-violet-400 hover:text-violet-300 transition-colors">Log in</Link> to leave a comment.
+            <button onClick={() => signIn()} className="text-violet-400 hover:text-violet-300 transition-colors">Sign in</button> to leave a comment.
           </p>
         )}
       </div>

@@ -1,22 +1,16 @@
 import { ApolloClient, InMemoryCache, createHttpLink } from "@apollo/client";
-import { setContext } from "@apollo/client/link/context";
 
+/**
+ * The API is same-origin behind the reverse proxy, which is also what lets the
+ * authentik session cookie ride along. No Authorization header is involved:
+ * the proxy outpost authenticates the request and forwards the identity.
+ */
 const httpLink = createHttpLink({
-  uri: import.meta.env.VITE_API_URL ?? "http://localhost:4000/graphql",
-});
-
-const authLink = setContext((_, prevContext: Record<string, unknown>) => {
-  const token = localStorage.getItem("gamereviews-token");
-  const headers = (prevContext["headers"] as Record<string, string> | undefined) ?? {};
-  return {
-    headers: {
-      ...headers,
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-    },
-  };
+  uri: import.meta.env.VITE_API_URL ?? "/graphql",
+  credentials: "same-origin",
 });
 
 export const client = new ApolloClient({
-  link: authLink.concat(httpLink),
+  link: httpLink,
   cache: new InMemoryCache(),
 });

@@ -1,28 +1,7 @@
-import { GraphQLError } from "graphql";
 import type { User } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { serializeDates } from "../lib/serialize";
 import { requireAuth, type Context } from "../context";
-
-interface UpdateUserInput {
-  username?: string;
-  email?: string;
-}
-
-function validateString(value: string, field: string, maxLength = 500): string {
-  const trimmed = value.trim();
-  if (!trimmed) throw new GraphQLError(`${field} must not be empty.`);
-  if (trimmed.length > maxLength)
-    throw new GraphQLError(`${field} must be at most ${maxLength} characters.`);
-  return trimmed;
-}
-
-function validateEmail(email: string): string {
-  const trimmed = email.trim().toLowerCase();
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed))
-    throw new GraphQLError("Invalid email address.");
-  return trimmed;
-}
 
 export const userResolvers = {
   Query: {
@@ -44,20 +23,8 @@ export const userResolvers = {
   },
 
   Mutation: {
-    updateUser: async (
-      _parent: unknown,
-      { input }: { input: UpdateUserInput },
-      context: Context
-    ) => {
-      const authUser = requireAuth(context);
-      const data: Partial<Pick<User, "username" | "email">> = {};
-      if (input.username !== undefined)
-        data.username = validateString(input.username, "username", 50);
-      if (input.email !== undefined) data.email = validateEmail(input.email);
-      const user = await prisma.user.update({ where: { id: authUser.id }, data });
-      return serializeDates(user);
-    },
-
+    // No updateUser: authentik owns username and email, and any local edit
+    // would be overwritten the next time the user makes a request.
     deleteUser: async (_parent: unknown, _args: unknown, context: Context) => {
       const authUser = requireAuth(context);
       await prisma.user.delete({ where: { id: authUser.id } });

@@ -12,9 +12,9 @@ RUN npm install \
 
 COPY . .
 
-# VITE_API_URL can be overridden at build time:
-#   docker-compose build --build-arg VITE_API_URL=https://api.example.com/graphql
-ARG VITE_API_URL=http://localhost:4000/graphql
+# The app talks to a same-origin /graphql, which is what lets the authentik
+# session cookie and the outpost's identity headers apply to API calls too.
+ARG VITE_API_URL=/graphql
 ENV VITE_API_URL=$VITE_API_URL
 
 RUN npm run build
