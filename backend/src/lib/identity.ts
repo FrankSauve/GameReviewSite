@@ -23,14 +23,22 @@ const HEADER_USERNAME = "x-authentik-username";
 const HEADER_EMAIL = "x-authentik-email";
 const HEADER_PROXY_SECRET = "x-proxy-secret";
 
-const PROXY_SECRET = process.env["AUTH_PROXY_SECRET"] ?? "";
+function proxySecret(): string {
+  return process.env["AUTH_PROXY_SECRET"] ?? "";
+}
 
-if (isProduction && !PROXY_SECRET) {
-  throw new Error(
-    "AUTH_PROXY_SECRET is not set. Identity comes from proxy headers, so " +
-      "without this shared secret anyone who can reach the backend directly " +
-      "could authenticate as any user."
-  );
+/**
+ * Fails startup rather than serving in a state where headers are trusted
+ * without proof. Called from createApp so it runs before the port is bound.
+ */
+export function assertIdentityConfig(): void {
+  if (isProduction() && !proxySecret()) {
+    throw new Error(
+      "AUTH_PROXY_SECRET is not set. Identity comes from proxy headers, so " +
+        "without this shared secret anyone who can reach the backend directly " +
+        "could authenticate as any user."
+    );
+  }
 }
 
 function digest(value: string): Buffer {
@@ -38,14 +46,15 @@ function digest(value: string): Buffer {
 }
 
 /** Constant-time comparison that does not leak the secret's length. */
-function secretMatches(provided: string): boolean {
-  return timingSafeEqual(digest(provided), digest(PROXY_SECRET));
+function secretMatches(provided: string, expected: string): boolean {
+  return timingSafeEqual(digest(provided), digest(expected));
 }
 
 function proxyIsTrusted(req: Request): boolean {
-  if (!PROXY_SECRET) return true; // development only; enforced above in production
+  const expected = proxySecret();
+  if (!expected) return true; // development only; production is guarded above
   const provided = req.headers[HEADER_PROXY_SECRET];
-  return typeof provided === "string" && secretMatches(provided);
+  return typeof provided === "string" && secretMatches(provided, expected);
 }
 
 function header(req: Request, name: string): string | null {
@@ -62,16 +71,13 @@ function header(req: Request, name: string): string | null {
  * Ignored outright in production — the shipped image sets NODE_ENV=production.
  */
 function devIdentity(): ProxyIdentity | null {
-  if (isProduction) return null;
+  if (isProduction()) return null;
   const raw = process.env["AUTH_DEV_IDENTITY"];
   if (!raw) return null;
 
   const [uid, username, email] = raw.split(":");
   if (!uid || !username) return null;
 
-  console.warn(
-    `⚠️  AUTH_DEV_IDENTITY is active — every request is treated as "${username}". Never use this in production.`
-  );
   return { uid, username, email: email ?? null };
 }
 
@@ -98,6 +104,23 @@ export function readIdentity(req: Request): ProxyIdentity | null {
 /** Prisma unique-constraint violation. */
 function isUniqueViolation(err: unknown): boolean {
   return (err as { code?: string } | null)?.code === "P2002";
+}
+
+/**
+ * Which unique field(s) a P2002 collided on. Postgres reports either the field
+ * list or the index name, so match loosely.
+ */
+function conflictsOn(err: unknown, field: string): boolean {
+  const target = (err as { meta?: { target?: unknown } } | null)?.meta?.target;
+  const names = Array.isArray(target)
+    ? target.map(String)
+    : typeof target === "string"
+      ? [target]
+      : [];
+  // Nothing reported: assume every unique field is suspect, so the caller
+  // applies both mitigations rather than retrying into the same failure.
+  if (names.length === 0) return true;
+  return names.some((name) => name.toLowerCase().includes(field.toLowerCase()));
 }
 
 /**
@@ -140,23 +163,31 @@ export async function provisionUser(identity: ProxyIdentity): Promise<User> {
     }
   }
 
-  try {
-    return await prisma.user.create({
-      data: {
-        authentikUid: identity.uid,
-        username: identity.username,
-        email: identity.email,
-      },
-    });
-  } catch (err) {
-    if (!isUniqueViolation(err)) throw err;
-    // Username taken by an unrelated account; disambiguate with the uid.
-    return prisma.user.create({
-      data: {
-        authentikUid: identity.uid,
-        username: `${identity.username}-${identity.uid.slice(0, 6)}`,
-        email: identity.email,
-      },
-    });
+  // A stale local row may hold the username, the email, or both — most likely
+  // one left behind by an authentik account that was deleted and recreated with
+  // a new uid. Sign-in must still work, so give way on whichever field
+  // collided: suffix the username, and drop the email, which authentik remains
+  // the source of truth for anyway. Postgres reports one constraint per error,
+  // so this concedes one field at a time.
+  let username = identity.username;
+  let email = identity.email;
+
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await prisma.user.create({
+        data: { authentikUid: identity.uid, username, email },
+      });
+    } catch (err) {
+      if (!isUniqueViolation(err) || attempt >= 2) throw err;
+
+      const usernameClash = conflictsOn(err, "username");
+      const emailClash = conflictsOn(err, "email");
+      // Something else is unique-conflicting (a concurrent request on the same
+      // uid, say). Retrying would just fail identically.
+      if (!usernameClash && !emailClash) throw err;
+
+      if (usernameClash) username = `${identity.username}-${identity.uid.slice(0, 6)}`;
+      if (emailClash) email = null;
+    }
   }
 }

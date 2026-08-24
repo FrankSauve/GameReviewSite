@@ -58,6 +58,11 @@ git pull
 docker compose -f docker-compose.prod.yml up -d --build
 ```
 
+Dependency updates arrive as Renovate pull requests. Patch and minor bumps, base
+image updates, and security fixes merge themselves once CI passes; majors are
+labelled `needs-review` and wait for you. So the routine is: glance at what
+merged, then `git pull` and the command above.
+
 Compose recreates only what changed. The Postgres volume is untouched.
 
 The backend replays any new migrations on startup. If one fails, the container

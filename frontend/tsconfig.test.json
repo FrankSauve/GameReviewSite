@@ -1,0 +1,8 @@
+{
+  // The build config only includes src/, so this one covers the tests too.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["vite/client", "node"]
+  },
+  "include": ["src", "test", "vitest.config.ts", "vite.config.ts"]
+}

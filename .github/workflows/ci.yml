@@ -1,0 +1,166 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch makes the previous run pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (typecheck, tests)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      # npm ci, not npm install: fails if the lockfile and package.json have
+      # drifted, so a dependency bot cannot green a build it did not lock.
+      - run: npm ci
+        working-directory: backend
+
+      - run: npx prisma generate
+        working-directory: backend
+
+      # Applies the committed migrations, which also proves they are valid SQL.
+      - run: npm run db:migrate
+        working-directory: backend
+
+      # Guards against a migration that no longer matches schema.prisma.
+      - name: Check for schema drift
+        working-directory: backend
+        run: |
+          npx prisma migrate diff \
+            --from-url "$DATABASE_URL" \
+            --to-schema-datamodel prisma/schema.prisma \
+            --exit-code
+
+      - run: npm run typecheck
+        working-directory: backend
+
+      - run: npm test
+        working-directory: backend
+
+      - run: npm run build
+        working-directory: backend
+
+  frontend:
+    name: Frontend (typecheck, tests, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+        working-directory: frontend
+
+      - run: npm run typecheck
+        working-directory: frontend
+
+      - run: npm test
+        working-directory: frontend
+
+      - run: npm run build
+        working-directory: frontend
+
+  images:
+    name: Container images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: false
+          load: true
+          tags: gamereviews-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: false
+          load: true
+          tags: gamereviews-frontend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Both images must run unprivileged. A base image change could silently
+      # undo this.
+      - name: Assert containers do not run as root
+        run: |
+          backend_uid=$(docker run --rm --entrypoint id gamereviews-backend:ci -u)
+          frontend_uid=$(docker run --rm --entrypoint id gamereviews-frontend:ci -u)
+          echo "backend uid=$backend_uid frontend uid=$frontend_uid"
+          test "$backend_uid" -ne 0 || { echo "backend runs as root"; exit 1; }
+          test "$frontend_uid" -ne 0 || { echo "frontend runs as root"; exit 1; }
+
+  compose:
+    name: Compose files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate dev compose file
+        env:
+          RAWG_API_KEY: dummy
+        run: docker compose -f docker-compose.yml config -q
+
+      - name: Validate production compose file
+        env:
+          POSTGRES_PASSWORD: dummy
+          RAWG_API_KEY: dummy
+          AUTH_PROXY_SECRET: dummy
+        run: docker compose -f docker-compose.prod.yml config -q
+
+      # The production stack must never publish a port to the host: identity
+      # arrives in proxy headers, so the API has to be unreachable otherwise.
+      - name: Assert nothing is published to the host
+        env:
+          POSTGRES_PASSWORD: dummy
+          RAWG_API_KEY: dummy
+          AUTH_PROXY_SECRET: dummy
+        run: |
+          published=$(docker compose -f docker-compose.prod.yml config --format json \
+            | jq '[.services[].ports // empty] | flatten | length')
+          echo "published ports: $published"
+          test "$published" -eq 0 || { echo "production compose publishes ports"; exit 1; }

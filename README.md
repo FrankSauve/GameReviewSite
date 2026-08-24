@@ -105,3 +105,57 @@ To also remove the PostgreSQL data volume:
 ```bash
 docker compose down -v
 ```
+
+---
+
+## Tests
+
+The backend suite runs against a real PostgreSQL — it exercises HTTP requests
+through the actual Express app, so the authorization and identity rules are
+tested where they are enforced rather than in isolation.
+
+```bash
+docker run --rm -d --name gr-test-db -p 5440:5432 \
+  -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=test \
+  postgres:16-alpine
+
+cd backend
+export DATABASE_URL="postgresql://test:test@127.0.0.1:5440/test"
+npx prisma migrate deploy
+npm test
+
+docker rm -f gr-test-db
+```
+
+The frontend suite needs nothing external:
+
+```bash
+cd frontend && npm test
+```
+
+What the backend suite covers:
+
+| Area | What it pins down |
+| ---- | ----------------- |
+| Identity trust | headers without the proxy secret are ignored; a partial or blank header set means anonymous, never trusted |
+| Endpoint split | the public endpoint never authenticates, even given valid credentials |
+| Authorization | game mutations require a user; `deleteGame` is gone; nobody can edit or delete another user's review or comment |
+| Privacy | email is returned only to its owner |
+| Provisioning | idempotent; follows renames; adopts pre-authentik rows; survives username and email collisions |
+| Query limits | depth and alias limits reject abusive queries on both endpoints |
+| Rate limits | general and RAWG-specific buckets return 429 |
+
+---
+
+## Dependency updates
+
+`renovate.json` configures unattended updates. Patch and minor npm bumps, base
+image updates, and security fixes auto-merge once CI is green; majors are
+labelled `needs-review` and wait for a human. PostgreSQL majors are held
+permanently, because moving from 16 to 17 is a dump-and-restore rather than a
+container restart — see [docs/deployment.md](docs/deployment.md).
+
+CI runs on every pull request: typecheck, tests, and build for both workspaces,
+plus a Prisma schema-drift check, container image builds, and assertions that
+neither image runs as root and that the production compose file publishes no
+ports.
