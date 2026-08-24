@@ -68,55 +68,7 @@ You will need, on or reachable from the server:
 
 ---
 
-## Step 1 — get the code into your own repository
-
-The work sits in seven commits across six stacked branches, none pushed. Each
-branch builds on the previous one, so **open each pull request against the branch
-below it, not against `main`**, or every diff will contain its predecessors.
-
-| Branch | What it does |
-| ------ | ------------ |
-| `01-security-hardening` | closes the anonymous-write holes and the email leak; adds query, rate and header limits |
-| `02-authentik-forward-auth` | removes passwords and JWTs; adds authentik identity and the public/authenticated endpoint split |
-| `03-reproducible-builds` | lockfiles, `npm ci`, unprivileged containers, healthchecks |
-| `04-production-deployment` | `docker-compose.prod.yml` and the SWAG conf |
-| `05-prisma-migrations` | replaces `db push` with versioned migrations |
-| `06-ci-and-renovate` | the test suite, CI, and unattended dependency updates |
-| `07-deployment-runbook` | this document |
-
-If your friend has given you write access to his repository, push there:
-
-```bash
-for b in 01-security-hardening 02-authentik-forward-auth 03-reproducible-builds \
-         04-production-deployment 05-prisma-migrations 06-ci-and-renovate \
-         07-deployment-runbook; do
-  git push -u origin "$b"
-done
-```
-
-Otherwise fork and push to your own copy, which is also what you want if this is
-becoming your deployment rather than his:
-
-```bash
-gh repo fork FrankSauve/GameReviewSite --remote-name personal --clone=false
-for b in 01-security-hardening 02-authentik-forward-auth 03-reproducible-builds \
-         04-production-deployment 05-prisma-migrations 06-ci-and-renovate \
-         07-deployment-runbook; do
-  git push -u personal "$b"
-done
-```
-
-Merge them in order. CI runs on every pull request and must be green before the
-next one goes in — the whole point of the suite is that it tells you when a
-change broke the authorization or identity rules.
-
-You can also deploy straight from the branch tip without merging anything, if you
-would rather see it working first. Nothing below depends on the history being
-linear.
-
----
-
-## Step 2 — configure the stack on the server
+## Step 1 — configure the stack on the server
 
 ```bash
 git clone <your repository> /srv/gamereviews
@@ -141,14 +93,14 @@ AUTH_PROXY_SECRET=<the 32-byte value>
 ```
 
 Keep `AUTH_PROXY_SECRET` to hand — it has to be written into the SWAG
-configuration in step 4, and the two must match exactly.
+configuration in step 3, and the two must match exactly.
 
 `.env` is gitignored. Do not commit it, and do not paste the secret into the
 copy of the proxy conf that lives in the repository.
 
 ---
 
-## Step 3 — create the authentik objects
+## Step 2 — create the authentik objects
 
 Work through [authentik-setup.md](authentik-setup.md), steps 2 to 5:
 
@@ -161,12 +113,12 @@ Work through [authentik-setup.md](authentik-setup.md), steps 2 to 5:
    *Not configured action* set to **Configure** — that is what makes 2FA
    mandatory instead of optional.
 
-Step 5 applies instance-wide, so if your other authentik-protected apps already
+Step 4 applies instance-wide, so if your other authentik-protected apps already
 enforce 2FA, it is already done.
 
 ---
 
-## Step 4 — install the SWAG configuration
+## Step 3 — install the SWAG configuration
 
 The conf is version-controlled. Substitute the secret as you copy it into place:
 
@@ -191,7 +143,7 @@ Do not reload SWAG yet — it would proxy to containers that do not exist.
 
 ---
 
-## Step 5 — bring up the stack
+## Step 4 — bring up the stack
 
 ```bash
 docker compose -f docker-compose.prod.yml up -d --build
@@ -227,7 +179,7 @@ docker exec swag nginx -s reload
 
 ---
 
-## Step 6 — verify
+## Step 5 — verify
 
 Work outside in. Each check isolates a different layer, so the first one that
 fails tells you where the problem is.
@@ -444,7 +396,7 @@ Two things in this deployment have never been executed, as opposed to reviewed:
 
 - **The authentik outpost handshake.** Everything on the application side is
   tested against a real database, and the SWAG conf passes `nginx -t`, but no
-  request has ever traversed a live outpost. Step 6's browser walkthrough is
+  request has ever traversed a live outpost. Step 5's browser walkthrough is
   where that gets proven.
 - **The CI workflow on GitHub.** It is linted, and each of its assertions has
   been run by hand, but the first real run may still surface something
