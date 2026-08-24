@@ -64,7 +64,18 @@ docker compose up --build
 | Frontend    | http://localhost:3000         |
 | GraphQL API | http://localhost:4000/graphql |
 
-The backend automatically runs `prisma db push` on startup to keep the database schema in sync.
+The backend runs `prisma migrate deploy` on startup, replaying the migrations in
+`backend/prisma/migrations`.
+
+To change the schema, edit `backend/prisma/schema.prisma` and generate a
+migration:
+
+```bash
+cd backend
+npm run db:migrate:new -- --name describe_your_change
+```
+
+Commit the generated folder. Never edit an applied migration; add a new one.
 
 ### 3. Develop with live rebuilds (watch mode)
 

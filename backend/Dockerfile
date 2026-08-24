@@ -32,6 +32,8 @@ WORKDIR /app
 
 # Safe default for a shipped image; the local compose stack overrides it.
 ENV NODE_ENV=production
+# The entrypoint shells out to npx; keep its update banner out of the logs.
+ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 
 # The node image ships an unprivileged `node` user (uid 1000); own the files so
 # nothing in the container needs to run as root.

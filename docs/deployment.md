@@ -60,9 +60,52 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 Compose recreates only what changed. The Postgres volume is untouched.
 
+The backend replays any new migrations on startup. If one fails, the container
+exits rather than starting against a half-migrated schema — check
+`docker compose -f docker-compose.prod.yml logs backend` and fix forward with a
+new migration.
+
 To roll back, check out the previous commit and run the same command — with one
-caveat: a rollback across a schema change does not undo the schema change. Take
-a dump first if the update touched `prisma/schema.prisma`.
+caveat: a rollback across a schema change does not undo the schema change.
+Prisma has no `migrate down`. Take a dump first if the update touched
+`prisma/schema.prisma`.
+
+## Schema changes
+
+Migrations live in `backend/prisma/migrations` and are applied in order by
+`prisma migrate deploy` at startup. Nothing infers the schema from the model
+file at runtime, so a change can never silently drop a column that live data
+still needs.
+
+Author a migration on your machine, against a local database, never on the
+server:
+
+```bash
+cd backend
+npm run db:migrate:new -- --name add_review_spoiler_flag
+```
+
+Read the generated SQL before committing it. Prisma will tell you when a change
+is destructive, but it cannot know that dropping a column loses data you care
+about. For anything that rewrites or removes data, take a dump first.
+
+Never edit a migration that has already been applied anywhere — Prisma records
+a checksum and will refuse to continue if it changes. Add a new migration
+instead.
+
+### Baselining a database created before migrations existed
+
+A database first created by the older `prisma db push` startup has tables but no
+`_prisma_migrations` table, so `migrate deploy` stops with error `P3005`. Record
+the initial migration as already applied, once:
+
+```bash
+docker compose -f docker-compose.prod.yml run --rm \
+  --entrypoint "npx prisma migrate resolve --applied 0_init" backend
+```
+
+That writes history only; it does not touch data or schema. Then start the stack
+normally. The container prints these instructions itself if it hits `P3005`.
 
 ## Backups
 
