@@ -1,0 +1,129 @@
+name: Publish images
+
+# Builds the two application images and pushes them to the GitHub Container
+# registry. That is what lets a server run this stack without cloning the
+# repository, installing a toolchain, or building anything — and it is the only
+# way an image updater such as Watchtower can notice a new version at all, since
+# those compare a running container's digest against a registry tag.
+#
+#   ghcr.io/<owner>/gamereviews-backend:latest    moves with the default branch
+#   ghcr.io/<owner>/gamereviews-frontend:latest
+#   ghcr.io/<owner>/gamereviews-{backend,frontend}:sha-<short>
+#
+# The sha- tags never move, so pinning one freezes a deployment even with an
+# updater running against `latest`.
+#
+# New GHCR packages are private until someone changes that by hand. The images
+# carry an org.opencontainers.image.source label, which links each package to
+# this repository, so repository collaborators inherit read access and can pull
+# with a read:packages token. See docs/deployment.md.
+#
+# workflow_dispatch is deliberate: it publishes from whatever ref it is run on,
+# which is how you deploy a branch that has not been merged yet.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - backend/**
+      - frontend/**
+      - .github/workflows/publish-images.yml
+  workflow_dispatch:
+
+# Two pushes of the same ref would race for the `latest` tag. Queue instead of
+# cancelling: a half-finished push is worse than a redundant one.
+concurrency:
+  group: publish-images-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: ${{ matrix.component }}
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [backend, frontend]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # GHCR rejects uppercase repository names, and an owner login may contain
+      # capitals, so derive the name rather than hardcoding it.
+      - name: Resolve image name
+        id: image
+        run: |
+          owner=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "name=ghcr.io/$owner/gamereviews-${{ matrix.component }}" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derive tags and labels
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ steps.image.outputs.name }}
+          tags: |
+            type=raw,value=latest
+            type=sha,prefix=sha-,format=short
+
+      # Built and loaded before it is pushed, so the image can be inspected
+      # while nobody can pull it yet.
+      #
+      # amd64 only: the deployment target is an x86 server, and an arm64 leg
+      # would run under emulation for no one's benefit. provenance is off
+      # because a single-platform build does not need an index, and the extra
+      # manifest confuses tooling that compares digests.
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.component }}
+          platforms: linux/amd64
+          load: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # CI asserts this on pull requests too. Repeated here because this is the
+      # step that makes an image reachable by a server: a base image change that
+      # reintroduced root must not get past this point.
+      - name: Assert the image does not run as root
+        run: |
+          uid=$(docker run --rm --entrypoint id "${{ steps.image.outputs.name }}:latest" -u)
+          echo "${{ matrix.component }} uid=$uid"
+          test "$uid" -ne 0 || { echo "image runs as root"; exit 1; }
+
+      # Every layer is already in the local cache, so this only uploads.
+      - name: Push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./${{ matrix.component }}
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          provenance: false
+          cache-from: type=gha
+
+      - name: Summarise
+        run: |
+          {
+            echo "### ${{ matrix.component }}"
+            echo
+            echo '```'
+            echo "${{ steps.meta.outputs.tags }}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
