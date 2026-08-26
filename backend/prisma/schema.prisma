@@ -21,6 +21,7 @@ model User {
   updatedAt DateTime  @updatedAt
   reviews   Review[]
   comments  Comment[]
+  addedGames Game[]   @relation("GameCreator")
 }
 
 model Game {
@@ -34,6 +35,11 @@ model Game {
   releaseYear Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  // Who added this game. Nullable because rows predating this column have no
+  // recorded creator, and because deleting an account must not delete the games
+  // it contributed — other people's reviews hang off them.
+  createdById String?
+  createdBy   User?    @relation("GameCreator", fields: [createdById], references: [id], onDelete: SetNull)
   reviews     Review[]
 }
 

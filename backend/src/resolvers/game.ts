@@ -51,6 +51,35 @@ function validateYear(year: number): number {
   return num;
 }
 
+/**
+ * Cover images end up in an <img src> on every visitor's page, so the scheme is
+ * not a free choice: without this an authenticated caller could point it at any
+ * URL and have every reader's browser fetch it.
+ */
+function validateCoverUrl(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.length > 2000)
+    throw new GraphQLError("coverUrl must be at most 2000 characters.");
+
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    throw new GraphQLError("coverUrl must be an absolute URL.");
+  }
+  if (parsed.protocol !== "https:")
+    throw new GraphQLError("coverUrl must use https.");
+  return parsed.toString();
+}
+
+/** RAWG identifiers are integers; this is also what gets parsed for the detail fetch. */
+function validateRawgId(value: string): string {
+  const trimmed = value.trim();
+  if (!/^\d{1,12}$/.test(trimmed))
+    throw new GraphQLError("rawgId must be a positive integer.");
+  return trimmed;
+}
+
 export const gameResolvers = {
   Query: {
     games: async (_parent: unknown, args: PageArgs, { budget }: Context) => {
@@ -92,28 +121,58 @@ export const gameResolvers = {
       { input }: { input: ImportGameInput },
       context: Context,
     ) => {
-      requireAuth(context);
+      const authUser = requireAuth(context);
 
-      // Fetch description from RAWG (also backfills existing games that have none)
+      // These arrive from the client, not from RAWG. The resolver never verifies
+      // them against RAWG, so "RAWG-supplied" is a description of where the
+      // client got them, not a guarantee — they get the same validation as the
+      // manual path. Previously a 20,000-character title and a
+      // `javascript:` coverUrl were both accepted here while createGame
+      // correctly refused the identical title.
+      const rawgId = validateRawgId(input.rawgId);
+      const title = validateString(input.title, "title", 200);
+      const coverUrl = input.coverUrl ? validateCoverUrl(input.coverUrl) : null;
+      const genre = input.genre ? validateString(input.genre, "genre", 100) : null;
+      const platform = input.platform
+        ? validateString(input.platform, "platform", 100)
+        : null;
+      const releaseYear =
+        input.releaseYear != null ? validateYear(input.releaseYear) : null;
+
+      // Fetch description from RAWG.
       let description: string | null = null;
       try {
-        const detail = await getRawgGame(parseInt(input.rawgId, 10));
-        description = detail.description_raw?.trim() || null;
+        const detail = await getRawgGame(parseInt(rawgId, 10));
+        description = detail.description_raw?.trim().slice(0, 20_000) || null;
       } catch {
         // Non-fatal — continue without description
       }
 
-      const game = await prisma.game.upsert({
-        where: { rawgId: input.rawgId },
-        update: { description },
-        create: {
-          rawgId: input.rawgId,
-          title: input.title,
-          coverUrl: input.coverUrl ?? null,
-          genre: input.genre ?? null,
-          platform: input.platform ?? null,
-          releaseYear: input.releaseYear ?? null,
+      const existing = await prisma.game.findUnique({ where: { rawgId } });
+
+      if (existing) {
+        // Importing a game somebody else already imported must not let this
+        // caller rewrite it. The one documented purpose of the update branch is
+        // backfilling a description that was never fetched, so that is all it
+        // does — and only when there is nothing to overwrite.
+        if (existing.description || !description) return serializeDates(existing);
+        const backfilled = await prisma.game.update({
+          where: { id: existing.id },
+          data: { description },
+        });
+        return serializeDates(backfilled);
+      }
+
+      const game = await prisma.game.create({
+        data: {
+          rawgId,
+          title,
+          coverUrl,
+          genre,
+          platform,
+          releaseYear,
           description,
+          createdById: authUser.id,
         },
       });
       return serializeDates(game);
@@ -124,23 +183,25 @@ export const gameResolvers = {
       { input }: { input: CreateGameInput },
       context: Context,
     ) => {
-      requireAuth(context);
+      const authUser = requireAuth(context);
 
-      const data: Omit<Game, "id" | "createdAt" | "updatedAt"> = {
-        rawgId: null,
-        title: validateString(input.title, "title", 200),
-        genre: input.genre ? validateString(input.genre, "genre", 100) : null,
-        platform: input.platform
-          ? validateString(input.platform, "platform", 100)
-          : null,
-        description: input.description
-          ? validateString(input.description, "description", 2000)
-          : null,
-        coverUrl: null,
-        releaseYear:
-          input.releaseYear != null ? validateYear(input.releaseYear) : null,
-      };
-      const game = await prisma.game.create({ data });
+      const game = await prisma.game.create({
+        data: {
+          rawgId: null,
+          title: validateString(input.title, "title", 200),
+          genre: input.genre ? validateString(input.genre, "genre", 100) : null,
+          platform: input.platform
+            ? validateString(input.platform, "platform", 100)
+            : null,
+          description: input.description
+            ? validateString(input.description, "description", 2000)
+            : null,
+          coverUrl: null,
+          releaseYear:
+            input.releaseYear != null ? validateYear(input.releaseYear) : null,
+          createdById: authUser.id,
+        },
+      });
       return serializeDates(game);
     },
 
@@ -149,8 +210,8 @@ export const gameResolvers = {
       { id, input }: { id: string; input: UpdateGameInput },
       context: Context,
     ) => {
-      requireAuth(context);
-      await requireGame(id);
+      const authUser = requireAuth(context);
+      await requireGameOwnership(id, authUser.id);
       const data: Partial<Omit<Game, "id" | "createdAt" | "updatedAt">> = {};
       if (input.title !== undefined)
         data.title = validateString(input.title, "title", 200);
@@ -194,11 +255,25 @@ export const gameResolvers = {
   },
 };
 
-async function requireGame(id: string): Promise<Game> {
+/**
+ * Game rows are shared: everybody's reviews hang off the same catalogue entry.
+ * That is exactly why editing one was the wrong thing to leave open to any
+ * signed-in account — a single title or description change rewrites the context
+ * of every review attached to it, and nothing recorded who put it there.
+ *
+ * A game with no recorded creator predates that column and is treated as owned
+ * by nobody, so nobody may edit it. RAWG remains the source for imported
+ * metadata, and the manual path can always add a fresh entry.
+ */
+async function requireGameOwnership(id: string, userId: string): Promise<Game> {
   const game = await prisma.game.findUnique({ where: { id } });
   if (!game)
     throw new GraphQLError("Game not found.", {
       extensions: { code: "NOT_FOUND" },
+    });
+  if (game.createdById !== userId)
+    throw new GraphQLError("You can only edit games you added.", {
+      extensions: { code: "FORBIDDEN" },
     });
   return game;
 }

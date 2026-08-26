@@ -11,6 +11,7 @@ import { buildContext } from "./context";
 import { assertIdentityConfig } from "./lib/identity";
 import { createMaxRowsRule } from "./lib/maxRows";
 import { collapseDuplicateErrors } from "./lib/collapseErrors";
+import { sanitizeError } from "./lib/sanitizeError";
 import {
   allowedOrigins,
   createLimiters,
@@ -76,14 +77,15 @@ export async function createApp(): Promise<AppHandle> {
     introspection: !isProduction(),
     plugins: [...protection.plugins, collapseDuplicateErrors()],
     validationRules: [...protection.validationRules, createMaxRowsRule()],
-    formatError: (formattedError) => {
-      const { extensions, ...safe } = formattedError;
-      return {
-        ...safe,
-        extensions: extensions
-          ? { code: (extensions["code"] as string) ?? "INTERNAL_SERVER_ERROR" }
-          : undefined,
-      };
+    formatError: (formattedError, originalError) => {
+      const sanitized = sanitizeError(formattedError);
+      // Whatever the client is told, the operator needs the real thing. Logged
+      // only when it was actually withheld, so ordinary validation failures do
+      // not fill the log.
+      if (sanitized.message !== formattedError.message) {
+        console.error("GraphQL internal error:", originalError ?? formattedError);
+      }
+      return sanitized;
     },
   });
 
