@@ -145,22 +145,33 @@ jobs:
           RAWG_API_KEY: dummy
         run: docker compose -f docker-compose.yml config -q
 
-      - name: Validate production compose file
+      - name: Validate the deployment snippet
         env:
-          POSTGRES_PASSWORD: dummy
-          RAWG_API_KEY: dummy
-          AUTH_PROXY_SECRET: dummy
-        run: docker compose -f docker-compose.prod.yml config -q
+          GAMEREVIEWS_DB_PASSWORD: dummy
+          GAMEREVIEWS_RAWG_API_KEY: dummy
+          GAMEREVIEWS_AUTH_PROXY_SECRET: dummy
+        run: docker compose -f deploy/gamereviews.yml config -q
 
-      # The production stack must never publish a port to the host: identity
-      # arrives in proxy headers, so the API has to be unreachable otherwise.
-      - name: Assert nothing is published to the host
+      # Two properties the deployment depends on, both easy to lose by accident.
+      #
+      # A published port would make the API reachable without passing the proxy,
+      # and identity arrives in proxy headers — so a stray `ports:` entry turns
+      # header trust into a hole anyone can walk through.
+      #
+      # A `build:` entry would put a source checkout back on the server and
+      # leave an image updater with no registry tag to compare against, which is
+      # the whole reason the images are published.
+      - name: Assert the deployment publishes no ports and builds nothing
         env:
-          POSTGRES_PASSWORD: dummy
-          RAWG_API_KEY: dummy
-          AUTH_PROXY_SECRET: dummy
+          GAMEREVIEWS_DB_PASSWORD: dummy
+          GAMEREVIEWS_RAWG_API_KEY: dummy
+          GAMEREVIEWS_AUTH_PROXY_SECRET: dummy
         run: |
-          published=$(docker compose -f docker-compose.prod.yml config --format json \
-            | jq '[.services[].ports // empty] | flatten | length')
-          echo "published ports: $published"
-          test "$published" -eq 0 || { echo "production compose publishes ports"; exit 1; }
+          config=$(docker compose -f deploy/gamereviews.yml config --format json)
+
+          published=$(echo "$config" | jq '[.services[].ports // empty] | flatten | length')
+          builds=$(echo "$config" | jq '[.services[].build // empty] | length')
+          echo "published ports: $published, build entries: $builds"
+
+          test "$published" -eq 0 || { echo "deployment publishes ports"; exit 1; }
+          test "$builds" -eq 0 || { echo "deployment builds from source"; exit 1; }

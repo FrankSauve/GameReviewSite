@@ -16,10 +16,12 @@ if ! output=$(npx prisma migrate deploy 2>&1); then
 This database has tables but no migration history, which means it was
 created by an older version of this image using `prisma db push`.
 
-Baseline it once by recording the initial migration as already applied:
+Baseline it once by recording the initial migration as already applied. The
+service is called `backend` in the development stack and
+`gamereviews-backend` in the deployment snippet:
 
-  docker compose -f docker-compose.prod.yml run --rm --entrypoint \
-    "npx prisma migrate resolve --applied 0_init" backend
+  docker compose run --rm \
+    --entrypoint "npx prisma migrate resolve --applied 0_init" <service>
 
 Then start the stack again. This records history only; it does not alter
 any data.
