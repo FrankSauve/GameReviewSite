@@ -50,9 +50,11 @@ proving they came through SWAG. Generate one:
 openssl rand -hex 32
 ```
 
-Put it in the stack's `.env` as `AUTH_PROXY_SECRET`. The same value goes into
-the SWAG configuration in step 6. In production the backend refuses to start
-without it.
+Put it in the stack's `.env`: as `AUTH_PROXY_SECRET` for the development stack,
+or as `GAMEREVIEWS_AUTH_PROXY_SECRET` for the deployment snippet, which prefixes
+its variables because that file is shared with your other services. The same
+value goes into the SWAG configuration in step 6. In production the backend
+refuses to start without it.
 
 ## Step 2 — create the proxy provider
 
@@ -157,7 +159,7 @@ container.
 
 ## Step 7 — backend environment
 
-The production stack sets these for you from `.env`; see
+The deployment snippet sets these for you from `.env`; see
 [docs/deployment.md](deployment.md). The values that matter here:
 
 ```env

@@ -12,11 +12,17 @@ A full-stack game review platform where users can search for games, write review
 | Auth           | authentik forward auth (2FA)    |
 | Game data      | RAWG API                        |
 | Container      | Docker + Docker Compose         |
+| Images         | GHCR, published by CI           |
 | Reverse proxy  | SWAG (nginx) + authentik SSO     |
 
 See [docs/authentik-setup.md](docs/authentik-setup.md) for the authentik and
 reverse proxy setup, including 2FA, and
 [docs/deployment.md](docs/deployment.md) for deploying behind SWAG.
+
+Deployment is three services pasted into whichever compose file already runs
+your reverse proxy — [deploy/gamereviews.yml](deploy/gamereviews.yml) — pulling
+images CI has already built. Nothing is cloned or compiled on the server, which
+is also what lets an image updater keep it current on its own.
 
 ---
 
@@ -157,5 +163,5 @@ container restart — see [docs/deployment.md](docs/deployment.md).
 
 CI runs on every pull request: typecheck, tests, and build for both workspaces,
 plus a Prisma schema-drift check, container image builds, and assertions that
-neither image runs as root and that the production compose file publishes no
-ports.
+neither image runs as root and that the deployment snippet publishes no ports and
+builds nothing from source. Merging to `main` publishes both images to GHCR.
