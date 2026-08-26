@@ -1,6 +1,8 @@
 import { GraphQLError } from "graphql";
 import type { Request } from "express";
 import { provisionUser, readIdentity } from "./lib/identity";
+import { createLoaders, type Loaders } from "./lib/loaders";
+import { RowBudget } from "./lib/budget";
 
 export interface AuthUser {
   id: string;
@@ -10,6 +12,10 @@ export interface AuthUser {
 
 export interface Context {
   user: AuthUser | null;
+  /** Per-request relation batching. See lib/loaders.ts. */
+  loaders: Loaders;
+  /** Per-request ceiling on total list rows returned. See lib/budget.ts. */
+  budget: RowBudget;
 }
 
 interface BuildContextArgs {
@@ -33,13 +39,23 @@ export async function buildContext({
   req,
   trustIdentity,
 }: BuildContextArgs): Promise<Context> {
-  if (!trustIdentity) return { user: null };
+  // One set of loaders and one budget per request. Sharing either across
+  // requests would leak rows — including the email field — between callers, and
+  // would let one caller exhaust another's allowance.
+  const loaders = createLoaders();
+  const budget = new RowBudget();
+
+  if (!trustIdentity) return { user: null, loaders, budget };
 
   const identity = readIdentity(req);
-  if (!identity) return { user: null };
+  if (!identity) return { user: null, loaders, budget };
 
   const user = await provisionUser(identity);
-  return { user: { id: user.id, username: user.username, email: user.email } };
+  return {
+    user: { id: user.id, username: user.username, email: user.email },
+    loaders,
+    budget,
+  };
 }
 
 /** Throws UNAUTHENTICATED if the request carried no verified identity. */

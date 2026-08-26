@@ -10,9 +10,7 @@ export const GET_GAMES = gql`
       coverUrl
       releaseYear
       averageRating
-      reviews {
-        id
-      }
+      reviewCount
     }
   }
 `;
@@ -135,10 +133,8 @@ export const GET_USERS = gql`
       id
       username
       createdAt
-      reviews {
-        id
-        rating
-      }
+      reviewCount
+      averageRating
     }
   }
 `;

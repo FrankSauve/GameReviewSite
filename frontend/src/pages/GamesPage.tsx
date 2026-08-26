@@ -299,7 +299,7 @@ export function GamesPage() {
   const reviews = reviewsData?.recentReviews ?? [];
   const totalReviews = reviewsData?.recentReviewsCount ?? 0;
   const totalPages = Math.ceil(totalReviews / PAGE_SIZE);
-  const games = (gamesData?.games ?? []).filter(g => (g.reviews?.length ?? 0) > 0);
+  const games = (gamesData?.games ?? []).filter(g => (g.reviewCount ?? 0) > 0);
   const visibleGames = showAllGames ? games : games.slice(0, 12);
 
   return (

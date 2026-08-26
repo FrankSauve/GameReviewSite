@@ -7,7 +7,8 @@ interface ReviewerUser {
   id: string;
   username: string;
   createdAt?: string | null;
-  reviews?: { id: string; rating: number }[];
+  reviewCount: number;
+  averageRating?: number | null;
 }
 
 function avatarGradient(username: string): string {
@@ -39,7 +40,7 @@ export function ReviewersPage() {
   const { data, loading } = useQuery<{ users: ReviewerUser[] }>(GET_USERS);
 
   const users = [...(data?.users ?? [])].sort(
-    (a, b) => (b.reviews?.length ?? 0) - (a.reviews?.length ?? 0)
+    (a, b) => b.reviewCount - a.reviewCount
   );
 
   return (
@@ -78,10 +79,8 @@ export function ReviewersPage() {
       {!loading && users.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {users.map((u) => {
-            const reviewCount = u.reviews?.length ?? 0;
-            const avgRating = reviewCount > 0
-              ? u.reviews!.reduce((s, r) => s + r.rating, 0) / reviewCount
-              : null;
+            const reviewCount = u.reviewCount;
+            const avgRating = u.averageRating ?? null;
             const isMe = me?.id === u.id;
 
             return (

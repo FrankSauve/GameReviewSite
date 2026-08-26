@@ -2,6 +2,12 @@ import { GraphQLError } from "graphql";
 import type { Game } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { serializeDates } from "../lib/serialize";
+import {
+  LIST_BOUNDS,
+  applyWindow,
+  clampWindow,
+  type PageArgs,
+} from "../lib/pagination";
 import { requireAuth, type Context } from "../context";
 import { searchRawg, getRawgGame, releaseYear } from "../lib/rawg";
 
@@ -47,11 +53,14 @@ function validateYear(year: number): number {
 
 export const gameResolvers = {
   Query: {
-    games: async () => {
+    games: async (_parent: unknown, args: PageArgs, { budget }: Context) => {
+      const { take, skip } = clampWindow(args, LIST_BOUNDS.games);
       const games = await prisma.game.findMany({
         orderBy: { createdAt: "desc" },
+        take,
+        skip,
       });
-      return games.map(serializeDates);
+      return budget.charge(games).map(serializeDates);
     },
 
     game: async (_parent: unknown, { id }: { id: string }) => {
@@ -166,21 +175,22 @@ export const gameResolvers = {
   },
 
   Game: {
-    reviews: async (parent: Game) => {
-      const reviews = await prisma.review.findMany({
-        where: { gameId: parent.id },
-        orderBy: { createdAt: "desc" },
-      });
-      return reviews.map(serializeDates);
+    reviews: async (parent: Game, args: PageArgs, { loaders, budget }: Context) => {
+      const reviews = await loaders.reviewsByGameId.load(parent.id);
+      const page = applyWindow(reviews, clampWindow(args, LIST_BOUNDS.nested));
+      return budget.charge(page).map(serializeDates);
     },
 
-    averageRating: async (parent: Game) => {
-      const agg = await prisma.review.aggregate({
-        where: { gameId: parent.id },
-        _avg: { rating: true },
-      });
-      return agg._avg.rating;
-    },
+    /**
+     * Aggregated in the database. The games listing needs the total but not the
+     * rows, and fetching the rows to length them was the largest single
+     * contributor to the response size of that page.
+     */
+    reviewCount: async (parent: Game, _args: unknown, { loaders }: Context) =>
+      (await loaders.reviewStatsByGameId.load(parent.id)).count,
+
+    averageRating: async (parent: Game, _args: unknown, { loaders }: Context) =>
+      (await loaders.reviewStatsByGameId.load(parent.id)).average,
   },
 };
 

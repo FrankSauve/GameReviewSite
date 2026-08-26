@@ -7,7 +7,10 @@ export const typeDefs = `#graphql
     email: String
     createdAt: String
     updatedAt: String
-    reviews: [Review!]
+    # Bounded list. Prefer reviewCount/averageRating when you only need totals.
+    reviews(limit: Int, offset: Int): [Review!]
+    reviewCount: Int!
+    averageRating: Float
   }
 
   type Game {
@@ -21,7 +24,9 @@ export const typeDefs = `#graphql
     releaseYear: Int
     createdAt: String
     updatedAt: String
-    reviews: [Review!]
+    # Bounded list. Prefer reviewCount when you only need the total.
+    reviews(limit: Int, offset: Int): [Review!]
+    reviewCount: Int!
     averageRating: Float
   }
 
@@ -46,7 +51,9 @@ export const typeDefs = `#graphql
     updatedAt: String
     user: User
     game: Game
-    comments: [Comment!]
+    # Bounded list. Prefer commentCount when you only need the total.
+    comments(limit: Int, offset: Int): [Comment!]
+    commentCount: Int!
   }
 
   type Comment {
@@ -110,23 +117,25 @@ export const typeDefs = `#graphql
 
   # ── Queries ──────────────────────────────────────────────────────────────────
 
+  # Every list field takes a bounded window. Omitting the arguments does not mean
+  # "all rows" — it means the server's default page size.
   type Query {
     me: User
-    users: [User!]!
+    users(limit: Int, offset: Int): [User!]!
     user(id: ID!): User
 
-    games: [Game!]!
+    games(limit: Int, offset: Int): [Game!]!
     game(id: ID!): Game
     searchGamesExternal(query: String!): [ExternalGame!]!
 
-    reviews: [Review!]!
+    reviews(limit: Int, offset: Int): [Review!]!
     review(id: ID!): Review
     recentReviews(limit: Int, offset: Int): [Review!]!
     recentReviewsCount: Int!
-    reviewsByGame(gameId: ID!): [Review!]!
-    reviewsByUser(userId: ID!): [Review!]!
+    reviewsByGame(gameId: ID!, limit: Int, offset: Int): [Review!]!
+    reviewsByUser(userId: ID!, limit: Int, offset: Int): [Review!]!
 
-    comments(reviewId: ID!): [Comment!]!
+    comments(reviewId: ID!, limit: Int, offset: Int): [Comment!]!
     comment(id: ID!): Comment
   }
 

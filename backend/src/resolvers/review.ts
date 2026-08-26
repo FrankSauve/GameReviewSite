@@ -2,6 +2,12 @@ import { GraphQLError } from "graphql";
 import type { Review } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { serializeDates } from "../lib/serialize";
+import {
+  LIST_BOUNDS,
+  applyWindow,
+  clampWindow,
+  type PageArgs,
+} from "../lib/pagination";
 import { requireAuth, type Context } from "../context";
 
 interface CreateReviewInput {
@@ -32,9 +38,14 @@ function validateRating(rating: number): number {
 
 export const reviewResolvers = {
   Query: {
-    reviews: async () => {
-      const reviews = await prisma.review.findMany({ orderBy: { createdAt: "desc" } });
-      return reviews.map(serializeDates);
+    reviews: async (_parent: unknown, args: PageArgs, { budget }: Context) => {
+      const { take, skip } = clampWindow(args, LIST_BOUNDS.reviews);
+      const reviews = await prisma.review.findMany({
+        orderBy: { createdAt: "desc" },
+        take,
+        skip,
+      });
+      return budget.charge(reviews).map(serializeDates);
     },
 
     review: async (_parent: unknown, { id }: { id: string }) => {
@@ -42,35 +53,48 @@ export const reviewResolvers = {
       return review ? serializeDates(review) : null;
     },
 
-    recentReviews: async (_parent: unknown, { limit, offset }: { limit?: number; offset?: number }) => {
-      const take = Math.min(Math.max(1, limit ?? 10), 50);
-      const skip = Math.max(0, offset ?? 0);
+    recentReviews: async (_parent: unknown, args: PageArgs, { budget }: Context) => {
+      const { take, skip } = clampWindow(args, LIST_BOUNDS.recentReviews);
       const reviews = await prisma.review.findMany({
         orderBy: { createdAt: "desc" },
         take,
         skip,
       });
-      return reviews.map(serializeDates);
+      return budget.charge(reviews).map(serializeDates);
     },
 
     recentReviewsCount: async () => {
       return prisma.review.count();
     },
 
-    reviewsByGame: async (_parent: unknown, { gameId }: { gameId: string }) => {
+    reviewsByGame: async (
+      _parent: unknown,
+      { gameId, ...args }: { gameId: string } & PageArgs,
+      { budget }: Context
+    ) => {
+      const { take, skip } = clampWindow(args, LIST_BOUNDS.reviews);
       const reviews = await prisma.review.findMany({
         where: { gameId },
         orderBy: { createdAt: "desc" },
+        take,
+        skip,
       });
-      return reviews.map(serializeDates);
+      return budget.charge(reviews).map(serializeDates);
     },
 
-    reviewsByUser: async (_parent: unknown, { userId }: { userId: string }) => {
+    reviewsByUser: async (
+      _parent: unknown,
+      { userId, ...args }: { userId: string } & PageArgs,
+      { budget }: Context
+    ) => {
+      const { take, skip } = clampWindow(args, LIST_BOUNDS.reviews);
       const reviews = await prisma.review.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
+        take,
+        skip,
       });
-      return reviews.map(serializeDates);
+      return budget.charge(reviews).map(serializeDates);
     },
   },
 
@@ -131,22 +155,25 @@ export const reviewResolvers = {
   },
 
   Review: {
-    user: async (parent: Review) => {
-      const user = await prisma.user.findUnique({ where: { id: parent.userId } });
+    user: async (parent: Review, _args: unknown, { loaders }: Context) => {
+      const user = await loaders.userById.load(parent.userId);
       return user ? serializeDates(user) : null;
     },
 
-    game: async (parent: Review) => {
-      const game = await prisma.game.findUnique({ where: { id: parent.gameId } });
+    game: async (parent: Review, _args: unknown, { loaders }: Context) => {
+      const game = await loaders.gameById.load(parent.gameId);
       return game ? serializeDates(game) : null;
     },
 
-    comments: async (parent: Review) => {
-      const comments = await prisma.comment.findMany({
-        where: { reviewId: parent.id },
-        orderBy: { createdAt: "asc" },
-      });
-      return comments.map(serializeDates);
+    comments: async (parent: Review, args: PageArgs, { loaders, budget }: Context) => {
+      const comments = await loaders.commentsByReviewId.load(parent.id);
+      const page = applyWindow(comments, clampWindow(args, LIST_BOUNDS.nested));
+      return budget.charge(page).map(serializeDates);
+    },
+
+    commentCount: async (parent: Review, _args: unknown, { loaders }: Context) => {
+      const comments = await loaders.commentsByReviewId.load(parent.id);
+      return comments.length;
     },
   },
 };

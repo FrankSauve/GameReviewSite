@@ -9,6 +9,8 @@ import { typeDefs } from "./schema/typeDefs";
 import { resolvers } from "./resolvers";
 import { buildContext } from "./context";
 import { assertIdentityConfig } from "./lib/identity";
+import { createMaxRowsRule } from "./lib/maxRows";
+import { collapseDuplicateErrors } from "./lib/collapseErrors";
 import {
   allowedOrigins,
   createLimiters,
@@ -40,8 +42,14 @@ function buildArmor(): ApolloArmor {
   // The schema is cyclic (Review → user → reviews → comments → review → …), so
   // an unbounded query can recurse until the process falls over. The deepest
   // query the frontend actually sends is 5 levels.
+  //
+  // These bound the *shape* of a query. They do not bound the size of the
+  // result — cost is scored before a single row is read — which is why every
+  // list field is separately clamped in lib/pagination.ts. Depth 6 rather than
+  // 8 because nothing legitimate needs 8 and each extra level multiplies the
+  // rows a single request can reach.
   return new ApolloArmor({
-    maxDepth: { n: 8 },
+    maxDepth: { n: 6 },
     maxAliases: { n: 15 },
     maxDirectives: { n: 20 },
     maxTokens: { n: 1000 },
@@ -66,8 +74,8 @@ export async function createApp(): Promise<AppHandle> {
     typeDefs,
     resolvers,
     introspection: !isProduction(),
-    plugins: [...protection.plugins],
-    validationRules: [...protection.validationRules],
+    plugins: [...protection.plugins, collapseDuplicateErrors()],
+    validationRules: [...protection.validationRules, createMaxRowsRule()],
     formatError: (formattedError) => {
       const { extensions, ...safe } = formattedError;
       return {

@@ -2,6 +2,7 @@ import { GraphQLError } from "graphql";
 import type { Comment } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { serializeDates } from "../lib/serialize";
+import { LIST_BOUNDS, clampWindow, type PageArgs } from "../lib/pagination";
 import { requireAuth, type Context } from "../context";
 
 interface CreateCommentInput {
@@ -23,12 +24,19 @@ function validateString(value: string, field: string, maxLength = 2000): string 
 
 export const commentResolvers = {
   Query: {
-    comments: async (_parent: unknown, { reviewId }: { reviewId: string }) => {
+    comments: async (
+      _parent: unknown,
+      { reviewId, ...args }: { reviewId: string } & PageArgs,
+      { budget }: Context
+    ) => {
+      const { take, skip } = clampWindow(args, LIST_BOUNDS.nested);
       const comments = await prisma.comment.findMany({
         where: { reviewId },
         orderBy: { createdAt: "asc" },
+        take,
+        skip,
       });
-      return comments.map(serializeDates);
+      return budget.charge(comments).map(serializeDates);
     },
 
     comment: async (_parent: unknown, { id }: { id: string }) => {
@@ -86,8 +94,8 @@ export const commentResolvers = {
   },
 
   Comment: {
-    user: async (parent: Comment) => {
-      const user = await prisma.user.findUnique({ where: { id: parent.userId } });
+    user: async (parent: Comment, _args: unknown, { loaders }: Context) => {
+      const user = await loaders.userById.load(parent.userId);
       return user ? serializeDates(user) : null;
     },
 

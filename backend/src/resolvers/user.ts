@@ -1,6 +1,12 @@
 import type { User } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { serializeDates } from "../lib/serialize";
+import {
+  LIST_BOUNDS,
+  applyWindow,
+  clampWindow,
+  type PageArgs,
+} from "../lib/pagination";
 import { requireAuth, type Context } from "../context";
 
 export const userResolvers = {
@@ -11,9 +17,19 @@ export const userResolvers = {
       return user ? serializeDates(user) : null;
     },
 
-    users: async () => {
-      const users = await prisma.user.findMany({ orderBy: { createdAt: "desc" } });
-      return users.map(serializeDates);
+    /**
+     * Public, so it is a bounded page rather than the whole account table.
+     * Usernames come from authentik, which makes an unbounded version a login-name
+     * roster for anyone probing the identity provider.
+     */
+    users: async (_parent: unknown, args: PageArgs, { budget }: Context) => {
+      const { take, skip } = clampWindow(args, LIST_BOUNDS.users);
+      const users = await prisma.user.findMany({
+        orderBy: { createdAt: "desc" },
+        take,
+        skip,
+      });
+      return budget.charge(users).map(serializeDates);
     },
 
     user: async (_parent: unknown, { id }: { id: string }) => {
@@ -40,12 +56,20 @@ export const userResolvers = {
     email: (parent: User, _args: unknown, context: Context) =>
       context.user?.id === parent.id ? parent.email : null,
 
-    reviews: async (parent: User) => {
-      const reviews = await prisma.review.findMany({
-        where: { userId: parent.id },
-        orderBy: { createdAt: "desc" },
-      });
-      return reviews.map(serializeDates);
+    reviews: async (parent: User, args: PageArgs, { loaders, budget }: Context) => {
+      const reviews = await loaders.reviewsByUserId.load(parent.id);
+      const page = applyWindow(reviews, clampWindow(args, LIST_BOUNDS.nested));
+      return budget.charge(page).map(serializeDates);
     },
+
+    /**
+     * Aggregated in the database rather than derived from `reviews`, so the
+     * leaderboard does not have to download every review to count them.
+     */
+    reviewCount: async (parent: User, _args: unknown, { loaders }: Context) =>
+      (await loaders.reviewStatsByUserId.load(parent.id)).count,
+
+    averageRating: async (parent: User, _args: unknown, { loaders }: Context) =>
+      (await loaders.reviewStatsByUserId.load(parent.id)).average,
   },
 };
