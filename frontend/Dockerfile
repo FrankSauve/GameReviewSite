@@ -30,6 +30,9 @@ FROM nginxinc/nginx-unprivileged:1.27-alpine
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Included by every location block in default.conf. Deliberately not under
+# conf.d/, which nginx globs into the http context on its own.
+COPY security-headers.conf /etc/nginx/security-headers.conf
 
 EXPOSE 8080
 
