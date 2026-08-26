@@ -43,10 +43,30 @@ export function allowedOrigins(): string[] | false {
 /** Field names that cause an outbound call to the RAWG API. */
 const RAWG_FIELDS = ["searchGamesExternal", "importGame"];
 
+/**
+ * Where the GraphQL document lives on this request.
+ *
+ * Apollo serves queries over GET as well as POST, and `express.json()` does not
+ * populate `req.body` for a GET — so reading only the body let a caller move the
+ * exact same operation to the query string and skip the RAWG bucket entirely,
+ * falling back to the general limit of 300/min instead of 30/min. Verified: with
+ * the bucket set to 2 and already exhausted by POSTs, 12 GETs of the same
+ * operation were all served.
+ */
+function documents(req: Request): string[] {
+  const found: string[] = [];
+
+  const body = req.body as { query?: unknown } | undefined;
+  if (typeof body?.query === "string") found.push(body.query);
+
+  const queryParam = (req.query as { query?: unknown } | undefined)?.query;
+  if (typeof queryParam === "string") found.push(queryParam);
+
+  return found;
+}
+
 function isRawgOperation(req: Request): boolean {
-  const query = (req.body as { query?: unknown } | undefined)?.query;
-  if (typeof query !== "string") return false;
-  return RAWG_FIELDS.some((field) => query.includes(field));
+  return documents(req).some((doc) => RAWG_FIELDS.some((field) => doc.includes(field)));
 }
 
 function envInt(name: string, fallback: number): number {

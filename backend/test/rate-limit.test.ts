@@ -59,4 +59,61 @@ describe("rate limiting", () => {
 
     await fresh.stop();
   });
+
+  /**
+   * Apollo answers a query sent as a GET with the document in the query string.
+   * The RAWG limiter used to read only `req.body`, which `express.json()` leaves
+   * empty on a GET — so the same operation moved to the query string skipped the
+   * RAWG bucket and fell back to the general limit, 300/min instead of 30/min.
+   */
+  it("counts a RAWG query against the RAWG bucket when it arrives as a GET", async () => {
+    const { createApp } = await import("../src/app");
+    const fresh = await createApp();
+    const document = '{ searchGamesExternal(query: "halo") { rawgId } }';
+
+    const get = () =>
+      request(fresh.app)
+        .get(PUBLIC_PATH)
+        .set("apollo-require-preflight", "true")
+        .query({ query: document });
+
+    const codes = [
+      (await get()).status,
+      (await get()).status,
+      (await get()).status,
+      (await get()).status,
+    ];
+
+    // Bucket is 2, so the third and fourth must be refused. Before the fix all
+    // four were served.
+    expect(codes.slice(2)).toEqual([429, 429]);
+
+    await fresh.stop();
+  });
+
+  it("shares one RAWG bucket across both methods", async () => {
+    const { createApp } = await import("../src/app");
+    const fresh = await createApp();
+    const document = '{ searchGamesExternal(query: "halo") { rawgId } }';
+
+    const posted = await request(fresh.app)
+      .post(PUBLIC_PATH)
+      .set("content-type", "application/json")
+      .send({ query: document });
+    const alsoPosted = await request(fresh.app)
+      .post(PUBLIC_PATH)
+      .set("content-type", "application/json")
+      .send({ query: document });
+    // Bucket of 2 is now spent by POSTs; a GET must not get a fresh allowance.
+    const viaGet = await request(fresh.app)
+      .get(PUBLIC_PATH)
+      .set("apollo-require-preflight", "true")
+      .query({ query: document });
+
+    expect(posted.status).not.toBe(429);
+    expect(alsoPosted.status).not.toBe(429);
+    expect(viaGet.status).toBe(429);
+
+    await fresh.stop();
+  });
 });
