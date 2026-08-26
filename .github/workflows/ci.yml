@@ -17,7 +17,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
         env:
           POSTGRES_USER: test
           POSTGRES_PASSWORD: test
@@ -34,9 +34,9 @@ jobs:
       DATABASE_URL: postgresql://test:test@localhost:5432/test
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -47,7 +47,7 @@ jobs:
       - run: npm ci
         working-directory: backend
 
-      - run: npx prisma generate
+      - run: ./node_modules/.bin/prisma generate
         working-directory: backend
 
       # Applies the committed migrations, which also proves they are valid SQL.
@@ -58,7 +58,7 @@ jobs:
       - name: Check for schema drift
         working-directory: backend
         run: |
-          npx prisma migrate diff \
+          ./node_modules/.bin/prisma migrate diff \
             --from-url "$DATABASE_URL" \
             --to-schema-datamodel prisma/schema.prisma \
             --exit-code
@@ -76,9 +76,9 @@ jobs:
     name: Frontend (typecheck, tests, build)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: npm
@@ -100,12 +100,12 @@ jobs:
     name: Container images
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      - uses: docker/setup-buildx-action@v3
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
 
       - name: Build backend image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: ./backend
           push: false
@@ -115,7 +115,7 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Build frontend image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
           context: ./frontend
           push: false
@@ -134,11 +134,62 @@ jobs:
           test "$backend_uid" -ne 0 || { echo "backend runs as root"; exit 1; }
           test "$frontend_uid" -ne 0 || { echo "frontend runs as root"; exit 1; }
 
+      # npm audit covers what we depend on; this covers what we are built on —
+      # the OS packages and bundled tools inside the base images, which no
+      # lockfile describes.
+      #
+      # The gate is fixable CRITICAL only, and that threshold is deliberate. A
+      # HIGH in a base image is usually upstream's to patch and arrives on
+      # upstream's schedule, so failing on it turns CI red through no change of
+      # ours and keeps it red until someone else ships — which is how a gate
+      # gets routinely overridden and stops meaning anything. Renovate already
+      # bumps the pinned digests. Highs are still printed, in the step below.
+      - name: Fail on a fixable critical vulnerability
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: gamereviews-backend:ci
+          scanners: vuln
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      - name: Fail on a fixable critical vulnerability (frontend)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: gamereviews-frontend:ci
+          scanners: vuln
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      # Visibility without a veto.
+      - name: Report high-severity vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: gamereviews-backend:ci
+          scanners: vuln
+          severity: HIGH
+          ignore-unfixed: true
+          exit-code: "0"
+          format: table
+
+      - name: Report high-severity vulnerabilities (frontend)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: gamereviews-frontend:ci
+          scanners: vuln
+          severity: HIGH
+          ignore-unfixed: true
+          exit-code: "0"
+          format: table
+
   compose:
     name: Compose files
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Validate dev compose file
         env:

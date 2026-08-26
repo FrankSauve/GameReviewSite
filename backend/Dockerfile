@@ -1,5 +1,5 @@
 # ── Stage 1: Install → generate → build → prune ──────────────────────────────
-FROM node:22-alpine AS builder
+FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS builder
 
 WORKDIR /app
 
@@ -15,7 +15,7 @@ COPY prisma ./prisma
 RUN npm ci --no-audit --no-fund
 
 # Generate Prisma client + download query engine for this platform (once)
-RUN npx prisma generate
+RUN ./node_modules/.bin/prisma generate
 
 COPY tsconfig.json ./
 COPY src ./src
@@ -26,14 +26,12 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # ── Stage 2: Lean runtime image (no network calls) ────────────────────────────
-FROM node:22-alpine
+FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32
 
 WORKDIR /app
 
 # Safe default for a shipped image; the local compose stack overrides it.
 ENV NODE_ENV=production
-# The entrypoint shells out to npx; keep its update banner out of the logs.
-ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 
 # The node image ships an unprivileged `node` user (uid 1000); own the files so
 # nothing in the container needs to run as root.
@@ -43,6 +41,18 @@ COPY --chown=node:node prisma        ./prisma
 COPY --chown=node:node entrypoint.sh ./
 
 RUN chmod +x entrypoint.sh
+
+# npm is not needed to run this image: the entrypoint calls the Prisma binary
+# directly and then `node dist/index.js`, and the healthcheck is `node -e`. It
+# was, however, the single largest source of vulnerability findings in the image
+# — the CVEs were all in npm's own bundled dependencies (tar, sigstore,
+# brace-expansion, ip-address, picomatch), reachable by nothing here because
+# nothing here runs npm. Removing it drops a fixable CRITICAL and five HIGH
+# findings and is one fewer way to fetch and execute code inside a container that
+# should only ever run the code it shipped with.
+RUN rm -rf /usr/local/lib/node_modules/npm \
+           /usr/local/bin/npm \
+           /usr/local/bin/npx
 
 USER node
 

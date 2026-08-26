@@ -1,5 +1,5 @@
 # ── Stage 1: Build ───────────────────────────────────────────────────────────
-FROM node:22-alpine AS builder
+FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS builder
 
 WORKDIR /app
 
@@ -26,7 +26,12 @@ RUN npm run build
 # The unprivileged variant runs entirely as uid 101 and listens on 8080; the
 # stock nginx image keeps its master process as root, which this container has
 # no need for.
-FROM nginxinc/nginx-unprivileged:1.27-alpine
+#
+# 1.29 rather than 1.27, and pinned by digest: 1.27-alpine is built on Alpine
+# 3.21, whose OpenSSL packages carry two fixable CRITICAL advisories. 1.29-alpine
+# is on Alpine 3.23 and measured zero. The digest is what Renovate updates; the
+# tag alone would have let the base drift silently under a running deployment.
+FROM nginxinc/nginx-unprivileged:1.29-alpine@sha256:0c79d56aee561a1d81c63f00eee5fb5fe29279560cdc55e91425133104c7fbe6
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf

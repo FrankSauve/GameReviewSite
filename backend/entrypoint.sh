@@ -6,7 +6,13 @@ echo "⏳ Applying database migrations..."
 # migrate deploy only replays the SQL committed in prisma/migrations. Unlike
 # `db push` it never infers changes from the schema, so it cannot silently drop
 # a column that live data still needs.
-if ! output=$(npx prisma migrate deploy 2>&1); then
+#
+# The binary is called directly rather than through npx. `npx prisma` falls back
+# to downloading prisma from the registry when it cannot find a local copy, so a
+# packaging mistake would turn a startup step into an unpinned network install
+# instead of failing. The read-only root filesystem would stop it in production,
+# but not before it had tried.
+if ! output=$(./node_modules/.bin/prisma migrate deploy 2>&1); then
   echo "$output" >&2
 
   if echo "$output" | grep -q 'P3005'; then
@@ -21,7 +27,7 @@ service is called `backend` in the development stack and
 `gamereviews-backend` in the deployment snippet:
 
   docker compose run --rm \
-    --entrypoint "npx prisma migrate resolve --applied 0_init" <service>
+    --entrypoint "./node_modules/.bin/prisma migrate resolve --applied 0_init" <service>
 
 Then start the stack again. This records history only; it does not alter
 any data.
