@@ -120,6 +120,41 @@ describe("response size bounds", () => {
     expect(res.data?.reviews[0]?.commentCount).toBe(60);
   });
 
+  /**
+   * Usernames come from authentik, so an unbounded public `users` query is a
+   * login-name roster for anyone probing the identity provider. Emails were
+   * already withheld (see privacy.test.ts); the list length was not bounded.
+   */
+  it("bounds the public account list", async () => {
+    await seed(12, 1, 0);
+    const res = await publicQuery<{ users: { id: string }[] }>(
+      app,
+      "{ users(limit: 99999) { id username } }"
+    );
+    expect(res.errors).toBeUndefined();
+    expect(res.data?.users.length).toBeLessThanOrEqual(200);
+  });
+
+  it("bounds the public games list", async () => {
+    await seed(1, 6, 0);
+    const res = await publicQuery<{ games: { id: string }[] }>(
+      app,
+      "{ games(limit: 99999) { id title } }"
+    );
+    expect(res.errors).toBeUndefined();
+    expect(res.data?.games.length).toBeLessThanOrEqual(200);
+  });
+
+  it("ignores a negative or absurd offset rather than passing it through", async () => {
+    await seed(2, 3, 0);
+    const res = await publicQuery<{ reviews: { id: string }[] }>(
+      app,
+      "{ reviews(limit: -5, offset: -100) { id } }"
+    );
+    expect(res.errors).toBeUndefined();
+    expect(res.data?.reviews.length).toBeGreaterThan(0);
+  });
+
   it("still serves every query the SPA sends", async () => {
     await seed(5, 5, 4);
     const game = await prisma.game.findFirst();

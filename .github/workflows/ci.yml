@@ -72,6 +72,15 @@ jobs:
       - run: npm run build
         working-directory: backend
 
+      # The advisories this cleared were not theoretical: @apollo/server below
+      # 5.5.0 carried a bypass of the CSRF prevention protecting the
+      # cookie-authenticated endpoint. Production dependencies only — a
+      # devDependency advisory cannot be reached by a running deployment, and
+      # gating on it would block merges over something the server never loads.
+      - name: Audit production dependencies
+        working-directory: backend
+        run: npm audit --omit=dev --audit-level=high
+
   frontend:
     name: Frontend (typecheck, tests, build)
     runs-on: ubuntu-latest
@@ -95,6 +104,10 @@ jobs:
 
       - run: npm run build
         working-directory: frontend
+
+      - name: Audit production dependencies
+        working-directory: frontend
+        run: npm audit --omit=dev --audit-level=high
 
   images:
     name: Container images
@@ -133,6 +146,39 @@ jobs:
           echo "backend uid=$backend_uid frontend uid=$frontend_uid"
           test "$backend_uid" -ne 0 || { echo "backend runs as root"; exit 1; }
           test "$frontend_uid" -ne 0 || { echo "frontend runs as root"; exit 1; }
+
+      # The headers only work because they are included per location: nginx's
+      # add_header does not merge with an inherited set, and every location here
+      # sets one of its own for Content-Type or Cache-Control. Configured once at
+      # server level, this assertion fails on all three paths — which is how the
+      # bug was found, so it is worth keeping a test that would find it again.
+      - name: Assert the SPA serves its security headers
+        run: |
+          docker run -d --name hdr -p 8080:8080 gamereviews-frontend:ci
+          for _ in $(seq 1 30); do
+            curl -fsS -o /dev/null http://127.0.0.1:8080/healthz && break
+            sleep 1
+          done
+
+          asset=$(docker exec hdr sh -c 'ls /usr/share/nginx/html/assets/*.js | head -1 | sed "s#/usr/share/nginx/html##"')
+          required="content-security-policy x-frame-options x-content-type-options referrer-policy permissions-policy cross-origin-opener-policy"
+          status=0
+
+          # A hashed asset, the HTML entry point, and an arbitrary SPA route that
+          # only exists via the try_files fallback.
+          for path in / /index.html "$asset" /games/regression-check; do
+            headers=$(curl -sS -D- -o /dev/null "http://127.0.0.1:8080$path" | tr '[:upper:]' '[:lower:]')
+            for header in $required; do
+              if ! printf '%s\n' "$headers" | grep -q "^$header:"; then
+                echo "MISSING $header on $path"
+                status=1
+              fi
+            done
+          done
+
+          docker rm -f hdr >/dev/null
+          test "$status" -eq 0 || { echo "security headers are not being served"; exit 1; }
+          echo "all six headers present on every path checked"
 
       # npm audit covers what we depend on; this covers what we are built on —
       # the OS packages and bundled tools inside the base images, which no
@@ -184,6 +230,46 @@ jobs:
           ignore-unfixed: true
           exit-code: "0"
           format: table
+
+  supply-chain:
+    name: Supply chain
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      # A tag is a pointer its owner can move. publish-images.yml runs with
+      # packages:write, so an action referenced by tag there is a standing offer
+      # of a GHCR push token to whoever compromises that action's repository.
+      # Renovate keeps the SHAs current by reading the version comment.
+      - name: Assert every third-party action is pinned to a commit SHA
+        run: |
+          status=0
+          # Anchored so the pattern matches YAML keys only. An unanchored search
+          # also matches the lines of this script, which is how the first version
+          # of this check failed against itself.
+          matches=$(grep -rnE '^[[:space:]]*-?[[:space:]]*uses:[[:space:]]' .github/workflows/*.yml || true)
+
+          while IFS= read -r line; do
+            [ -n "$line" ] || continue
+            file=${line%%:*}
+            ref=$(printf '%s\n' "$line" \
+              | sed -E 's/^[^:]*:[0-9]+:[[:space:]]*-?[[:space:]]*uses:[[:space:]]*//' \
+              | sed -E 's/[[:space:]]*#.*$//' \
+              | tr -d '"'"'"' ')
+            # Local composite actions and reusable workflows have nothing to pin.
+            case "$ref" in ./*|.github/*|'') continue ;; esac
+
+            sha=${ref##*@}
+            if ! printf '%s\n' "$sha" | grep -qE '^[0-9a-f]{40}$'; then
+              echo "NOT PINNED: $ref (in $file)"
+              status=1
+            else
+              echo "ok: $ref"
+            fi
+          done <<< "$matches"
+
+          test "$status" -eq 0 || exit 1
+          echo "every action reference is a 40-character commit SHA"
 
   compose:
     name: Compose files
