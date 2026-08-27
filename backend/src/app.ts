@@ -9,7 +9,7 @@ import helmet from "helmet";
 import { typeDefs } from "./schema/typeDefs";
 import { resolvers } from "./resolvers";
 import { buildContext } from "./context";
-import { assertIdentityConfig } from "./lib/identity";
+import { assertOidcConfig } from "./lib/oidc";
 import { createMaxRowsRule } from "./lib/maxRows";
 import { collapseDuplicateErrors } from "./lib/collapseErrors";
 import { sanitizeError } from "./lib/sanitizeError";
@@ -18,22 +18,20 @@ import {
   allowedOrigins,
   createLimiters,
   isProduction,
+  sameOriginOnly,
   trustProxyHops,
 } from "./security";
 
 /**
- * Reviews are public, writes are not, and a single GraphQL endpoint cannot be
- * selectively gated by nginx's auth_request (it cannot read the query body).
- * So the same schema is served twice:
+ * One endpoint, and authorization decided per field.
  *
- *   /graphql       reachable by anyone, always anonymous, reads only
- *   /graphql-auth  guarded by the authentik outpost, identity honoured
- *
- * Mutations reaching /graphql fail with UNAUTHENTICATED, which is what tells
- * the client to sign in.
+ * This used to be two: nginx's `auth_request` cannot read a GraphQL body, so it
+ * could not tell a mutation from a query, and the only way to gate writes at the
+ * proxy was to serve the schema twice — once guarded, once not. Now that this
+ * app is the OAuth2 client and reads its own session cookie, `requireAuth` makes
+ * that decision where the resolvers are, and the split has no reason to exist.
  */
-export const PUBLIC_PATH = "/graphql";
-export const AUTHENTICATED_PATH = "/graphql-auth";
+export const GRAPHQL_PATH = "/graphql";
 
 export interface AppHandle {
   app: Express;
@@ -62,9 +60,9 @@ function buildArmor(): ApolloArmor {
 }
 
 export async function createApp(): Promise<AppHandle> {
-  // Before anything is served: refuse to run in a configuration where proxy
-  // headers would be trusted without proof.
-  assertIdentityConfig();
+  // Before anything is served: refuse to run in a configuration where nobody
+  // could sign in.
+  assertOidcConfig();
 
   const app = express();
 
@@ -77,6 +75,10 @@ export async function createApp(): Promise<AppHandle> {
     typeDefs,
     resolvers,
     introspection: !isProduction(),
+    // On by default in Apollo Server 4+, but stated explicitly because it is now
+    // load-bearing: a cookie-borne session means a cross-site form POST would
+    // carry credentials, and this is what rejects it. See sameOriginOnly.
+    csrfPrevention: true,
     plugins: [...protection.plugins, collapseDuplicateErrors()],
     validationRules: [...protection.validationRules, createMaxRowsRule()],
     formatError: (formattedError, originalError) => {
@@ -105,18 +107,17 @@ export async function createApp(): Promise<AppHandle> {
   // nobody is signed in.
   app.use("/auth", limiters.auth, createAuthRouter(isProduction()));
 
-  const middleware = (trustIdentity: boolean) => [
+  app.use(
+    GRAPHQL_PATH,
     cors({ origin: allowedOrigins() }),
+    sameOriginOnly(),
     express.json({ limit: "100kb" }),
     limiters.general,
     limiters.rawg,
     expressMiddleware(server, {
-      context: async ({ req }) => buildContext({ req, trustIdentity }),
-    }),
-  ];
-
-  app.use(PUBLIC_PATH, ...middleware(false));
-  app.use(AUTHENTICATED_PATH, ...middleware(true));
+      context: async ({ req }) => buildContext({ req }),
+    })
+  );
 
   app.get("/health", (_req: Request, res: Response) => {
     res.json({ status: "ok" });

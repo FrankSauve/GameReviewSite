@@ -109,7 +109,7 @@ describe("user provisioning", () => {
   });
 
   it("provisions a user with no email at all", async () => {
-    const res = await me({ uid: "ak-noemail", username: "nomail" });
+    const res = await me({ uid: "ak-noemail", username: "nomail", email: null });
     expect(res.data?.me.email).toBeNull();
     expect(await prisma.user.count()).toBe(1);
   });

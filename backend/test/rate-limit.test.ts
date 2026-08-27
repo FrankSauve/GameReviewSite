@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import type { Express } from "express";
-import { PUBLIC_PATH } from "../src/app";
+import { GRAPHQL_PATH } from "../src/app";
 
 /**
  * Rate limiting protects two things: the process, and the RAWG API quota. The
@@ -27,7 +27,7 @@ describe("rate limiting", () => {
   });
 
   const send = (query: string) =>
-    request(app).post(PUBLIC_PATH).set("content-type", "application/json").send({ query });
+    request(app).post(GRAPHQL_PATH).set("content-type", "application/json").send({ query });
 
   it("returns 429 once the general limit is exceeded", async () => {
     const codes: number[] = [];
@@ -43,7 +43,7 @@ describe("rate limiting", () => {
     const fresh = await createApp();
     const rawg = () =>
       request(fresh.app)
-        .post(PUBLIC_PATH)
+        .post(GRAPHQL_PATH)
         .set("content-type", "application/json")
         .send({ query: '{ searchGamesExternal(query: "halo") { rawgId } }' });
 
@@ -73,7 +73,7 @@ describe("rate limiting", () => {
 
     const get = () =>
       request(fresh.app)
-        .get(PUBLIC_PATH)
+        .get(GRAPHQL_PATH)
         .set("apollo-require-preflight", "true")
         .query({ query: document });
 
@@ -97,16 +97,16 @@ describe("rate limiting", () => {
     const document = '{ searchGamesExternal(query: "halo") { rawgId } }';
 
     const posted = await request(fresh.app)
-      .post(PUBLIC_PATH)
+      .post(GRAPHQL_PATH)
       .set("content-type", "application/json")
       .send({ query: document });
     const alsoPosted = await request(fresh.app)
-      .post(PUBLIC_PATH)
+      .post(GRAPHQL_PATH)
       .set("content-type", "application/json")
       .send({ query: document });
     // Bucket of 2 is now spent by POSTs; a GET must not get a fresh allowance.
     const viaGet = await request(fresh.app)
-      .get(PUBLIC_PATH)
+      .get(GRAPHQL_PATH)
       .set("apollo-require-preflight", "true")
       .query({ query: document });
 

@@ -27,7 +27,12 @@ async function appFor(nodeEnv: string): Promise<{
   vi.resetModules();
   const previous = process.env["NODE_ENV"];
   process.env["NODE_ENV"] = nodeEnv;
-  process.env["AUTH_PROXY_SECRET"] = "test-proxy-secret";
+  // createApp refuses to boot in production with no way to sign in. Never
+  // contacted: these tests only exercise error formatting.
+  process.env["OIDC_ISSUER"] = "http://127.0.0.1:1/application/o/gamereviews/";
+  process.env["OIDC_CLIENT_ID"] = "gamereviews";
+  process.env["OIDC_CLIENT_SECRET"] = "shhh";
+  process.env["OIDC_REDIRECT_URI"] = "https://gamereviews.example.com/auth/callback";
   const { createApp } = await import("../src/app");
   const handle = await createApp();
   return {
@@ -85,7 +90,7 @@ describe("error message disclosure", () => {
       'mutation { createGame(input: { title: "x" }) { id } }'
     );
     expect(anonWrite.errors?.[0]?.extensions?.code).toBe("UNAUTHENTICATED");
-    expect(anonWrite.errors?.[0]?.message).toMatch(/logged in/i);
+    expect(anonWrite.errors?.[0]?.message).toMatch(/signed in/i);
 
     await stop();
   });

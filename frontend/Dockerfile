@@ -11,14 +11,12 @@ RUN npm ci --no-audit --no-fund
 
 COPY . .
 
-# The app talks to same-origin GraphQL paths, which is what lets the authentik
-# session cookie and the outpost's identity headers apply to API calls too.
-#   /graphql       public reads
-#   /graphql-auth  guarded by the authentik outpost
+# The app talks to same-origin paths, which is what lets the session cookie the
+# backend issues apply to API calls as well as to the sign-in routes.
+#   /graphql     the whole API, authenticated per field
+#   /auth/*      the OIDC login flow, served by the backend
 ARG VITE_API_URL=/graphql
-ARG VITE_API_AUTH_URL=/graphql-auth
 ENV VITE_API_URL=$VITE_API_URL
-ENV VITE_API_AUTH_URL=$VITE_API_AUTH_URL
 
 RUN npm run build
 
