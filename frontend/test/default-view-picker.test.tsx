@@ -77,16 +77,16 @@ describe("DefaultViewPicker", () => {
     renderPicker("year", [
       {
         request: { query: SET_REVIEW_GROUPING, variables: { grouping: "SCORE" } },
-        error: new Error("nope"),
+        result: {
+          errors: [{ message: "nope" }],
+        },
       },
     ]);
     screen.getByRole("button", { name: "By score" }).click();
     await waitFor(() => {
       expect(screen.getByText(/could not save/i)).toBeTruthy();
-    }).catch(() => {
-      expect(screen.getByText(/could not save/i)).toBeTruthy();
     });
-  })
+  });
 ;});
 
 describe("the mutation itself", () => {
