@@ -75,7 +75,10 @@ existing users get new rows and lose their reviews unless the migration maps
 them across.
 
 None of this is out of reach; it is simply a larger change than it looks, and
-worth its own PR rather than riding along with a proxy-config fix.
+worth its own PR rather than riding along with a proxy-config fix. The plan for
+doing it is in
+[docs/oauth2-migration-plan.md](oauth2-migration-plan.md), including the open
+questions that block starting.
 
 ## Prerequisites
 
