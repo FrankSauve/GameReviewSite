@@ -31,6 +31,52 @@ proxy were misconfigured, sending `X-authentik-uid` to the public path cannot
 authenticate anyone. That is deliberate redundancy: the proxy strips the
 headers *and* the application ignores them.
 
+## Why a proxy provider and not an OAuth2 provider
+
+This is the obvious question to ask, and the short answer is that you are
+already using OAuth. A proxy provider is not an alternative to OAuth — it is an
+OAuth2 client. It has its own `client_id` on the provider's **Authentication**
+tab, and when you click **Sign in** the browser runs an ordinary authorization
+code flow against authentik. The only difference from a textbook OIDC
+integration is *who holds the client credentials*: the outpost, rather than
+GameReviews itself.
+
+So the choice is not "OAuth or not". It is where the OAuth client lives:
+
+| | Proxy provider (today) | OAuth2 provider |
+| - | ---------------------- | --------------- |
+| OAuth client | the authentik outpost | the GameReviews backend |
+| App-side auth code | none | discovery, JWKS, PKCE, callback, session, refresh, logout |
+| Endpoints | must be split, `/graphql` + `/graphql-auth` | one `/graphql` |
+| Trust basis | app is unreachable except via SWAG, proxy proves itself with a shared secret | signature on a token, verified in-process |
+| Revocation | when the outpost cookie expires or the user signs out | access-token lifetime, or introspection per request |
+| 2FA | flow property, unaffected | flow property, unaffected |
+
+The endpoint split is the honest cost of the current design. It exists because
+nginx's `auth_request` has to decide before it can read the GraphQL body, so
+"is this a mutation?" cannot inform "should this be authenticated?". Moving the
+OAuth client into the backend would collapse the two paths into one and let
+`requireAuth` do that job per field, which is where it belongs. It would also
+retire the shared-secret header trust in `backend/src/lib/identity.ts` and the
+frontend's endpoint-splitting link in `frontend/src/apollo.ts`.
+
+What it costs is real code in the security-critical path: the callback handler,
+session cookie flags, CSRF protection (a cookie-borne session on a POST endpoint
+needs it, which header identity did not), token refresh, RP-initiated logout via
+`end_session_endpoint`, and JWKS caching against key rotation. It also rewrites
+a good part of the backend suite, since `identity.test.ts` and the endpoint-split
+assertions are testing a trust model that would no longer exist.
+
+One migration detail to settle first: `provisionUser` keys local rows on
+`authentikUid`, currently the outpost's `X-authentik-uid` (a hashed user
+identifier). Whether the OIDC `sub` is byte-identical depends on the provider's
+subject mode, so check that on your instance before switching — if it differs,
+existing users get new rows and lose their reviews unless the migration maps
+them across.
+
+None of this is out of reach; it is simply a larger change than it looks, and
+worth its own PR rather than riding along with a proxy-config fix.
+
 ## Prerequisites
 
 - A working authentik instance reachable by SWAG, with its container named
@@ -59,7 +105,9 @@ refuses to start without it.
 ## Step 2 — create the proxy provider
 
 In authentik, go to **Applications → Providers → Create** and choose
-**Proxy Provider**.
+**Proxy Provider**. (Not an OAuth2 provider — see
+[Why a proxy provider and not an OAuth2 provider](#why-a-proxy-provider-and-not-an-oauth2-provider)
+above, which also covers what switching would take.)
 
 | Field | Value |
 | ----- | ----- |
@@ -139,12 +187,24 @@ sed "s|REPLACE_WITH_AUTH_PROXY_SECRET|$AUTH_PROXY_SECRET|" \
   > /path/to/swag/config/nginx/proxy-confs/gamereviews.subdomain.conf
 ```
 
-Three details in that file are load-bearing and worth understanding before you
+The file follows SWAG's own proxy-conf layout — version header, `client_max_body_size`,
+then per-location `set $upstream_app` / `$upstream_port` / `$upstream_proto` — so it
+reads like the samples in `/config/nginx/proxy-confs`. There is no `http2 on;`
+because SWAG's `nginx.conf` already sets it at the `http` level for every server.
+
+Four details in that file are load-bearing and worth understanding before you
 change it:
 
+- **The geoblocking check needs SWAG's geoip2 setup.** `$lan-ip` and
+  `$geo-whitelist` are defined by that setup, not by nginx, so if you do not run
+  geoip2 the config will not load at all — nginx exits with
+  `unknown "lan-ip" variable`. Delete both `if` lines in that case. Also note
+  what they do: a site whose reviews are otherwise readable by anyone becomes
+  readable only from your whitelisted countries and your LAN.
 - **`location = /graphql` blanks the identity headers.** The backend ignores
   them on that path anyway, but a client should never get as far as having them
-  merely ignored.
+  merely ignored. It blanks all five headers `authentik-location.conf` would
+  set, not just the three the backend reads.
 - **`location = /graphql-auth` does not use `@goauthentik_proxy_signin`.** SWAG's
   stock `authentik-location.conf` redirects a 401 to the login page, which is
   right for a whole-page request and wrong here: this endpoint is only ever
