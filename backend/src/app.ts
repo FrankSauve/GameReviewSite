@@ -2,6 +2,7 @@ import { ApolloServer } from "@apollo/server";
 import { expressMiddleware } from "@as-integrations/express5";
 import { ApolloArmor } from "@escape.tech/graphql-armor";
 import express, { type Express, type Request, type Response } from "express";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import helmet from "helmet";
 
@@ -12,6 +13,7 @@ import { assertIdentityConfig } from "./lib/identity";
 import { createMaxRowsRule } from "./lib/maxRows";
 import { collapseDuplicateErrors } from "./lib/collapseErrors";
 import { sanitizeError } from "./lib/sanitizeError";
+import { createAuthRouter } from "./routes/auth";
 import {
   allowedOrigins,
   createLimiters,
@@ -91,7 +93,17 @@ export async function createApp(): Promise<AppHandle> {
   // CSP is disabled outside production so the Apollo Sandbox landing page works.
   app.use(helmet({ contentSecurityPolicy: isProduction() }));
 
+  // Sessions live in a cookie, so the cookie has to be parsed before anything
+  // that reads one. Nothing is signed here: the session cookie is an opaque
+  // random token looked up in the database, not a bearer of claims.
+  app.use(cookieParser());
+
   const limiters = createLimiters();
+
+  // Mounted before the GraphQL middleware, and deliberately outside it: signing
+  // in is not a GraphQL operation, and these routes must stay reachable when
+  // nobody is signed in.
+  app.use("/auth", limiters.auth, createAuthRouter(isProduction()));
 
   const middleware = (trustIdentity: boolean) => [
     cors({ origin: allowedOrigins() }),

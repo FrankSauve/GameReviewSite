@@ -77,6 +77,7 @@ function envInt(name: string, fallback: number): number {
 export interface Limiters {
   general: RequestHandler;
   rawg: RequestHandler;
+  auth: RequestHandler;
 }
 
 /**
@@ -101,6 +102,17 @@ export function createLimiters(): Limiters {
       legacyHeaders: false,
       skip: (req) => !isRawgOperation(req),
       message: { errors: [{ message: "Too many game searches, slow down." }] },
+    }),
+    // The /auth routes sit outside the GraphQL limiters and are cheap to abuse:
+    // /login makes this app do discovery and issue a redirect, /callback makes
+    // it do a token exchange against authentik. Signing in is not something a
+    // person does twenty times a minute.
+    auth: rateLimit({
+      windowMs: envInt("RATE_LIMIT_WINDOW_MS", 60_000),
+      limit: envInt("AUTH_RATE_LIMIT_MAX", 20),
+      standardHeaders: "draft-7",
+      legacyHeaders: false,
+      message: { errors: [{ message: "Too many sign-in attempts." }] },
     }),
   };
 }

@@ -29,6 +29,7 @@
     "express-rate-limit": "^8.1.0",
     "graphql": "^16.11.0",
     "helmet": "^8.1.0",
+    "openid-client": "^5.7.1",
     "prisma": "^6.19.3"
   },
   "devDependencies": {
