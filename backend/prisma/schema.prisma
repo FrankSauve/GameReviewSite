@@ -12,7 +12,7 @@ datasource db {
 
 model User {
   id        String    @id @default(uuid())
-  // Stable subject identifier from authentik (X-authentik-uid). Nullable so
+  // Stable subject identifier from authentik: the OIDC `sub` claim. Nullable so
   // rows created before the authentik migration can be adopted on first login.
   authentikUid String? @unique
   username  String    @unique
@@ -22,6 +22,27 @@ model User {
   reviews   Review[]
   comments  Comment[]
   addedGames Game[]   @relation("GameCreator")
+  sessions  Session[]
+}
+
+/// A signed-in browser.
+///
+/// The backend is the OIDC client, so it issues its own session rather than
+/// re-checking with authentik on every request. See lib/session.ts.
+model Session {
+  /// SHA-256 of the value in the cookie, never the value itself, so a dump of
+  /// this table does not hand over usable sessions.
+  id        String   @id
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Kept solely to pass as `id_token_hint` on RP-initiated logout, so authentik
+  /// knows which session to end without prompting.
+  idToken   String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Game {
