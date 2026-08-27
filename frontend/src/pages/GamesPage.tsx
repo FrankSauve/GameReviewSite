@@ -7,6 +7,7 @@ import { useAuth } from "../contexts/AuthContext";
 import type { Review, Game } from "../types";
 import { formatRating, ratingColor } from "../lib/rating";
 import { excerpt } from "../lib/markdown";
+import { formatPlaytime } from "../lib/playtime";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -138,7 +139,8 @@ function ReviewFeedCard({ review }: { review: Review }) {
               {review.user?.username ?? "Anonymous"}
             </Link>
             <span className="text-xs text-gray-600 ml-auto shrink-0">
-              {timeAgo(review.createdAt)}
+              {formatPlaytime(review.yearPlayed, review.hoursPlayed) ??
+                timeAgo(review.createdAt)}
             </span>
           </div>
         </div>

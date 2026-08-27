@@ -96,3 +96,12 @@ export async function seedGame(title = "Test Game"): Promise<string> {
   const game = await prisma.game.create({ data: { title } });
   return game.id;
 }
+
+/**
+ * The playtime fields `createReview` requires.
+ *
+ * Spliced into the input literal by tests that are about something else, so the
+ * part they actually exercise stays legible. A test that is about playtime states
+ * its own values instead.
+ */
+export const PLAYTIME_INPUT = "yearPlayed: 2024, hoursPlayed: 12";

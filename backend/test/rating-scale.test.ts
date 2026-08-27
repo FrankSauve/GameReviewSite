@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Express } from "express";
 import {
   ALICE,
+  PLAYTIME_INPUT,
   authedQuery,
   resetDatabase,
   seedGame,
@@ -37,7 +38,7 @@ describe("rating scale", () => {
   const create = (rating: string): Promise<GraphQLResponse> =>
     authedQuery(
       app,
-      `mutation { createReview(input: { gameId: "${gameId}", rating: ${rating}, content: "c" }) { id rating } }`,
+      `mutation { createReview(input: { gameId: "${gameId}", rating: ${rating}, content: "c", ${PLAYTIME_INPUT} }) { id rating } }`,
       ALICE
     );
 

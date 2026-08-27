@@ -4,12 +4,15 @@ import { GET_USER_PROFILE } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
 import { formatRating, ratingColor } from "../lib/rating";
 import { excerpt } from "../lib/markdown";
+import { formatPlaytime } from "../lib/playtime";
 
 interface ProfileReview {
   id: string;
   rating: number;
   content: string;
   createdAt: string;
+  yearPlayed?: number | null;
+  hoursPlayed?: number | null;
   game?: {
     id: string;
     title: string;
@@ -208,7 +211,10 @@ export function UserProfilePage() {
                       <p className="text-xs text-gray-400 leading-relaxed flex-1">{summary}</p>
 
                       <div className="flex items-center gap-3 pt-1 border-t border-gray-800/60">
-                        <span className="text-xs text-gray-600">{timeAgo(review.createdAt)}</span>
+                        <span className="text-xs text-gray-600">
+                          {formatPlaytime(review.yearPlayed, review.hoursPlayed) ??
+                            timeAgo(review.createdAt)}
+                        </span>
                         {(review.comments?.length ?? 0) > 0 && (
                           <span className="text-xs text-gray-600 flex items-center gap-1">
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

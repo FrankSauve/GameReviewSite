@@ -35,7 +35,7 @@ describe("review body", () => {
       "mutation ($input: CreateReviewInput!) { createReview(input: $input) { id content } }",
       ALICE,
       {},
-      { input: { gameId, rating: 8, content } }
+      { input: { gameId, rating: 8, content, yearPlayed: 2024, hoursPlayed: 12 } }
     );
 
   it("accepts a body at the limit", async () => {

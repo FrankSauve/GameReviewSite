@@ -47,6 +47,11 @@ export const typeDefs = `#graphql
     gameId: ID!
     rating: Float!
     content: String!
+    # The year the game was played or finished, not the year the review was
+    # written. Null only for reviews imported without one.
+    yearPlayed: Int
+    # Hours spent with the game.
+    hoursPlayed: Float
     createdAt: String
     updatedAt: String
     user: User
@@ -94,16 +99,24 @@ export const typeDefs = `#graphql
     releaseYear: Int
   }
 
-  # userId is taken from the auth token — not supplied by the client
+  # userId is taken from the session — not supplied by the client.
+  #
+  # yearPlayed and hoursPlayed are required here while both columns are nullable.
+  # Every review written through the app carries them; the row that predates the
+  # columns, and an importer that genuinely does not know a value, do not have to.
   input CreateReviewInput {
     gameId: ID!
     rating: Float!
     content: String!
+    yearPlayed: Int!
+    hoursPlayed: Float!
   }
 
   input UpdateReviewInput {
     rating: Float
     content: String
+    yearPlayed: Int
+    hoursPlayed: Float
   }
 
   input CreateCommentInput {

@@ -4,7 +4,9 @@ import { CREATE_REVIEW } from "../graphql/mutations";
 import { GET_GAME } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
 import { REVIEW_CONTENT_MAX } from "../lib/markdown";
+import { currentYear, snapHours } from "../lib/playtime";
 import { RatingInput } from "./RatingInput";
+import { PlaytimeInput } from "./PlaytimeInput";
 import { Markdown } from "./Markdown";
 
 interface AddReviewFormProps {
@@ -19,6 +21,8 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
   const bodyId = useId();
   const [content, setContent] = useState("");
   const [rating, setRating] = useState<number>(DEFAULT_RATING);
+  const [yearPlayed, setYearPlayed] = useState<number>(currentYear());
+  const [hoursPlayed, setHoursPlayed] = useState("");
   const [previewing, setPreviewing] = useState(false);
 
   const [createReview, { loading, error }] = useMutation(CREATE_REVIEW, {
@@ -26,6 +30,8 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
     onCompleted: () => {
       setContent("");
       setRating(DEFAULT_RATING);
+      setYearPlayed(currentYear());
+      setHoursPlayed("");
       setPreviewing(false);
       onSuccess?.();
     },
@@ -45,11 +51,23 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
     );
   }
 
+  const hours = Number(hoursPlayed);
+  const hoursValid = hoursPlayed.trim() !== "" && Number.isFinite(hours) && hours > 0;
+  const canSubmit = content.trim() !== "" && hoursValid;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!canSubmit) return;
     void createReview({
-      variables: { input: { gameId, rating, content: content.trim() } },
+      variables: {
+        input: {
+          gameId,
+          rating,
+          content: content.trim(),
+          yearPlayed,
+          hoursPlayed: snapHours(hours),
+        },
+      },
     });
   };
 
@@ -61,6 +79,13 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
         </label>
         <RatingInput value={rating} onChange={setRating} />
       </div>
+
+      <PlaytimeInput
+        year={yearPlayed}
+        hours={hoursPlayed}
+        onYearChange={setYearPlayed}
+        onHoursChange={setHoursPlayed}
+      />
 
       <div>
         <div className="flex items-baseline justify-between mb-1.5">
@@ -112,7 +137,7 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
 
       <button
         type="submit"
-        disabled={loading || !content.trim()}
+        disabled={loading || !canSubmit}
         className="btn-primary w-full"
       >
         {loading ? "Submitting…" : "Submit Review"}

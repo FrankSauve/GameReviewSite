@@ -14,11 +14,15 @@ interface CreateReviewInput {
   gameId: string;
   rating: number;
   content: string;
+  yearPlayed: number;
+  hoursPlayed: number;
 }
 
 interface UpdateReviewInput {
   rating?: number;
   content?: string;
+  yearPlayed?: number;
+  hoursPlayed?: number;
 }
 
 /**
@@ -71,6 +75,48 @@ function validateRating(rating: number): number {
   if (!Number.isInteger(num * 2))
     throw new GraphQLError("rating must be a whole or half point, such as 9 or 9.5.");
   return num;
+}
+
+/**
+ * The year the game was played.
+ *
+ * The floor is 1970 rather than something tighter: the point of the field is a
+ * backlog stretching back years, and a wrong-by-a-decade floor would refuse a
+ * legitimate entry. The ceiling is next year, because someone finishing a game in
+ * late December writing it up in January is ordinary, and anything beyond that is
+ * a typo — usually a mistyped four-digit year.
+ */
+export const YEAR_PLAYED_MIN = 1970;
+
+function validateYearPlayed(year: number): number {
+  const num = Number(year);
+  const max = new Date().getFullYear() + 1;
+  if (!Number.isInteger(num) || num < YEAR_PLAYED_MIN || num > max)
+    throw new GraphQLError(
+      `yearPlayed must be a whole year between ${YEAR_PLAYED_MIN} and ${max}.`
+    );
+  return num;
+}
+
+/**
+ * Hours spent with the game, to one decimal.
+ *
+ * Hours rather than minutes because that is how people talk about it, and a Float
+ * because `rating` already is. One decimal rather than half-hour steps: "12.5
+ * hours" is the common case but a 1.25-hour game exists, and refusing it to keep
+ * the granularity tidy would be pedantry. Rounded rather than refused, unlike
+ * `rating`, because there is no canonical scale here for an off-step value to
+ * contradict — 3.14159 hours is a real measurement, just over-reported.
+ */
+export const HOURS_PLAYED_MAX = 10000;
+
+function validateHoursPlayed(hours: number): number {
+  const num = Number(hours);
+  if (!Number.isFinite(num) || num <= 0 || num > HOURS_PLAYED_MAX)
+    throw new GraphQLError(
+      `hoursPlayed must be greater than 0 and at most ${HOURS_PLAYED_MAX}.`
+    );
+  return Math.round(num * 10) / 10;
 }
 
 export const reviewResolvers = {
@@ -159,6 +205,8 @@ export const reviewResolvers = {
           gameId: input.gameId,
           rating: validateRating(input.rating),
           content: validateString(input.content, "content"),
+          yearPlayed: validateYearPlayed(input.yearPlayed),
+          hoursPlayed: validateHoursPlayed(input.hoursPlayed),
         },
       });
       return serializeDates(review);
@@ -171,10 +219,16 @@ export const reviewResolvers = {
     ) => {
       const authUser = requireAuth(context);
       const existing = await requireOwnership(id, authUser.id);
-      const data: Partial<Pick<Review, "rating" | "content">> = {};
+      const data: Partial<
+        Pick<Review, "rating" | "content" | "yearPlayed" | "hoursPlayed">
+      > = {};
       if (input.rating !== undefined) data.rating = validateRating(input.rating);
       if (input.content !== undefined)
         data.content = validateString(input.content, "content");
+      if (input.yearPlayed !== undefined)
+        data.yearPlayed = validateYearPlayed(input.yearPlayed);
+      if (input.hoursPlayed !== undefined)
+        data.hoursPlayed = validateHoursPlayed(input.hoursPlayed);
       const review = await prisma.review.update({ where: { id: existing.id }, data });
       return serializeDates(review);
     },

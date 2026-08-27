@@ -6,7 +6,9 @@ import { CREATE_COMMENT, DELETE_COMMENT, DELETE_REVIEW, UPDATE_REVIEW } from "..
 import { useAuth } from "../contexts/AuthContext";
 import { formatRating, ratingColor } from "../lib/rating";
 import { REVIEW_CONTENT_MAX } from "../lib/markdown";
+import { currentYear, formatPlaytime, snapHours } from "../lib/playtime";
 import { RatingInput } from "../components/RatingInput";
+import { PlaytimeInput } from "../components/PlaytimeInput";
 import { Markdown } from "../components/Markdown";
 
 interface CommentUser { id: string; username: string; }
@@ -17,6 +19,8 @@ interface ReviewGame {
 }
 interface ReviewDetail {
   id: string; rating: number; content: string; createdAt: string;
+  yearPlayed?: number | null;
+  hoursPlayed?: number | null;
   user?: CommentUser | null;
   game?: ReviewGame | null;
   comments?: ReviewComment[];
@@ -64,6 +68,8 @@ export function ReviewDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editRating, setEditRating] = useState(0);
   const [editContent, setEditContent] = useState("");
+  const [editYear, setEditYear] = useState(currentYear());
+  const [editHours, setEditHours] = useState("");
   const [newComment, setNewComment] = useState("");
 
   if (loading) {
@@ -95,16 +101,33 @@ export function ReviewDetailPage() {
   const game = review.game;
   const isOwner = user?.id === review.user?.id;
   const comments = review.comments ?? [];
+  const playtime = formatPlaytime(review.yearPlayed, review.hoursPlayed);
 
   const startEdit = () => {
     setEditRating(review.rating);
     setEditContent(review.content);
+    setEditYear(review.yearPlayed ?? currentYear());
+    setEditHours(review.hoursPlayed != null ? String(review.hoursPlayed) : "");
     setEditing(true);
   };
 
+  const editHoursNum = Number(editHours);
+  const editHoursValid =
+    editHours.trim() !== "" && Number.isFinite(editHoursNum) && editHoursNum > 0;
+
   const handleSave = async () => {
-    if (!editContent.trim()) return;
-    await updateReview({ variables: { id: review.id, input: { rating: editRating, content: editContent.trim() } } });
+    if (!editContent.trim() || !editHoursValid) return;
+    await updateReview({
+      variables: {
+        id: review.id,
+        input: {
+          rating: editRating,
+          content: editContent.trim(),
+          yearPlayed: editYear,
+          hoursPlayed: snapHours(editHoursNum),
+        },
+      },
+    });
     setEditing(false);
   };
 
@@ -177,7 +200,10 @@ export function ReviewDetailPage() {
               >
                 {review.user?.username ?? "Unknown"}
               </Link>
-              <p className="text-xs text-gray-500">{timeAgo(review.createdAt)}</p>
+              <p className="text-xs text-gray-500">
+                {timeAgo(review.createdAt)}
+                {playtime && <span className="text-gray-600"> · played {playtime}</span>}
+              </p>
             </div>
           </div>
 
@@ -221,6 +247,14 @@ export function ReviewDetailPage() {
                 <RatingInput value={editRating} onChange={setEditRating} size="sm" />
               </div>
             </div>
+
+            <PlaytimeInput
+              year={editYear}
+              hours={editHours}
+              onYearChange={setEditYear}
+              onHoursChange={setEditHours}
+              size="sm"
+            />
             <textarea
               value={editContent}
               onChange={e => setEditContent(e.target.value)}
@@ -241,7 +275,7 @@ export function ReviewDetailPage() {
               </button>
               <button
                 onClick={() => void handleSave()}
-                disabled={saving || !editContent.trim()}
+                disabled={saving || !editContent.trim() || !editHoursValid}
                 className="btn-primary text-sm py-1.5 px-3 disabled:opacity-50"
               >
                 {saving ? "Saving…" : "Save"}

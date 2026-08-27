@@ -32,6 +32,8 @@ export const CREATE_REVIEW = gql`
       id
       rating
       content
+      yearPlayed
+      hoursPlayed
       createdAt
       user {
         id
@@ -74,6 +76,8 @@ export const UPDATE_REVIEW = gql`
       id
       rating
       content
+      yearPlayed
+      hoursPlayed
     }
   }
 `;

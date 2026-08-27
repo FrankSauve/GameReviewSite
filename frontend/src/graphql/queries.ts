@@ -44,6 +44,8 @@ export const GET_GAME = gql`
         id
         rating
         content
+        yearPlayed
+        hoursPlayed
         createdAt
         user {
           id
@@ -69,6 +71,8 @@ export const GET_RECENT_REVIEWS = gql`
       id
       rating
       content
+      yearPlayed
+      hoursPlayed
       createdAt
       user {
         id
@@ -101,6 +105,8 @@ export const GET_REVIEW = gql`
       id
       rating
       content
+      yearPlayed
+      hoursPlayed
       createdAt
       user {
         id
@@ -149,6 +155,8 @@ export const GET_USER_PROFILE = gql`
         id
         rating
         content
+        yearPlayed
+        hoursPlayed
         createdAt
         game {
           id

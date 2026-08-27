@@ -7,7 +7,10 @@ reviews, and comment on other people's. Sign-in is delegated to your own
 ## Features
 
 - Game search via the [RAWG](https://rawg.io/apidocs) API, imported on demand
-- Reviews scored out of 10, editable and deletable by their author
+- Reviews scored out of 10 in half points, written in Markdown, editable and
+  deletable by their author
+- Each review records the year the game was played and the hours spent on it, so
+  an imported backlog reads by when it was played rather than when it was typed up
 - Comments on reviews
 - Profile pages with every review and an average score
 - Reviewers leaderboard and a paginated recent-reviews feed
