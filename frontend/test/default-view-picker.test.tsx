@@ -81,9 +81,13 @@ describe("DefaultViewPicker", () => {
       },
     ]);
     screen.getByRole("button", { name: "By score" }).click();
-    await waitFor(() => expect(screen.getByText(/could not save/i)).toBeTruthy());
-  });
-});
+    await waitFor(() => {
+      expect(screen.getByText(/could not save/i)).toBeTruthy();
+    }).catch(() => {
+      expect(screen.getByText(/could not save/i)).toBeTruthy();
+    });
+  })
+;});
 
 describe("the mutation itself", () => {
   /**
