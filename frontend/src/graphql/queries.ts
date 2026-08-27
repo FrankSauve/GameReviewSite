@@ -138,7 +138,6 @@ export const GET_USERS = gql`
     users {
       id
       username
-      createdAt
       reviewCount
       averageRating
     }
@@ -150,7 +149,6 @@ export const GET_USER_PROFILE = gql`
     user(id: $id) {
       id
       username
-      createdAt
       reviews {
         id
         rating

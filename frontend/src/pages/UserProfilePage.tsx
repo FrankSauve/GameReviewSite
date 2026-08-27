@@ -26,7 +26,6 @@ interface ProfileReview {
 interface UserProfile {
   id: string;
   username: string;
-  createdAt?: string | null;
   reviews?: ProfileReview[];
 }
 
@@ -40,11 +39,6 @@ function timeAgo(iso: string): string {
   const days = Math.floor(hrs / 24);
   if (days < 30) return `${days}d ago`;
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-}
-
-function memberSince(iso?: string | null): string {
-  if (!iso) return "Unknown";
-  return new Date(iso).toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
 function avatarGradient(username: string): string {
@@ -132,7 +126,6 @@ export function UserProfilePage() {
               </span>
             )}
           </div>
-          <p className="text-sm text-gray-500">Member since {memberSince(profile.createdAt)}</p>
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 pt-2">
             <div className="text-center">
               <p className="text-lg font-bold text-gray-100">{reviews.length}</p>
