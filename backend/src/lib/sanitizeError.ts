@@ -1,10 +1,6 @@
 import type { GraphQLFormattedError } from "graphql";
 import { isProduction } from "../security";
 
-/**
- * Codes that describe a caller's mistake. Their messages are written for the
- * caller and are safe to return verbatim.
- */
 const CLIENT_ERROR_CODES = new Set([
   "BAD_USER_INPUT",
   "GRAPHQL_PARSE_FAILED",
@@ -23,17 +19,6 @@ const GENERIC_MESSAGE = "Internal server error.";
 
 /**
  * Strips everything from an error that the client has no business seeing.
- *
- * Apollo Server does not mask error messages by default — it removes the stack
- * trace in production and leaves the message intact. So an unexpected throw
- * reached the client verbatim: a resolver failure surfaced as
- * "RAWG_API_KEY is not configured. Get a free key at https://rawg.io/apidocs
- * and add it to backend/.env", and a Prisma failure would have named tables,
- * columns and constraints the same way.
- *
- * Errors this application raises deliberately carry one of the codes above and
- * are passed through, because their messages are the interface. Anything else is
- * a bug or an outage, and the caller gets a constant.
  *
  * Only in production: locally the real message is what makes a failure
  * debuggable, and the tests assert against it.

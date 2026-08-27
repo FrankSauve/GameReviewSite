@@ -39,9 +39,6 @@ export async function buildContext({
   req,
   trustIdentity,
 }: BuildContextArgs): Promise<Context> {
-  // One set of loaders and one budget per request. Sharing either across
-  // requests would leak rows — including the email field — between callers, and
-  // would let one caller exhaust another's allowance.
   const loaders = createLoaders();
   const budget = new RowBudget();
 

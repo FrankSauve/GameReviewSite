@@ -72,11 +72,6 @@ jobs:
       - run: npm run build
         working-directory: backend
 
-      # The advisories this cleared were not theoretical: @apollo/server below
-      # 5.5.0 carried a bypass of the CSRF prevention protecting the
-      # cookie-authenticated endpoint. Production dependencies only — a
-      # devDependency advisory cannot be reached by a running deployment, and
-      # gating on it would block merges over something the server never loads.
       - name: Audit production dependencies
         working-directory: backend
         run: npm audit --omit=dev --audit-level=high
@@ -147,11 +142,6 @@ jobs:
           test "$backend_uid" -ne 0 || { echo "backend runs as root"; exit 1; }
           test "$frontend_uid" -ne 0 || { echo "frontend runs as root"; exit 1; }
 
-      # The headers only work because they are included per location: nginx's
-      # add_header does not merge with an inherited set, and every location here
-      # sets one of its own for Content-Type or Cache-Control. Configured once at
-      # server level, this assertion fails on all three paths — which is how the
-      # bug was found, so it is worth keeping a test that would find it again.
       - name: Assert the SPA serves its security headers
         run: |
           docker run -d --name hdr -p 8080:8080 gamereviews-frontend:ci
@@ -180,16 +170,6 @@ jobs:
           test "$status" -eq 0 || { echo "security headers are not being served"; exit 1; }
           echo "all six headers present on every path checked"
 
-      # npm audit covers what we depend on; this covers what we are built on —
-      # the OS packages and bundled tools inside the base images, which no
-      # lockfile describes.
-      #
-      # The gate is fixable CRITICAL only, and that threshold is deliberate. A
-      # HIGH in a base image is usually upstream's to patch and arrives on
-      # upstream's schedule, so failing on it turns CI red through no change of
-      # ours and keeps it red until someone else ships — which is how a gate
-      # gets routinely overridden and stops meaning anything. Renovate already
-      # bumps the pinned digests. Highs are still printed, in the step below.
       - name: Fail on a fixable critical vulnerability
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -210,7 +190,6 @@ jobs:
           exit-code: "1"
           format: table
 
-      # Visibility without a veto.
       - name: Report high-severity vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -237,16 +216,9 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      # A tag is a pointer its owner can move. publish-images.yml runs with
-      # packages:write, so an action referenced by tag there is a standing offer
-      # of a GHCR push token to whoever compromises that action's repository.
-      # Renovate keeps the SHAs current by reading the version comment.
       - name: Assert every third-party action is pinned to a commit SHA
         run: |
           status=0
-          # Anchored so the pattern matches YAML keys only. An unanchored search
-          # also matches the lines of this script, which is how the first version
-          # of this check failed against itself.
           matches=$(grep -rnE '^[[:space:]]*-?[[:space:]]*uses:[[:space:]]' .github/workflows/*.yml || true)
 
           while IFS= read -r line; do
@@ -289,15 +261,6 @@ jobs:
           GAMEREVIEWS_AUTH_PROXY_SECRET: dummy
         run: docker compose -f deploy/gamereviews.yml config -q
 
-      # Two properties the deployment depends on, both easy to lose by accident.
-      #
-      # A published port would make the API reachable without passing the proxy,
-      # and identity arrives in proxy headers — so a stray `ports:` entry turns
-      # header trust into a hole anyone can walk through.
-      #
-      # A `build:` entry would put a source checkout back on the server and
-      # leave an image updater with no registry tag to compare against, which is
-      # the whole reason the images are published.
       - name: Assert the deployment publishes no ports and builds nothing
         env:
           GAMEREVIEWS_DB_PASSWORD: dummy

@@ -1,15 +1,6 @@
 import type { ApolloServerPlugin } from "@apollo/server";
 import type { GraphQLFormattedError } from "graphql";
 
-/**
- * Collapses repeated identical errors down to the first occurrence.
- *
- * When the per-request row budget runs out, every remaining list field fails
- * with the same message. GraphQL collects one error per field, so a query with
- * hundreds of list fields produced hundreds of copies — a 419 KB response made
- * almost entirely of the same sentence, which turned the defence itself into a
- * modest amplifier. One copy says everything the caller needs.
- */
 export function collapseDuplicateErrors(): ApolloServerPlugin {
   return {
     async requestDidStart() {

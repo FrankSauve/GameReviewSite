@@ -79,9 +79,6 @@ export async function createApp(): Promise<AppHandle> {
     validationRules: [...protection.validationRules, createMaxRowsRule()],
     formatError: (formattedError, originalError) => {
       const sanitized = sanitizeError(formattedError);
-      // Whatever the client is told, the operator needs the real thing. Logged
-      // only when it was actually withheld, so ordinary validation failures do
-      // not fill the log.
       if (sanitized.message !== formattedError.message) {
         console.error("GraphQL internal error:", originalError ?? formattedError);
       }

@@ -123,12 +123,7 @@ export const gameResolvers = {
     ) => {
       const authUser = requireAuth(context);
 
-      // These arrive from the client, not from RAWG. The resolver never verifies
-      // them against RAWG, so "RAWG-supplied" is a description of where the
-      // client got them, not a guarantee — they get the same validation as the
-      // manual path. Previously a 20,000-character title and a
-      // `javascript:` coverUrl were both accepted here while createGame
-      // correctly refused the identical title.
+      // These arrive from the client, not from RAWG, and so need re-validation.
       const rawgId = validateRawgId(input.rawgId);
       const title = validateString(input.title, "title", 200);
       const coverUrl = input.coverUrl ? validateCoverUrl(input.coverUrl) : null;
@@ -139,7 +134,6 @@ export const gameResolvers = {
       const releaseYear =
         input.releaseYear != null ? validateYear(input.releaseYear) : null;
 
-      // Fetch description from RAWG.
       let description: string | null = null;
       try {
         const detail = await getRawgGame(parseInt(rawgId, 10));
@@ -151,10 +145,6 @@ export const gameResolvers = {
       const existing = await prisma.game.findUnique({ where: { rawgId } });
 
       if (existing) {
-        // Importing a game somebody else already imported must not let this
-        // caller rewrite it. The one documented purpose of the update branch is
-        // backfilling a description that was never fetched, so that is all it
-        // does — and only when there is nothing to overwrite.
         if (existing.description || !description) return serializeDates(existing);
         const backfilled = await prisma.game.update({
           where: { id: existing.id },

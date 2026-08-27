@@ -6,11 +6,6 @@ import { LIST_BOUNDS } from "./pagination";
 /**
  * Per-request batching for the relation fields.
  *
- * Without this, `Review.user`, `Review.game`, `Review.comments`, `User.reviews`
- * and `Comment.user` each issue their own query per parent row, so the query
- * count multiplies at every level of a nested selection. One request could turn
- * into thousands of round trips while its own size stayed constant.
- *
  * Loaders are built per request, not per process: a DataLoader caches for its
  * lifetime, and a process-wide cache would serve one request stale rows written
  * by another — and, for the email field, would risk serving one caller a row

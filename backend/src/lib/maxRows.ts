@@ -74,11 +74,6 @@ export function createMaxRowsRule(maxRows: number = DEFAULT_ROW_BUDGET) {
             return;
           }
 
-          // A list type always renders with brackets ("[Review!]", "[Review!]!")
-          // and a non-list never does. Deliberately not isListType(): that is an
-          // instanceof check, and it throws "Cannot use GraphQLList from another
-          // module or realm" whenever two copies of graphql are resolvable,
-          // which a validation rule has no business being sensitive to.
           const isList = String(fieldDef.type).includes("[");
 
           if (!isList) {

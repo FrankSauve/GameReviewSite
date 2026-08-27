@@ -30,13 +30,7 @@ export interface Bounds {
 /**
  * `def` is what an argument-less query gets, `max` is the hard ceiling.
  *
- * The nested bounds are deliberately smaller than the root ones, because nested
- * lists multiply: they sit inside a list that is itself already paged. Fifty
- * reviews on one game, or fifty comments on one review, is well beyond anything
- * this site produces, and a caller that needs more can page for it.
- *
- * These bounds cap each list individually. What stops a query from multiplying
- * several capped lists together is the per-request row budget in lib/budget.ts.
+ * The nested bounds are deliberately smaller than the root ones.
  */
 export const LIST_BOUNDS = {
   reviews: { def: 50, max: 100 },
@@ -59,14 +53,7 @@ export function clampWindow(args: PageArgs | undefined, bounds: Bounds): ListWin
   return { take, skip };
 }
 
-/**
- * Applies a window to an already-loaded list.
- *
- * Nested lists arrive from a DataLoader that fetched one batch for every parent
- * in the request, so they are sliced in memory rather than by the database. The
- * loader itself reads at most `LIST_BOUNDS.nested.max` rows per parent, which is
- * what bounds the query — paging past that ceiling is empty by design.
- */
+/** Applies a window to an already-loaded list. */
 export function applyWindow<T>(rows: T[], window: ListWindow): T[] {
   return rows.slice(window.skip, window.skip + window.take);
 }

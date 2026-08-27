@@ -53,8 +53,6 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
-      # GHCR rejects uppercase repository names, and an owner login may contain
-      # capitals, so derive the name rather than hardcoding it.
       - name: Resolve image name
         id: image
         run: |
@@ -78,13 +76,6 @@ jobs:
             type=raw,value=latest
             type=sha,prefix=sha-,format=short
 
-      # Built and loaded before it is pushed, so the image can be inspected
-      # while nobody can pull it yet.
-      #
-      # amd64 only: the deployment target is an x86 server, and an arm64 leg
-      # would run under emulation for no one's benefit. provenance is off
-      # because a single-platform build does not need an index, and the extra
-      # manifest confuses tooling that compares digests.
       - name: Build
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
@@ -97,16 +88,12 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # CI asserts this on pull requests too. Repeated here because this is the
-      # step that makes an image reachable by a server: a base image change that
-      # reintroduced root must not get past this point.
       - name: Assert the image does not run as root
         run: |
           uid=$(docker run --rm --entrypoint id "${{ steps.image.outputs.name }}:latest" -u)
           echo "${{ matrix.component }} uid=$uid"
           test "$uid" -ne 0 || { echo "image runs as root"; exit 1; }
 
-      # Every layer is already in the local cache, so this only uploads.
       - name: Push
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:

@@ -3,15 +3,6 @@ set -e
 
 echo "⏳ Applying database migrations..."
 
-# migrate deploy only replays the SQL committed in prisma/migrations. Unlike
-# `db push` it never infers changes from the schema, so it cannot silently drop
-# a column that live data still needs.
-#
-# The binary is called directly rather than through npx. `npx prisma` falls back
-# to downloading prisma from the registry when it cannot find a local copy, so a
-# packaging mistake would turn a startup step into an unpinned network install
-# instead of failing. The read-only root filesystem would stop it in production,
-# but not before it had tried.
 if ! output=$(./node_modules/.bin/prisma migrate deploy 2>&1); then
   echo "$output" >&2
 
