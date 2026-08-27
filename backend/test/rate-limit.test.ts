@@ -24,6 +24,7 @@ describe("rate limiting", () => {
     await stop();
     delete process.env["RATE_LIMIT_MAX"];
     delete process.env["RAWG_RATE_LIMIT_MAX"];
+    delete process.env["AUTH_RATE_LIMIT_MAX"];
   });
 
   const send = (query: string) =>
@@ -113,6 +114,28 @@ describe("rate limiting", () => {
     expect(posted.status).not.toBe(429);
     expect(alsoPosted.status).not.toBe(429);
     expect(viaGet.status).toBe(429);
+
+    await fresh.stop();
+  });
+
+  /**
+   * The /auth routes have their own bucket because they are not GraphQL and are
+   * cheap to abuse: /login makes this app do discovery and issue a redirect.
+   */
+  it("limits sign-in attempts separately from GraphQL", async () => {
+    process.env["AUTH_RATE_LIMIT_MAX"] = "3";
+    const { createApp } = await import("../src/app");
+    const fresh = await createApp();
+
+    const codes: number[] = [];
+    for (let i = 0; i < 5; i++) {
+      codes.push((await request(fresh.app).get("/auth/login")).status);
+    }
+
+    // 503 rather than 302: OIDC is unconfigured in this suite. What matters is
+    // that the fourth attempt is refused by the limiter instead.
+    expect(codes.slice(0, 3)).toEqual([503, 503, 503]);
+    expect(codes.slice(3)).toEqual([429, 429]);
 
     await fresh.stop();
   });

@@ -144,14 +144,15 @@ What the backend suite covers:
 
 | Area | What it pins down |
 | ---- | ----------------- |
+| Sign-in flow | a full authorization code exchange against a stub provider whose ID tokens are really RS256-signed: PKCE and scopes are requested, the session is issued, the local row is provisioned from `sub`, and a mismatched `nonce` is refused |
 | Session trust | an unknown, tampered, expired, or signed-out session cookie is anonymous, never trusted; the old proxy headers are inert |
-| Sign-in flow | `state` mismatches and callbacks with no transaction are refused; `returnTo` cannot leave the site |
+| Open redirect | `returnTo` cannot leave the site, including protocol-relative and CRLF forms |
 | CSRF | a request naming another origin is refused, session or not |
 | Authorization | game mutations require a user; `deleteGame` is gone; nobody can edit or delete another user's review or comment |
 | Privacy | email is returned only to its owner |
 | Provisioning | idempotent; follows renames; adopts pre-authentik rows; survives username and email collisions |
 | Query limits | depth and alias limits reject abusive queries |
-| Rate limits | general and RAWG-specific buckets return 429 |
+| Rate limits | general, RAWG-specific and sign-in buckets each return 429 |
 
 ---
 
