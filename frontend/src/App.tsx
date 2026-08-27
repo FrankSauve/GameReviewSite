@@ -8,8 +8,6 @@ import { GameDetailPage } from "./pages/GameDetailPage";
 import { UserProfilePage } from "./pages/UserProfilePage";
 import { ReviewDetailPage } from "./pages/ReviewDetailPage";
 import { ReviewersPage } from "./pages/ReviewersPage";
-import { LoginPage } from "./pages/LoginPage";
-import { RegisterPage } from "./pages/RegisterPage";
 
 function App() {
   return (
@@ -25,8 +23,10 @@ function App() {
                 <Route path="/users/:id" element={<UserProfilePage />} />
                 <Route path="/reviews/:id" element={<ReviewDetailPage />} />
                 <Route path="/reviewers" element={<ReviewersPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
+                {/* Login and registration are handled by authentik, not by
+                    this app, so /login and /register no longer exist. */}
+                <Route path="/login" element={<Navigate to="/" replace />} />
+                <Route path="/register" element={<Navigate to="/" replace />} />
                 {/* Redirect old add-game route to home */}
                 <Route path="/add-game" element={<Navigate to="/" replace />} />
               </Routes>

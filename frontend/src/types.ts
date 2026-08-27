@@ -39,6 +39,7 @@ export interface Game {
   coverUrl?: string | null;
   releaseYear?: number | null;
   averageRating?: number | null;
+  reviewCount?: number | null;
   reviews?: Review[];
 }
 

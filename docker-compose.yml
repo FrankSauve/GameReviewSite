@@ -2,7 +2,7 @@ services:
 
   # ── PostgreSQL ──────────────────────────────────────────────────────────────
   db:
-    image: postgres:16-alpine
+    image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
     restart: unless-stopped
     environment:
       POSTGRES_DB: gamereview
@@ -28,11 +28,33 @@ services:
     restart: unless-stopped
     environment:
       PORT: 4000
+      # The image defaults to production; this local stack overrides it so the
+      # Apollo sandbox and localhost CORS keep working.
+      NODE_ENV: ${NODE_ENV:-development}
       DATABASE_URL: postgresql://gamereview:gamereview@db:5432/gamereview
-      JWT_SECRET: ${JWT_SECRET}
       RAWG_API_KEY: ${RAWG_API_KEY}
+      AUTH_PROXY_SECRET: ${AUTH_PROXY_SECRET:-}
+      # No authentik outpost in front of the local stack, so fake an identity.
+      # Ignored whenever NODE_ENV=production.
+      AUTH_DEV_IDENTITY: ${AUTH_DEV_IDENTITY:-dev-uid:devuser:dev@example.com}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      # Ports are published straight to the host here, so no proxy hops.
+      TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-0}
     ports:
       - "4000:4000"
+    healthcheck:
+      # node -e rather than curl/wget: guaranteed present in the runtime image.
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:4000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     depends_on:
       db:
         condition: service_healthy
@@ -54,9 +76,16 @@ services:
         VITE_API_URL: http://localhost:4000/graphql
     restart: unless-stopped
     ports:
-      - "3000:80"
+      - "3000:8080"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8080/healthz"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     develop:
       watch:
         - path: ./frontend/src

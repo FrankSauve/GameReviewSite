@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@apollo/client";
 import { GET_GAME } from "../graphql/queries";
 import { ReviewCard } from "../components/ReviewCard";
@@ -9,8 +9,7 @@ import type { Game } from "../types";
 
 export function GameDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const { user, signIn } = useAuth();
   const [showReviewForm, setShowReviewForm] = useState(false);
 
   const { data, loading, error } = useQuery<{ game: Game | null }>(GET_GAME, {
@@ -142,7 +141,7 @@ export function GameDetailPage() {
             <span className="text-2xl">🔐</span>
             <p className="text-sm text-gray-500">
               <button
-                onClick={() => navigate("/login", { state: { from: `/games/${game.id}` } })}
+                onClick={() => signIn(`/games/${game.id}`)}
                 className="text-violet-400 hover:text-violet-300 font-medium transition-colors"
               >
                 Sign in

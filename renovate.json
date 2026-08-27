@@ -1,0 +1,83 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":dependencyDashboard"],
+  "timezone": "America/Toronto",
+  "schedule": ["* 0-6 * * 1"],
+  "prConcurrentLimit": 5,
+  "labels": ["dependencies"],
+
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["* 0-6 1 * *"],
+    "automerge": true
+  },
+
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"],
+    "schedule": ["at any time"],
+    "automerge": true
+  },
+
+  "packageRules": [
+    {
+      "description": "Patch and minor npm updates land unattended once CI is green. CI runs the full backend suite against a real Postgres, so a broken bump does not merge.",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "npm minor and patch",
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "description": "Majors are read by a human. They are where renames, dropped Node versions and changed defaults live.",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "addLabels": ["needs-review"]
+    },
+    {
+      "description": "Postgres majors are a dump-and-restore, not a container restart: the new image refuses to start against an old data directory. Held permanently; see docs/deployment.md.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["postgres"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
+      "description": "Postgres patch releases are safe and worth taking promptly.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["postgres"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "automerge": true
+    },
+    {
+      "description": "A Node major changes the runtime under the app and the base image at once. Manual, and it must be paired with the CI node-version.",
+      "matchDatasources": ["docker", "node-version"],
+      "matchPackageNames": ["node", "nginxinc/nginx-unprivileged"],
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "addLabels": ["needs-review"]
+    },
+    {
+      "description": "Base image patch and minor updates are the point of running Renovate here: they are how CVEs in the OS layer get picked up.",
+      "matchManagers": ["dockerfile", "docker-compose"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "container base images",
+      "automerge": true
+    },
+    {
+      "description": "GitHub Actions pinned by major tag; minor moves are noise.",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "github actions",
+      "automerge": true
+    },
+    {
+      "description": "esbuild is pinned exactly on purpose. Surface the update but never merge it unread.",
+      "matchPackageNames": ["esbuild"],
+      "rangeStrategy": "pin",
+      "automerge": false,
+      "addLabels": ["needs-review"]
+    }
+  ]
+}

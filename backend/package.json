@@ -7,31 +7,41 @@
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
+    "typecheck": "tsc -p tsconfig.test.json",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push",
+    "db:migrate": "prisma migrate deploy",
+    "db:migrate:new": "prisma migrate dev",
+    "db:baseline": "prisma migrate resolve --applied 0_init",
     "db:studio": "prisma studio"
   },
   "dependencies": {
     "@apollo/server": "^5.4.0",
     "@as-integrations/express5": "^1.1.2",
-    "@prisma/client": "^6.4.0",
-    "bcryptjs": "^3.0.3",
-    "body-parser": "^1.20.3",
+    "@escape.tech/graphql-armor": "^3.2.0",
+    "@prisma/client": "^6.19.3",
     "cors": "^2.8.5",
+    "dataloader": "^2.2.3",
     "dotenv": "^16.4.5",
     "express": "^5.0.0",
+    "express-rate-limit": "^8.1.0",
     "graphql": "^16.11.0",
-    "jsonwebtoken": "^9.0.3",
-    "prisma": "^6.4.0"
+    "helmet": "^8.1.0",
+    "prisma": "^6.19.3"
   },
   "devDependencies": {
-    "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
-    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.0.0",
+    "@types/supertest": "^6.0.2",
     "esbuild": "0.25.0",
+    "supertest": "^7.0.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
   }
 }

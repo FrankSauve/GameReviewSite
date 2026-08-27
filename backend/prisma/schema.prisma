@@ -12,13 +12,16 @@ datasource db {
 
 model User {
   id        String    @id @default(uuid())
+  // Stable subject identifier from authentik (X-authentik-uid). Nullable so
+  // rows created before the authentik migration can be adopted on first login.
+  authentikUid String? @unique
   username  String    @unique
-  email     String    @unique
-  password  String
+  email     String?   @unique
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   reviews   Review[]
   comments  Comment[]
+  addedGames Game[]   @relation("GameCreator")
 }
 
 model Game {
@@ -32,6 +35,11 @@ model Game {
   releaseYear Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  // Who added this game. Nullable because rows predating this column have no
+  // recorded creator, and because deleting an account must not delete the games
+  // it contributed — other people's reviews hang off them.
+  createdById String?
+  createdBy   User?    @relation("GameCreator", fields: [createdById], references: [id], onDelete: SetNull)
   reviews     Review[]
 }
 

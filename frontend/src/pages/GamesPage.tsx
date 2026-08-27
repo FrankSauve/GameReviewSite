@@ -56,7 +56,7 @@ function titleGradient(title: string): string {
 function ReviewFeedCard({ review }: { review: Review }) {
   const game = review.game;
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, signIn } = useAuth();
   const [showComments, setShowComments] = useState(false);
   const [newComment, setNewComment] = useState("");
   const [localComments, setLocalComments] = useState(review.comments ?? []);
@@ -212,7 +212,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
               </form>
             ) : (
               <p className="text-xs text-gray-600 pt-1 pl-1">
-                <Link to="/login" className="text-violet-400 hover:text-violet-300 transition-colors">Log in</Link> to leave a comment.
+                <button onClick={() => signIn()} className="text-violet-400 hover:text-violet-300 transition-colors">Sign in</button> to leave a comment.
               </p>
             )}
           </div>
@@ -299,7 +299,7 @@ export function GamesPage() {
   const reviews = reviewsData?.recentReviews ?? [];
   const totalReviews = reviewsData?.recentReviewsCount ?? 0;
   const totalPages = Math.ceil(totalReviews / PAGE_SIZE);
-  const games = (gamesData?.games ?? []).filter(g => (g.reviews?.length ?? 0) > 0);
+  const games = (gamesData?.games ?? []).filter(g => (g.reviewCount ?? 0) > 0);
   const visibleGames = showAllGames ? games : games.slice(0, 12);
 
   return (

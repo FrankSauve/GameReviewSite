@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useMutation } from "@apollo/client";
-import { useNavigate } from "react-router-dom";
 import { CREATE_REVIEW } from "../graphql/mutations";
 import { GET_GAME } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
@@ -11,8 +10,7 @@ interface AddReviewFormProps {
 }
 
 export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
-  const { user } = useAuth();
-  const navigate = useNavigate();
+  const { user, signIn } = useAuth();
   const [content, setContent] = useState("");
   const [rating, setRating] = useState<number>(8);
   const [hoverRating, setHoverRating] = useState<number | null>(null);
@@ -30,7 +28,7 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
     return (
       <p className="text-sm text-gray-500">
         <button
-          onClick={() => navigate("/login")}
+          onClick={() => signIn()}
           className="text-violet-400 hover:text-violet-300 font-medium"
         >
           Sign in

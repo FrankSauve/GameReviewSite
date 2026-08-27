@@ -1,0 +1,11 @@
+{
+  // The build config sets rootDir to ./src so dist/ stays flat, which excludes
+  // the test folder. This one typechecks both without emitting anything.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "types": ["node", "vitest/globals"]
+  },
+  "include": ["src/**/*", "test/**/*", "vitest.config.ts"]
+}

@@ -1,0 +1,277 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch makes the previous run pointless.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend (typecheck, tests)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine@sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test -d test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      DATABASE_URL: postgresql://test:test@localhost:5432/test
+
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      # npm ci, not npm install: fails if the lockfile and package.json have
+      # drifted, so a dependency bot cannot green a build it did not lock.
+      - run: npm ci
+        working-directory: backend
+
+      - run: ./node_modules/.bin/prisma generate
+        working-directory: backend
+
+      # Applies the committed migrations, which also proves they are valid SQL.
+      - run: npm run db:migrate
+        working-directory: backend
+
+      # Guards against a migration that no longer matches schema.prisma.
+      - name: Check for schema drift
+        working-directory: backend
+        run: |
+          ./node_modules/.bin/prisma migrate diff \
+            --from-url "$DATABASE_URL" \
+            --to-schema-datamodel prisma/schema.prisma \
+            --exit-code
+
+      - run: npm run typecheck
+        working-directory: backend
+
+      - run: npm test
+        working-directory: backend
+
+      - run: npm run build
+        working-directory: backend
+
+      - name: Audit production dependencies
+        working-directory: backend
+        run: npm audit --omit=dev --audit-level=high
+
+  frontend:
+    name: Frontend (typecheck, tests, build)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - run: npm ci
+        working-directory: frontend
+
+      - run: npm run typecheck
+        working-directory: frontend
+
+      - run: npm test
+        working-directory: frontend
+
+      - run: npm run build
+        working-directory: frontend
+
+      - name: Audit production dependencies
+        working-directory: frontend
+        run: npm audit --omit=dev --audit-level=high
+
+  images:
+    name: Container images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+
+      - name: Build backend image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: ./backend
+          push: false
+          load: true
+          tags: gamereviews-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build frontend image
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: ./frontend
+          push: false
+          load: true
+          tags: gamereviews-frontend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # Both images must run unprivileged. A base image change could silently
+      # undo this.
+      - name: Assert containers do not run as root
+        run: |
+          backend_uid=$(docker run --rm --entrypoint id gamereviews-backend:ci -u)
+          frontend_uid=$(docker run --rm --entrypoint id gamereviews-frontend:ci -u)
+          echo "backend uid=$backend_uid frontend uid=$frontend_uid"
+          test "$backend_uid" -ne 0 || { echo "backend runs as root"; exit 1; }
+          test "$frontend_uid" -ne 0 || { echo "frontend runs as root"; exit 1; }
+
+      - name: Assert the SPA serves its security headers
+        run: |
+          docker run -d --name hdr -p 8080:8080 gamereviews-frontend:ci
+          for _ in $(seq 1 30); do
+            curl -fsS -o /dev/null http://127.0.0.1:8080/healthz && break
+            sleep 1
+          done
+
+          asset=$(docker exec hdr sh -c 'ls /usr/share/nginx/html/assets/*.js | head -1 | sed "s#/usr/share/nginx/html##"')
+          required="content-security-policy x-frame-options x-content-type-options referrer-policy permissions-policy cross-origin-opener-policy"
+          status=0
+
+          # A hashed asset, the HTML entry point, and an arbitrary SPA route that
+          # only exists via the try_files fallback.
+          for path in / /index.html "$asset" /games/regression-check; do
+            headers=$(curl -sS -D- -o /dev/null "http://127.0.0.1:8080$path" | tr '[:upper:]' '[:lower:]')
+            for header in $required; do
+              if ! printf '%s\n' "$headers" | grep -q "^$header:"; then
+                echo "MISSING $header on $path"
+                status=1
+              fi
+            done
+          done
+
+          docker rm -f hdr >/dev/null
+          test "$status" -eq 0 || { echo "security headers are not being served"; exit 1; }
+          echo "all six headers present on every path checked"
+
+      - name: Fail on a fixable critical vulnerability
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: gamereviews-backend:ci
+          scanners: vuln
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      - name: Fail on a fixable critical vulnerability (frontend)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: gamereviews-frontend:ci
+          scanners: vuln
+          severity: CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      - name: Report high-severity vulnerabilities
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: gamereviews-backend:ci
+          scanners: vuln
+          severity: HIGH
+          ignore-unfixed: true
+          exit-code: "0"
+          format: table
+
+      - name: Report high-severity vulnerabilities (frontend)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          image-ref: gamereviews-frontend:ci
+          scanners: vuln
+          severity: HIGH
+          ignore-unfixed: true
+          exit-code: "0"
+          format: table
+
+  supply-chain:
+    name: Supply chain
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Assert every third-party action is pinned to a commit SHA
+        run: |
+          status=0
+          matches=$(grep -rnE '^[[:space:]]*-?[[:space:]]*uses:[[:space:]]' .github/workflows/*.yml || true)
+
+          while IFS= read -r line; do
+            [ -n "$line" ] || continue
+            file=${line%%:*}
+            ref=$(printf '%s\n' "$line" \
+              | sed -E 's/^[^:]*:[0-9]+:[[:space:]]*-?[[:space:]]*uses:[[:space:]]*//' \
+              | sed -E 's/[[:space:]]*#.*$//' \
+              | tr -d '"'"'"' ')
+            # Local composite actions and reusable workflows have nothing to pin.
+            case "$ref" in ./*|.github/*|'') continue ;; esac
+
+            sha=${ref##*@}
+            if ! printf '%s\n' "$sha" | grep -qE '^[0-9a-f]{40}$'; then
+              echo "NOT PINNED: $ref (in $file)"
+              status=1
+            else
+              echo "ok: $ref"
+            fi
+          done <<< "$matches"
+
+          test "$status" -eq 0 || exit 1
+          echo "every action reference is a 40-character commit SHA"
+
+  compose:
+    name: Compose files
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Validate dev compose file
+        env:
+          RAWG_API_KEY: dummy
+        run: docker compose -f docker-compose.yml config -q
+
+      - name: Validate the deployment snippet
+        env:
+          GAMEREVIEWS_DB_PASSWORD: dummy
+          GAMEREVIEWS_RAWG_API_KEY: dummy
+          GAMEREVIEWS_AUTH_PROXY_SECRET: dummy
+        run: docker compose -f deploy/gamereviews.yml config -q
+
+      - name: Assert the deployment publishes no ports and builds nothing
+        env:
+          GAMEREVIEWS_DB_PASSWORD: dummy
+          GAMEREVIEWS_RAWG_API_KEY: dummy
+          GAMEREVIEWS_AUTH_PROXY_SECRET: dummy
+        run: |
+          config=$(docker compose -f deploy/gamereviews.yml config --format json)
+
+          published=$(echo "$config" | jq '[.services[].ports // empty] | flatten | length')
+          builds=$(echo "$config" | jq '[.services[].build // empty] | length')
+          echo "published ports: $published, build entries: $builds"
+
+          test "$published" -eq 0 || { echo "deployment publishes ports"; exit 1; }
+          test "$builds" -eq 0 || { echo "deployment builds from source"; exit 1; }

@@ -1,54 +1,22 @@
 import "dotenv/config";
 
-import { ApolloServer } from "@apollo/server";
-import { expressMiddleware } from "@as-integrations/express5";
-import express, { type Request, type Response } from "express";
-import cors from "cors";
-import bodyParser from "body-parser";
-
-import { typeDefs } from "./schema/typeDefs";
-import { resolvers } from "./resolvers";
-import { buildContext } from "./context";
+import { AUTHENTICATED_PATH, PUBLIC_PATH, createApp } from "./app";
 import { prisma } from "./lib/prisma";
 
 const PORT = parseInt(process.env["PORT"] ?? "4000", 10);
 
 async function bootstrap(): Promise<void> {
-  const app = express();
+  const { app, stop } = await createApp();
 
-  const server = new ApolloServer({
-    typeDefs,
-    resolvers,
-    formatError: (formattedError) => {
-      const { extensions, ...safe } = formattedError;
-      return {
-        ...safe,
-        extensions: extensions
-          ? { code: (extensions["code"] as string) ?? "INTERNAL_SERVER_ERROR" }
-          : undefined,
-      };
-    },
-  });
-
-  await server.start();
-
-  app.use(
-    "/graphql",
-    cors(),
-    bodyParser.json(),
-    expressMiddleware(server, { context: async ({ req }) => buildContext({ req }) })
-  );
-
-  app.get("/health", (_req: Request, res: Response) => {
-    res.json({ status: "ok" });
-  });
-
-  app.listen(PORT, () => {
-    console.log(`🎮  Game Review API ready at http://localhost:${PORT}/graphql`);
+  const httpServer = app.listen(PORT, () => {
+    console.log(`🎮  Game Review API ready on port ${PORT}`);
+    console.log(`    public    ${PUBLIC_PATH}`);
+    console.log(`    authed    ${AUTHENTICATED_PATH}`);
   });
 
   const shutdown = async () => {
-    await server.stop();
+    httpServer.close();
+    await stop();
     await prisma.$disconnect();
     process.exit(0);
   };

@@ -1,4 +1,3 @@
-import { authResolvers } from "./auth";
 import { userResolvers } from "./user";
 import { gameResolvers } from "./game";
 import { reviewResolvers } from "./review";
@@ -12,7 +11,6 @@ export const resolvers = {
     ...commentResolvers.Query,
   },
   Mutation: {
-    ...authResolvers.Mutation,
     ...userResolvers.Mutation,
     ...gameResolvers.Mutation,
     ...reviewResolvers.Mutation,

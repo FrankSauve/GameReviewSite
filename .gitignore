@@ -11,9 +11,14 @@ frontend/node_modules/
 # Build output
 backend/dist/
 frontend/dist/
+*.tsbuildinfo
 
 # Prisma generated client
 backend/node_modules/.prisma/
+
+# Stray SQLite databases (this project uses PostgreSQL)
+*.db
+*.db-journal
 
 # Logs
 *.log
