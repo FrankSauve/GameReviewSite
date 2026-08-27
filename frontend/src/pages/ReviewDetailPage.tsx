@@ -4,6 +4,8 @@ import { useQuery, useMutation } from "@apollo/client";
 import { GET_REVIEW } from "../graphql/queries";
 import { CREATE_COMMENT, DELETE_COMMENT, DELETE_REVIEW, UPDATE_REVIEW } from "../graphql/mutations";
 import { useAuth } from "../contexts/AuthContext";
+import { formatRating, ratingColor } from "../lib/rating";
+import { RatingInput } from "../components/RatingInput";
 
 interface CommentUser { id: string; username: string; }
 interface ReviewComment { id: string; content: string; createdAt: string; user?: CommentUser | null; }
@@ -28,12 +30,6 @@ function timeAgo(iso: string): string {
   const days = Math.floor(hrs / 24);
   if (days < 30) return `${days}d ago`;
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-}
-
-function ratingColor(r: number) {
-  if (r >= 8) return "text-emerald-400";
-  if (r >= 6) return "text-amber-400";
-  return "text-red-400";
 }
 
 function avatarGradient(username: string): string {
@@ -187,7 +183,7 @@ export function ReviewDetailPage() {
           {!editing && (
             <div className="flex items-baseline gap-1 shrink-0">
               <span className={`text-3xl font-black ${ratingColor(review.rating)}`}>
-                {review.rating.toFixed(1)}
+                {formatRating(review.rating)}
               </span>
               <span className="text-sm text-gray-600">/ 10</span>
             </div>
@@ -217,29 +213,11 @@ export function ReviewDetailPage() {
         {/* Edit form */}
         {editing ? (
           <div className="space-y-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-gray-400 w-14">Rating</span>
-              <div className="flex items-center gap-1">
-                {[...Array(10)].map((_, i) => {
-                  const val = i + 1;
-                  return (
-                    <button
-                      key={val}
-                      onClick={() => setEditRating(val)}
-                      className={`w-7 h-7 rounded text-xs font-bold transition-colors ${
-                        val <= editRating
-                          ? "bg-amber-500 text-gray-900"
-                          : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                      }`}
-                    >
-                      {val}
-                    </button>
-                  );
-                })}
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-xs text-gray-400 w-14 shrink-0">Rating</span>
+              <div className="flex-1 min-w-[16rem]">
+                <RatingInput value={editRating} onChange={setEditRating} size="sm" />
               </div>
-              <span className={`text-sm font-bold ml-1 ${ratingColor(editRating)}`}>
-                {editRating}/10
-              </span>
             </div>
             <textarea
               value={editContent}

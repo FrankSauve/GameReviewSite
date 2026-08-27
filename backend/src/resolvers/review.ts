@@ -29,11 +29,29 @@ function validateString(value: string, field: string, maxLength = 5000): string 
   return trimmed;
 }
 
+/**
+ * Scores are whole or half points on a 1–10 scale: 9.5 is a score, 9.4 is a typo.
+ *
+ * Off-step values are refused rather than snapped. The column is a `Float` and
+ * the previous version of this function quietly rounded to one decimal, so a
+ * caller sending 9.4 got a stored 9.4 and a caller sending 9.44 got 9.4 without
+ * being told either — and once a backlog import starts feeding scores from an old
+ * spreadsheet, silently altering them is the failure mode that is hardest to
+ * notice. `x * 2` is exact for halves in binary floating point, so this needs no
+ * epsilon.
+ */
+export const RATING_MIN = 1;
+export const RATING_MAX = 10;
+
 function validateRating(rating: number): number {
   const num = Number(rating);
-  if (isNaN(num) || num < 0 || num > 10)
-    throw new GraphQLError("rating must be between 0 and 10.");
-  return Math.round(num * 10) / 10;
+  if (!Number.isFinite(num) || num < RATING_MIN || num > RATING_MAX)
+    throw new GraphQLError(
+      `rating must be between ${RATING_MIN} and ${RATING_MAX}.`
+    );
+  if (!Number.isInteger(num * 2))
+    throw new GraphQLError("rating must be a whole or half point, such as 9 or 9.5.");
+  return num;
 }
 
 export const reviewResolvers = {

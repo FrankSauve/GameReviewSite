@@ -3,23 +3,25 @@ import { useMutation } from "@apollo/client";
 import { CREATE_REVIEW } from "../graphql/mutations";
 import { GET_GAME } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
+import { RatingInput } from "./RatingInput";
 
 interface AddReviewFormProps {
   gameId: string;
   onSuccess?: () => void;
 }
 
+const DEFAULT_RATING = 8;
+
 export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
   const { user, signIn } = useAuth();
   const [content, setContent] = useState("");
-  const [rating, setRating] = useState<number>(8);
-  const [hoverRating, setHoverRating] = useState<number | null>(null);
+  const [rating, setRating] = useState<number>(DEFAULT_RATING);
 
   const [createReview, { loading, error }] = useMutation(CREATE_REVIEW, {
     refetchQueries: [{ query: GET_GAME, variables: { id: gameId } }],
     onCompleted: () => {
       setContent("");
-      setRating(8);
+      setRating(DEFAULT_RATING);
       onSuccess?.();
     },
   });
@@ -46,33 +48,13 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
     });
   };
 
-  const displayRating = hoverRating ?? rating;
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-400 mb-2">
-          Your Rating:{" "}
-          <span className="text-amber-400 font-bold">{displayRating}/10</span>
+          Your Rating
         </label>
-        <div className="flex gap-1">
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((val) => (
-            <button
-              key={val}
-              type="button"
-              onMouseEnter={() => setHoverRating(val)}
-              onMouseLeave={() => setHoverRating(null)}
-              onClick={() => setRating(val)}
-              className={`w-9 h-9 rounded-lg text-sm font-bold transition-all duration-100 ${
-                val <= displayRating
-                  ? "bg-amber-500 text-gray-900 scale-105"
-                  : "bg-gray-800 text-gray-500 hover:bg-gray-700"
-              }`}
-            >
-              {val}
-            </button>
-          ))}
-        </div>
+        <RatingInput value={rating} onChange={setRating} />
       </div>
 
       <div>

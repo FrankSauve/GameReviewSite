@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import type { Game } from "../types";
+import { formatRating, ratingColor } from "../lib/rating";
 interface GameCardProps {
   game: Game;
 }
@@ -92,8 +93,8 @@ export function GameCard({ game }: GameCardProps) {
           <div className="flex items-center justify-between pt-1 border-t border-gray-800">
             {game.averageRating != null ? (
               <div className="flex items-baseline gap-1">
-                <span className={`text-sm font-extrabold ${game.averageRating >= 8 ? "text-emerald-400" : game.averageRating >= 6 ? "text-amber-400" : "text-red-400"}`}>
-                  {game.averageRating.toFixed(1)}
+                <span className={`text-sm font-extrabold ${ratingColor(game.averageRating)}`}>
+                  {formatRating(game.averageRating)}
                 </span>
                 <span className="text-xs text-gray-600">/ 10</span>
               </div>

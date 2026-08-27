@@ -6,6 +6,7 @@ import { ReviewCard } from "../components/ReviewCard";
 import { AddReviewForm } from "../components/AddReviewForm";
 import { useAuth } from "../contexts/AuthContext";
 import type { Game } from "../types";
+import { formatRating, ratingColor } from "../lib/rating";
 
 export function GameDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -89,8 +90,8 @@ export function GameDetailPage() {
 
             {game.averageRating != null && (
               <div className="card px-5 py-4 text-center shrink-0">
-                <p className={`text-4xl font-extrabold ${game.averageRating >= 8 ? "text-emerald-400" : game.averageRating >= 6 ? "text-amber-400" : "text-red-400"}`}>
-                  {game.averageRating.toFixed(1)}
+                <p className={`text-4xl font-extrabold ${ratingColor(game.averageRating)}`}>
+                  {formatRating(game.averageRating)}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">out of 10</p>
                 <p className="text-xs text-gray-600 mt-1">

@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@apollo/client";
 import { GET_USER_PROFILE } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
+import { formatRating, ratingColor } from "../lib/rating";
 
 interface ProfileReview {
   id: string;
@@ -40,12 +41,6 @@ function timeAgo(iso: string): string {
 function memberSince(iso?: string | null): string {
   if (!iso) return "Unknown";
   return new Date(iso).toLocaleDateString(undefined, { month: "long", year: "numeric" });
-}
-
-function ratingColor(r: number): string {
-  if (r >= 8) return "text-emerald-400";
-  if (r >= 6) return "text-amber-400";
-  return "text-red-400";
 }
 
 function avatarGradient(username: string): string {
@@ -141,7 +136,7 @@ export function UserProfilePage() {
             </div>
             {avgRating !== null && (
               <div className="text-center">
-                <p className={`text-lg font-bold ${ratingColor(avgRating)}`}>{avgRating.toFixed(1)}</p>
+                <p className={`text-lg font-bold ${ratingColor(avgRating)}`}>{formatRating(avgRating)}</p>
                 <p className="text-xs text-gray-500">avg rating</p>
               </div>
             )}
@@ -207,7 +202,7 @@ export function UserProfilePage() {
 
                       <div className="flex items-baseline gap-1">
                         <span className={`text-xl font-extrabold ${ratingColor(review.rating)}`}>
-                          {review.rating.toFixed(1)}
+                          {formatRating(review.rating)}
                         </span>
                         <span className="text-xs text-gray-600">/ 10</span>
                       </div>

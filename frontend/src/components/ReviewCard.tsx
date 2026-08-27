@@ -5,6 +5,8 @@ import type { Review } from "../types";
 import { UPDATE_REVIEW, DELETE_REVIEW } from "../graphql/mutations";
 import { GET_GAME } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
+import { formatRating, ratingColor } from "../lib/rating";
+import { RatingInput } from "./RatingInput";
 
 interface ReviewCardProps {
   review: Review;
@@ -77,8 +79,8 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
         <div className="flex items-center gap-2">
           {!editing && (
             <div className="flex items-baseline gap-1">
-              <span className={`text-lg font-extrabold ${review.rating >= 8 ? "text-emerald-400" : review.rating >= 6 ? "text-amber-400" : "text-red-400"}`}>
-                {review.rating.toFixed(1)}
+              <span className={`text-lg font-extrabold ${ratingColor(review.rating)}`}>
+                {formatRating(review.rating)}
               </span>
               <span className="text-xs text-gray-600">/ 10</span>
             </div>
@@ -129,30 +131,10 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
         <div className="space-y-3">
           {/* Rating picker */}
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400 w-14">Rating</span>
-            <div className="flex items-center gap-1">
-              {[...Array(10)].map((_, i) => {
-                const val = i + 1;
-                return (
-                  <button
-                    key={val}
-                    onClick={() => setEditRating(val)}
-                    className={`w-7 h-7 rounded text-xs font-bold transition-colors ${
-                      val <= editRating
-                        ? "bg-amber-500 text-gray-900"
-                        : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                    }`}
-                  >
-                    {val}
-                  </button>
-                );
-              })}
+            <span className="text-xs text-gray-400 w-14 shrink-0">Rating</span>
+            <div className="flex-1">
+              <RatingInput value={editRating} onChange={setEditRating} size="sm" />
             </div>
-            <span className={`text-sm font-bold ml-1 ${
-              editRating >= 8 ? "text-emerald-400" : editRating >= 6 ? "text-amber-400" : "text-red-400"
-            }`}>
-              {editRating}/10
-            </span>
           </div>
 
           {/* Text area */}
