@@ -1,8 +1,8 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Request, Response } from "express";
 import type { User } from "@prisma/client";
-import { prisma } from "./prisma";
-import { isProduction } from "../security";
+import { prisma } from "./prisma.js";
+import { isProduction } from "../security.js";
 
 /**
  * Server-side sessions for the browser.

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Express } from "express";
-import { authedQuery, publicQuery, resetDatabase, startApp } from "./helpers";
+import { authedQuery, publicQuery, resetDatabase, startApp } from "./helpers.js";
 
 /**
  * The schema is cyclic (Review → user → reviews → comments → review → …), so

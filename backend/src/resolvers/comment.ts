@@ -1,9 +1,9 @@
 import { GraphQLError } from "graphql";
 import type { Comment } from "@prisma/client";
-import { prisma } from "../lib/prisma";
-import { serializeDates } from "../lib/serialize";
-import { LIST_BOUNDS, clampWindow, type PageArgs } from "../lib/pagination";
-import { requireAuth, type Context } from "../context";
+import { prisma } from "../lib/prisma.js";
+import { serializeDates } from "../lib/serialize.js";
+import { LIST_BOUNDS, clampWindow, type PageArgs } from "../lib/pagination.js";
+import { requireAuth, type Context } from "../context.js";
 
 interface CreateCommentInput {
   reviewId: string;

@@ -1,6 +1,6 @@
 import type { User } from "@prisma/client";
-import { prisma } from "./prisma";
-import { isProduction } from "../security";
+import { prisma } from "./prisma.js";
+import { isProduction } from "../security.js";
 
 /**
  * Who a request is from, as established by the OIDC login flow.

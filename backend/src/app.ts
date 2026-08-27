@@ -1,4 +1,4 @@
-import { ApolloServer } from "@apollo/server";
+import { ApolloServer, type ApolloServerPlugin } from "@apollo/server";
 import { expressMiddleware } from "@as-integrations/express5";
 import { ApolloArmor } from "@escape.tech/graphql-armor";
 import express, { type Express, type Request, type Response } from "express";
@@ -6,21 +6,21 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import helmet from "helmet";
 
-import { typeDefs } from "./schema/typeDefs";
-import { resolvers } from "./resolvers";
-import { buildContext } from "./context";
-import { assertOidcConfig } from "./lib/oidc";
-import { createMaxRowsRule } from "./lib/maxRows";
-import { collapseDuplicateErrors } from "./lib/collapseErrors";
-import { sanitizeError } from "./lib/sanitizeError";
-import { createAuthRouter } from "./routes/auth";
+import { typeDefs } from "./schema/typeDefs.js";
+import { resolvers } from "./resolvers/index.js";
+import { buildContext } from "./context.js";
+import { assertOidcConfig } from "./lib/oidc.js";
+import { createMaxRowsRule } from "./lib/maxRows.js";
+import { collapseDuplicateErrors } from "./lib/collapseErrors.js";
+import { sanitizeError } from "./lib/sanitizeError.js";
+import { createAuthRouter } from "./routes/auth.js";
 import {
   allowedOrigins,
   createLimiters,
   isProduction,
   sameOriginOnly,
   trustProxyHops,
-} from "./security";
+} from "./security.js";
 
 /**
  * One endpoint, and authorization decided per field.
@@ -79,7 +79,18 @@ export async function createApp(): Promise<AppHandle> {
     // load-bearing: a cookie-borne session means a cross-site form POST would
     // carry credentials, and this is what rejects it. See sameOriginOnly.
     csrfPrevention: true,
-    plugins: [...protection.plugins, collapseDuplicateErrors()],
+    // graphql-armor ships no `exports` map, so its type declarations resolve
+    // @apollo/server through the `require` condition while this package, now
+    // ESM, resolves the `import` one. The two describe the same runtime class,
+    // but HeaderMap carries a private field, so TypeScript treats them as
+    // unrelated types. The cast is safe rather than convenient: armor declares
+    // @apollo/server as an optional peer and has zero runtime references to it,
+    // and there is a single hoisted copy, so no second instance exists to be
+    // confused with. Remove this once armor publishes dual-condition types.
+    plugins: [
+      ...(protection.plugins as unknown as ApolloServerPlugin[]),
+      collapseDuplicateErrors(),
+    ],
     validationRules: [...protection.validationRules, createMaxRowsRule()],
     formatError: (formattedError, originalError) => {
       const sanitized = sanitizeError(formattedError);

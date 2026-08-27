@@ -1,5 +1,5 @@
 import type { GraphQLFormattedError } from "graphql";
-import { isProduction } from "../security";
+import { isProduction } from "../security.js";
 
 const CLIENT_ERROR_CODES = new Set([
   "BAD_USER_INPUT",

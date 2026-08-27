@@ -4,8 +4,8 @@ import {
   type FieldNode,
   type ValidationContext,
 } from "graphql";
-import { LIST_BOUNDS, type Bounds } from "./pagination";
-import { DEFAULT_ROW_BUDGET } from "./budget";
+import { LIST_BOUNDS, type Bounds } from "./pagination.js";
+import { DEFAULT_ROW_BUDGET } from "./budget.js";
 
 /**
  * Rejects a query whose shape could return more rows than the budget allows,

@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import request from "supertest";
 import type { Express } from "express";
-import { GRAPHQL_PATH } from "../src/app";
+import { GRAPHQL_PATH } from "../src/app.js";
 
 /**
  * Rate limiting protects two things: the process, and the RAWG API quota. The
@@ -16,7 +16,7 @@ describe("rate limiting", () => {
     process.env["RAWG_RATE_LIMIT_MAX"] = "2";
     // Imported after the environment is set: the limiters read it when the app
     // is constructed.
-    const { createApp } = await import("../src/app");
+    const { createApp } = await import("../src/app.js");
     ({ app, stop } = await createApp());
   });
 
@@ -40,7 +40,7 @@ describe("rate limiting", () => {
   });
 
   it("limits RAWG-backed fields far more tightly than ordinary queries", async () => {
-    const { createApp } = await import("../src/app");
+    const { createApp } = await import("../src/app.js");
     const fresh = await createApp();
     const rawg = () =>
       request(fresh.app)
@@ -68,7 +68,7 @@ describe("rate limiting", () => {
    * RAWG bucket and fell back to the general limit, 300/min instead of 30/min.
    */
   it("counts a RAWG query against the RAWG bucket when it arrives as a GET", async () => {
-    const { createApp } = await import("../src/app");
+    const { createApp } = await import("../src/app.js");
     const fresh = await createApp();
     const document = '{ searchGamesExternal(query: "halo") { rawgId } }';
 
@@ -93,7 +93,7 @@ describe("rate limiting", () => {
   });
 
   it("shares one RAWG bucket across both methods", async () => {
-    const { createApp } = await import("../src/app");
+    const { createApp } = await import("../src/app.js");
     const fresh = await createApp();
     const document = '{ searchGamesExternal(query: "halo") { rawgId } }';
 
@@ -124,7 +124,7 @@ describe("rate limiting", () => {
    */
   it("limits sign-in attempts separately from GraphQL", async () => {
     process.env["AUTH_RATE_LIMIT_MAX"] = "3";
-    const { createApp } = await import("../src/app");
+    const { createApp } = await import("../src/app.js");
     const fresh = await createApp();
 
     const codes: number[] = [];

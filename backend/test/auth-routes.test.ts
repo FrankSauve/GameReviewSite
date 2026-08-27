@@ -2,10 +2,10 @@ import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from
 import request from "supertest";
 import type { Express } from "express";
 
-import { resetClientCache } from "../src/lib/oidc";
-import { safeReturnTo } from "../src/routes/auth";
-import { SESSION_COOKIE } from "../src/lib/session";
-import { resetDatabase, startApp } from "./helpers";
+import { resetClientCache } from "../src/lib/oidc.js";
+import { safeReturnTo } from "../src/routes/auth.js";
+import { SESSION_COOKIE } from "../src/lib/session.js";
+import { resetDatabase, startApp } from "./helpers.js";
 
 /**
  * The /auth routes, minus the parts that need a live provider. The full

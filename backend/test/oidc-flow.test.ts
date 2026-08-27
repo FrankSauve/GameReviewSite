@@ -2,12 +2,12 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import type { Express } from "express";
 
-import { GRAPHQL_PATH } from "../src/app";
-import { prisma } from "../src/lib/prisma";
-import { SESSION_COOKIE } from "../src/lib/session";
-import { resetClientCache } from "../src/lib/oidc";
-import { resetDatabase, startApp } from "./helpers";
-import { startStubProvider, type StubProvider } from "./stubProvider";
+import { GRAPHQL_PATH } from "../src/app.js";
+import { prisma } from "../src/lib/prisma.js";
+import { SESSION_COOKIE } from "../src/lib/session.js";
+import { resetClientCache } from "../src/lib/oidc.js";
+import { resetDatabase, startApp } from "./helpers.js";
+import { startStubProvider, type StubProvider } from "./stubProvider.js";
 
 /**
  * The authorization code flow, run for real against an in-process OpenID

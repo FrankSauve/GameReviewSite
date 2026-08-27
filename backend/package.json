@@ -1,6 +1,7 @@
 {
   "name": "game-review-site",
   "version": "1.0.0",
+  "type": "module",
   "description": "GraphQL API for a game review site backed by PostgreSQL via Prisma",
   "main": "dist/index.js",
   "scripts": {
@@ -29,7 +30,7 @@
     "express-rate-limit": "^8.1.0",
     "graphql": "^16.11.0",
     "helmet": "^8.1.0",
-    "openid-client": "^5.7.1",
+    "openid-client": "^6.8.7",
     "prisma": "^6.19.3"
   },
   "devDependencies": {

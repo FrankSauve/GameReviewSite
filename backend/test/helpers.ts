@@ -1,9 +1,9 @@
 import request from "supertest";
 import type { Express } from "express";
-import { GRAPHQL_PATH, createApp } from "../src/app";
-import { prisma } from "../src/lib/prisma";
-import { provisionUser, type Identity } from "../src/lib/identity";
-import { SESSION_COOKIE, createSession } from "../src/lib/session";
+import { GRAPHQL_PATH, createApp } from "../src/app.js";
+import { prisma } from "../src/lib/prisma.js";
+import { provisionUser, type Identity } from "../src/lib/identity.js";
+import { SESSION_COOKIE, createSession } from "../src/lib/session.js";
 
 export interface GraphQLResponse<T = Record<string, unknown>> {
   status: number;

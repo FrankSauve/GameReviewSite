@@ -1,9 +1,9 @@
 import { GraphQLError } from "graphql";
 import type { Request } from "express";
-import { devIdentity, provisionUser } from "./lib/identity";
-import { readSession } from "./lib/session";
-import { createLoaders, type Loaders } from "./lib/loaders";
-import { RowBudget } from "./lib/budget";
+import { devIdentity, provisionUser } from "./lib/identity.js";
+import { readSession } from "./lib/session.js";
+import { createLoaders, type Loaders } from "./lib/loaders.js";
+import { RowBudget } from "./lib/budget.js";
 
 export interface AuthUser {
   id: string;

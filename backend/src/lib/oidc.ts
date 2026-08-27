@@ -1,5 +1,5 @@
-import { Issuer, generators, type Client, type TokenSet } from "openid-client";
-import { isProduction } from "../security";
+import * as oidc from "openid-client";
+import { isProduction } from "../security.js";
 
 /**
  * GameReviews as a confidential OIDC client.
@@ -13,11 +13,6 @@ import { isProduction } from "../security";
  * Only the ID token matters here. This app never calls authentik again after
  * login: it does not read userinfo, does not introspect, and does not refresh.
  * All it needs is proof of who the user is, once.
- *
- * Note on the dependency: openid-client is pinned to the 5.x line because 6.x
- * is ESM-only and this package is CommonJS (see tsconfig `module`). Moving to
- * 6 means converting the backend to ESM first, so Renovate's major-version PR
- * for this package is expected to need that work rather than being a plain bump.
  */
 
 const SCOPES = "openid profile email";
@@ -81,33 +76,33 @@ export function assertOidcConfig(): void {
  * one round trip. A failure is not cached — otherwise authentik being briefly
  * unreachable at boot would poison sign-in until the next restart.
  */
-let clientPromise: Promise<Client> | null = null;
+let configPromise: Promise<oidc.Configuration> | null = null;
 
-export async function getClient(): Promise<Client> {
-  const config = oidcConfig();
-  if (!config) throw new Error("OIDC is not configured.");
+export async function getConfiguration(): Promise<oidc.Configuration> {
+  const settings = oidcConfig();
+  if (!settings) throw new Error("OIDC is not configured.");
 
-  if (!clientPromise) {
-    clientPromise = (async () => {
-      const issuer = await Issuer.discover(config.issuer);
-      return new issuer.Client({
-        client_id: config.clientId,
-        client_secret: config.clientSecret,
-        redirect_uris: [config.redirectUri],
-        response_types: ["code"],
+  if (!configPromise) {
+    configPromise = oidc
+      .discovery(new URL(settings.issuer), settings.clientId, settings.clientSecret, undefined, {
+        // openid-client 6 refuses plain HTTP by default, which is the right
+        // default and the reason this is conditional rather than absent: the
+        // test suite runs against a stub provider on http://127.0.0.1, and
+        // production must never be allowed to.
+        ...(isProduction() ? {} : { execute: [oidc.allowInsecureRequests] }),
+      })
+      .catch((err: unknown) => {
+        configPromise = null;
+        throw err;
       });
-    })().catch((err: unknown) => {
-      clientPromise = null;
-      throw err;
-    });
   }
 
-  return clientPromise;
+  return configPromise;
 }
 
 /** Only for tests, which construct apps repeatedly in one process. */
 export function resetClientCache(): void {
-  clientPromise = null;
+  configPromise = null;
 }
 
 export interface AuthorizationRequest {
@@ -124,21 +119,26 @@ export interface AuthorizationRequest {
  * be redeemed by anyone else.
  */
 export async function createAuthorizationRequest(): Promise<AuthorizationRequest> {
-  const client = await getClient();
+  const settings = oidcConfig();
+  if (!settings) throw new Error("OIDC is not configured.");
 
-  const state = generators.state();
-  const nonce = generators.nonce();
-  const codeVerifier = generators.codeVerifier();
+  const config = await getConfiguration();
 
-  const url = client.authorizationUrl({
+  const state = oidc.randomState();
+  const nonce = oidc.randomNonce();
+  const codeVerifier = oidc.randomPKCECodeVerifier();
+  const codeChallenge = await oidc.calculatePKCECodeChallenge(codeVerifier);
+
+  const url = oidc.buildAuthorizationUrl(config, {
+    redirect_uri: settings.redirectUri,
     scope: SCOPES,
     state,
     nonce,
-    code_challenge: generators.codeChallenge(codeVerifier),
+    code_challenge: codeChallenge,
     code_challenge_method: "S256",
   });
 
-  return { url, state, nonce, codeVerifier };
+  return { url: url.href, state, nonce, codeVerifier };
 }
 
 export interface OidcIdentity {
@@ -173,54 +173,56 @@ export interface CallbackParams {
   state: string;
   nonce: string;
   codeVerifier: string;
-  /** The full query string of the callback request, as parsed by Express. */
-  query: Record<string, unknown>;
+  /**
+   * The callback URL as it was actually requested, query string included.
+   * openid-client derives the `redirect_uri` it sends to the token endpoint
+   * from this, so it has to be the registered value rather than anything
+   * reconstructed loosely.
+   */
+  currentUrl: URL;
 }
 
 /**
  * Completes the code exchange.
  *
- * `client.callback` is doing the security-critical work: it verifies the ID
- * token signature against the provider's JWKS, checks `iss`, `aud` and expiry,
- * confirms the `nonce` matches, and sends the PKCE verifier so the provider can
- * confirm the code was issued to this request. It throws on any of those
- * failing, which is why the caller treats an exception as "not signed in"
- * rather than trying to interpret a partial result.
+ * `authorizationCodeGrant` is doing the security-critical work: it verifies the
+ * ID token signature against the provider's JWKS, checks `iss`, `aud` and
+ * expiry, confirms the `state` and `nonce` match what was asked for, and sends
+ * the PKCE verifier so the provider can confirm the code was issued to this
+ * request. It throws on any of those failing, which is why the caller treats an
+ * exception as "not signed in" rather than trying to interpret a partial result.
  */
 export async function completeAuthorization({
   state,
   nonce,
   codeVerifier,
-  query,
+  currentUrl,
 }: CallbackParams): Promise<OidcIdentity> {
-  const config = oidcConfig();
-  if (!config) throw new Error("OIDC is not configured.");
+  const config = await getConfiguration();
 
-  const client = await getClient();
-
-  const tokenSet: TokenSet = await client.callback(config.redirectUri, query, {
-    state,
-    nonce,
-    code_verifier: codeVerifier,
+  const tokens = await oidc.authorizationCodeGrant(config, currentUrl, {
+    pkceCodeVerifier: codeVerifier,
+    expectedNonce: nonce,
+    expectedState: state,
   });
 
-  const claims = tokenSet.claims() as unknown as Record<string, unknown>;
-  const sub = claims["sub"];
+  const claims = tokens.claims() as Record<string, unknown> | undefined;
+  const sub = claims?.["sub"];
   if (typeof sub !== "string" || !sub) {
     throw new Error("ID token carried no sub claim.");
   }
 
-  if (!tokenSet.id_token) {
+  if (!tokens.id_token) {
     throw new Error("Token response carried no id_token.");
   }
 
-  const email = claims["email"];
+  const email = claims?.["email"];
 
   return {
     uid: sub,
-    username: pickUsername(claims, sub),
+    username: pickUsername(claims ?? {}, sub),
     email: typeof email === "string" && email.includes("@") ? email : null,
-    idToken: tokenSet.id_token,
+    idToken: tokens.id_token,
   };
 }
 
@@ -231,16 +233,16 @@ export async function completeAuthorization({
  * session and simply has nowhere further to send anyone.
  */
 export async function endSessionUrl(idToken: string): Promise<string | null> {
-  const config = oidcConfig();
-  if (!config) return null;
+  const settings = oidcConfig();
+  if (!settings) return null;
 
-  const client = await getClient();
-  if (!client.issuer.metadata.end_session_endpoint) return null;
+  const config = await getConfiguration();
+  if (!config.serverMetadata().end_session_endpoint) return null;
 
-  return client.endSessionUrl({
+  return oidc.buildEndSessionUrl(config, {
     id_token_hint: idToken,
-    ...(config.postLogoutRedirectUri
-      ? { post_logout_redirect_uri: config.postLogoutRedirectUri }
+    ...(settings.postLogoutRedirectUri
+      ? { post_logout_redirect_uri: settings.postLogoutRedirectUri }
       : {}),
-  });
+  }).href;
 }

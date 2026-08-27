@@ -1,7 +1,7 @@
 import DataLoader from "dataloader";
 import type { Comment, Game, Review, User } from "@prisma/client";
-import { prisma } from "./prisma";
-import { LIST_BOUNDS } from "./pagination";
+import { prisma } from "./prisma.js";
+import { LIST_BOUNDS } from "./pagination.js";
 
 /**
  * Per-request batching for the relation fields.

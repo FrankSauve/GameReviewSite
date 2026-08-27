@@ -1,14 +1,14 @@
 import { GraphQLError } from "graphql";
 import type { Review } from "@prisma/client";
-import { prisma } from "../lib/prisma";
-import { serializeDates } from "../lib/serialize";
+import { prisma } from "../lib/prisma.js";
+import { serializeDates } from "../lib/serialize.js";
 import {
   LIST_BOUNDS,
   applyWindow,
   clampWindow,
   type PageArgs,
-} from "../lib/pagination";
-import { requireAuth, type Context } from "../context";
+} from "../lib/pagination.js";
+import { requireAuth, type Context } from "../context.js";
 
 interface CreateReviewInput {
   gameId: string;

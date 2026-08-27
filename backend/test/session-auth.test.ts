@@ -2,10 +2,10 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import type { Express } from "express";
 
-import { GRAPHQL_PATH } from "../src/app";
-import { prisma } from "../src/lib/prisma";
-import { SESSION_COOKIE, createSession } from "../src/lib/session";
-import { provisionUser } from "../src/lib/identity";
+import { GRAPHQL_PATH } from "../src/app.js";
+import { prisma } from "../src/lib/prisma.js";
+import { SESSION_COOKIE, createSession } from "../src/lib/session.js";
+import { provisionUser } from "../src/lib/identity.js";
 import {
   ALICE,
   authedQuery,
@@ -14,7 +14,7 @@ import {
   resetDatabase,
   sessionFor,
   startApp,
-} from "./helpers";
+} from "./helpers.js";
 
 /**
  * The trust boundary. It used to be a shared secret on a proxy header; it is now

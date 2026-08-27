@@ -7,7 +7,7 @@ import {
   publicQuery,
   resetDatabase,
   startApp,
-} from "./helpers";
+} from "./helpers.js";
 
 /**
  * The public `users` and `user(id)` queries used to return every account's

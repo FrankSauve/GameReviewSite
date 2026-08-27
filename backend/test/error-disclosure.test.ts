@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Express } from "express";
-import { publicQuery, resetDatabase } from "./helpers";
+import { publicQuery, resetDatabase } from "./helpers.js";
 
 /**
  * Apollo Server does not mask error messages by default. It strips the stack
@@ -33,7 +33,7 @@ async function appFor(nodeEnv: string): Promise<{
   process.env["OIDC_CLIENT_ID"] = "gamereviews";
   process.env["OIDC_CLIENT_SECRET"] = "shhh";
   process.env["OIDC_REDIRECT_URI"] = "https://gamereviews.example.com/auth/callback";
-  const { createApp } = await import("../src/app");
+  const { createApp } = await import("../src/app.js");
   const handle = await createApp();
   return {
     app: handle.app,

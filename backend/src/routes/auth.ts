@@ -1,19 +1,20 @@
 import { Router, type Request, type Response } from "express";
 
-import { provisionUser } from "../lib/identity";
+import { provisionUser } from "../lib/identity.js";
 import {
   completeAuthorization,
   createAuthorizationRequest,
   endSessionUrl,
+  oidcConfig,
   oidcConfigured,
-} from "../lib/oidc";
+} from "../lib/oidc.js";
 import {
   clearSessionCookie,
   createSession,
   destroySession,
   setSessionCookie,
   tokensMatch,
-} from "../lib/session";
+} from "../lib/session.js";
 
 /**
  * The three endpoints that make this app an OAuth2 client.
@@ -57,6 +58,27 @@ export function safeReturnTo(raw: unknown): string {
   // "//host" and "/\host" are both read as protocol-relative by browsers.
   if (raw.startsWith("//") || raw.startsWith("/\\")) return "/";
   return raw;
+}
+
+/**
+ * Rebuilds the callback URL that openid-client needs to process the response.
+ *
+ * Built on the configured redirect URI rather than on the inbound Host header,
+ * for two reasons: it is the value the provider validated the authorization
+ * request against and the one it expects echoed back at the token endpoint, and
+ * deriving it from a request header would let a caller influence it.
+ */
+function callbackUrl(req: Request): URL {
+  const settings = oidcConfig();
+  const url = new URL(settings?.redirectUri ?? "http://localhost/auth/callback");
+
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(req.query)) {
+    if (typeof value === "string") params.append(key, value);
+  }
+  url.search = params.toString();
+
+  return url;
 }
 
 function txCookieOptions(secure: boolean) {
@@ -161,7 +183,7 @@ export function createAuthRouter(secureCookies: boolean): Router {
         state: transaction.state,
         nonce: transaction.nonce,
         codeVerifier: transaction.codeVerifier,
-        query: req.query as Record<string, unknown>,
+        currentUrl: callbackUrl(req),
       });
 
       const user = await provisionUser({

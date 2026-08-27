@@ -1,7 +1,7 @@
 import "dotenv/config";
 
-import { GRAPHQL_PATH, createApp } from "./app";
-import { prisma } from "./lib/prisma";
+import { GRAPHQL_PATH, createApp } from "./app.js";
+import { prisma } from "./lib/prisma.js";
 
 const PORT = parseInt(process.env["PORT"] ?? "4000", 10);
 
