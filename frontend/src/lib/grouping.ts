@@ -106,6 +106,40 @@ export function groupByScore(reviews: ReviewSummary[]): ReviewGroup[] {
 
 export type Grouping = "year" | "score" | "recent";
 
+/**
+ * The GraphQL `ReviewGrouping` enum, which is uppercase, against the lowercase
+ * route segments. Kept as an explicit pair rather than `toUpperCase()` so a rename
+ * on either side is a type error instead of a runtime surprise.
+ */
+export type ServerGrouping = "YEAR" | "SCORE" | "RECENT";
+
+const FROM_SERVER: Record<ServerGrouping, Grouping> = {
+  YEAR: "year",
+  SCORE: "score",
+  RECENT: "recent",
+};
+
+const TO_SERVER: Record<Grouping, ServerGrouping> = {
+  year: "YEAR",
+  score: "SCORE",
+  recent: "RECENT",
+};
+
+export const GROUPING_LABELS: Record<Grouping, string> = {
+  year: "By year",
+  score: "By score",
+  recent: "Recent",
+};
+
+/** Falls back to by-year for an enum value this build does not know about. */
+export function fromServerGrouping(value?: string | null): Grouping {
+  return (value && FROM_SERVER[value as ServerGrouping]) || "year";
+}
+
+export function toGrouping(grouping: Grouping): ServerGrouping {
+  return TO_SERVER[grouping];
+}
+
 export function groupReviews(
   reviews: ReviewSummary[],
   grouping: Grouping

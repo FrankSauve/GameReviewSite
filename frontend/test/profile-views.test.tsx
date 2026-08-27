@@ -50,7 +50,7 @@ const ROWS = [
   summary("r3", 10, 2019, "Another Great One"),
 ];
 
-function mockFor(order: string) {
+function mockFor(order: string | null, defaultReviewGrouping = "YEAR") {
   return {
     request: {
       query: GET_USER_REVIEW_SUMMARIES,
@@ -64,6 +64,7 @@ function mockFor(order: string) {
           username: "simon",
           reviewCount: 3,
           averageRating: 9.5,
+          defaultReviewGrouping,
         },
         reviewSummariesByUser: ROWS,
       },
@@ -71,17 +72,14 @@ function mockFor(order: string) {
   };
 }
 
-function renderAt(path: string) {
+function renderAt(path: string, mocks = DEFAULT_MOCKS) {
   // No AuthContext.Provider: the context's own default is an anonymous viewer,
   // which is what these tests want.
   return render(
-    <MockedProvider
-      mocks={[mockFor("YEAR_DESC"), mockFor("RATING_DESC"), mockFor("RECENT")]}
-      addTypename={false}
-    >
+    <MockedProvider mocks={mocks} addTypename={false}>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
-          <Route path="/users/:id" element={<UserProfilePage grouping="year" />} />
+          <Route path="/users/:id" element={<UserProfilePage />} />
           <Route
             path="/users/:id/by-year"
             element={<UserProfilePage grouping="year" />}
@@ -100,6 +98,17 @@ function renderAt(path: string) {
   );
 }
 
+/**
+ * `order: null` is the bare route asking the server for the owner's own
+ * arrangement; the three named orders are the explicit routes.
+ */
+const DEFAULT_MOCKS = [
+  mockFor(null),
+  mockFor("YEAR_DESC"),
+  mockFor("RATING_DESC"),
+  mockFor("RECENT"),
+];
+
 /** Group headings, in the order they appear. */
 async function headings(): Promise<string[]> {
   await waitFor(() => expect(screen.getByText("simon")).toBeTruthy());
@@ -108,8 +117,38 @@ async function headings(): Promise<string[]> {
 }
 
 describe("profile grouped views", () => {
-  it("groups by year at the bare profile route", async () => {
+  it("groups by the owner's preference at the bare profile route", async () => {
     renderAt(`/users/${USER_ID}`);
+    expect(await headings()).toEqual(["2024", "2019"]);
+  });
+
+  /**
+   * The whole point of the preference: the same bare route renders a different
+   * view depending on whose profile it is.
+   */
+  it("groups by score at the bare route when the owner prefers score", async () => {
+    renderAt(`/users/${USER_ID}`, [mockFor(null, "SCORE")]);
+    expect(await headings()).toEqual(["10", "8.5"]);
+  });
+
+  it("shows no headings at the bare route when the owner prefers recent", async () => {
+    renderAt(`/users/${USER_ID}`, [mockFor(null, "RECENT")]);
+    await waitFor(() => expect(screen.getByText("simon")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Best Game")).toBeTruthy());
+    expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(0);
+  });
+
+  /** An explicit route must win, or a shared link would render as its owner likes. */
+  it("lets an explicit route override the owner's preference", async () => {
+    renderAt(`/users/${USER_ID}/by-year`, [
+      mockFor("YEAR_DESC", "SCORE"),
+      mockFor(null, "SCORE"),
+    ]);
+    expect(await headings()).toEqual(["2024", "2019"]);
+  });
+
+  it("falls back to by-year for an unrecognised stored value", async () => {
+    renderAt(`/users/${USER_ID}`, [mockFor(null, "SIDEWAYS")]);
     expect(await headings()).toEqual(["2024", "2019"]);
   });
 
@@ -154,9 +193,21 @@ describe("profile grouped views", () => {
     expect(screen.getByRole("link", { name: "Recent" }).getAttribute("href")).toBe(
       `/users/${USER_ID}/recent`
     );
+    /**
+     * By year gets its own path rather than the bare route: the bare route means
+     * "however the owner likes it", which stops being by-year the moment they
+     * change it.
+     */
     expect(screen.getByRole("link", { name: "By year" }).getAttribute("href")).toBe(
-      `/users/${USER_ID}`
+      `/users/${USER_ID}/by-year`
     );
+  });
+
+  /** The control that writes the preference belongs only to its owner. */
+  it("offers no default-view control to a visitor", async () => {
+    renderAt(`/users/${USER_ID}`);
+    await waitFor(() => expect(screen.getByText("simon")).toBeTruthy());
+    expect(screen.queryByText("Visitors see")).toBeNull();
   });
 
   it("renders no body text, because the query does not fetch one", async () => {

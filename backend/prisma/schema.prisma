@@ -17,12 +17,26 @@ model User {
   authentikUid String? @unique
   username  String    @unique
   email     String?   @unique
+  /// Which grouping this person's own profile opens on, chosen by them.
+  ///
+  /// Local-only data: authentik has no opinion about it, unlike username and
+  /// email, which is why writing it does not reopen the case against updateUser.
+  /// Defaults to YEAR because a profile of a ten-year backlog reads as a playing
+  /// history rather than a posting log.
+  defaultReviewGrouping ReviewGrouping @default(YEAR)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   reviews   Review[]
   comments  Comment[]
   addedGames Game[]   @relation("GameCreator")
   sessions  Session[]
+}
+
+/// How a profile groups its reviews. Mirrors the GraphQL enum of the same name.
+enum ReviewGrouping {
+  YEAR
+  SCORE
+  RECENT
 }
 
 /// A signed-in browser.

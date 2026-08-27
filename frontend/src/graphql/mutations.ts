@@ -66,6 +66,22 @@ export const GET_ME = gql`
       id
       username
       email
+      defaultReviewGrouping
+    }
+  }
+`;
+
+/**
+ * Sets which grouping the caller's own profile opens on.
+ *
+ * Takes no user id — the server derives the row from the session — so there is no
+ * shape of this call that writes somebody else's preference.
+ */
+export const SET_REVIEW_GROUPING = gql`
+  mutation SetReviewGrouping($grouping: ReviewGrouping!) {
+    setReviewGrouping(grouping: $grouping) {
+      id
+      defaultReviewGrouping
     }
   }
 `;

@@ -5,18 +5,22 @@ import { useAuth } from "../contexts/AuthContext";
 import { formatRating, ratingColor } from "../lib/rating";
 import { formatHours } from "../lib/playtime";
 import {
+  GROUPING_LABELS,
   ORDER_FOR,
+  fromServerGrouping,
   groupReviews,
   type Grouping,
   type ReviewSummary,
 } from "../lib/grouping";
 import { GroupedReviewList } from "../components/GroupedReviewList";
+import { DefaultViewPicker } from "../components/DefaultViewPicker";
 
 interface ProfileUser {
   id: string;
   username: string;
   reviewCount: number;
   averageRating?: number | null;
+  defaultReviewGrouping?: string | null;
 }
 
 interface ProfileData {
@@ -37,26 +41,30 @@ function avatarGradient(username: string): string {
   return gradients[idx];
 }
 
-const TABS: { grouping: Grouping; label: string; path: string }[] = [
-  { grouping: "year", label: "By year", path: "" },
-  { grouping: "score", label: "By score", path: "by-score" },
-  { grouping: "recent", label: "Recent", path: "recent" },
+const TABS: { grouping: Grouping; path: string }[] = [
+  { grouping: "year", path: "by-year" },
+  { grouping: "score", path: "by-score" },
+  { grouping: "recent", path: "recent" },
 ];
 
 interface UserProfilePageProps {
   /**
-   * Which view this route renders. By year is the default, per the brief — a
-   * profile reads as a playing history rather than a posting log.
+   * Which view this route renders, or undefined at the bare `/users/:id` route,
+   * where the profile's own owner decides.
+   *
+   * When undefined the query omits `order` too, so the server sorts by the owner's
+   * preference and returns it in the same response — one round trip rather than
+   * learning the preference and then asking again for rows along its axis.
    */
   grouping?: Grouping;
 }
 
-export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
+export function UserProfilePage({ grouping: routeGrouping }: UserProfilePageProps) {
   const { id } = useParams<{ id: string }>();
   const { user: me } = useAuth();
 
   const { data, loading, error } = useQuery<ProfileData>(GET_USER_REVIEW_SUMMARIES, {
-    variables: { id, order: ORDER_FOR[grouping] },
+    variables: { id, order: routeGrouping ? ORDER_FOR[routeGrouping] : null },
     skip: !id,
   });
 
@@ -91,6 +99,9 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
 
   const profile = data.user;
   const reviews = data.reviewSummariesByUser ?? [];
+  const ownerDefault = fromServerGrouping(profile.defaultReviewGrouping);
+  // The route wins where it names a view; otherwise the profile's owner decides.
+  const grouping = routeGrouping ?? ownerDefault;
   const groups = groupReviews(reviews, grouping);
   const isOwnProfile = me?.id === profile.id;
 
@@ -151,7 +162,7 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
           return (
             <Link
               key={tab.grouping}
-              to={`/users/${profile.id}${tab.path ? `/${tab.path}` : ""}`}
+              to={`/users/${profile.id}/${tab.path}`}
               aria-current={active ? "page" : undefined}
               className={`px-3 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${
                 active
@@ -159,11 +170,14 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
                   : "border-transparent text-gray-500 hover:text-gray-300"
               }`}
             >
-              {tab.label}
+              {GROUPING_LABELS[tab.grouping]}
             </Link>
           );
         })}
       </nav>
+
+      {/* Only the owner sets which view their profile opens on. */}
+      {isOwnProfile && <DefaultViewPicker current={ownerDefault} />}
 
       {/* ── Reviews ── */}
       {groups.length === 0 ? (

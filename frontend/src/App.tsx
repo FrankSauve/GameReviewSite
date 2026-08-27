@@ -20,9 +20,14 @@ function App() {
               <Routes>
                 <Route path="/" element={<GamesPage />} />
                 <Route path="/games/:id" element={<GameDetailPage />} />
-                {/* By year is the default view: a profile reads as a playing
-                    history rather than a posting log. */}
-                <Route path="/users/:id" element={<UserProfilePage grouping="year" />} />
+                {/* No grouping prop: the bare profile route renders whichever view
+                    its owner chose. The three explicit routes override that, so a
+                    link to one survives the owner changing their preference. */}
+                <Route path="/users/:id" element={<UserProfilePage />} />
+                <Route
+                  path="/users/:id/by-year"
+                  element={<UserProfilePage grouping="year" />}
+                />
                 <Route
                   path="/users/:id/by-score"
                   element={<UserProfilePage grouping="score" />}
@@ -30,12 +35,6 @@ function App() {
                 <Route
                   path="/users/:id/recent"
                   element={<UserProfilePage grouping="recent" />}
-                />
-                {/* The by-year view is reachable at its own path too, so a link
-                    to it survives the default changing. */}
-                <Route
-                  path="/users/:id/by-year"
-                  element={<UserProfilePage grouping="year" />}
                 />
                 <Route path="/reviews/:id" element={<ReviewDetailPage />} />
                 <Route path="/reviewers" element={<ReviewersPage />} />

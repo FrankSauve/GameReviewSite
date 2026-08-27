@@ -162,6 +162,7 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
       username
       reviewCount
       averageRating
+      defaultReviewGrouping
     }
     reviewSummariesByUser(userId: $id, order: $order) {
       id

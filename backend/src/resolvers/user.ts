@@ -1,4 +1,4 @@
-import type { User } from "@prisma/client";
+import type { ReviewGrouping, User } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { serializeDates } from "../lib/serialize.js";
 import {
@@ -39,8 +39,30 @@ export const userResolvers = {
   },
 
   Mutation: {
-    // No updateUser: authentik owns username and email, and any local edit
-    // would be overwritten the next time the user makes a request.
+    /**
+     * Still no updateUser, and this is not the beginning of one.
+     *
+     * The argument against it was never "users may not write to their own row" —
+     * it was that authentik owns username and email, so a local edit to either is
+     * overwritten at the next login. `defaultReviewGrouping` is local-only data
+     * authentik has no opinion about, so it has no such fate.
+     *
+     * It takes no user id. There is no shape of this call that writes somebody
+     * else's row, which is a stronger guarantee than checking one.
+     */
+    setReviewGrouping: async (
+      _parent: unknown,
+      { grouping }: { grouping: ReviewGrouping },
+      context: Context
+    ) => {
+      const authUser = requireAuth(context);
+      const user = await prisma.user.update({
+        where: { id: authUser.id },
+        data: { defaultReviewGrouping: grouping },
+      });
+      return serializeDates(user);
+    },
+
     deleteUser: async (_parent: unknown, _args: unknown, context: Context) => {
       const authUser = requireAuth(context);
       await prisma.user.delete({ where: { id: authUser.id } });

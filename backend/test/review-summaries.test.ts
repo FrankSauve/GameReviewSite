@@ -110,11 +110,37 @@ describe("reviewSummariesByUser", () => {
       ]);
     });
 
-    it("defaults to most recently written when no order is given", async () => {
+    /**
+     * Omitting `order` means "however this user arranged their own profile", which
+     * is what lets a profile render in one request rather than fetching the
+     * preference and then the rows. YEAR is the schema default, so a fresh account
+     * gets its reviews by year played.
+     */
+    it("falls back to the owner's own arrangement when no order is given", async () => {
       await seed([
         [6, 2011],
         [10, 2024],
       ]);
+      const res = await publicQuery<{
+        reviewSummariesByUser: { yearPlayed: number }[];
+      }>(
+        app,
+        `{ reviewSummariesByUser(userId: "${userId}") { id yearPlayed } }`
+      );
+      expect(res.data?.reviewSummariesByUser.map((r) => r.yearPlayed)).toEqual([
+        2024, 2011,
+      ]);
+    });
+
+    it("follows the owner's preference when they have changed it", async () => {
+      await seed([
+        [6, 2024],
+        [10, 2011],
+      ]);
+      await prisma.user.update({
+        where: { id: userId },
+        data: { defaultReviewGrouping: "SCORE" },
+      });
       const res = await publicQuery<{
         reviewSummariesByUser: { rating: number }[];
       }>(
@@ -122,6 +148,22 @@ describe("reviewSummariesByUser", () => {
         `{ reviewSummariesByUser(userId: "${userId}") { id rating } }`
       );
       expect(res.data?.reviewSummariesByUser.map((r) => r.rating)).toEqual([10, 6]);
+    });
+
+    /** An explicit order always wins, whatever the owner prefers. */
+    it("lets an explicit order override the owner's preference", async () => {
+      await seed([
+        [6, 2024],
+        [10, 2011],
+      ]);
+      await prisma.user.update({
+        where: { id: userId },
+        data: { defaultReviewGrouping: "SCORE" },
+      });
+      const res = await query("order: YEAR_DESC");
+      expect(res.data?.reviewSummariesByUser.map((r) => r.yearPlayed)).toEqual([
+        2024, 2011,
+      ]);
     });
 
     /** Ties must not reshuffle between requests. */

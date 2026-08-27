@@ -5,12 +5,25 @@ export const typeDefs = `#graphql
     username: String!
     # Only returned to the authenticated owner of the account; null otherwise.
     email: String
+    # Which grouping this person's profile opens on. Public, because a visitor
+    # loading the profile needs it to know which view to render.
+    defaultReviewGrouping: ReviewGrouping!
     createdAt: String
     updatedAt: String
     # Bounded list. Prefer reviewCount/averageRating when you only need totals.
     reviews(limit: Int, offset: Int): [Review!]
     reviewCount: Int!
     averageRating: Float
+  }
+
+  # How a profile groups its reviews.
+  #
+  # Distinct from ReviewOrder, which is a server-side sort. This is the view a
+  # profile opens on, and RECENT means one undivided list rather than an ordering.
+  enum ReviewGrouping {
+    YEAR
+    SCORE
+    RECENT
   }
 
   type Game {
@@ -179,6 +192,10 @@ export const typeDefs = `#graphql
     # Bounded higher than the body-carrying lists precisely because it carries no
     # body. Grouping is the client's job: buckets are presentation, and returning
     # groups of reviews would multiply out against the row budget for no gain.
+    #
+    # Omit order to get the list the way its owner arranged it — the ordering that
+    # matches their defaultReviewGrouping. That is what lets a profile render in
+    # one request instead of fetching the preference and then the reviews.
     reviewSummariesByUser(
       userId: ID!
       order: ReviewOrder
@@ -194,6 +211,10 @@ export const typeDefs = `#graphql
 
   type Mutation {
     deleteUser: Boolean!
+
+    # Sets which grouping the caller's own profile opens on. Never takes a user
+    # id: there is no shape of this call that writes somebody else's row.
+    setReviewGrouping(grouping: ReviewGrouping!): User!
 
     importGame(input: ImportGameInput!): Game!
     createGame(input: CreateGameInput!): Game!

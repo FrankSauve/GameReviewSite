@@ -1,5 +1,5 @@
 import { GraphQLError } from "graphql";
-import { Prisma, type Review } from "@prisma/client";
+import { Prisma, type Review, type ReviewGrouping } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { serializeDates } from "../lib/serialize.js";
 import {
@@ -141,6 +141,33 @@ const ORDER_BY: Record<ReviewOrder, Prisma.ReviewOrderByWithRelationInput[]> = {
   ],
 };
 
+/**
+ * The ordering each grouping needs the rows sorted by.
+ *
+ * Grouping by score over rows the server ordered by date gives correct headings
+ * with shuffled contents, which is the kind of wrong that looks right.
+ */
+const ORDER_FOR_GROUPING: Record<ReviewGrouping, ReviewOrder> = {
+  YEAR: "YEAR_DESC",
+  SCORE: "RATING_DESC",
+  RECENT: "RECENT",
+};
+
+/**
+ * The ordering a user has arranged their own profile in.
+ *
+ * Falls back to the schema's own default rather than throwing when the user does
+ * not exist: this is a list query, and a missing user should yield an empty list,
+ * not an error about a preference.
+ */
+async function orderForOwner(userId: string): Promise<ReviewOrder> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { defaultReviewGrouping: true },
+  });
+  return user ? ORDER_FOR_GROUPING[user.defaultReviewGrouping] : "YEAR_DESC";
+}
+
 export const reviewResolvers = {
   Query: {
     reviews: async (_parent: unknown, args: PageArgs, { budget }: Context) => {
@@ -210,6 +237,12 @@ export const reviewResolvers = {
      * benefit, since the buckets are presentation and the whole payload is a few
      * tens of kilobytes.
      *
+     * Omitting `order` means "the way this user arranged their own profile": the
+     * ordering implied by their `defaultReviewGrouping`. Without that, a profile
+     * opening on the owner's preference would need two round trips — one to learn
+     * the preference, one to fetch rows sorted along its axis — and the first
+     * render would either wait or show the wrong order briefly.
+     *
      * `yearPlayed` is nullable, and Postgres sorts nulls first on a DESC ordering,
      * which would put the reviews with no recorded year above the most recent ones.
      * `nulls: "last"` keeps the "Unknown" bucket at the bottom where the view wants
@@ -219,15 +252,16 @@ export const reviewResolvers = {
       _parent: unknown,
       {
         userId,
-        order = "RECENT",
+        order,
         ...args
-      }: { userId: string; order?: ReviewOrder } & PageArgs,
+      }: { userId: string; order?: ReviewOrder | null } & PageArgs,
       { budget }: Context
     ) => {
+      const effective = order ?? (await orderForOwner(userId));
       const { take, skip } = clampWindow(args, LIST_BOUNDS.reviewSummaries);
       const reviews = await prisma.review.findMany({
         where: { userId },
-        orderBy: ORDER_BY[order] ?? ORDER_BY.RECENT,
+        orderBy: ORDER_BY[effective],
         take,
         skip,
       });
