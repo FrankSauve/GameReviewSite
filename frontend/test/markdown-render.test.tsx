@@ -1,7 +1,15 @@
 // @vitest-environment jsdom
-import { describe, expect, it } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
 import { Markdown } from "../src/components/Markdown";
+
+/**
+ * @testing-library/react only registers its own cleanup when the runner exposes
+ * globals, and this project runs vitest without them. Most assertions here are
+ * scoped to their own render's container and so survive without it, but the two
+ * that use `screen` would start matching earlier renders.
+ */
+afterEach(cleanup);
 
 /**
  * jsdom is selected per file rather than globally: the rest of the suite tests
