@@ -76,7 +76,7 @@ function renderAt(path: string, mocks = DEFAULT_MOCKS) {
   // No AuthContext.Provider: the context's own default is an anonymous viewer,
   // which is what these tests want.
   return render(
-    <MockedProvider mocks={mocks} addTypename={false}>
+    <MockedProvider mocks={mocks}>
       <MemoryRouter initialEntries={[path]}>
         <Routes>
           <Route path="/users/:id" element={<UserProfilePage />} />

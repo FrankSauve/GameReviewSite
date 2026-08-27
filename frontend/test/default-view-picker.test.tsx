@@ -31,7 +31,7 @@ function mutationMock(grouping: string, onCalled?: () => void) {
 
 function renderPicker(current: "year" | "score" | "recent", mocks: unknown[] = []) {
   return render(
-    <MockedProvider mocks={mocks as never[]} addTypename={false}>
+    <MockedProvider mocks={mocks as never[]}>
       <DefaultViewPicker current={current} />
     </MockedProvider>
   );
