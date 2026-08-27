@@ -38,6 +38,15 @@ export const LIST_BOUNDS = {
   users: { def: 100, max: 200 },
   games: { def: 100, max: 200 },
   nested: { def: 50, max: 100 },
+  /**
+   * Higher than `reviews` on purpose: a review summary carries no `content`, which
+   * is the field the other bounds are small to contain. 500 rows of summary is
+   * roughly 50 kB, where 500 full reviews could be 10 MB.
+   *
+   * The default is 200 rather than the maximum so a profile with a decade of
+   * reviews loads in one request without a caller having to know to ask.
+   */
+  reviewSummaries: { def: 200, max: 500 },
 } as const satisfies Record<string, Bounds>;
 
 function intOr(value: number | null | undefined, fallback: number): number {

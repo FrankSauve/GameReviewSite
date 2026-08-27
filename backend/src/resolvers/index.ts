@@ -19,5 +19,8 @@ export const resolvers = {
   User: userResolvers.User,
   Game: gameResolvers.Game,
   Review: reviewResolvers.Review,
+  // Its own entry rather than a spread of Review: ReviewSummary has no body, so
+  // Review's content resolver has no field here to resolve.
+  ReviewSummary: reviewResolvers.ReviewSummary,
   Comment: commentResolvers.Comment,
 };

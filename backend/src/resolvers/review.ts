@@ -1,5 +1,5 @@
 import { GraphQLError } from "graphql";
-import type { Review } from "@prisma/client";
+import { Prisma, type Review } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { serializeDates } from "../lib/serialize.js";
 import {
@@ -119,6 +119,28 @@ function validateHoursPlayed(hours: number): number {
   return Math.round(num * 10) / 10;
 }
 
+/**
+ * Orderings `reviewSummariesByUser` accepts.
+ *
+ * Each falls back to a second key so the result is deterministic: two reviews with
+ * the same score, or played the same year, would otherwise come back in whatever
+ * order Postgres chose that day, and a list that reshuffles between pages is worse
+ * than one ordered slightly arbitrarily.
+ *
+ * `nulls: "last"` matters on yearPlayed. Postgres puts nulls first under DESC, so
+ * without it a review with no recorded year would outrank this year's.
+ */
+type ReviewOrder = "RECENT" | "RATING_DESC" | "YEAR_DESC";
+
+const ORDER_BY: Record<ReviewOrder, Prisma.ReviewOrderByWithRelationInput[]> = {
+  RECENT: [{ createdAt: "desc" }],
+  RATING_DESC: [{ rating: "desc" }, { createdAt: "desc" }],
+  YEAR_DESC: [
+    { yearPlayed: { sort: "desc", nulls: "last" } },
+    { createdAt: "desc" },
+  ],
+};
+
 export const reviewResolvers = {
   Query: {
     reviews: async (_parent: unknown, args: PageArgs, { budget }: Context) => {
@@ -174,6 +196,38 @@ export const reviewResolvers = {
       const reviews = await prisma.review.findMany({
         where: { userId },
         orderBy: { createdAt: "desc" },
+        take,
+        skip,
+      });
+      return budget.charge(reviews).map(serializeDates);
+    },
+
+    /**
+     * A user's reviews without their bodies.
+     *
+     * Grouping happens in the browser. A `[ReviewGroup]` of `[Review]` would price
+     * badly against the static row rule — group width times review width — for no
+     * benefit, since the buckets are presentation and the whole payload is a few
+     * tens of kilobytes.
+     *
+     * `yearPlayed` is nullable, and Postgres sorts nulls first on a DESC ordering,
+     * which would put the reviews with no recorded year above the most recent ones.
+     * `nulls: "last"` keeps the "Unknown" bucket at the bottom where the view wants
+     * it.
+     */
+    reviewSummariesByUser: async (
+      _parent: unknown,
+      {
+        userId,
+        order = "RECENT",
+        ...args
+      }: { userId: string; order?: ReviewOrder } & PageArgs,
+      { budget }: Context
+    ) => {
+      const { take, skip } = clampWindow(args, LIST_BOUNDS.reviewSummaries);
+      const reviews = await prisma.review.findMany({
+        where: { userId },
+        orderBy: ORDER_BY[order] ?? ORDER_BY.RECENT,
         take,
         skip,
       });
@@ -243,6 +297,23 @@ export const reviewResolvers = {
       await prisma.review.delete({ where: { id } });
       return true;
     },
+  },
+
+  /**
+   * Reuses the same loaders as `Review`, so a page of 200 summaries is two batched
+   * queries for the games and the comment counts rather than 400 individual ones.
+   *
+   * Not spread from `reviewResolvers.Review`: that object carries a `content`
+   * resolver, and `ReviewSummary` has no such field for it to resolve.
+   */
+  ReviewSummary: {
+    game: async (parent: Review, _args: unknown, { loaders }: Context) => {
+      const game = await loaders.gameById.load(parent.gameId);
+      return game ? serializeDates(game) : null;
+    },
+
+    commentCount: async (parent: Review, _args: unknown, { loaders }: Context) =>
+      (await loaders.commentsByReviewId.load(parent.id)).length,
   },
 
   Review: {
