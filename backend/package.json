@@ -1,6 +1,7 @@
 {
   "name": "game-review-site",
   "version": "1.0.0",
+  "type": "module",
   "description": "GraphQL API for a game review site backed by PostgreSQL via Prisma",
   "main": "dist/index.js",
   "scripts": {
@@ -21,6 +22,7 @@
     "@as-integrations/express5": "^1.1.2",
     "@escape.tech/graphql-armor": "^3.2.0",
     "@prisma/client": "^6.19.3",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dataloader": "^2.2.3",
     "dotenv": "^16.4.5",
@@ -28,9 +30,11 @@
     "express-rate-limit": "^8.1.0",
     "graphql": "^16.11.0",
     "helmet": "^8.1.0",
+    "openid-client": "^6.8.7",
     "prisma": "^6.19.3"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",

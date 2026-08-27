@@ -44,6 +44,46 @@ export function allowedOrigins(): string[] | false {
 const RAWG_FIELDS = ["searchGamesExternal", "importGame"];
 
 /**
+ * Refuses browser requests that came from another site.
+ *
+ * This matters more than it did. Identity used to arrive in headers the proxy
+ * injected, which no third-party page could cause to be sent. It now arrives in
+ * a cookie, and browsers attach cookies to requests a foreign page initiates —
+ * so this is the CSRF boundary.
+ *
+ * It is one of three overlapping defences, and they stop different things:
+ * SameSite=Lax on the session cookie means it is not attached to a cross-site
+ * POST at all; Apollo's csrfPrevention rejects the simple form POSTs that
+ * SameSite=None cookies would otherwise permit; and this rejects anything from
+ * a browser that names a different origin, so the guarantee does not rest on a
+ * default in someone else's library.
+ *
+ * A request with no Origin header is allowed through: that is curl, the test
+ * suite, and the healthcheck, none of which carry ambient credentials.
+ */
+export function sameOriginOnly(): RequestHandler {
+  return (req, res, next) => {
+    const origin = req.headers.origin;
+    if (typeof origin !== "string" || origin === "") return next();
+
+    const allowed = allowedOrigins();
+    if (Array.isArray(allowed) && allowed.includes(origin)) return next();
+
+    // Compared on host rather than the full origin so that a misconfigured
+    // X-Forwarded-Proto cannot make every same-site request look hostile.
+    try {
+      if (new URL(origin).host === req.headers.host) return next();
+    } catch {
+      // Unparseable Origin. Falls through to the refusal below.
+    }
+
+    res.status(403).json({
+      errors: [{ message: "Cross-origin requests are not allowed." }],
+    });
+  };
+}
+
+/**
  * Where the GraphQL document lives on this request.
  *
  * Apollo serves queries over GET as well as POST, and `express.json()` does not
@@ -77,6 +117,7 @@ function envInt(name: string, fallback: number): number {
 export interface Limiters {
   general: RequestHandler;
   rawg: RequestHandler;
+  auth: RequestHandler;
 }
 
 /**
@@ -101,6 +142,17 @@ export function createLimiters(): Limiters {
       legacyHeaders: false,
       skip: (req) => !isRawgOperation(req),
       message: { errors: [{ message: "Too many game searches, slow down." }] },
+    }),
+    // The /auth routes sit outside the GraphQL limiters and are cheap to abuse:
+    // /login makes this app do discovery and issue a redirect, /callback makes
+    // it do a token exchange against authentik. Signing in is not something a
+    // person does twenty times a minute.
+    auth: rateLimit({
+      windowMs: envInt("RATE_LIMIT_WINDOW_MS", 60_000),
+      limit: envInt("AUTH_RATE_LIMIT_MAX", 20),
+      standardHeaders: "draft-7",
+      legacyHeaders: false,
+      message: { errors: [{ message: "Too many sign-in attempts." }] },
     }),
   };
 }

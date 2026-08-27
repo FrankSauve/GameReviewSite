@@ -1,37 +1,37 @@
-import { ApolloServer } from "@apollo/server";
+import { ApolloServer, type ApolloServerPlugin } from "@apollo/server";
 import { expressMiddleware } from "@as-integrations/express5";
 import { ApolloArmor } from "@escape.tech/graphql-armor";
 import express, { type Express, type Request, type Response } from "express";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import helmet from "helmet";
 
-import { typeDefs } from "./schema/typeDefs";
-import { resolvers } from "./resolvers";
-import { buildContext } from "./context";
-import { assertIdentityConfig } from "./lib/identity";
-import { createMaxRowsRule } from "./lib/maxRows";
-import { collapseDuplicateErrors } from "./lib/collapseErrors";
-import { sanitizeError } from "./lib/sanitizeError";
+import { typeDefs } from "./schema/typeDefs.js";
+import { resolvers } from "./resolvers/index.js";
+import { buildContext } from "./context.js";
+import { assertOidcConfig } from "./lib/oidc.js";
+import { createMaxRowsRule } from "./lib/maxRows.js";
+import { collapseDuplicateErrors } from "./lib/collapseErrors.js";
+import { sanitizeError } from "./lib/sanitizeError.js";
+import { createAuthRouter } from "./routes/auth.js";
 import {
   allowedOrigins,
   createLimiters,
   isProduction,
+  sameOriginOnly,
   trustProxyHops,
-} from "./security";
+} from "./security.js";
 
 /**
- * Reviews are public, writes are not, and a single GraphQL endpoint cannot be
- * selectively gated by nginx's auth_request (it cannot read the query body).
- * So the same schema is served twice:
+ * One endpoint, and authorization decided per field.
  *
- *   /graphql       reachable by anyone, always anonymous, reads only
- *   /graphql-auth  guarded by the authentik outpost, identity honoured
- *
- * Mutations reaching /graphql fail with UNAUTHENTICATED, which is what tells
- * the client to sign in.
+ * This used to be two: nginx's `auth_request` cannot read a GraphQL body, so it
+ * could not tell a mutation from a query, and the only way to gate writes at the
+ * proxy was to serve the schema twice — once guarded, once not. Now that this
+ * app is the OAuth2 client and reads its own session cookie, `requireAuth` makes
+ * that decision where the resolvers are, and the split has no reason to exist.
  */
-export const PUBLIC_PATH = "/graphql";
-export const AUTHENTICATED_PATH = "/graphql-auth";
+export const GRAPHQL_PATH = "/graphql";
 
 export interface AppHandle {
   app: Express;
@@ -60,9 +60,9 @@ function buildArmor(): ApolloArmor {
 }
 
 export async function createApp(): Promise<AppHandle> {
-  // Before anything is served: refuse to run in a configuration where proxy
-  // headers would be trusted without proof.
-  assertIdentityConfig();
+  // Before anything is served: refuse to run in a configuration where nobody
+  // could sign in.
+  assertOidcConfig();
 
   const app = express();
 
@@ -75,7 +75,22 @@ export async function createApp(): Promise<AppHandle> {
     typeDefs,
     resolvers,
     introspection: !isProduction(),
-    plugins: [...protection.plugins, collapseDuplicateErrors()],
+    // On by default in Apollo Server 4+, but stated explicitly because it is now
+    // load-bearing: a cookie-borne session means a cross-site form POST would
+    // carry credentials, and this is what rejects it. See sameOriginOnly.
+    csrfPrevention: true,
+    // graphql-armor ships no `exports` map, so its type declarations resolve
+    // @apollo/server through the `require` condition while this package, now
+    // ESM, resolves the `import` one. The two describe the same runtime class,
+    // but HeaderMap carries a private field, so TypeScript treats them as
+    // unrelated types. The cast is safe rather than convenient: armor declares
+    // @apollo/server as an optional peer and has zero runtime references to it,
+    // and there is a single hoisted copy, so no second instance exists to be
+    // confused with. Remove this once armor publishes dual-condition types.
+    plugins: [
+      ...(protection.plugins as unknown as ApolloServerPlugin[]),
+      collapseDuplicateErrors(),
+    ],
     validationRules: [...protection.validationRules, createMaxRowsRule()],
     formatError: (formattedError, originalError) => {
       const sanitized = sanitizeError(formattedError);
@@ -91,20 +106,29 @@ export async function createApp(): Promise<AppHandle> {
   // CSP is disabled outside production so the Apollo Sandbox landing page works.
   app.use(helmet({ contentSecurityPolicy: isProduction() }));
 
+  // Sessions live in a cookie, so the cookie has to be parsed before anything
+  // that reads one. Nothing is signed here: the session cookie is an opaque
+  // random token looked up in the database, not a bearer of claims.
+  app.use(cookieParser());
+
   const limiters = createLimiters();
 
-  const middleware = (trustIdentity: boolean) => [
+  // Mounted before the GraphQL middleware, and deliberately outside it: signing
+  // in is not a GraphQL operation, and these routes must stay reachable when
+  // nobody is signed in.
+  app.use("/auth", limiters.auth, createAuthRouter(isProduction()));
+
+  app.use(
+    GRAPHQL_PATH,
     cors({ origin: allowedOrigins() }),
+    sameOriginOnly(),
     express.json({ limit: "100kb" }),
     limiters.general,
     limiters.rawg,
     expressMiddleware(server, {
-      context: async ({ req }) => buildContext({ req, trustIdentity }),
-    }),
-  ];
-
-  app.use(PUBLIC_PATH, ...middleware(false));
-  app.use(AUTHENTICATED_PATH, ...middleware(true));
+      context: async ({ req }) => buildContext({ req }),
+    })
+  );
 
   app.get("/health", (_req: Request, res: Response) => {
     res.json({ status: "ok" });

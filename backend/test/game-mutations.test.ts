@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Express } from "express";
-import { prisma } from "../src/lib/prisma";
+import { prisma } from "../src/lib/prisma.js";
 import {
   ALICE,
   BOB,
@@ -9,7 +9,7 @@ import {
   publicQuery,
   resetDatabase,
   startApp,
-} from "./helpers";
+} from "./helpers.js";
 
 interface GamePayload {
   id: string;

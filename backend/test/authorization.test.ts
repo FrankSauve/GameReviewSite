@@ -9,7 +9,7 @@ import {
   resetDatabase,
   seedGame,
   startApp,
-} from "./helpers";
+} from "./helpers.js";
 
 /**
  * Regression tests for the authorization holes the initial version shipped

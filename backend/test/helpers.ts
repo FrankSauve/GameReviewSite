@@ -1,9 +1,9 @@
 import request from "supertest";
 import type { Express } from "express";
-import { AUTHENTICATED_PATH, PUBLIC_PATH, createApp } from "../src/app";
-import { prisma } from "../src/lib/prisma";
-
-export const PROXY_SECRET = "test-proxy-secret";
+import { GRAPHQL_PATH, createApp } from "../src/app.js";
+import { prisma } from "../src/lib/prisma.js";
+import { provisionUser, type Identity } from "../src/lib/identity.js";
+import { SESSION_COOKIE, createSession } from "../src/lib/session.js";
 
 export interface GraphQLResponse<T = Record<string, unknown>> {
   status: number;
@@ -11,12 +11,7 @@ export interface GraphQLResponse<T = Record<string, unknown>> {
   errors?: { message: string; extensions?: { code?: string } }[];
 }
 
-/** An identity as the authentik outpost would assert it. */
-export interface Identity {
-  uid: string;
-  username: string;
-  email?: string;
-}
+export type { Identity };
 
 export const ALICE: Identity = {
   uid: "ak-alice",
@@ -32,47 +27,51 @@ export async function startApp(): Promise<{ app: Express; stop: () => Promise<vo
 /**
  * Empties every table. Called before each test so ordering cannot matter.
  * TRUNCATE ... CASCADE rather than deleteMany so the foreign keys do not
- * dictate the order.
+ * dictate the order. Session is listed explicitly rather than left to cascade
+ * from User, so a test that creates a session without a user still starts clean.
  */
 export async function resetDatabase(): Promise<void> {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "Comment", "Review", "Game", "User" CASCADE'
+    'TRUNCATE TABLE "Session", "Comment", "Review", "Game", "User" CASCADE'
   );
+}
+
+/**
+ * Signs someone in the way the OIDC callback does: provision the local row from
+ * the identity, then issue a session for it. Returns the Cookie header value.
+ *
+ * The id token is a placeholder — nothing reads it except RP-initiated logout,
+ * which hands it straight back to authentik.
+ */
+export async function sessionFor(identity: Identity): Promise<string> {
+  const user = await provisionUser(identity);
+  const { token } = await createSession(user.id, `id-token-for-${identity.uid}`);
+  return `${SESSION_COOKIE}=${token}`;
 }
 
 function post(
   app: Express,
-  path: string,
   query: string,
   headers: Record<string, string>,
   variables?: Record<string, unknown>
 ) {
-  const req = request(app).post(path).set("content-type", "application/json");
+  const req = request(app).post(GRAPHQL_PATH).set("content-type", "application/json");
   for (const [name, value] of Object.entries(headers)) req.set(name, value);
   return req.send(variables ? { query, variables } : { query });
 }
 
-function identityHeaders(identity: Identity): Record<string, string> {
-  return {
-    "x-proxy-secret": PROXY_SECRET,
-    "x-authentik-uid": identity.uid,
-    "x-authentik-username": identity.username,
-    ...(identity.email ? { "x-authentik-email": identity.email } : {}),
-  };
-}
-
-/** Calls the public endpoint, which is never authenticated. */
+/** Calls the API with no session, as an anonymous visitor would. */
 export async function publicQuery<T = Record<string, unknown>>(
   app: Express,
   query: string,
   extraHeaders: Record<string, string> = {},
   variables?: Record<string, unknown>
 ): Promise<GraphQLResponse<T>> {
-  const res = await post(app, PUBLIC_PATH, query, extraHeaders, variables);
+  const res = await post(app, query, extraHeaders, variables);
   return { status: res.status, data: res.body.data ?? null, errors: res.body.errors };
 }
 
-/** Calls the guarded endpoint as the given user, or anonymously if omitted. */
+/** Calls the API as the given user, or anonymously if omitted. */
 export async function authedQuery<T = Record<string, unknown>>(
   app: Express,
   query: string,
@@ -80,8 +79,11 @@ export async function authedQuery<T = Record<string, unknown>>(
   extraHeaders: Record<string, string> = {},
   variables?: Record<string, unknown>
 ): Promise<GraphQLResponse<T>> {
-  const headers = { ...(identity ? identityHeaders(identity) : {}), ...extraHeaders };
-  const res = await post(app, AUTHENTICATED_PATH, query, headers, variables);
+  const headers = {
+    ...(identity ? { Cookie: await sessionFor(identity) } : {}),
+    ...extraHeaders,
+  };
+  const res = await post(app, query, headers, variables);
   return { status: res.status, data: res.body.data ?? null, errors: res.body.errors };
 }
 

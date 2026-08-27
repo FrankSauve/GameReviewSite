@@ -39,6 +39,14 @@ COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/dist         ./dist
 COPY --chown=node:node prisma        ./prisma
 COPY --chown=node:node entrypoint.sh ./
+# Declares the module type instead of leaving Node to infer it. This package is
+# ESM ("type": "module"), and dist/ is emitted as ESM. Node 22 would actually
+# cope without this — module syntax detection has been on by default since
+# 22.7, so it retries a failed CommonJS parse as ESM — but that is a fallback
+# with two sharp edges: a file containing no import or export syntax is still
+# treated as CommonJS, and the behaviour is version-dependent. One line to stop
+# depending on it.
+COPY --chown=node:node package.json  ./
 
 RUN chmod +x entrypoint.sh
 

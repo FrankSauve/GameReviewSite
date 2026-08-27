@@ -1,7 +1,7 @@
 import { createContext, useContext, type ReactNode } from "react";
 import { useQuery } from "@apollo/client";
 import { GET_ME } from "../graphql/mutations";
-import { startSignIn, startSignOut } from "../lib/authentik";
+import { startSignIn, startSignOut } from "../lib/auth";
 
 export interface AuthUser {
   id: string;
@@ -24,18 +24,15 @@ const AuthContext = createContext<AuthContextValue>({
 });
 
 /**
- * Identity comes from the authentik proxy outpost, which sits in front of the
- * authenticated GraphQL endpoint. There is no token to store: the server tells
- * us who we are via the `me` query.
+ * Identity comes from the session cookie the backend issued after the OIDC
+ * login flow. There is no token to store, and none the JavaScript could read
+ * even if there were: the server tells us who we are via the `me` query.
  *
- * For a signed-out visitor that endpoint answers 401, which surfaces here as a
- * network error. That is the expected anonymous path, not a failure — reviews
- * are public, so the app carries on with `user: null`.
+ * A signed-out visitor gets `{ me: null }` with a 200. That is the ordinary
+ * anonymous path, not an error — reviews are public, so the app carries on.
  */
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { data, loading } = useQuery<{ me: AuthUser | null }>(GET_ME, {
-    errorPolicy: "all",
-  });
+  const { data, loading } = useQuery<{ me: AuthUser | null }>(GET_ME);
 
   return (
     <AuthContext.Provider

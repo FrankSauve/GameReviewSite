@@ -1,76 +1,32 @@
-import { createHash, timingSafeEqual } from "node:crypto";
-import type { Request } from "express";
 import type { User } from "@prisma/client";
-import { prisma } from "./prisma";
-import { isProduction } from "../security";
+import { prisma } from "./prisma.js";
+import { isProduction } from "../security.js";
 
 /**
- * Identity as asserted by the authentik proxy outpost.
+ * Who a request is from, as established by the OIDC login flow.
  *
- * The outpost sets these headers after a successful auth_request. They are
- * only trustworthy because the backend is not reachable except through the
- * reverse proxy, and because the proxy proves itself with a shared secret
- * (see `proxyIsTrusted`).
+ * `uid` is the `sub` claim of the ID token authentik issued. It is the only
+ * field this app treats as a stable key; username and email are authentik's to
+ * change and are refreshed from the claims at each login.
  */
-export interface ProxyIdentity {
+export interface Identity {
   uid: string;
   username: string;
   email: string | null;
 }
 
-const HEADER_UID = "x-authentik-uid";
-const HEADER_USERNAME = "x-authentik-username";
-const HEADER_EMAIL = "x-authentik-email";
-const HEADER_PROXY_SECRET = "x-proxy-secret";
-
-function proxySecret(): string {
-  return process.env["AUTH_PROXY_SECRET"] ?? "";
-}
-
 /**
- * Fails startup rather than serving in a state where headers are trusted
- * without proof. Called from createApp so it runs before the port is bound.
- */
-export function assertIdentityConfig(): void {
-  if (isProduction() && !proxySecret()) {
-    throw new Error(
-      "AUTH_PROXY_SECRET is not set. Identity comes from proxy headers, so " +
-        "without this shared secret anyone who can reach the backend directly " +
-        "could authenticate as any user."
-    );
-  }
-}
-
-function digest(value: string): Buffer {
-  return createHash("sha256").update(value).digest();
-}
-
-/** Constant-time comparison that does not leak the secret's length. */
-function secretMatches(provided: string, expected: string): boolean {
-  return timingSafeEqual(digest(provided), digest(expected));
-}
-
-function proxyIsTrusted(req: Request): boolean {
-  const expected = proxySecret();
-  if (!expected) return true; // development only; production is guarded above
-  const provided = req.headers[HEADER_PROXY_SECRET];
-  return typeof provided === "string" && secretMatches(provided, expected);
-}
-
-function header(req: Request, name: string): string | null {
-  const value = req.headers[name];
-  if (typeof value !== "string") return null;
-  const trimmed = value.trim();
-  return trimmed.length > 0 ? trimmed : null;
-}
-
-/**
- * Local-development escape hatch, since there is no authentik outpost in front
- * of `docker compose up`. Format: `uid:username:email`.
+ * Local-development escape hatch, since there is no authentik in front of
+ * `docker compose up` and no OIDC provider to redirect to.
+ * Format: `uid:username:email`.
  *
  * Ignored outright in production — the shipped image sets NODE_ENV=production.
+ *
+ * Note this now applies to every request rather than only the authenticated
+ * endpoint, because there is only one endpoint. Unset it to browse locally as
+ * an anonymous visitor.
  */
-function devIdentity(): ProxyIdentity | null {
+export function devIdentity(): Identity | null {
   if (isProduction()) return null;
   const raw = process.env["AUTH_DEV_IDENTITY"];
   if (!raw) return null;
@@ -79,26 +35,6 @@ function devIdentity(): ProxyIdentity | null {
   if (!uid || !username) return null;
 
   return { uid, username, email: email ?? null };
-}
-
-/**
- * Reads the caller's identity, or null if the request is not authenticated.
- *
- * Fails closed. When the outpost declines a request it leaves the identity
- * headers unset (this is the failure mode behind CVE-2026-25748), so a missing
- * header must mean "anonymous", never "trusted".
- */
-export function readIdentity(req: Request): ProxyIdentity | null {
-  const dev = devIdentity();
-  if (dev) return dev;
-
-  if (!proxyIsTrusted(req)) return null;
-
-  const uid = header(req, HEADER_UID);
-  const username = header(req, HEADER_USERNAME);
-  if (!uid || !username) return null;
-
-  return { uid, username, email: header(req, HEADER_EMAIL) };
 }
 
 /** Prisma unique-constraint violation. */
@@ -127,8 +63,11 @@ function conflictsOn(err: unknown, field: string): boolean {
  * Maps an authentik identity onto a local row, creating it on first sight.
  *
  * authentik owns the username and email, so both are refreshed when they drift.
+ * That refresh happens at login rather than on every request now that identity
+ * comes from a session, so a rename in authentik lands the next time the person
+ * signs in.
  */
-export async function provisionUser(identity: ProxyIdentity): Promise<User> {
+export async function provisionUser(identity: Identity): Promise<User> {
   const existing = await prisma.user.findUnique({
     where: { authentikUid: identity.uid },
   });

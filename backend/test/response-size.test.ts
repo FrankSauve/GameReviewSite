@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Express } from "express";
-import { prisma } from "../src/lib/prisma";
-import { publicQuery, resetDatabase, startApp } from "./helpers";
+import { prisma } from "../src/lib/prisma.js";
+import { publicQuery, resetDatabase, startApp } from "./helpers.js";
 
 /**
  * A request whose own size is fixed must not be able to ask for a response whose

@@ -1,7 +1,7 @@
-import { userResolvers } from "./user";
-import { gameResolvers } from "./game";
-import { reviewResolvers } from "./review";
-import { commentResolvers } from "./comment";
+import { userResolvers } from "./user.js";
+import { gameResolvers } from "./game.js";
+import { reviewResolvers } from "./review.js";
+import { commentResolvers } from "./comment.js";
 
 export const resolvers = {
   Query: {

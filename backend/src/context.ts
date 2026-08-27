@@ -1,8 +1,9 @@
 import { GraphQLError } from "graphql";
 import type { Request } from "express";
-import { provisionUser, readIdentity } from "./lib/identity";
-import { createLoaders, type Loaders } from "./lib/loaders";
-import { RowBudget } from "./lib/budget";
+import { devIdentity, provisionUser } from "./lib/identity.js";
+import { readSession } from "./lib/session.js";
+import { createLoaders, type Loaders } from "./lib/loaders.js";
+import { RowBudget } from "./lib/budget.js";
 
 export interface AuthUser {
   id: string;
@@ -20,48 +21,52 @@ export interface Context {
 
 interface BuildContextArgs {
   req: Request;
-  /**
-   * Whether identity headers may be honoured on this route.
-   *
-   * False on the public endpoint, which no authentik outpost guards. Ignoring
-   * the headers there means a client cannot authenticate by simply sending
-   * them to the unprotected path.
-   */
-  trustIdentity: boolean;
 }
 
 /**
- * Derives the request context from the identity headers set by the authentik
- * proxy outpost. There is no password or token handling in this application —
- * authentik owns the login flow, including 2FA.
+ * Derives the request context from the session cookie.
+ *
+ * There is no password handling here and no token in the browser: authentik
+ * authenticates people over OIDC, including 2FA, and lib/session.ts turns the
+ * result into a session of this app's own. A request with no session, an
+ * unknown one, or an expired one is anonymous — which is an ordinary state,
+ * because reviews are public.
  */
-export async function buildContext({
-  req,
-  trustIdentity,
-}: BuildContextArgs): Promise<Context> {
+export async function buildContext({ req }: BuildContextArgs): Promise<Context> {
   const loaders = createLoaders();
   const budget = new RowBudget();
 
-  if (!trustIdentity) return { user: null, loaders, budget };
+  // Local development only, and never in production. See devIdentity.
+  const dev = devIdentity();
+  if (dev) {
+    const user = await provisionUser(dev);
+    return {
+      user: { id: user.id, username: user.username, email: user.email },
+      loaders,
+      budget,
+    };
+  }
 
-  const identity = readIdentity(req);
-  if (!identity) return { user: null, loaders, budget };
+  const session = await readSession(req);
+  if (!session) return { user: null, loaders, budget };
 
-  const user = await provisionUser(identity);
   return {
-    user: { id: user.id, username: user.username, email: user.email },
+    user: {
+      id: session.user.id,
+      username: session.user.username,
+      email: session.user.email,
+    },
     loaders,
     budget,
   };
 }
 
-/** Throws UNAUTHENTICATED if the request carried no verified identity. */
+/** Throws UNAUTHENTICATED if the request carried no valid session. */
 export function requireAuth(context: Context): AuthUser {
   if (!context.user) {
-    throw new GraphQLError(
-      "You must be logged in. Write operations must be sent to the authenticated endpoint.",
-      { extensions: { code: "UNAUTHENTICATED" } }
-    );
+    throw new GraphQLError("You must be signed in to do that.", {
+      extensions: { code: "UNAUTHENTICATED" },
+    });
   }
   return context.user;
 }

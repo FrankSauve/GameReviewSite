@@ -1,7 +1,7 @@
 import "dotenv/config";
 
-import { AUTHENTICATED_PATH, PUBLIC_PATH, createApp } from "./app";
-import { prisma } from "./lib/prisma";
+import { GRAPHQL_PATH, createApp } from "./app.js";
+import { prisma } from "./lib/prisma.js";
 
 const PORT = parseInt(process.env["PORT"] ?? "4000", 10);
 
@@ -10,8 +10,8 @@ async function bootstrap(): Promise<void> {
 
   const httpServer = app.listen(PORT, () => {
     console.log(`🎮  Game Review API ready on port ${PORT}`);
-    console.log(`    public    ${PUBLIC_PATH}`);
-    console.log(`    authed    ${AUTHENTICATED_PATH}`);
+    console.log(`    graphql   ${GRAPHQL_PATH}`);
+    console.log(`    sign in   /auth/login`);
   });
 
   const shutdown = async () => {

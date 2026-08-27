@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Express } from "express";
-import { ALICE, authedQuery, resetDatabase, startApp } from "./helpers";
-import { prisma } from "../src/lib/prisma";
+import { ALICE, authedQuery, resetDatabase, startApp } from "./helpers.js";
+import { prisma } from "../src/lib/prisma.js";
 
 /** Local rows are created from the authentik identity on first sight. */
 describe("user provisioning", () => {
@@ -109,7 +109,7 @@ describe("user provisioning", () => {
   });
 
   it("provisions a user with no email at all", async () => {
-    const res = await me({ uid: "ak-noemail", username: "nomail" });
+    const res = await me({ uid: "ak-noemail", username: "nomail", email: null });
     expect(res.data?.me.email).toBeNull();
     expect(await prisma.user.count()).toBe(1);
   });

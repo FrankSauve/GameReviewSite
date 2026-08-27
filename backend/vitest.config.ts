@@ -10,13 +10,15 @@ export default defineConfig({
     isolate: true,
     env: {
       NODE_ENV: "test",
-      AUTH_PROXY_SECRET: "test-proxy-secret",
       // Must stay unset: it would make every request authenticate as one user.
       AUTH_DEV_IDENTITY: "",
       // High enough that the functional tests never trip it; the rate limit
       // test lowers it for itself.
       RATE_LIMIT_MAX: "100000",
       RAWG_RATE_LIMIT_MAX: "100000",
+      // Likewise: the OIDC flow test signs in a dozen times in one minute,
+      // which is well past what a person would do and past the real default.
+      AUTH_RATE_LIMIT_MAX: "100000",
     },
     testTimeout: 20_000,
     hookTimeout: 30_000,

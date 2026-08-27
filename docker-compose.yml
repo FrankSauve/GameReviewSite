@@ -33,9 +33,16 @@ services:
       NODE_ENV: ${NODE_ENV:-development}
       DATABASE_URL: postgresql://gamereview:gamereview@db:5432/gamereview
       RAWG_API_KEY: ${RAWG_API_KEY}
-      AUTH_PROXY_SECRET: ${AUTH_PROXY_SECRET:-}
-      # No authentik outpost in front of the local stack, so fake an identity.
-      # Ignored whenever NODE_ENV=production.
+      # Optional locally. Set all four to exercise the real OIDC flow against
+      # your authentik instance; leave them empty and AUTH_DEV_IDENTITY covers
+      # sign-in instead. Note the SPA and API are on different ports here, so
+      # the /auth routes are only reachable if you front both with one origin.
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-}
+      OIDC_REDIRECT_URI: ${OIDC_REDIRECT_URI:-}
+      # There is no identity provider in front of the local stack, so fake a
+      # signed-in user. Ignored whenever NODE_ENV=production.
       AUTH_DEV_IDENTITY: ${AUTH_DEV_IDENTITY:-dev-uid:devuser:dev@example.com}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       # Ports are published straight to the host here, so no proxy hops.

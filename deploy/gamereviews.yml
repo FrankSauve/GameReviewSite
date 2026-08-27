@@ -20,16 +20,19 @@
 #
 # ── Environment ──────────────────────────────────────────────────────────────
 #
-# Three values in the compose project's .env. They are prefixed because that
-# file is shared with your other services, and a bare POSTGRES_PASSWORD would
-# collide with the database behind authentik:
+# Six values in the compose project's .env. They are prefixed because that file
+# is shared with your other services, and a bare POSTGRES_PASSWORD would collide
+# with the database behind authentik:
 #
-#   GAMEREVIEWS_DB_PASSWORD=         # openssl rand -hex 24
-#   GAMEREVIEWS_RAWG_API_KEY=        # https://rawg.io/apidocs
-#   GAMEREVIEWS_AUTH_PROXY_SECRET=   # openssl rand -hex 32
+#   GAMEREVIEWS_DB_PASSWORD=          # openssl rand -hex 24
+#   GAMEREVIEWS_RAWG_API_KEY=         # https://rawg.io/apidocs
+#   GAMEREVIEWS_OIDC_ISSUER=          # .../application/o/<slug>/
+#   GAMEREVIEWS_OIDC_CLIENT_ID=       # from the authentik provider
+#   GAMEREVIEWS_OIDC_CLIENT_SECRET=   # from the authentik provider
+#   GAMEREVIEWS_OIDC_REDIRECT_URI=    # https://<site>/auth/callback
 #
-# The last one must match the X-Proxy-Secret literal in the SWAG proxy conf at
-# deploy/swag/gamereviews.subdomain.conf exactly.
+# Nothing here is duplicated into the proxy configuration: the proxy holds no
+# secret and takes no part in authentication.
 #
 # ── Reverse proxy ────────────────────────────────────────────────────────────
 #
@@ -99,8 +102,16 @@ services:
     environment:
       DATABASE_URL: postgresql://gamereview:${GAMEREVIEWS_DB_PASSWORD}@gamereviews-db:5432/gamereview
       RAWG_API_KEY: ${GAMEREVIEWS_RAWG_API_KEY:?GAMEREVIEWS_RAWG_API_KEY must be set}
-      # Must match the X-Proxy-Secret literal in the SWAG proxy conf.
-      AUTH_PROXY_SECRET: ${GAMEREVIEWS_AUTH_PROXY_SECRET:?GAMEREVIEWS_AUTH_PROXY_SECRET must be set}
+      # This app is the OAuth2 client, so it needs its own credentials. All
+      # four are required: the backend refuses to start in production without
+      # them, because nobody could sign in. From the authentik provider's
+      # Protocol settings -- see docs/authentik-setup.md.
+      OIDC_ISSUER: ${GAMEREVIEWS_OIDC_ISSUER:?GAMEREVIEWS_OIDC_ISSUER must be set}
+      OIDC_CLIENT_ID: ${GAMEREVIEWS_OIDC_CLIENT_ID:?GAMEREVIEWS_OIDC_CLIENT_ID must be set}
+      OIDC_CLIENT_SECRET: ${GAMEREVIEWS_OIDC_CLIENT_SECRET:?GAMEREVIEWS_OIDC_CLIENT_SECRET must be set}
+      OIDC_REDIRECT_URI: ${GAMEREVIEWS_OIDC_REDIRECT_URI:?GAMEREVIEWS_OIDC_REDIRECT_URI must be set}
+      # How long a session here lasts. Defaults to 30 days, matching authentik.
+      SESSION_TTL_HOURS: ${GAMEREVIEWS_SESSION_TTL_HOURS:-720}
       # The proxy talks straight to this container, so exactly one hop. Wrong
       # values make rate limiting key on the proxy's IP, and one abusive client
       # then locks out everyone.
@@ -137,8 +148,8 @@ services:
           memory: 512M
 
   # ── Frontend (React + nginx) ────────────────────────────────────────────────
-  # The bundle calls the relative paths /graphql and /graphql-auth, so the image
-  # carries no hostname and needs no per-deployment build.
+  # The bundle calls the relative paths /graphql and /auth/*, so the image carries
+  # no hostname and needs no per-deployment build.
   gamereviews-frontend:
     image: ghcr.io/franksauve/gamereviews-frontend:latest
     container_name: gamereviews-frontend

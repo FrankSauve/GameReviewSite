@@ -258,14 +258,20 @@ jobs:
         env:
           GAMEREVIEWS_DB_PASSWORD: dummy
           GAMEREVIEWS_RAWG_API_KEY: dummy
-          GAMEREVIEWS_AUTH_PROXY_SECRET: dummy
+          GAMEREVIEWS_OIDC_ISSUER: dummy
+          GAMEREVIEWS_OIDC_CLIENT_ID: dummy
+          GAMEREVIEWS_OIDC_CLIENT_SECRET: dummy
+          GAMEREVIEWS_OIDC_REDIRECT_URI: dummy
         run: docker compose -f deploy/gamereviews.yml config -q
 
       - name: Assert the deployment publishes no ports and builds nothing
         env:
           GAMEREVIEWS_DB_PASSWORD: dummy
           GAMEREVIEWS_RAWG_API_KEY: dummy
-          GAMEREVIEWS_AUTH_PROXY_SECRET: dummy
+          GAMEREVIEWS_OIDC_ISSUER: dummy
+          GAMEREVIEWS_OIDC_CLIENT_ID: dummy
+          GAMEREVIEWS_OIDC_CLIENT_SECRET: dummy
+          GAMEREVIEWS_OIDC_REDIRECT_URI: dummy
         run: |
           config=$(docker compose -f deploy/gamereviews.yml config --format json)
 
