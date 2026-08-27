@@ -5,6 +5,12 @@ import type { Review } from "../types";
 import { UPDATE_REVIEW, DELETE_REVIEW } from "../graphql/mutations";
 import { GET_GAME } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
+import { formatRating, ratingColor } from "../lib/rating";
+import { REVIEW_CONTENT_MAX } from "../lib/markdown";
+import { currentYear, formatPlaytime, snapHours } from "../lib/playtime";
+import { RatingInput } from "./RatingInput";
+import { PlaytimeInput } from "./PlaytimeInput";
+import { Markdown } from "./Markdown";
 
 interface ReviewCardProps {
   review: Review;
@@ -29,24 +35,45 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editRating, setEditRating] = useState(review.rating);
   const [editContent, setEditContent] = useState(review.content);
+  const [editYear, setEditYear] = useState(review.yearPlayed ?? currentYear());
+  const [editHours, setEditHours] = useState(
+    review.hoursPlayed != null ? String(review.hoursPlayed) : ""
+  );
 
   const commentCount = review.comments?.length ?? 0;
   const isOwner = user?.id === review.user?.id;
+  const playtime = formatPlaytime(review.yearPlayed, review.hoursPlayed);
 
   const refetch = { refetchQueries: [{ query: GET_GAME, variables: { id: gameId } }] };
 
   const [updateReview, { loading: saving }] = useMutation(UPDATE_REVIEW, refetch);
   const [deleteReview, { loading: deleting }] = useMutation(DELETE_REVIEW, refetch);
 
+  const editHoursNum = Number(editHours);
+  const editHoursValid =
+    editHours.trim() !== "" && Number.isFinite(editHoursNum) && editHoursNum > 0;
+
   const handleSave = async () => {
-    if (!editContent.trim()) return;
-    await updateReview({ variables: { id: review.id, input: { rating: editRating, content: editContent.trim() } } });
+    if (!editContent.trim() || !editHoursValid) return;
+    await updateReview({
+      variables: {
+        id: review.id,
+        input: {
+          rating: editRating,
+          content: editContent.trim(),
+          yearPlayed: editYear,
+          hoursPlayed: snapHours(editHoursNum),
+        },
+      },
+    });
     setEditing(false);
   };
 
   const handleCancelEdit = () => {
     setEditRating(review.rating);
     setEditContent(review.content);
+    setEditYear(review.yearPlayed ?? currentYear());
+    setEditHours(review.hoursPlayed != null ? String(review.hoursPlayed) : "");
     setEditing(false);
   };
 
@@ -70,15 +97,14 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
             >
               {review.user?.username ?? "Unknown"}
             </Link>
-            <p className="text-xs text-gray-400">{timeAgo(review.createdAt)}</p>
-          </div>
+            <p className="text-xs text-gray-400">{timeAgo(review.createdAt)}</p>          </div>
         </div>
 
         <div className="flex items-center gap-2">
           {!editing && (
             <div className="flex items-baseline gap-1">
-              <span className={`text-lg font-extrabold ${review.rating >= 8 ? "text-emerald-400" : review.rating >= 6 ? "text-amber-400" : "text-red-400"}`}>
-                {review.rating.toFixed(1)}
+              <span className={`text-lg font-extrabold ${ratingColor(review.rating)}`}>
+                {formatRating(review.rating)}
               </span>
               <span className="text-xs text-gray-600">/ 10</span>
             </div>
@@ -129,40 +155,32 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
         <div className="space-y-3">
           {/* Rating picker */}
           <div className="flex items-center gap-3">
-            <span className="text-xs text-gray-400 w-14">Rating</span>
-            <div className="flex items-center gap-1">
-              {[...Array(10)].map((_, i) => {
-                const val = i + 1;
-                return (
-                  <button
-                    key={val}
-                    onClick={() => setEditRating(val)}
-                    className={`w-7 h-7 rounded text-xs font-bold transition-colors ${
-                      val <= editRating
-                        ? "bg-amber-500 text-gray-900"
-                        : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                    }`}
-                  >
-                    {val}
-                  </button>
-                );
-              })}
+            <span className="text-xs text-gray-400 w-14 shrink-0">Rating</span>
+            <div className="flex-1">
+              <RatingInput value={editRating} onChange={setEditRating} size="sm" />
             </div>
-            <span className={`text-sm font-bold ml-1 ${
-              editRating >= 8 ? "text-emerald-400" : editRating >= 6 ? "text-amber-400" : "text-red-400"
-            }`}>
-              {editRating}/10
-            </span>
           </div>
+
+          <PlaytimeInput
+            year={editYear}
+            hours={editHours}
+            onYearChange={setEditYear}
+            onHoursChange={setEditHours}
+            size="sm"
+          />
 
           {/* Text area */}
           <textarea
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
-            rows={4}
+            rows={6}
+            maxLength={REVIEW_CONTENT_MAX}
             className="input-field w-full resize-none text-sm"
             placeholder="Update your review…"
           />
+          <p className="text-xs text-gray-600 -mt-1">
+            Markdown: **bold**, *italic*, - lists, &gt; quotes
+          </p>
 
           {/* Actions */}
           <div className="flex items-center gap-2 justify-end">
@@ -174,7 +192,7 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
             </button>
             <button
               onClick={() => void handleSave()}
-              disabled={saving || !editContent.trim()}
+              disabled={saving || !editContent.trim() || !editHoursValid}
               className="btn-primary text-sm py-1.5 px-3 disabled:opacity-50"
             >
               {saving ? "Saving…" : "Save"}
@@ -182,18 +200,36 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
           </div>
         </div>
       ) : (
-        <p className="text-gray-300 text-sm leading-relaxed">{review.content}</p>
+        <div className="text-gray-300 text-sm leading-relaxed">
+          <Markdown>{review.content}</Markdown>
+        </div>
       )}
 
-      {/* Comment count */}
+      {/* Comment count and playtime */}
       {!editing && (
-        <div className="pt-2 border-t border-gray-800 flex items-center gap-1.5 text-xs text-gray-500">
-          <CommentIcon />
-          {commentCount} {commentCount === 1 ? "comment" : "comments"}
+        <div className="pt-2 border-t border-gray-800 flex items-center gap-3 text-xs text-gray-500">
+          <span className="flex items-center gap-1.5">
+            <CommentIcon />
+            {commentCount} {commentCount === 1 ? "comment" : "comments"}
+          </span>
+          {playtime && (
+            <span className="flex items-center gap-1.5">
+              <ClockIcon />
+              {playtime}
+            </span>
+          )}
         </div>
       )}
       </div>
     </div>
+  );
+}
+
+function ClockIcon() {
+  return (
+    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
   );
 }
 

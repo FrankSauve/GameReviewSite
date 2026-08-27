@@ -44,6 +44,8 @@ export const GET_GAME = gql`
         id
         rating
         content
+        yearPlayed
+        hoursPlayed
         createdAt
         user {
           id
@@ -69,6 +71,8 @@ export const GET_RECENT_REVIEWS = gql`
       id
       rating
       content
+      yearPlayed
+      hoursPlayed
       createdAt
       user {
         id
@@ -101,6 +105,8 @@ export const GET_REVIEW = gql`
       id
       rating
       content
+      yearPlayed
+      hoursPlayed
       createdAt
       user {
         id
@@ -132,34 +138,44 @@ export const GET_USERS = gql`
     users {
       id
       username
-      createdAt
       reviewCount
       averageRating
     }
   }
 `;
 
-export const GET_USER_PROFILE = gql`
-  query GetUserProfile($id: ID!) {
+/**
+ * The profile page's whole review history, without the bodies.
+ *
+ * Replaced GET_USER_PROFILE, which nested `reviews` under `user` and so inherited
+ * the nested bound of 50 — a fifty-review backlog truncated silently, and it paid
+ * for every body to render a 180-character excerpt. This is bounded at 200 by
+ * default precisely by not asking for `content`.
+ *
+ * The grouping happens in the browser; `order` only decides the axis the server
+ * sorts along, so each group's contents come out in the right order too.
+ */
+export const GET_USER_REVIEW_SUMMARIES = gql`
+  query GetUserReviewSummaries($id: ID!, $order: ReviewOrder!) {
     user(id: $id) {
       id
       username
+      reviewCount
+      averageRating
+    }
+    reviewSummariesByUser(userId: $id, order: $order) {
+      id
+      rating
+      yearPlayed
+      hoursPlayed
       createdAt
-      reviews {
+      commentCount
+      game {
         id
-        rating
-        content
-        createdAt
-        game {
-          id
-          title
-          coverUrl
-          releaseYear
-          genre
-        }
-        comments {
-          id
-        }
+        title
+        coverUrl
+        releaseYear
+        genre
       }
     }
   }

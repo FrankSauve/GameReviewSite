@@ -2,11 +2,11 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@apollo/client";
 import { GET_USERS } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
+import { formatRating, ratingColor } from "../lib/rating";
 
 interface ReviewerUser {
   id: string;
   username: string;
-  createdAt?: string | null;
   reviewCount: number;
   averageRating?: number | null;
 }
@@ -22,17 +22,6 @@ function avatarGradient(username: string): string {
   ];
   const idx = [...username].reduce((a, c) => a + c.charCodeAt(0), 0) % gradients.length;
   return gradients[idx];
-}
-
-function ratingColor(r: number): string {
-  if (r >= 8) return "text-emerald-400";
-  if (r >= 6) return "text-amber-400";
-  return "text-red-400";
-}
-
-function memberSince(iso?: string | null): string {
-  if (!iso) return "";
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", year: "numeric" });
 }
 
 export function ReviewersPage() {
@@ -111,14 +100,11 @@ export function ReviewersPage() {
                         <>
                           <span className="text-gray-700 text-xs">·</span>
                           <span className={`text-xs font-semibold ${ratingColor(avgRating)}`}>
-                            avg {avgRating.toFixed(1)}
+                            avg {formatRating(avgRating)}
                           </span>
                         </>
                       )}
                     </div>
-                    {u.createdAt && (
-                      <p className="text-xs text-gray-700 mt-0.5">Since {memberSince(u.createdAt)}</p>
-                    )}
                   </div>
                 </div>
               </Link>

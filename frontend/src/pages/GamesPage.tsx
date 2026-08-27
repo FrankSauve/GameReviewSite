@@ -5,6 +5,9 @@ import { GET_RECENT_REVIEWS, GET_GAMES } from "../graphql/queries";
 import { CREATE_COMMENT } from "../graphql/mutations";
 import { useAuth } from "../contexts/AuthContext";
 import type { Review, Game } from "../types";
+import { formatRating, ratingColor } from "../lib/rating";
+import { excerpt } from "../lib/markdown";
+import { formatPlaytime } from "../lib/playtime";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -16,12 +19,6 @@ function timeAgo(iso: string): string {
   const days = Math.floor(hrs / 24);
   if (days < 30) return `${days}d ago`;
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-}
-
-function ratingColor(r: number): string {
-  if (r >= 8) return "text-emerald-400";
-  if (r >= 6) return "text-amber-400";
-  return "text-red-400";
 }
 
 function genreColor(genre?: string | null): string {
@@ -75,10 +72,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
     createComment({ variables: { input: { reviewId: review.id, content: trimmed } } });
   };
 
-  const EXCERPT_LEN = 220;
-  const excerpt = review.content.length > EXCERPT_LEN
-    ? review.content.slice(0, EXCERPT_LEN).trimEnd() + "…"
-    : review.content;
+  const summary = excerpt(review.content, 220);
 
   return (
     <article className="card overflow-hidden flex flex-col hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
@@ -122,14 +116,14 @@ function ReviewFeedCard({ review }: { review: Review }) {
           {/* Score out of 10 */}
           <div className="flex items-baseline gap-1">
             <span className={`text-2xl font-extrabold ${ratingColor(review.rating)}`}>
-              {review.rating.toFixed(1)}
+              {formatRating(review.rating)}
             </span>
             <span className="text-sm text-gray-600">/ 10</span>
           </div>
 
           {/* Excerpt */}
           <p className="text-sm text-gray-400 leading-relaxed flex-1">
-            {excerpt}
+            {summary}
           </p>
 
           {/* Footer: reviewer + time */}
@@ -145,7 +139,8 @@ function ReviewFeedCard({ review }: { review: Review }) {
               {review.user?.username ?? "Anonymous"}
             </Link>
             <span className="text-xs text-gray-600 ml-auto shrink-0">
-              {timeAgo(review.createdAt)}
+              {formatPlaytime(review.yearPlayed, review.hoursPlayed) ??
+                timeAgo(review.createdAt)}
             </span>
           </div>
         </div>
@@ -244,7 +239,7 @@ function GameStrip({ game }: { game: Game }) {
           )}
           {game.averageRating != null && (
             <span className={`absolute bottom-2 right-2 text-sm font-black drop-shadow ${ratingColor(game.averageRating)}`}>
-              {game.averageRating.toFixed(1)}
+              {formatRating(game.averageRating)}
             </span>
           )}
         </div>

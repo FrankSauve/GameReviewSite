@@ -1,25 +1,38 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useMutation } from "@apollo/client";
 import { CREATE_REVIEW } from "../graphql/mutations";
 import { GET_GAME } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
+import { REVIEW_CONTENT_MAX } from "../lib/markdown";
+import { currentYear, snapHours } from "../lib/playtime";
+import { RatingInput } from "./RatingInput";
+import { PlaytimeInput } from "./PlaytimeInput";
+import { Markdown } from "./Markdown";
 
 interface AddReviewFormProps {
   gameId: string;
   onSuccess?: () => void;
 }
 
+const DEFAULT_RATING = 8;
+
 export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
   const { user, signIn } = useAuth();
+  const bodyId = useId();
   const [content, setContent] = useState("");
-  const [rating, setRating] = useState<number>(8);
-  const [hoverRating, setHoverRating] = useState<number | null>(null);
+  const [rating, setRating] = useState<number>(DEFAULT_RATING);
+  const [yearPlayed, setYearPlayed] = useState<number>(currentYear());
+  const [hoursPlayed, setHoursPlayed] = useState("");
+  const [previewing, setPreviewing] = useState(false);
 
   const [createReview, { loading, error }] = useMutation(CREATE_REVIEW, {
     refetchQueries: [{ query: GET_GAME, variables: { id: gameId } }],
     onCompleted: () => {
       setContent("");
-      setRating(8);
+      setRating(DEFAULT_RATING);
+      setYearPlayed(currentYear());
+      setHoursPlayed("");
+      setPreviewing(false);
       onSuccess?.();
     },
   });
@@ -38,57 +51,82 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
     );
   }
 
+  const hours = Number(hoursPlayed);
+  const hoursValid = hoursPlayed.trim() !== "" && Number.isFinite(hours) && hours > 0;
+  const canSubmit = content.trim() !== "" && hoursValid;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) return;
+    if (!canSubmit) return;
     void createReview({
-      variables: { input: { gameId, rating, content: content.trim() } },
+      variables: {
+        input: {
+          gameId,
+          rating,
+          content: content.trim(),
+          yearPlayed,
+          hoursPlayed: snapHours(hours),
+        },
+      },
     });
   };
-
-  const displayRating = hoverRating ?? rating;
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
         <label className="block text-sm font-medium text-gray-400 mb-2">
-          Your Rating:{" "}
-          <span className="text-amber-400 font-bold">{displayRating}/10</span>
+          Your Rating
         </label>
-        <div className="flex gap-1">
-          {Array.from({ length: 10 }, (_, i) => i + 1).map((val) => (
-            <button
-              key={val}
-              type="button"
-              onMouseEnter={() => setHoverRating(val)}
-              onMouseLeave={() => setHoverRating(null)}
-              onClick={() => setRating(val)}
-              className={`w-9 h-9 rounded-lg text-sm font-bold transition-all duration-100 ${
-                val <= displayRating
-                  ? "bg-amber-500 text-gray-900 scale-105"
-                  : "bg-gray-800 text-gray-500 hover:bg-gray-700"
-              }`}
-            >
-              {val}
-            </button>
-          ))}
-        </div>
+        <RatingInput value={rating} onChange={setRating} />
       </div>
 
+      <PlaytimeInput
+        year={yearPlayed}
+        hours={hoursPlayed}
+        onYearChange={setYearPlayed}
+        onHoursChange={setHoursPlayed}
+      />
+
       <div>
-        <label className="block text-sm font-medium text-gray-400 mb-1.5">
-          Your Review
-        </label>
-        <textarea
-          className="input-field resize-none"
-          rows={4}
-          placeholder="Share your thoughts on this game..."
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          maxLength={5000}
-          required
-        />
-        <p className="text-xs text-gray-600 mt-1 text-right">{content.length}/5000</p>
+        <div className="flex items-baseline justify-between mb-1.5">
+          <label htmlFor={bodyId} className="block text-sm font-medium text-gray-400">
+            Your Review
+          </label>
+          <button
+            type="button"
+            onClick={() => setPreviewing((p) => !p)}
+            disabled={!content.trim()}
+            className="text-xs text-violet-400 hover:text-violet-300 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
+          >
+            {previewing ? "Write" : "Preview"}
+          </button>
+        </div>
+
+        {previewing ? (
+          <div className="input-field min-h-[6.5rem] text-sm text-gray-300 leading-relaxed overflow-y-auto">
+            <Markdown>{content}</Markdown>
+          </div>
+        ) : (
+          <textarea
+            id={bodyId}
+            className="input-field resize-none"
+            rows={6}
+            placeholder="Share your thoughts on this game..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            maxLength={REVIEW_CONTENT_MAX}
+            required
+          />
+        )}
+
+        <div className="flex items-baseline justify-between mt-1">
+          <p className="text-xs text-gray-600">
+            Markdown: **bold**, *italic*, - lists, &gt; quotes
+          </p>
+          <p className="text-xs text-gray-600">
+            {content.length}/{REVIEW_CONTENT_MAX}
+          </p>
+        </div>
       </div>
 
       {error && (
@@ -99,7 +137,7 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
 
       <button
         type="submit"
-        disabled={loading || !content.trim()}
+        disabled={loading || !canSubmit}
         className="btn-primary w-full"
       >
         {loading ? "Submitting…" : "Submit Review"}

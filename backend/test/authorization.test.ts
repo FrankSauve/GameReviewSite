@@ -3,6 +3,7 @@ import type { Express } from "express";
 import {
   ALICE,
   BOB,
+  PLAYTIME_INPUT,
   authedQuery,
   errorCodes,
   publicQuery,
@@ -75,7 +76,7 @@ describe("authorization", () => {
       const gameId = await seedGame();
       const created = await authedQuery<{ createReview: { id: string } }>(
         app,
-        `mutation { createReview(input: { gameId: "${gameId}", rating: 8, content: "Alice's take" }) { id } }`,
+        `mutation { createReview(input: { gameId: "${gameId}", rating: 8, content: "Alice's take", ${PLAYTIME_INPUT} }) { id } }`,
         ALICE
       );
       const reviewId = created.data!.createReview.id;
@@ -92,7 +93,7 @@ describe("authorization", () => {
       const gameId = await seedGame();
       const created = await authedQuery<{ createReview: { id: string } }>(
         app,
-        `mutation { createReview(input: { gameId: "${gameId}", rating: 7, content: "Mine" }) { id } }`,
+        `mutation { createReview(input: { gameId: "${gameId}", rating: 7, content: "Mine", ${PLAYTIME_INPUT} }) { id } }`,
         ALICE
       );
       const reviewId = created.data!.createReview.id;
@@ -109,7 +110,7 @@ describe("authorization", () => {
       const gameId = await seedGame();
       const review = await authedQuery<{ createReview: { id: string } }>(
         app,
-        `mutation { createReview(input: { gameId: "${gameId}", rating: 6, content: "R" }) { id } }`,
+        `mutation { createReview(input: { gameId: "${gameId}", rating: 6, content: "R", ${PLAYTIME_INPUT} }) { id } }`,
         ALICE
       );
       const reviewId = review.data!.createReview.id;
@@ -132,7 +133,7 @@ describe("authorization", () => {
       const gameId = await seedGame();
       const created = await authedQuery<{ createReview: { id: string } }>(
         app,
-        `mutation { createReview(input: { gameId: "${gameId}", rating: 9, content: "Mine" }) { id } }`,
+        `mutation { createReview(input: { gameId: "${gameId}", rating: 9, content: "Mine", ${PLAYTIME_INPUT} }) { id } }`,
         ALICE
       );
       const res = await authedQuery<{ deleteReview: boolean }>(
@@ -148,7 +149,7 @@ describe("authorization", () => {
     const gameId = await seedGame("Public Game");
     await authedQuery(
       app,
-      `mutation { createReview(input: { gameId: "${gameId}", rating: 10, content: "Visible to all" }) { id } }`,
+      `mutation { createReview(input: { gameId: "${gameId}", rating: 10, content: "Visible to all", ${PLAYTIME_INPUT} }) { id } }`,
       ALICE
     );
 

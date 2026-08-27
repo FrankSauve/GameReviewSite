@@ -30,6 +30,7 @@ const EXPLICIT_BOUNDS: Record<string, Bounds> = {
   "Query.recentReviews": LIST_BOUNDS.recentReviews,
   "Query.reviewsByGame": LIST_BOUNDS.reviews,
   "Query.reviewsByUser": LIST_BOUNDS.reviews,
+  "Query.reviewSummariesByUser": LIST_BOUNDS.reviewSummaries,
   "Query.users": LIST_BOUNDS.users,
   "Query.games": LIST_BOUNDS.games,
   "Query.comments": LIST_BOUNDS.nested,

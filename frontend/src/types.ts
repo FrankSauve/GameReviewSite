@@ -23,6 +23,8 @@ export interface Review {
   id: string;
   rating: number;
   content: string;
+  yearPlayed?: number | null;
+  hoursPlayed?: number | null;
   createdAt: string;
   user?: User | null;
   game?: GameSnippet | null;

@@ -1,145 +1,55 @@
 # Deploying GameReviews to a home server
 
-An ordered runbook, from a repository with no images published to a working site
-behind a reverse proxy with authentik login. Follow it top to bottom the first
-time; the [day-two operations](#day-two-operations) sections stand alone
-afterwards.
-
-The authentik objects themselves — provider, application, 2FA stage — live in
-[authentik-setup.md](authentik-setup.md). This document says *when* to do that;
-that one says *how*.
-
----
-
-## What you are deploying
-
 Three containers added to the compose file that already runs your reverse proxy.
-None of them listens on the host. The proxy reaches two of them over the network
-it already shares with them, by container name, and the database is on a separate
-network nothing else can reach.
+None of them listens on the host. The server builds nothing — CI publishes the
+images.
 
-```
-browser ──► SWAG ──┬─► /         → gamereviews-frontend:8080
-                   ├─► /graphql  → gamereviews-backend:4000
-                   └─► /auth/*   → gamereviews-backend:4000
-
-                       gamereviews-backend ──► gamereviews-db:5432    gamereviews-internal
-                       gamereviews-backend ──► authentik              OIDC, server to server
-```
-
-Reviews are readable by anyone. Writing requires an authentik session, and the
-app never sees a password — 2FA included, that is entirely authentik's business.
-The only persistent state is the Postgres volume.
-
-Identity is established by the app itself, over OIDC, and proven by a signature
-rather than asserted by a header. The deployment still publishes no ports —
-defence in depth, and the database has no business being reachable — but the
-correctness of authentication no longer rests on that being true.
-
-### Where the images come from
-
-The server builds nothing. CI publishes two images to the GitHub Container
-registry:
-
-```
-ghcr.io/franksauve/gamereviews-backend:latest       moves with main
-ghcr.io/franksauve/gamereviews-frontend:latest
-ghcr.io/franksauve/gamereviews-{backend,frontend}:sha-<short>
-```
-
-`latest` is what an image updater follows. The `sha-` tags never move, which is
-what makes a rollback a tag change rather than a rebuild.
-
-This is also the reason there is no second compose file. An updater such as
-Watchtower works by comparing a running container's digest against a registry
-tag; an image built on the server has no registry tag to compare against, so
-nothing can notice a new version. Publishing the images removes the checkout, the
-toolchain, the build, and the extra compose file all at once.
-
----
+The authentik objects are in [authentik-setup.md](authentik-setup.md).
 
 ## Before you start
 
-You will need, on or reachable from the server:
-
-- **authentik**, running and reachable from the backend container over HTTPS.
-  No shared network and no outpost are needed: the backend talks to authentik
-  server to server, as an OAuth2 client.
-- **SWAG**, running. It terminates TLS and proxies; it takes no part in
-  authentication.
-- Both on a network the new containers will share. If they all live in one
-  compose file, that is the project's `default` network and there is nothing to
-  configure. If your proxy is a separate project, declare its network as
-  `external` and attach the frontend and backend to it instead of `default`.
-- A **DNS record** for the site, e.g. `gamereviews.example.com`, pointed at the
-  same place your other subdomains are.
+- **authentik**, reachable from the backend container over HTTPS.
+- **SWAG**, or another reverse proxy terminating TLS for one hostname.
+- Both on a network the new containers will share. In one compose file that is
+  the project's `default` network. If your proxy is a separate project, declare
+  its network `external` and attach the frontend and backend to it instead.
+- A DNS record, e.g. `gamereviews.example.com`.
 - A **RAWG API key** — free at <https://rawg.io/apidocs>.
 - `docker compose` v2.
 
----
+## 1. Publish the images
 
-## Step 1 — publish the images
-
-Merging to `main` publishes both images. Until the deployment branches are
-merged, publish from a branch instead: **Actions → Publish images → Run
-workflow**, and pick the ref. It builds from whatever ref it runs on and moves
-`latest` there, which is the point.
+Merging to `main` publishes both. To publish from another ref:
+**Actions → Publish images → Run workflow**.
 
 Check the run is green and both packages appear under the repository owner's
-**Packages**. New packages are **private** — GitHub's default, and nothing needs
-to change to keep them that way.
+**Packages**. They are private by default.
 
-Because the images carry an `org.opencontainers.image.source` label, each package
-is linked to this repository and inherits its access permissions, which is what
-lets a repository collaborator pull without anyone granting access by hand. If
-you would rather manage that explicitly, the package's settings page has
-*Inherit access from repository*; turn it off and add yourself directly.
+## 2. Let the server pull
 
-## Step 2 — let the server pull
-
-A private package needs credentials. Create a token with **`read:packages`** and
-nothing else — a classic PAT set to no expiry, or a fine-grained one, but
-remember an expiring token means a deployment that silently stops updating
-months from now.
-
-Log in once, so `docker compose up` can pull:
+Create a GitHub token with **`read:packages`** and nothing else, then:
 
 ```bash
 echo "$GHCR_TOKEN" | docker login ghcr.io -u <your-github-username> --password-stdin
+docker pull ghcr.io/franksauve/gamereviews-backend:latest
 ```
 
-Your image updater is a separate process with its own filesystem, so it needs the
-same credentials mounted in. For Watchtower:
+Your image updater is a separate process and needs the same credentials. For
+Watchtower:
 
 ```yaml
   watchtower:
     volumes:
-      - /root/.docker/config.json:/config.json:ro   # wherever docker login wrote it
+      - /root/.docker/config.json:/config.json:ro
 ```
 
-Only the `ghcr.io` entry matters; anonymous pulls from other registries keep
-working. If the file also holds credentials for registries you would rather not
-expose to the updater, write a config containing just the `ghcr.io` auth and
-mount that instead.
-
-Confirm a pull works before going further, because the alternative is debugging
-authentication through three layers of compose:
-
-```bash
-docker pull ghcr.io/franksauve/gamereviews-backend:latest
-```
-
-## Step 3 — set the environment values
-
-Generate the database password:
+## 3. Set the environment values
 
 ```bash
 openssl rand -hex 24   # GAMEREVIEWS_DB_PASSWORD
 ```
 
-The OIDC client credentials are not generated here — they come from the authentik
-provider you create in step 5, so you will come back to finish this file. Add to
-the `.env` next to your compose file:
+In the `.env` next to your compose file:
 
 ```env
 GAMEREVIEWS_DB_PASSWORD=<the 24-byte value>
@@ -150,110 +60,67 @@ GAMEREVIEWS_OIDC_CLIENT_SECRET=<from the provider>
 GAMEREVIEWS_OIDC_REDIRECT_URI=https://gamereviews.example.com/auth/callback
 ```
 
-All four `OIDC_` values are required. The backend refuses to start in production
-without them, on the grounds that a site nobody can sign in to is not a
-successful deployment.
+The four `OIDC_` values come from step 5, so you will come back to this file. All
+four are required; the backend refuses to start in production without them.
 
-The names are prefixed on purpose. A bare `POSTGRES_PASSWORD` in a file shared
-with your other services would collide with the database behind authentik, and
-the failure mode — one of the two stacks quietly authenticating against the wrong
-password — is unpleasant to diagnose.
-
-Nothing here has to be duplicated into the proxy configuration any more. The
-proxy holds no secret and makes no authentication decision.
-
-## Step 4 — add the services
+## 4. Add the services
 
 Copy the three services from [deploy/gamereviews.yml](../deploy/gamereviews.yml)
-into the `services:` block of your compose file, and its `networks:` and
-`volumes:` entries into yours. Do not start them yet — the proxy configuration
-comes first, and starting them early only means a restart.
+into your `services:` block, and its `networks:` and `volumes:` entries into
+yours. Do not start them yet.
 
-The `gamereviews-internal` network is the one part worth understanding rather
-than pasting. With everything on a single shared network, any container on it
-could reach `gamereviews-db:5432` and try the password. Attaching the database to
-its own network and the backend to both is what keeps that unreachable, and it is
-four lines.
+Keep the `gamereviews-internal` network as written: it is what stops any other
+container on the shared network from reaching `gamereviews-db:5432`.
 
-## Step 5 — create the authentik objects
+## 5. Create the authentik objects
 
-Work through [authentik-setup.md](authentik-setup.md), steps 1 to 3:
+Work through [authentik-setup.md](authentik-setup.md), steps 1 to 3, then copy
+the client ID and secret into the `.env` from step 3.
 
-1. An **OAuth2/OpenID provider** with client type **Confidential** and the
-   redirect URI set to `https://gamereviews.example.com/auth/callback`.
-2. An **application** bound to it, plus a group binding controlling who may
-   write. Anyone not bound can still read the site.
-3. An **Authenticator Validation stage** on your authentication flow with
-   *Not configured action* set to **Configure** — that is what makes 2FA
-   mandatory instead of optional.
-
-Copy the client ID and secret into the `.env` from step 3 while you are there.
-
-Step 3 applies instance-wide, so if your other authentik-protected apps already
-enforce 2FA, it is already done.
-
-## Step 6 — install the SWAG configuration
-
-The conf is version-controlled and has nothing to substitute — no secret, and no
-role in authentication. Copy it into place:
+## 6. Install the SWAG configuration
 
 ```bash
 cp deploy/swag/gamereviews.subdomain.conf \
   /path/to/swag/config/nginx/proxy-confs/gamereviews.subdomain.conf
 ```
 
-Do not reload SWAG yet — it would proxy to containers that do not exist.
+Do not reload SWAG yet.
 
-## Step 7 — bring it up
+## 7. Bring it up
 
 ```bash
 docker compose up -d
-```
-
-Compose starts the three new containers and leaves everything else alone. Then
-watch them settle:
-
-```bash
 docker compose ps gamereviews-db gamereviews-backend gamereviews-frontend
 ```
 
-**Checkpoint.** All three must report `healthy`. The first boot is slower than
-later ones because the backend applies the initial migration before it starts
-listening.
-
-If the backend is restarting, read its log before going further:
+All three must report `healthy`. First boot is slower — the backend applies
+migrations before it starts listening. If the backend is restarting:
 
 ```bash
 docker compose logs gamereviews-backend
 ```
 
-Two failures are expected and self-explaining. A complaint about OIDC means one
-of the four `OIDC_*` values is missing from `.env` — the backend refuses to serve
-a site nobody could sign in to. A `P3005` error means the database predates migrations, and the log prints the
-one-off baseline command; see
-[baselining](#baselining-a-database-created-before-migrations-existed).
+A complaint about OIDC means one of the four `OIDC_*` values is missing. A
+`P3005` means the database predates migrations; the log prints the one-off
+baseline command, also given under [Schema changes](#schema-changes).
 
-Now reload SWAG:
+Then reload SWAG:
 
 ```bash
 docker exec swag nginx -s reload
 ```
 
-## Step 8 — verify
+## 8. Verify
 
-Work outside in. Each check isolates a different layer, so the first one that
-fails tells you where the problem is.
-
-**Public reads work without a session.**
+Public reads work without a session:
 
 ```bash
 curl -s https://gamereviews.example.com/graphql \
-  -H 'content-type: application/json' \
-  -d '{"query":"{recentReviewsCount}"}'
+  -H 'content-type: application/json' -d '{"query":"{recentReviewsCount}"}'
 # {"data":{"recentReviewsCount":0}}
 ```
 
-**Writes are refused without one.**
+Writes are refused without one:
 
 ```bash
 curl -s https://gamereviews.example.com/graphql \
@@ -262,8 +129,7 @@ curl -s https://gamereviews.example.com/graphql \
 # UNAUTHENTICATED
 ```
 
-**The old proxy headers are inert.** They used to be identity. Nothing should
-ever make them mean anything again:
+The old proxy headers are inert:
 
 ```bash
 curl -s https://gamereviews.example.com/graphql \
@@ -273,8 +139,7 @@ curl -s https://gamereviews.example.com/graphql \
 # {"data":{"me":null}}
 ```
 
-**A request from another origin is refused.** This is the CSRF boundary that
-matters now that a cookie carries the session:
+Another origin is refused:
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' https://gamereviews.example.com/graphql \
@@ -283,8 +148,8 @@ curl -s -o /dev/null -w '%{http_code}\n' https://gamereviews.example.com/graphql
 # 403
 ```
 
-**Sign-in redirects to authentik.** A 503 means the `OIDC_*` values are missing;
-a 502 means the backend cannot reach the issuer.
+Sign-in redirects to authentik (503 means the `OIDC_*` values are missing; 502
+means the backend cannot reach the issuer):
 
 ```bash
 curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' \
@@ -292,27 +157,18 @@ curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' \
 # 302 https://authentik.example.com/application/o/authorize/?...
 ```
 
-**The database is not reachable from the proxy network.** This is the assertion
-the `gamereviews-internal` network exists to make true:
+The database is unreachable from the proxy network:
 
 ```bash
 docker exec swag getent hosts gamereviews-db
 # no output, exit status 2
 ```
 
-**Then the browser, which is the only thing that exercises the whole login
-flow.** Load the site signed out: reviews should render, with a **Sign in**
-button in the navbar. Click it, complete the authentik flow including the 2FA
-prompt, and confirm you land back on the page you started from with your
-username in the navbar. Search for a game, post a review, leave a comment. Then
-**Sign out** and confirm you are signed out of authentik itself, not merely of
-this app.
-
-If sign-in appears to succeed but the navbar still offers **Sign in**, the
-session cookie is not coming back. The troubleshooting table in
-[authentik-setup.md](authentik-setup.md#troubleshooting) distinguishes the
-causes: a mismatched redirect URI, an unbound user, a site not served over HTTPS,
-or the SPA and API being on different origins.
+Then in a browser: load the site signed out and confirm reviews render with a
+**Sign in** button, complete the authentik flow including the 2FA prompt, post a
+review and a comment, then **Sign out**. If sign-in appears to succeed but the
+navbar still offers **Sign in**, see
+[troubleshooting](authentik-setup.md#troubleshooting).
 
 ---
 
@@ -320,33 +176,19 @@ or the SPA and API being on different origins.
 
 ## Updating
 
-Nothing to do. Renovate opens dependency pull requests, patch and minor bumps and
-security fixes merge themselves once CI is green, a merge to `main` publishes new
-images, and your image updater pulls them on its next pass and recreates the
-containers. The backend applies any new migrations as it starts, so there is no
-follow-up step. If a migration fails the container exits rather than serving
-against a half-migrated schema — check the log and fix forward with a new
+Nothing to do. A merge to `main` publishes new images, your updater pulls them,
+and the backend applies any new migrations as it starts. A failed migration exits
+the container rather than serving a half-migrated schema — fix forward with a new
 migration.
 
-Two things are worth knowing about how that plays out.
+An updater does not honour `depends_on`, so the two app containers are recreated
+in no particular order. Both are stateless.
 
-An updater does not honour `depends_on`, so the backend and frontend are
-recreated independently and in no particular order. Both are stateless and the
-bundle is versioned, so the worst case is a page reload. It does mean the
-ordering in the snippet only applies to `docker compose up`.
-
-And an update lands whenever the poll happens, unattended. Nothing reaches
-`main` without the test suite passing against a real PostgreSQL, which is the
-reason that suite exists, but if you would rather look first, most updaters have
-a monitor-only mode that notifies instead of pulling. Either way, take the
-database dump on a schedule rather than trusting the timing to work out.
-
-Majors are held back for a human: Renovate labels them `needs-review` and does
-not merge them.
+Majors are held back for a human: Renovate labels them `needs-review`.
 
 ## Rolling back
 
-Change `latest` to the immutable tag you want and bring it up:
+Change `latest` to an immutable tag and bring it up:
 
 ```yaml
     image: ghcr.io/franksauve/gamereviews-backend:sha-1a2b3c4
@@ -356,80 +198,51 @@ Change `latest` to the immutable tag you want and bring it up:
 docker compose up -d gamereviews-backend
 ```
 
-A `sha-` tag never moves, so an updater cannot pull it forward — a pinned service
-stays pinned until you unpin it. That is the mechanism, and also the trap: it
-will still be pinned in six months if you forget.
+A `sha-` tag never moves, so an updater cannot pull it forward — it stays pinned
+until you unpin it.
 
-One caveat: rolling back code does not roll back the database. Prisma has no
-`migrate down`. If the update you are undoing touched
-`backend/prisma/schema.prisma`, restore a dump taken before it, or accept that
-the schema stays ahead of the code — which is usually fine for an added column
-and definitely not fine for a removed one.
+Rolling back code does not roll back the database; Prisma has no `migrate down`.
+If the update touched `backend/prisma/schema.prisma`, restore a dump taken before
+it.
 
 ## Schema changes
 
-Migrations live in `backend/prisma/migrations` and are applied in order at
-startup. Nothing infers the schema from the model file at runtime, so a change
-can never silently drop a column that live data still needs.
-
-Author migrations on your machine against a local database, never on the server:
+Author migrations on your machine, never on the server:
 
 ```bash
 cd backend
 npm run db:migrate:new -- --name add_review_spoiler_flag
 ```
 
-Read the generated SQL before committing it. Prisma flags destructive changes,
-but it cannot know that dropping a column loses data you care about. Take a dump
-first for anything that rewrites or removes data.
+Read the generated SQL before committing. Never edit a migration that has already
+been applied anywhere — Prisma records a checksum and will refuse to continue.
 
-Never edit a migration that has already been applied anywhere. Prisma records a
-checksum and will refuse to continue when it changes. Add a new migration.
-
-### Baselining a database created before migrations existed
-
-A database first created by the older `prisma db push` startup has tables but no
-`_prisma_migrations` table, so `migrate deploy` stops with `P3005`. Record the
-initial migration as already applied, once:
+A database first created by the older `prisma db push` startup stops with `P3005`.
+Record the initial migration as applied, once:
 
 ```bash
 docker compose run --rm \
   --entrypoint "npx prisma migrate resolve --applied 0_init" gamereviews-backend
 ```
 
-That writes history only; it touches neither data nor schema. Then start the
-stack normally.
-
 ## Backups
 
-The Postgres volume is the only state this deployment holds. If a file-level
-backup tool already snapshots your docker volumes, it covers the data — but a
-snapshot of a running database's data directory is a crash-consistent copy, not a
-clean one. Postgres recovers from those, usually. A dump is a copy you do not
-have to reason about:
+The Postgres volume is the only state here. Take a dump:
 
 ```bash
 docker exec gamereviews-db pg_dump -U gamereview -d gamereview --clean \
   | gzip > "gamereviews-$(date +%F).sql.gz"
 ```
 
-Write it somewhere your backup tool already collects, and it inherits your
-existing retention and off-site handling.
-
-Restoring:
+Restore:
 
 ```bash
 gunzip -c gamereviews-2026-08-23.sql.gz \
   | docker exec -i gamereviews-db psql -U gamereview -d gamereview
 ```
 
-Restore into a throwaway container at least once. An untested backup is a guess,
-and finding out it was a bad guess is not a thing you want to do on the day you
-need it.
-
-Note what a dump does *not* contain: accounts live in authentik, and the local
-`User` rows only mirror them. Back up authentik separately — restoring this
-database alone gives you reviews attributed to users who can no longer sign in.
+Restore into a throwaway container at least once. Accounts live in authentik and
+the local `User` rows only mirror them, so back up authentik separately.
 
 ## Operational notes
 
@@ -437,8 +250,7 @@ database alone gives you reviews attributed to users who can no longer sign in.
 # Logs
 docker compose logs -f gamereviews-backend
 
-# A shell in the backend. The filesystem is read-only, so you cannot install
-# anything in here.
+# A shell in the backend. The filesystem is read-only.
 docker compose exec gamereviews-backend sh
 
 # psql
@@ -449,62 +261,12 @@ docker compose stop gamereviews-frontend gamereviews-backend gamereviews-db
 ```
 
 `docker compose down -v` deletes every volume in the project, this database
-included. There is rarely a reason to run it on a server that hosts more than one
-thing.
-
-## What the hardening does
-
-Both application containers run with a read-only root filesystem, all Linux
-capabilities dropped, and `no-new-privileges`. The backend runs as uid 1000 and
-the frontend as uid 101; neither has a root process anywhere. Writable `tmpfs`
-mounts are provided only where the software genuinely needs one — `/tmp` for the
-backend, `/tmp` and `/var/cache/nginx` for nginx, which will not start without a
-writable temp directory.
-
-Postgres is the exception. It starts as root to correct ownership of its data
-directory before dropping to the `postgres` user, so it keeps five capabilities
-(`CHOWN`, `DAC_OVERRIDE`, `FOWNER`, `SETGID`, `SETUID`). Dropping all of them
-makes it fail with `failed switching to 'postgres'`.
-
-Each service has a memory cap and 30 MB of rotated logs, so a runaway container
-cannot take the host down or fill the disk.
-
-CI asserts the three properties that are easy to lose by accident: that neither
-image runs as root, that the deployment publishes no ports, and that it builds
-nothing from source. A base image change, a stray `ports:` entry, or a `build:`
-entry creeping back in fails the build.
+included.
 
 ## Postgres major upgrades
 
-`postgres:16-alpine` is pinned to major 16 on purpose. Moving to 17 or later is
-not a container restart — the on-disk format changes and the new image refuses to
-start against an old data directory. When you decide to upgrade: dump, stop the
-three containers, delete the volume, change the tag, start, restore. Renovate is
-configured to hold this major back permanently so an automated update can never
-do it to you at four in the morning.
-
-Note that an image updater has no such restraint of its own. It follows the tag
-it is given, so the pin in the snippet is what protects you — `postgres:16-alpine`
-receives 16.x patches and never a major.
-
----
-
-## Known gaps
-
-Three things in this deployment have never been executed, as opposed to reviewed:
-
-- **The login flow against real authentik.** The authorization code flow is
-  tested end to end against a stub OIDC provider, and the SWAG conf passes
-  `nginx -t`, but no request has ever reached a live authentik instance. Step 8's
-  browser walkthrough is where that gets proven — in particular the 2FA prompt
-  and the `sub` claim your provider actually issues.
-- **The workflows on GitHub.** Both are linted, each CI assertion has been run by
-  hand, and the compose snippet is validated the same way CI validates it — but
-  no image has been pushed yet, and neither workflow has had a real run. The
-  first one may still surface something environmental.
-- **The updater's pull of a private package.** The credential path — token,
-  `docker login`, mounted config — is the most common thing to get wrong here,
-  and step 2 exists to prove it before anything depends on it.
-
-None of these blocks a deployment. All are worth knowing before you conclude that
-a failure must be your configuration.
+`postgres:16-alpine` is pinned on purpose: the on-disk format changes between
+majors and the new image refuses to start against an old data directory. To
+upgrade — dump, stop the three containers, delete the volume, change the tag,
+start, restore. Renovate holds this major back permanently; an image updater does
+not, so the pin in the snippet is what protects you.

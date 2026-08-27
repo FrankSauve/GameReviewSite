@@ -41,12 +41,44 @@ export const typeDefs = `#graphql
     metacritic: Int
   }
 
+  # A review without its body.
+  #
+  # The profile groupings need a user's whole history at once, and User.reviews
+  # cannot supply it: it is bounded at 50 by default and 100 at most, so a backlog
+  # of fifty reviews already truncates. Raising that bound is not the answer — it
+  # exists because the body is what made a 249-byte query return 2.6 MB — so this
+  # is the same rows without the expensive field, which can be bounded far higher.
+  type ReviewSummary {
+    id: ID!
+    rating: Float!
+    yearPlayed: Int
+    hoursPlayed: Float
+    createdAt: String
+    commentCount: Int!
+    game: Game
+  }
+
+  # How to order a list of a user's reviews.
+  #
+  # RECENT is by when the review was written; YEAR_DESC by when the game was
+  # played, which is the axis the by-year grouping reads along.
+  enum ReviewOrder {
+    RECENT
+    RATING_DESC
+    YEAR_DESC
+  }
+
   type Review {
     id: ID!
     userId: ID!
     gameId: ID!
     rating: Float!
     content: String!
+    # The year the game was played or finished, not the year the review was
+    # written. Null only for reviews imported without one.
+    yearPlayed: Int
+    # Hours spent with the game.
+    hoursPlayed: Float
     createdAt: String
     updatedAt: String
     user: User
@@ -94,16 +126,24 @@ export const typeDefs = `#graphql
     releaseYear: Int
   }
 
-  # userId is taken from the auth token — not supplied by the client
+  # userId is taken from the session — not supplied by the client.
+  #
+  # yearPlayed and hoursPlayed are required here while both columns are nullable.
+  # Every review written through the app carries them; the row that predates the
+  # columns, and an importer that genuinely does not know a value, do not have to.
   input CreateReviewInput {
     gameId: ID!
     rating: Float!
     content: String!
+    yearPlayed: Int!
+    hoursPlayed: Float!
   }
 
   input UpdateReviewInput {
     rating: Float
     content: String
+    yearPlayed: Int
+    hoursPlayed: Float
   }
 
   input CreateCommentInput {
@@ -134,6 +174,17 @@ export const typeDefs = `#graphql
     recentReviewsCount: Int!
     reviewsByGame(gameId: ID!, limit: Int, offset: Int): [Review!]!
     reviewsByUser(userId: ID!, limit: Int, offset: Int): [Review!]!
+
+    # A user's reviews without their bodies, for the grouped profile views.
+    # Bounded higher than the body-carrying lists precisely because it carries no
+    # body. Grouping is the client's job: buckets are presentation, and returning
+    # groups of reviews would multiply out against the row budget for no gain.
+    reviewSummariesByUser(
+      userId: ID!
+      order: ReviewOrder
+      limit: Int
+      offset: Int
+    ): [ReviewSummary!]!
 
     comments(reviewId: ID!, limit: Int, offset: Int): [Comment!]!
     comment(id: ID!): Comment

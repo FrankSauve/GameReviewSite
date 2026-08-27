@@ -4,6 +4,12 @@ import { useQuery, useMutation } from "@apollo/client";
 import { GET_REVIEW } from "../graphql/queries";
 import { CREATE_COMMENT, DELETE_COMMENT, DELETE_REVIEW, UPDATE_REVIEW } from "../graphql/mutations";
 import { useAuth } from "../contexts/AuthContext";
+import { formatRating, ratingColor } from "../lib/rating";
+import { REVIEW_CONTENT_MAX } from "../lib/markdown";
+import { currentYear, formatPlaytime, snapHours } from "../lib/playtime";
+import { RatingInput } from "../components/RatingInput";
+import { PlaytimeInput } from "../components/PlaytimeInput";
+import { Markdown } from "../components/Markdown";
 
 interface CommentUser { id: string; username: string; }
 interface ReviewComment { id: string; content: string; createdAt: string; user?: CommentUser | null; }
@@ -13,6 +19,8 @@ interface ReviewGame {
 }
 interface ReviewDetail {
   id: string; rating: number; content: string; createdAt: string;
+  yearPlayed?: number | null;
+  hoursPlayed?: number | null;
   user?: CommentUser | null;
   game?: ReviewGame | null;
   comments?: ReviewComment[];
@@ -28,12 +36,6 @@ function timeAgo(iso: string): string {
   const days = Math.floor(hrs / 24);
   if (days < 30) return `${days}d ago`;
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-}
-
-function ratingColor(r: number) {
-  if (r >= 8) return "text-emerald-400";
-  if (r >= 6) return "text-amber-400";
-  return "text-red-400";
 }
 
 function avatarGradient(username: string): string {
@@ -66,6 +68,8 @@ export function ReviewDetailPage() {
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [editRating, setEditRating] = useState(0);
   const [editContent, setEditContent] = useState("");
+  const [editYear, setEditYear] = useState(currentYear());
+  const [editHours, setEditHours] = useState("");
   const [newComment, setNewComment] = useState("");
 
   if (loading) {
@@ -97,16 +101,33 @@ export function ReviewDetailPage() {
   const game = review.game;
   const isOwner = user?.id === review.user?.id;
   const comments = review.comments ?? [];
+  const playtime = formatPlaytime(review.yearPlayed, review.hoursPlayed);
 
   const startEdit = () => {
     setEditRating(review.rating);
     setEditContent(review.content);
+    setEditYear(review.yearPlayed ?? currentYear());
+    setEditHours(review.hoursPlayed != null ? String(review.hoursPlayed) : "");
     setEditing(true);
   };
 
+  const editHoursNum = Number(editHours);
+  const editHoursValid =
+    editHours.trim() !== "" && Number.isFinite(editHoursNum) && editHoursNum > 0;
+
   const handleSave = async () => {
-    if (!editContent.trim()) return;
-    await updateReview({ variables: { id: review.id, input: { rating: editRating, content: editContent.trim() } } });
+    if (!editContent.trim() || !editHoursValid) return;
+    await updateReview({
+      variables: {
+        id: review.id,
+        input: {
+          rating: editRating,
+          content: editContent.trim(),
+          yearPlayed: editYear,
+          hoursPlayed: snapHours(editHoursNum),
+        },
+      },
+    });
     setEditing(false);
   };
 
@@ -179,7 +200,10 @@ export function ReviewDetailPage() {
               >
                 {review.user?.username ?? "Unknown"}
               </Link>
-              <p className="text-xs text-gray-500">{timeAgo(review.createdAt)}</p>
+              <p className="text-xs text-gray-500">
+                {timeAgo(review.createdAt)}
+                {playtime && <span className="text-gray-600"> · played {playtime}</span>}
+              </p>
             </div>
           </div>
 
@@ -187,7 +211,7 @@ export function ReviewDetailPage() {
           {!editing && (
             <div className="flex items-baseline gap-1 shrink-0">
               <span className={`text-3xl font-black ${ratingColor(review.rating)}`}>
-                {review.rating.toFixed(1)}
+                {formatRating(review.rating)}
               </span>
               <span className="text-sm text-gray-600">/ 10</span>
             </div>
@@ -217,37 +241,31 @@ export function ReviewDetailPage() {
         {/* Edit form */}
         {editing ? (
           <div className="space-y-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs text-gray-400 w-14">Rating</span>
-              <div className="flex items-center gap-1">
-                {[...Array(10)].map((_, i) => {
-                  const val = i + 1;
-                  return (
-                    <button
-                      key={val}
-                      onClick={() => setEditRating(val)}
-                      className={`w-7 h-7 rounded text-xs font-bold transition-colors ${
-                        val <= editRating
-                          ? "bg-amber-500 text-gray-900"
-                          : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                      }`}
-                    >
-                      {val}
-                    </button>
-                  );
-                })}
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-xs text-gray-400 w-14 shrink-0">Rating</span>
+              <div className="flex-1 min-w-[16rem]">
+                <RatingInput value={editRating} onChange={setEditRating} size="sm" />
               </div>
-              <span className={`text-sm font-bold ml-1 ${ratingColor(editRating)}`}>
-                {editRating}/10
-              </span>
             </div>
+
+            <PlaytimeInput
+              year={editYear}
+              hours={editHours}
+              onYearChange={setEditYear}
+              onHoursChange={setEditHours}
+              size="sm"
+            />
             <textarea
               value={editContent}
               onChange={e => setEditContent(e.target.value)}
               rows={6}
+              maxLength={REVIEW_CONTENT_MAX}
               className="input-field w-full resize-none text-sm"
               placeholder="Update your review…"
             />
+            <p className="text-xs text-gray-600">
+              Markdown: **bold**, *italic*, - lists, &gt; quotes
+            </p>
             <div className="flex items-center gap-2 justify-end">
               <button
                 onClick={() => setEditing(false)}
@@ -257,7 +275,7 @@ export function ReviewDetailPage() {
               </button>
               <button
                 onClick={() => void handleSave()}
-                disabled={saving || !editContent.trim()}
+                disabled={saving || !editContent.trim() || !editHoursValid}
                 className="btn-primary text-sm py-1.5 px-3 disabled:opacity-50"
               >
                 {saving ? "Saving…" : "Save"}
@@ -265,7 +283,9 @@ export function ReviewDetailPage() {
             </div>
           </div>
         ) : (
-          <p className="text-gray-200 leading-relaxed">{review.content}</p>
+          <div className="text-gray-200 leading-relaxed">
+            <Markdown>{review.content}</Markdown>
+          </div>
         )}
 
         {/* Owner actions */}
