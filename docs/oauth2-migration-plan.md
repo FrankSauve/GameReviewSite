@@ -1,11 +1,19 @@
 # Migrating from the proxy provider to an OAuth2 provider
 
+> **Status: implemented.** This was the design record written before the work
+> started; it is kept for the reasoning, not as instructions. Configuration is
+> documented in [authentik-setup.md](authentik-setup.md), which is authoritative.
+> Where the two disagree, this file is the stale one.
+>
+> Two things were settled differently once the answers came in: there is no
+> `sub`/`authentikUid` backfill, because the database was still empty, and no
+> refresh token is used, because authentik's provider defaults do not grant
+> `offline_access` — which turned out not to matter, since the app never calls
+> authentik again after login.
+
 This plan replaces authentik's proxy outpost with GameReviews acting as its own
 OAuth2/OIDC client. It is written to be executed as a stack of small PRs, not as
 one change.
-
-Nothing here is started. The questions in the last section block the first
-commit, and some of them can only be answered against your authentik instance.
 
 ## Why bother
 

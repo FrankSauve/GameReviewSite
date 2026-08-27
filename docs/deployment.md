@@ -19,23 +19,22 @@ it already shares with them, by container name, and the database is on a separat
 network nothing else can reach.
 
 ```
-browser ──► SWAG ──┬─► /                → gamereviews-frontend:8080   public
-                   ├─► /graphql         → gamereviews-backend:4000    public, always anonymous
-                   ├─► /graphql-auth    → auth_request to authentik,
-                   │                      then gamereviews-backend:4000 with identity headers
-                   └─► /outpost.goauthentik.io → authentik-server:9000
+browser ──► SWAG ──┬─► /         → gamereviews-frontend:8080
+                   ├─► /graphql  → gamereviews-backend:4000
+                   └─► /auth/*   → gamereviews-backend:4000
 
                        gamereviews-backend ──► gamereviews-db:5432    gamereviews-internal
+                       gamereviews-backend ──► authentik              OIDC, server to server
 ```
 
 Reviews are readable by anyone. Writing requires an authentik session, and the
 app never sees a password — 2FA included, that is entirely authentik's business.
 The only persistent state is the Postgres volume.
 
-Identity arrives in HTTP headers, which is sound only because the backend is
-unreachable except through the proxy. That single fact is why the deployment
-publishes no ports and why the backend refuses to start without a shared secret.
-Keep both properties and the design holds; break either and it does not.
+Identity is established by the app itself, over OIDC, and proven by a signature
+rather than asserted by a header. The deployment still publishes no ports —
+defence in depth, and the database has no business being reachable — but the
+correctness of authentication no longer rests on that being true.
 
 ### Where the images come from
 
@@ -63,11 +62,11 @@ toolchain, the build, and the extra compose file all at once.
 
 You will need, on or reachable from the server:
 
-- **authentik**, running, with its container named `authentik-server`, and an
-  embedded or standalone outpost that is healthy.
-- **SWAG**, running, with `/config/nginx/authentik-server.conf` in place — rename
-  the shipped `.sample` if you have not already. That file provides the
-  `/outpost.goauthentik.io` locations this deployment depends on.
+- **authentik**, running and reachable from the backend container over HTTPS.
+  No shared network and no outpost are needed: the backend talks to authentik
+  server to server, as an OAuth2 client.
+- **SWAG**, running. It terminates TLS and proxies; it takes no part in
+  authentication.
 - Both on a network the new containers will share. If they all live in one
   compose file, that is the project's `default` network and there is nothing to
   configure. If your proxy is a separate project, declare its network as
@@ -132,28 +131,36 @@ docker pull ghcr.io/franksauve/gamereviews-backend:latest
 
 ## Step 3 — set the environment values
 
-Generate the two secrets:
+Generate the database password:
 
 ```bash
 openssl rand -hex 24   # GAMEREVIEWS_DB_PASSWORD
-openssl rand -hex 32   # GAMEREVIEWS_AUTH_PROXY_SECRET
 ```
 
-Add three lines to the `.env` next to your compose file:
+The OIDC client credentials are not generated here — they come from the authentik
+provider you create in step 5, so you will come back to finish this file. Add to
+the `.env` next to your compose file:
 
 ```env
 GAMEREVIEWS_DB_PASSWORD=<the 24-byte value>
 GAMEREVIEWS_RAWG_API_KEY=<your RAWG key>
-GAMEREVIEWS_AUTH_PROXY_SECRET=<the 32-byte value>
+GAMEREVIEWS_OIDC_ISSUER=https://authentik.example.com/application/o/gamereviews/
+GAMEREVIEWS_OIDC_CLIENT_ID=<from the provider>
+GAMEREVIEWS_OIDC_CLIENT_SECRET=<from the provider>
+GAMEREVIEWS_OIDC_REDIRECT_URI=https://gamereviews.example.com/auth/callback
 ```
+
+All four `OIDC_` values are required. The backend refuses to start in production
+without them, on the grounds that a site nobody can sign in to is not a
+successful deployment.
 
 The names are prefixed on purpose. A bare `POSTGRES_PASSWORD` in a file shared
 with your other services would collide with the database behind authentik, and
 the failure mode — one of the two stacks quietly authenticating against the wrong
 password — is unpleasant to diagnose.
 
-Keep `GAMEREVIEWS_AUTH_PROXY_SECRET` to hand; it has to be written into the SWAG
-configuration in step 5, and the two must match exactly.
+Nothing here has to be duplicated into the proxy configuration any more. The
+proxy holds no secret and makes no authentication decision.
 
 ## Step 4 — add the services
 
@@ -170,37 +177,29 @@ four lines.
 
 ## Step 5 — create the authentik objects
 
-Work through [authentik-setup.md](authentik-setup.md), steps 2 to 5:
+Work through [authentik-setup.md](authentik-setup.md), steps 1 to 3:
 
-1. A **proxy provider** in *Forward auth (single application)* mode, with the
-   external host set to the exact URL people will type.
+1. An **OAuth2/OpenID provider** with client type **Confidential** and the
+   redirect URI set to `https://gamereviews.example.com/auth/callback`.
 2. An **application** bound to it, plus a group binding controlling who may
    write. Anyone not bound can still read the site.
-3. The provider **attached to an outpost**, and that outpost healthy.
-4. An **Authenticator Validation stage** on your authentication flow with
+3. An **Authenticator Validation stage** on your authentication flow with
    *Not configured action* set to **Configure** — that is what makes 2FA
    mandatory instead of optional.
 
-Step 4 applies instance-wide, so if your other authentik-protected apps already
+Copy the client ID and secret into the `.env` from step 3 while you are there.
+
+Step 3 applies instance-wide, so if your other authentik-protected apps already
 enforce 2FA, it is already done.
 
 ## Step 6 — install the SWAG configuration
 
-The conf is version-controlled. Substitute the secret as you copy it into place:
+The conf is version-controlled and has nothing to substitute — no secret, and no
+role in authentication. Copy it into place:
 
 ```bash
-sed "s|REPLACE_WITH_AUTH_PROXY_SECRET|$GAMEREVIEWS_AUTH_PROXY_SECRET|" \
-  deploy/swag/gamereviews.subdomain.conf \
-  > /path/to/swag/config/nginx/proxy-confs/gamereviews.subdomain.conf
-```
-
-Confirm the placeholder is gone, because a proxy sending the literal string
-`REPLACE_WITH_AUTH_PROXY_SECRET` fails in a way that looks exactly like "signed
-in but the app disagrees":
-
-```bash
-grep -c REPLACE_WITH /path/to/swag/config/nginx/proxy-confs/gamereviews.subdomain.conf
-# must print 0
+cp deploy/swag/gamereviews.subdomain.conf \
+  /path/to/swag/config/nginx/proxy-confs/gamereviews.subdomain.conf
 ```
 
 Do not reload SWAG yet — it would proxy to containers that do not exist.
@@ -228,10 +227,9 @@ If the backend is restarting, read its log before going further:
 docker compose logs gamereviews-backend
 ```
 
-Two failures are expected and self-explaining. A complaint about
-`AUTH_PROXY_SECRET` means the value is missing from `.env` — the backend refuses
-to run in a configuration where proxy headers would be trusted without proof. A
-`P3005` error means the database predates migrations, and the log prints the
+Two failures are expected and self-explaining. A complaint about OIDC means one
+of the four `OIDC_*` values is missing from `.env` — the backend refuses to serve
+a site nobody could sign in to. A `P3005` error means the database predates migrations, and the log prints the
 one-off baseline command; see
 [baselining](#baselining-a-database-created-before-migrations-existed).
 
@@ -264,9 +262,8 @@ curl -s https://gamereviews.example.com/graphql \
 # UNAUTHENTICATED
 ```
 
-**Forged identity headers get you nothing.** This is the one to care about: if it
-ever returns a user, the header trust boundary is broken and anyone on the
-internet can post as anyone.
+**The old proxy headers are inert.** They used to be identity. Nothing should
+ever make them mean anything again:
 
 ```bash
 curl -s https://gamereviews.example.com/graphql \
@@ -276,15 +273,23 @@ curl -s https://gamereviews.example.com/graphql \
 # {"data":{"me":null}}
 ```
 
-**The authenticated endpoint answers 401, not a redirect.** A 302 here means the
-conf is using SWAG's stock `@goauthentik_proxy_signin` error page, which would
-make the browser fetch an HTML login page and try to parse it as GraphQL.
+**A request from another origin is refused.** This is the CSRF boundary that
+matters now that a cookie carries the session:
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' \
-  -X POST https://gamereviews.example.com/graphql-auth \
-  -H 'content-type: application/json' -d '{"query":"{me{id}}"}'
-# 401
+curl -s -o /dev/null -w '%{http_code}\n' https://gamereviews.example.com/graphql \
+  -H 'content-type: application/json' -H 'Origin: https://evil.example.com' \
+  -d '{"query":"{me{username}}"}'
+# 403
+```
+
+**Sign-in redirects to authentik.** A 503 means the `OIDC_*` values are missing;
+a 502 means the backend cannot reach the issuer.
+
+```bash
+curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' \
+  'https://gamereviews.example.com/auth/login?returnTo=%2F'
+# 302 https://authentik.example.com/application/o/authorize/?...
 ```
 
 **The database is not reachable from the proxy network.** This is the assertion
@@ -295,8 +300,8 @@ docker exec swag getent hosts gamereviews-db
 # no output, exit status 2
 ```
 
-**Then the browser, which is the only thing that exercises the outpost
-handshake.** Load the site signed out: reviews should render, with a **Sign in**
+**Then the browser, which is the only thing that exercises the whole login
+flow.** Load the site signed out: reviews should render, with a **Sign in**
 button in the navbar. Click it, complete the authentik flow including the 2FA
 prompt, and confirm you land back on the page you started from with your
 username in the navbar. Search for a game, post a review, leave a comment. Then
@@ -304,10 +309,10 @@ username in the navbar. Search for a game, post a review, leave a comment. Then
 this app.
 
 If sign-in appears to succeed but the navbar still offers **Sign in**, the
-identity is not reaching the backend. The troubleshooting table in
+session cookie is not coming back. The troubleshooting table in
 [authentik-setup.md](authentik-setup.md#troubleshooting) distinguishes the
-causes: a 401 from the outpost, a mismatched external host, an unbound user, or a
-proxy secret that does not match.
+causes: a mismatched redirect URI, an unbound user, a site not served over HTTPS,
+or the SPA and API being on different origins.
 
 ---
 
@@ -488,10 +493,11 @@ receives 16.x patches and never a major.
 
 Three things in this deployment have never been executed, as opposed to reviewed:
 
-- **The authentik outpost handshake.** Everything on the application side is
-  tested against a real database, and the SWAG conf passes `nginx -t`, but no
-  request has ever traversed a live outpost. Step 8's browser walkthrough is
-  where that gets proven.
+- **The login flow against real authentik.** The authorization code flow is
+  tested end to end against a stub OIDC provider, and the SWAG conf passes
+  `nginx -t`, but no request has ever reached a live authentik instance. Step 8's
+  browser walkthrough is where that gets proven — in particular the 2FA prompt
+  and the `sub` claim your provider actually issues.
 - **The workflows on GitHub.** Both are linted, each CI assertion has been run by
   hand, and the compose snippet is validated the same way CI validates it — but
   no image has been pushed yet, and neither workflow has had a real run. The

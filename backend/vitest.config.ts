@@ -10,7 +10,6 @@ export default defineConfig({
     isolate: true,
     env: {
       NODE_ENV: "test",
-      AUTH_PROXY_SECRET: "test-proxy-secret",
       // Must stay unset: it would make every request authenticate as one user.
       AUTH_DEV_IDENTITY: "",
       // High enough that the functional tests never trip it; the rate limit

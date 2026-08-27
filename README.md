@@ -9,11 +9,11 @@ A full-stack game review platform where users can search for games, write review
 | ORM            | Prisma                          |
 | Database       | PostgreSQL                      |
 | Frontend       | React + Vite + Tailwind CSS     |
-| Auth           | authentik forward auth (2FA)    |
+| Auth           | authentik via OIDC (2FA)        |
 | Game data      | RAWG API                        |
 | Container      | Docker + Docker Compose         |
 | Images         | GHCR, published by CI           |
-| Reverse proxy  | SWAG (nginx) + authentik SSO     |
+| Reverse proxy  | SWAG (nginx)                    |
 
 See [docs/authentik-setup.md](docs/authentik-setup.md) for the authentik and
 reverse proxy setup, including 2FA, and
@@ -51,13 +51,14 @@ Edit `.env` and fill in the required values:
 # Get a free API key at https://rawg.io/apidocs
 RAWG_API_KEY=your-rawg-api-key-here
 
-# There is no authentik outpost in front of the local stack, so this fakes a
+# There is no identity provider in front of the local stack, so this fakes a
 # signed-in user. Ignored whenever NODE_ENV=production.
 AUTH_DEV_IDENTITY=dev-uid:devuser:dev@example.com
 ```
 
 Reviews are readable without signing in. Writing requires an identity, which in
-production comes from authentik and locally comes from `AUTH_DEV_IDENTITY`.
+production comes from an OIDC login against authentik and locally comes from
+`AUTH_DEV_IDENTITY`. Unset it to browse locally as an anonymous visitor.
 
 ### 2. Start the full stack
 
@@ -143,12 +144,13 @@ What the backend suite covers:
 
 | Area | What it pins down |
 | ---- | ----------------- |
-| Identity trust | headers without the proxy secret are ignored; a partial or blank header set means anonymous, never trusted |
-| Endpoint split | the public endpoint never authenticates, even given valid credentials |
+| Session trust | an unknown, tampered, expired, or signed-out session cookie is anonymous, never trusted; the old proxy headers are inert |
+| Sign-in flow | `state` mismatches and callbacks with no transaction are refused; `returnTo` cannot leave the site |
+| CSRF | a request naming another origin is refused, session or not |
 | Authorization | game mutations require a user; `deleteGame` is gone; nobody can edit or delete another user's review or comment |
 | Privacy | email is returned only to its owner |
 | Provisioning | idempotent; follows renames; adopts pre-authentik rows; survives username and email collisions |
-| Query limits | depth and alias limits reject abusive queries on both endpoints |
+| Query limits | depth and alias limits reject abusive queries |
 | Rate limits | general and RAWG-specific buckets return 429 |
 
 ---
