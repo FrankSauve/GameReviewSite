@@ -3,6 +3,7 @@ import { useQuery } from "@apollo/client";
 import { GET_USER_PROFILE } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
 import { formatRating, ratingColor } from "../lib/rating";
+import { excerpt } from "../lib/markdown";
 
 interface ProfileReview {
   id: string;
@@ -161,10 +162,7 @@ export function UserProfilePage() {
           <div className="space-y-3">
             {reviews.map(review => {
               const game = review.game;
-              const EXCERPT = 180;
-              const excerpt = review.content.length > EXCERPT
-                ? review.content.slice(0, EXCERPT).trimEnd() + "…"
-                : review.content;
+              const summary = excerpt(review.content, 180);
 
               return (
                 <Link
@@ -207,7 +205,7 @@ export function UserProfilePage() {
                         <span className="text-xs text-gray-600">/ 10</span>
                       </div>
 
-                      <p className="text-xs text-gray-400 leading-relaxed flex-1">{excerpt}</p>
+                      <p className="text-xs text-gray-400 leading-relaxed flex-1">{summary}</p>
 
                       <div className="flex items-center gap-3 pt-1 border-t border-gray-800/60">
                         <span className="text-xs text-gray-600">{timeAgo(review.createdAt)}</span>

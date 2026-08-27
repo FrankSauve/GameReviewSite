@@ -21,7 +21,26 @@ interface UpdateReviewInput {
   content?: string;
 }
 
-function validateString(value: string, field: string, maxLength = 5000): string {
+/**
+ * Reviews are Markdown, and a decade of backlog includes long ones, so the body
+ * limit is generous. Comments and game fields are unaffected — each resolver has
+ * its own `validateString` with its own default (2000 and 500 respectively).
+ *
+ * This does widen the worst-case response, and it is worth being precise about how
+ * much. The guards in lib/budget.ts and lib/maxRows.ts count rows, not bytes: the
+ * budget is 3000 rows, so the ceiling on a single response goes from roughly
+ * 3000 x 5000 to 3000 x 20000. Reaching it needs that many long reviews to
+ * genuinely exist, so it is a ceiling rather than an amplification — a small query
+ * still cannot conjure a large response out of a nearly empty database.
+ *
+ * The lists that grew fastest are the ones that do not need a body at all: cards
+ * show a 180- to 220-character excerpt and fetch the whole thing to do it. A
+ * byte-aware budget, or a server-side excerpt field, is the fix. Neither belongs
+ * in the commit that turns Markdown on.
+ */
+export const REVIEW_CONTENT_MAX = 20000;
+
+function validateString(value: string, field: string, maxLength = REVIEW_CONTENT_MAX): string {
   const trimmed = value.trim();
   if (!trimmed) throw new GraphQLError(`${field} must not be empty.`);
   if (trimmed.length > maxLength)
@@ -173,6 +192,14 @@ export const reviewResolvers = {
   },
 
   Review: {
+    /**
+     * Charges the request's text budget. Every path that returns a review body —
+     * the four root queries, plus `User.reviews` and `Game.reviews` — resolves it
+     * through here, so one interception covers all of them.
+     */
+    content: (parent: Review, _args: unknown, { budget }: Context) =>
+      budget.chargeText(parent.content),
+
     user: async (parent: Review, _args: unknown, { loaders }: Context) => {
       const user = await loaders.userById.load(parent.userId);
       return user ? serializeDates(user) : null;

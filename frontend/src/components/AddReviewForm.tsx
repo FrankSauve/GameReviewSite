@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useMutation } from "@apollo/client";
 import { CREATE_REVIEW } from "../graphql/mutations";
 import { GET_GAME } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
+import { REVIEW_CONTENT_MAX } from "../lib/markdown";
 import { RatingInput } from "./RatingInput";
+import { Markdown } from "./Markdown";
 
 interface AddReviewFormProps {
   gameId: string;
@@ -14,14 +16,17 @@ const DEFAULT_RATING = 8;
 
 export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
   const { user, signIn } = useAuth();
+  const bodyId = useId();
   const [content, setContent] = useState("");
   const [rating, setRating] = useState<number>(DEFAULT_RATING);
+  const [previewing, setPreviewing] = useState(false);
 
   const [createReview, { loading, error }] = useMutation(CREATE_REVIEW, {
     refetchQueries: [{ query: GET_GAME, variables: { id: gameId } }],
     onCompleted: () => {
       setContent("");
       setRating(DEFAULT_RATING);
+      setPreviewing(false);
       onSuccess?.();
     },
   });
@@ -58,19 +63,45 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-400 mb-1.5">
-          Your Review
-        </label>
-        <textarea
-          className="input-field resize-none"
-          rows={4}
-          placeholder="Share your thoughts on this game..."
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          maxLength={5000}
-          required
-        />
-        <p className="text-xs text-gray-600 mt-1 text-right">{content.length}/5000</p>
+        <div className="flex items-baseline justify-between mb-1.5">
+          <label htmlFor={bodyId} className="block text-sm font-medium text-gray-400">
+            Your Review
+          </label>
+          <button
+            type="button"
+            onClick={() => setPreviewing((p) => !p)}
+            disabled={!content.trim()}
+            className="text-xs text-violet-400 hover:text-violet-300 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
+          >
+            {previewing ? "Write" : "Preview"}
+          </button>
+        </div>
+
+        {previewing ? (
+          <div className="input-field min-h-[6.5rem] text-sm text-gray-300 leading-relaxed overflow-y-auto">
+            <Markdown>{content}</Markdown>
+          </div>
+        ) : (
+          <textarea
+            id={bodyId}
+            className="input-field resize-none"
+            rows={6}
+            placeholder="Share your thoughts on this game..."
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            maxLength={REVIEW_CONTENT_MAX}
+            required
+          />
+        )}
+
+        <div className="flex items-baseline justify-between mt-1">
+          <p className="text-xs text-gray-600">
+            Markdown: **bold**, *italic*, - lists, &gt; quotes
+          </p>
+          <p className="text-xs text-gray-600">
+            {content.length}/{REVIEW_CONTENT_MAX}
+          </p>
+        </div>
       </div>
 
       {error && (

@@ -6,7 +6,9 @@ import { UPDATE_REVIEW, DELETE_REVIEW } from "../graphql/mutations";
 import { GET_GAME } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
 import { formatRating, ratingColor } from "../lib/rating";
+import { REVIEW_CONTENT_MAX } from "../lib/markdown";
 import { RatingInput } from "./RatingInput";
+import { Markdown } from "./Markdown";
 
 interface ReviewCardProps {
   review: Review;
@@ -141,10 +143,14 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
           <textarea
             value={editContent}
             onChange={(e) => setEditContent(e.target.value)}
-            rows={4}
+            rows={6}
+            maxLength={REVIEW_CONTENT_MAX}
             className="input-field w-full resize-none text-sm"
             placeholder="Update your review…"
           />
+          <p className="text-xs text-gray-600 -mt-1">
+            Markdown: **bold**, *italic*, - lists, &gt; quotes
+          </p>
 
           {/* Actions */}
           <div className="flex items-center gap-2 justify-end">
@@ -164,7 +170,9 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
           </div>
         </div>
       ) : (
-        <p className="text-gray-300 text-sm leading-relaxed">{review.content}</p>
+        <div className="text-gray-300 text-sm leading-relaxed">
+          <Markdown>{review.content}</Markdown>
+        </div>
       )}
 
       {/* Comment count */}

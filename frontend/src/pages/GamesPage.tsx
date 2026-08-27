@@ -6,6 +6,7 @@ import { CREATE_COMMENT } from "../graphql/mutations";
 import { useAuth } from "../contexts/AuthContext";
 import type { Review, Game } from "../types";
 import { formatRating, ratingColor } from "../lib/rating";
+import { excerpt } from "../lib/markdown";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -70,10 +71,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
     createComment({ variables: { input: { reviewId: review.id, content: trimmed } } });
   };
 
-  const EXCERPT_LEN = 220;
-  const excerpt = review.content.length > EXCERPT_LEN
-    ? review.content.slice(0, EXCERPT_LEN).trimEnd() + "…"
-    : review.content;
+  const summary = excerpt(review.content, 220);
 
   return (
     <article className="card overflow-hidden flex flex-col hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
@@ -124,7 +122,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
 
           {/* Excerpt */}
           <p className="text-sm text-gray-400 leading-relaxed flex-1">
-            {excerpt}
+            {summary}
           </p>
 
           {/* Footer: reviewer + time */}
