@@ -24,9 +24,9 @@ import { isProduction } from "../security";
 
 export const SESSION_COOKIE = "gr_session";
 
-/** 7 days. Long enough not to be re-prompted for 2FA daily, short enough that
- *  a revoked account cannot linger indefinitely. */
-const DEFAULT_TTL_HOURS = 168;
+/** 30 days, matching the session duration configured in authentik, so the two
+ *  do not expire at visibly different times. */
+const DEFAULT_TTL_HOURS = 720;
 
 export function sessionTtlMs(): number {
   const parsed = parseInt(process.env["SESSION_TTL_HOURS"] ?? "", 10);
