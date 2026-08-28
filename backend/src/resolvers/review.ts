@@ -77,15 +77,6 @@ function validateRating(rating: number): number {
   return num;
 }
 
-/**
- * The year the game was played.
- *
- * The floor is 1970 rather than something tighter: the point of the field is a
- * backlog stretching back years, and a wrong-by-a-decade floor would refuse a
- * legitimate entry. The ceiling is next year, because someone finishing a game in
- * late December writing it up in January is ordinary, and anything beyond that is
- * a typo — usually a mistyped four-digit year.
- */
 export const YEAR_PLAYED_MIN = 1970;
 
 function validateYearPlayed(year: number): number {
@@ -100,15 +91,8 @@ function validateYearPlayed(year: number): number {
 
 /**
  * Hours spent with the game, to one decimal.
- *
- * Hours rather than minutes because that is how people talk about it, and a Float
- * because `rating` already is. One decimal rather than half-hour steps: "12.5
- * hours" is the common case but a 1.25-hour game exists, and refusing it to keep
- * the granularity tidy would be pedantry. Rounded rather than refused, unlike
- * `rating`, because there is no canonical scale here for an off-step value to
- * contradict — 3.14159 hours is a real measurement, just over-reported.
  */
-export const HOURS_PLAYED_MAX = 10000;
+export const HOURS_PLAYED_MAX = 30000;
 
 function validateHoursPlayed(hours: number): number {
   const num = Number(hours);
