@@ -5,13 +5,6 @@ interface PlaytimeInputProps {
   year: number;
   hours: string;
   onYearChange: (year: number) => void;
-  /**
-   * Hours is held as a string, not a number.
-   *
-   * A number would have to represent the empty field and the half-typed "1." as
-   * something, and every candidate is wrong: 0 is a value the API refuses, and NaN
-   * makes the field fight the person typing in it. The parse happens on submit.
-   */
   onHoursChange: (hours: string) => void;
   size?: "sm" | "md";
 }
@@ -54,13 +47,16 @@ export function PlaytimeInput({
         </label>
         <input
           id={hoursId}
-          type="number"
+          type="text"
           inputMode="decimal"
-          min={0.1}
-          max={HOURS_PLAYED_MAX}
-          step={0.5}
           value={hours}
-          onChange={(e) => onHoursChange(e.target.value)}
+          onChange={(e) => {
+            const val = e.target.value;
+            // allow empty, digits, and up to one decimal point with up to 2 decimals
+            if (/^\d*\.?\d{0,2}$/.test(val)) {
+              onHoursChange(val);
+            }
+          }}
           placeholder="e.g. 42"
           className="input-field w-full"
           required
