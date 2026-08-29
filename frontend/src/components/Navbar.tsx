@@ -41,6 +41,12 @@ export function Navbar() {
         >
           Reviewers
         </Link>
+        <Link
+          to="/texts"
+          className={navLink(location.pathname === "/texts")}
+        >
+          Texts
+        </Link>
 
         {/* Search bar (fills available space) */}
         <GameSearchBar />

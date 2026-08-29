@@ -97,3 +97,33 @@ export const DELETE_COMMENT = gql`
     deleteComment(id: $id)
   }
 `;
+
+export const CREATE_ARTICLE = gql`
+  mutation CreateArticle($input: CreateArticleInput!) {
+    createArticle(input: $input) {
+      id
+      slug
+      title
+      content
+      publishedAt
+    }
+  }
+`;
+
+export const UPDATE_ARTICLE = gql`
+  mutation UpdateArticle($id: ID!, $input: UpdateArticleInput!) {
+    updateArticle(id: $id, input: $input) {
+      id
+      slug
+      title
+      content
+      publishedAt
+    }
+  }
+`;
+
+export const DELETE_ARTICLE = gql`
+  mutation DeleteArticle($id: ID!) {
+    deleteArticle(id: $id)
+  }
+`;

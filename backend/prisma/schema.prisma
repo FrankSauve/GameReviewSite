@@ -27,6 +27,7 @@ model User {
   comments  Comment[]
   addedGames Game[]   @relation("GameCreator")
   sessions  Session[]
+  articles  Article[]
 }
 
 /// A signed-in browser.
@@ -84,6 +85,32 @@ model Review {
   comments  Comment[]
 
   @@index([userId, yearPlayed])
+}
+
+/// A manifesto, an essay, a changelog note — anything that is not a review.
+///
+/// Called an Article here and reached at /texts in the app: "text" is what the
+/// people writing them call these, and is also a word Postgres and every ORM
+/// already use for something else.
+model Article {
+  id          String    @id @default(uuid())
+  /// Derived from the title at insert and never regenerated, like every other
+  /// slug here. See lib/slug.ts.
+  slug        String    @unique
+  title       String
+  content     String
+  /// Null means a draft: visible to its author, to nobody else, and absent from
+  /// the index. A boolean would answer "is it public" without answering "since
+  /// when", and the index is ordered by publication rather than by creation.
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  /// The index reads along this: published texts, newest first.
+  @@index([publishedAt])
+  @@index([authorId])
 }
 
 model Comment {

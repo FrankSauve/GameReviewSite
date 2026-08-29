@@ -64,3 +64,19 @@ export interface CurrentUser {
   slug?: string | null;
   username: string;
 }
+
+/**
+ * A manifesto, an essay — anything that is not a review. Called an Article by
+ * the API and reached at /texts here; see backend/src/resolvers/article.ts.
+ */
+export interface Article {
+  id: string;
+  slug?: string | null;
+  title: string;
+  content: string;
+  /** Null while it is a draft, and a draft is only ever returned to its author. */
+  publishedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  author?: User | null;
+}

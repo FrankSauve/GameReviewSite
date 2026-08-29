@@ -230,3 +230,44 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
     }
   }
 `;
+
+/**
+ * The texts index, plus the total the paging controls need.
+ *
+ * No `content`: the index shows an excerpt, and a page of twenty full
+ * manifestos is the shape the server's text budget exists to refuse.
+ */
+export const GET_ARTICLES = gql`
+  query GetArticles($limit: Int, $offset: Int) {
+    articles(limit: $limit, offset: $offset) {
+      id
+      slug
+      title
+      publishedAt
+      createdAt
+      author {
+        id
+        username
+      }
+    }
+    articlesCount
+  }
+`;
+
+export const GET_ARTICLE = gql`
+  query GetArticle($id: ID!) {
+    article(id: $id) {
+      id
+      slug
+      title
+      content
+      publishedAt
+      createdAt
+      updatedAt
+      author {
+        id
+        username
+      }
+    }
+  }
+`;

@@ -109,6 +109,22 @@ export const typeDefs = `#graphql
     commentCount: Int!
   }
 
+  # A manifesto, an essay, anything that is not a review. Reached at /texts in
+  # the app; see resolvers/article.ts for why it is not a Review with no game.
+  type Article {
+    id: ID!
+    # Readable identifier, e.g. "our-manifesto". Fixed at insert.
+    slug: String!
+    title: String!
+    content: String!
+    # Null while it is a draft. A draft is returned only to its author, and never
+    # appears in the index for anybody else.
+    publishedAt: String
+    createdAt: String
+    updatedAt: String
+    author: User
+  }
+
   type Comment {
     id: ID!
     userId: ID!
@@ -166,6 +182,21 @@ export const typeDefs = `#graphql
     content: String
     yearPlayed: Int
     hoursPlayed: Float
+  }
+
+  # authorId is taken from the session — not supplied by the client.
+  input CreateArticleInput {
+    title: String!
+    content: String!
+    # Defaults to true: writing something and then wondering why nobody can see
+    # it is the worse default.
+    published: Boolean
+  }
+
+  input UpdateArticleInput {
+    title: String
+    content: String
+    published: Boolean
   }
 
   input CreateCommentInput {
@@ -228,6 +259,13 @@ export const typeDefs = `#graphql
 
     comments(reviewId: ID!, limit: Int, offset: Int): [Comment!]!
     comment(id: ID!): Comment
+
+    # Published texts, newest publication first, plus your own drafts when you
+    # are signed in. The count matches the same visibility, so paging controls
+    # never render a page that is always empty.
+    articles(limit: Int, offset: Int): [Article!]!
+    articlesCount: Int!
+    article(id: ID!): Article
   }
 
   # ── Mutations ────────────────────────────────────────────────────────────────
@@ -242,6 +280,10 @@ export const typeDefs = `#graphql
     createReview(input: CreateReviewInput!): Review!
     updateReview(id: ID!, input: UpdateReviewInput!): Review!
     deleteReview(id: ID!): Boolean!
+
+    createArticle(input: CreateArticleInput!): Article!
+    updateArticle(id: ID!, input: UpdateArticleInput!): Article!
+    deleteArticle(id: ID!): Boolean!
 
     createComment(input: CreateCommentInput!): Comment!
     updateComment(id: ID!, input: UpdateCommentInput!): Comment!
