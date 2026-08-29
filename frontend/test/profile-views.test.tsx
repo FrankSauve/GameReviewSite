@@ -43,7 +43,7 @@ const summary = (
     title,
     coverUrl: null,
     releaseYear: 2015,
-    genre: "RPG",
+    genres: ["RPG"],
   },
 });
 

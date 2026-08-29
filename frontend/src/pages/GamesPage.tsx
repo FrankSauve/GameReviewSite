@@ -9,6 +9,7 @@ import { formatRating, ratingColor } from "../lib/rating";
 import { excerpt } from "../lib/markdown";
 import { formatPlaytime } from "../lib/playtime";
 import { gamePath, reviewPath, userPath } from "../lib/links";
+import { Pagination } from "../components/Pagination";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -281,8 +282,10 @@ function ReviewFeedSkeleton() {
 
 const PAGE_SIZE = 10;
 
+/** How many covers the home page strip shows. The rest are at /games. */
+const STRIP_SIZE = 12;
+
 export function GamesPage() {
-  const [showAllGames, setShowAllGames] = useState(false);
   const [page, setPage] = useState(0);
 
   const { data: reviewsData, loading: reviewsLoading } = useQuery<{ recentReviews: Review[]; recentReviewsCount: number }>(
@@ -290,13 +293,25 @@ export function GamesPage() {
     { variables: { limit: PAGE_SIZE, offset: page * PAGE_SIZE }, fetchPolicy: "network-only" }
   );
 
-  const { data: gamesData, loading: gamesLoading } = useQuery<{ games: Game[] }>(GET_GAMES);
+  /**
+   * Twelve, asked for as twelve.
+   *
+   * This used to fetch the whole catalogue and slice it here — and filter it
+   * here too, so the twelve shown were the first twelve reviewed games out of
+   * however many the server had sent. Both jobs are the server's now, which is
+   * what makes the home page cost the same whether the library holds thirty
+   * games or three thousand.
+   */
+  const { data: gamesData, loading: gamesLoading } = useQuery<{ games: Game[]; gamesCount: number }>(
+    GET_GAMES,
+    { variables: { limit: STRIP_SIZE, reviewedOnly: true } }
+  );
 
   const reviews = reviewsData?.recentReviews ?? [];
   const totalReviews = reviewsData?.recentReviewsCount ?? 0;
   const totalPages = Math.ceil(totalReviews / PAGE_SIZE);
-  const games = (gamesData?.games ?? []).filter(g => (g.reviewCount ?? 0) > 0);
-  const visibleGames = showAllGames ? games : games.slice(0, 12);
+  const games = gamesData?.games ?? [];
+  const totalGames = gamesData?.gamesCount ?? 0;
 
   return (
     <div className="space-y-10">
@@ -333,41 +348,12 @@ export function GamesPage() {
               ))}
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 pt-4">
-                <button
-                  onClick={() => setPage(p => p - 1)}
-                  disabled={page === 0}
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  ← Prev
-                </button>
-
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }).map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setPage(i)}
-                      className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                        i === page
-                          ? "bg-violet-600 text-white"
-                          : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={page >= totalPages - 1}
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  Next →
-                </button>
-              </div>
-            )}
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onChange={setPage}
+              label="Recent review pages"
+            />
           </>
         )}
       </section>
@@ -380,8 +366,8 @@ export function GamesPage() {
               <span className="w-1 h-5 bg-violet-500 rounded-full inline-block" />
               Games Library
             </h2>
-            {games.length > 0 && (
-              <span className="text-xs text-gray-600">{games.length} {games.length === 1 ? "game" : "games"}</span>
+            {totalGames > 0 && (
+              <span className="text-xs text-gray-600">{totalGames} {totalGames === 1 ? "game" : "games"}</span>
             )}
           </div>
 
@@ -402,19 +388,18 @@ export function GamesPage() {
           {!gamesLoading && (
             <>
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                {visibleGames.map((game) => (
+                {games.map((game) => (
                   <GameStrip key={game.id} game={game} />
                 ))}
               </div>
 
-              {games.length > 12 && (
-                <button
-                  onClick={() => setShowAllGames((v) => !v)}
-                  className="mt-4 text-sm text-violet-400 hover:text-violet-300 transition-colors"
-                >
-                  {showAllGames ? "Show less" : `Show all ${games.length} games`}
-                </button>
-              )}
+              {/* Where "Show all N games" used to expand the strip in place. */}
+              <Link
+                to="/games"
+                className="inline-block mt-4 text-sm text-violet-400 hover:text-violet-300 transition-colors"
+              >
+                Browse the full library →
+              </Link>
             </>
           )}
         </section>

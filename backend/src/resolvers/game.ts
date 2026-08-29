@@ -121,17 +121,49 @@ function validateRawgId(value: string): string {
   return trimmed;
 }
 
+interface GamesArgs extends PageArgs {
+  reviewedOnly?: boolean | null;
+}
+
+/**
+ * The catalogue filter, shared by the listing and its count.
+ *
+ * Both have to read the same way or the paging controls describe a different
+ * set from the one being paged: a count of every game against pages holding
+ * only the reviewed ones renders trailing pages that are permanently empty.
+ */
+function gamesWhere(reviewedOnly?: boolean | null) {
+  return reviewedOnly ? { reviews: { some: {} } } : {};
+}
+
 export const gameResolvers = {
   Query: {
-    games: async (_parent: unknown, args: PageArgs, { budget }: Context) => {
+    games: async (
+      _parent: unknown,
+      { reviewedOnly, ...args }: GamesArgs,
+      { budget }: Context
+    ) => {
       const { take, skip } = clampWindow(args, LIST_BOUNDS.games);
       const games = await prisma.game.findMany({
-        orderBy: { createdAt: "desc" },
+        where: gamesWhere(reviewedOnly),
+        /**
+         * The id breaks ties, and it is not decoration.
+         *
+         * A backlog imported in one go gives dozens of rows the same
+         * `createdAt` to the millisecond, and Postgres is free to order equal
+         * keys differently between two queries. Under an unpaginated listing
+         * that was invisible; under paging it means a game can appear on page
+         * two and again on page three while another is never shown at all.
+         */
+        orderBy: [{ createdAt: "desc" }, { id: "asc" }],
         take,
         skip,
       });
       return budget.charge(games).map(serializeDates);
     },
+
+    gamesCount: async (_parent: unknown, { reviewedOnly }: GamesArgs) =>
+      prisma.game.count({ where: gamesWhere(reviewedOnly) }),
 
     game: async (_parent: unknown, { id }: { id: string }) => {
       const game = await prisma.game.findFirst({ where: byIdOrSlug(id) });

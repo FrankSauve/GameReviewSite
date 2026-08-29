@@ -170,7 +170,13 @@ export const typeDefs = `#graphql
     users(limit: Int, offset: Int): [User!]!
     user(id: ID!): User
 
-    games(limit: Int, offset: Int): [Game!]!
+    # "reviewedOnly" narrows the catalogue to games somebody has actually
+    # reviewed. It is a server-side filter rather than a client-side one on
+    # purpose: filtering after paging drops rows out of an already-short page,
+    # so the page you get is neither the size you asked for nor complete.
+    games(limit: Int, offset: Int, reviewedOnly: Boolean): [Game!]!
+    # Total matching the same filter, for paging controls.
+    gamesCount(reviewedOnly: Boolean): Int!
     game(id: ID!): Game
     searchGamesExternal(query: String!): [ExternalGame!]!
 

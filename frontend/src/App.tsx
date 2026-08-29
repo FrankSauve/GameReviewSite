@@ -4,6 +4,7 @@ import { client } from "./apollo";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Navbar } from "./components/Navbar";
 import { GamesPage } from "./pages/GamesPage";
+import { GameLibraryPage } from "./pages/GameLibraryPage";
 import { GameDetailPage } from "./pages/GameDetailPage";
 import { UserProfilePage } from "./pages/UserProfilePage";
 import { ReviewDetailPage } from "./pages/ReviewDetailPage";
@@ -19,6 +20,7 @@ function App() {
             <main className="max-w-6xl mx-auto px-4 py-8">
               <Routes>
                 <Route path="/" element={<GamesPage />} />
+                <Route path="/games" element={<GameLibraryPage />} />
                 <Route path="/games/:id" element={<GameDetailPage />} />
                 {/* By year is the default view: a profile reads as a playing
                     history rather than a posting log. */}

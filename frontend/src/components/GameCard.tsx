@@ -38,7 +38,12 @@ function titleGradient(title: string): string {
 }
 
 export function GameCard({ game }: GameCardProps) {
-  const reviewCount = game.reviews?.length ?? 0;
+  /**
+   * The aggregate, not the length of the list. Counting `game.reviews` meant a
+   * grid of cards had to fetch every review body it was going to display a
+   * number for, which is the one thing a listing must not do.
+   */
+  const reviewCount = game.reviewCount ?? 0;
 
   return (
     <Link to={gamePath(game)} className="group block">

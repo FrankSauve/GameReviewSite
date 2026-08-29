@@ -4,6 +4,17 @@ import { useAuth } from "../contexts/AuthContext";
 import { GameSearchBar } from "./GameSearchBar";
 import { userPath } from "../lib/links";
 
+/**
+ * Matched on the exact path, so /games/elden-ring does not light up the library
+ * link — the game detail page is somewhere else, and highlighting a section the
+ * reader is not in is worse than highlighting nothing.
+ */
+function navLink(active: boolean): string {
+  return `text-sm font-medium shrink-0 transition-colors ${
+    active ? "text-violet-300" : "text-gray-400 hover:text-gray-100"
+  }`;
+}
+
 export function Navbar() {
   const location = useLocation();
   const apollo = useApolloClient();
@@ -23,8 +34,14 @@ export function Navbar() {
 
         {/* Nav links */}
         <Link
+          to="/games"
+          className={navLink(location.pathname === "/games")}
+        >
+          Games
+        </Link>
+        <Link
           to="/reviewers"
-          className={`text-sm font-medium shrink-0 transition-colors ${location.pathname === "/reviewers" ? "text-violet-300" : "text-gray-400 hover:text-gray-100"}`}
+          className={navLink(location.pathname === "/reviewers")}
         >
           Reviewers
         </Link>

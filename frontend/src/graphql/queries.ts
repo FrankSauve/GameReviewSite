@@ -1,8 +1,15 @@
 import { gql } from "@apollo/client";
 
+/**
+ * A page of the catalogue, plus the total the paging controls need.
+ *
+ * `reviewedOnly` is passed to both fields, not just the listing — a count of the
+ * whole catalogue against pages of only the reviewed games would render trailing
+ * pages that are always empty.
+ */
 export const GET_GAMES = gql`
-  query GetGames {
-    games {
+  query GetGames($limit: Int, $offset: Int, $reviewedOnly: Boolean) {
+    games(limit: $limit, offset: $offset, reviewedOnly: $reviewedOnly) {
       id
       slug
       title
@@ -13,6 +20,7 @@ export const GET_GAMES = gql`
       averageRating
       reviewCount
     }
+    gamesCount(reviewedOnly: $reviewedOnly)
   }
 `;
 
