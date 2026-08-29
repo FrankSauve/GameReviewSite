@@ -1,25 +1,11 @@
 /**
  * Discord-style spoilers: `||hidden text||`.
  *
- * A remark plugin rather than a pass over the rendered output, because the
- * markers have to be understood at the same time as the rest of the Markdown.
- * Doing it afterwards would hide `||` inside a code block, and doing it before
- * parsing would mean writing a second Markdown parser to know where code blocks
- * are.
- *
- * Spoilers may contain formatting: `||the **twist**||` hides an emphasised word,
- * not the literal asterisks. That is why this works over a parent's whole child
- * list rather than one text node at a time — by the time this runs, `**twist**`
- * is already its own node, so the opening and closing markers sit in two
- * different text nodes with a `strong` between them.
- *
- * Inline code is safe for free. Its content lives on an `inlineCode` node's
- * `value` rather than in a `text` child, so a `||` typed inside backticks is
- * never a marker — while a spoiler wrapped *around* some inline code still
- * hides it, which is the behaviour people expect.
- *
- * No dependency on `unist-util-visit`: it is not a declared dependency of this
- * package, only a transitive one, and the walk this needs is a dozen lines.
+ * A remark plugin rather than a pass over the rendered output, so the markers
+ * are understood alongside the rest of the Markdown: `||` inside code is never a
+ * marker, and `||the **twist**||` hides an emphasised word rather than showing
+ * its asterisks. That is why it works over a parent's whole child list rather
+ * than one text node at a time.
  */
 
 const MARKER = "||";

@@ -4,14 +4,8 @@ import { useState, type KeyboardEvent, type ReactNode } from "react";
  * A click-to-reveal spoiler, as produced by `||…||`.
  *
  * A `span` with `role="button"` rather than a real `<button>`, because a spoiler
- * may contain a link and a `<button>` wrapping an `<a>` is invalid HTML that
- * browsers recover from inconsistently. The keyboard handling a button would
- * have given for free is therefore written out: Enter and Space, and a tab stop.
- *
- * While hidden the text is `aria-hidden`, so a screen reader announces the
- * control rather than reading out the thing being hidden — a spoiler that is
- * only visually covered is not a spoiler for everyone. Revealing clears the
- * attribute along with the covering.
+ * may contain a link and a `<button>` wrapping an `<a>` is invalid HTML. The
+ * keyboard handling a button would have given for free is written out instead.
  */
 export function Spoiler({ children }: { children: ReactNode }) {
   const [revealed, setRevealed] = useState(false);

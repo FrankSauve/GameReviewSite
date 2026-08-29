@@ -19,24 +19,21 @@ export const REVIEW_CONTENT_MAX = 20000;
  * first.
  */
 export function toPlainText(markdown: string): string {
+  // Code is set aside before the spoiler pass so that a `||` typed inside it
+  // cannot pair with a real marker, as it cannot in the renderer.
+  const code: string[] = [];
+  const stash = (body: string) => `\u0000${code.push(body) - 1}\u0000`;
+
   return (
     markdown
-      /**
-       * Spoilers are redacted, not unwrapped.
-       *
-       * This function feeds the card excerpts on the home feed and the profile
-       * views, which is exactly where a spoiler must not appear: hiding the
-       * twist behind a click on the review page achieves nothing if the card
-       * linking to it prints the twist underneath. Stripping the markers the way
-       * the emphasis rules below do would have done precisely that.
-       *
-       * Runs first, so the marker pair is still intact — the emphasis rules
-       * would otherwise have already rewritten what is inside it.
-       */
-      .replace(/\|\|[\s\S]+?\|\|/g, "[spoiler]")
       // Fenced code blocks: keep the code, drop the fences.
-      .replace(/```[^\n]*\n?([\s\S]*?)```/g, "$1")
-      .replace(/`([^`]+)`/g, "$1")
+      .replace(/```[^\n]*\n?([\s\S]*?)```/g, (_m, body: string) => stash(body))
+      .replace(/`([^`]+)`/g, (_m, body: string) => stash(body))
+      // Spoilers are redacted, not unwrapped: an excerpt is the one place the
+      // hidden text must not appear. Confined to a single block, because the
+      // renderer never pairs markers across a blank line either.
+      .replace(/\|\|(?:(?!\n[ \t]*\n)[\s\S])+?\|\|/g, "[spoiler]")
+      .replace(/\u0000(\d+)\u0000/g, (_m, i: string) => code[Number(i)])
       // Links and any images that predate the renderer's element list.
       .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
       .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")

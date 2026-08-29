@@ -23,10 +23,8 @@ import { Spoiler } from "./Spoiler";
  * lines with single newlines, which strict Markdown collapses into one paragraph;
  * every imported review would arrive as a wall of text without it.
  *
- * `remarkSpoiler` adds `||hidden||`. It produces a node of its own type rather
- * than raw HTML, and `spoilerHandler` below turns that into the one `span` this
- * renderer emits — so the spoiler survives the element allow-list without
- * `rehype-raw` being reintroduced.
+ * `remarkSpoiler` adds `||hidden||` as a node of its own type rather than raw
+ * HTML, so it survives the element allow-list without `rehype-raw`.
  */
 
 /**
@@ -52,17 +50,8 @@ const ALLOWED = [
 
 /**
  * Turns the plugin's `spoiler` node into a `span` carrying a marker attribute.
- *
- * Registered explicitly rather than leaning on `data.hName`, so the conversion
- * does not depend on how mdast-util-to-hast happens to treat a node type it has
- * no handler for.
- *
- * The cast is the price of a custom node type. `handlers` is keyed on mdast's
- * registry of known node types, and `spoiler` is by definition not in it; the
- * alternative is augmenting the `mdast` module, which buys the same thing at the
- * cost of a declaration that has to stay in step with a transitive dependency's
- * type names. It is anchored to the prop's own type rather than `any`, so a
- * change to the surrounding shape is still caught.
+ * The cast is the price of a custom node type: `handlers` is keyed on mdast's
+ * known node types, and `spoiler` is by definition not one.
  */
 type RemarkRehypeOptions = ComponentProps<typeof ReactMarkdown>["remarkRehypeOptions"];
 
@@ -153,11 +142,8 @@ const components: Components = {
       {alt ? `[image: ${alt}]` : "[image]"}
     </span>
   ),
-  /**
-   * The only `span` this renderer produces is a spoiler, but it is checked
-   * rather than assumed: `allowedElements` permits the tag generally, and a
-   * future plugin emitting one should not silently become clickable.
-   */
+  // Checked rather than assumed: a future plugin emitting a `span` should not
+  // silently become clickable.
   span: ({ node, children }) => {
     const isSpoiler = node?.properties?.["dataSpoiler"] !== undefined;
     return isSpoiler ? <Spoiler>{children}</Spoiler> : <span>{children}</span>;

@@ -49,6 +49,30 @@ describe("toPlainText", () => {
     it("leaves an unclosed marker alone", () => {
       expect(toPlainText("a || b")).toBe("a || b");
     });
+
+    /**
+     * The renderer never pairs a marker inside code, nor one across a blank
+     * line, with a real one. Where this function did, a stray `||` earlier in
+     * the body shifted the pairing and printed the spoiler on the card.
+     */
+    it("does not pair a marker inside inline code with a real one", () => {
+      const out = toPlainText("`a || b` and then ||the butler did it||");
+      expect(out).toBe("a || b and then [spoiler]");
+    });
+
+    it("does not pair a marker inside a fenced block with a real one", () => {
+      const out = toPlainText("```\nx || y\n```\n\nEnding: ||the butler did it||");
+      expect(out).toBe("x || y Ending: [spoiler]");
+    });
+
+    it("does not pair markers across a blank line", () => {
+      const out = toPlainText("Stats: 3 || 4.\n\nThe ending: ||the butler did it||");
+      expect(out).toBe("Stats: 3 || 4. The ending: [spoiler]");
+    });
+
+    it("leaves a marker pair spanning two paragraphs literal, as the renderer does", () => {
+      expect(toPlainText("||one\n\ntwo||")).toBe("||one two||");
+    });
   });
 
   it("keeps link text and drops the target", () => {
