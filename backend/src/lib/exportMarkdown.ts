@@ -4,6 +4,7 @@
  *     # Game Title
  *     **Score:** 8.5
  *     **Playtime:** 42 hrs
+ *     **Year played:** 2024
  *
  *     <body>
  *
@@ -23,20 +24,25 @@ export interface ExportableReview {
   rating: number;
   /** Null for the rows that predate the column, and for imports without one. */
   hoursPlayed?: number | null;
+  /** Null for the same reason. */
+  yearPlayed?: number | null;
   content: string;
 }
 
 /**
  * One review as its own section.
  *
- * The playtime line is dropped rather than written as "unknown" when there are
- * no hours: a person reading this file later should not have to decide whether
- * a zero means "no time" or "no record".
+ * A missing playtime or year drops its line rather than writing "unknown": a
+ * person reading this file later should not have to decide whether a zero means
+ * "no time" or "no record".
  */
 export function formatReview(review: ExportableReview): string {
   const lines = [`# ${review.gameTitle}`, `**Score:** ${formatScore(review.rating)}`];
   if (review.hoursPlayed != null) {
     lines.push(`**Playtime:** ${formatHoursPlayed(review.hoursPlayed)} hrs`);
+  }
+  if (review.yearPlayed != null) {
+    lines.push(`**Year played:** ${review.yearPlayed}`);
   }
   // The blank line is what separates the metadata block from the body; without
   // it markdown reads the first line of the review as part of the bold run.

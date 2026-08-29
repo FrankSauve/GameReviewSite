@@ -27,6 +27,7 @@ interface SeedReview {
   title: string;
   rating?: number;
   hoursPlayed?: number | null;
+  yearPlayed?: number | null;
   content?: string;
   createdAt?: Date;
 }
@@ -42,7 +43,7 @@ async function seedReview(identity: Identity, review: SeedReview): Promise<void>
     data: {
       rating: review.rating ?? 8,
       content: review.content ?? "It was good.",
-      yearPlayed: 2024,
+      yearPlayed: review.yearPlayed === undefined ? 2024 : review.yearPlayed,
       hoursPlayed: review.hoursPlayed === undefined ? 12 : review.hoursPlayed,
       slug: `${game.slug}-by-${user.username}`,
       gameId: game.id,
@@ -57,9 +58,13 @@ describe("exporting reviews as markdown", () => {
   let stop: () => Promise<void>;
 
   beforeAll(async () => {
+    // The limiter is constructed with the app and counts every request in this
+    // file against one IP; the default ten is below what the file makes.
+    process.env["EXPORT_RATE_LIMIT_MAX"] = "1000";
     ({ app, stop } = await startApp());
   });
   afterAll(async () => {
+    delete process.env["EXPORT_RATE_LIMIT_MAX"];
     await stop();
   });
   beforeEach(resetDatabase);
@@ -93,7 +98,8 @@ describe("exporting reviews as markdown", () => {
 
     const res = await request(app).get(EXPORT_PATH).set("Cookie", cookie);
     expect(res.text).toBe(
-      "# Elden Ring\n**Score:** 9.5\n**Playtime:** 120 hrs\n\nBest of its kind.\n"
+      "# Elden Ring\n**Score:** 9.5\n**Playtime:** 120 hrs\n" +
+        "**Year played:** 2024\n\nBest of its kind.\n"
     );
   });
 
@@ -104,6 +110,15 @@ describe("exporting reviews as markdown", () => {
     const res = await request(app).get(EXPORT_PATH).set("Cookie", cookie);
     expect(res.text).not.toContain("Playtime");
     expect(res.text).toContain("**Score:**");
+  });
+
+  it("leaves the year line out when no year was recorded", async () => {
+    const cookie = await sessionFor(ALICE);
+    await seedReview(ALICE, { title: "Old Import", yearPlayed: null });
+
+    const res = await request(app).get(EXPORT_PATH).set("Cookie", cookie);
+    expect(res.text).not.toContain("Year played");
+    expect(res.text).toContain("**Playtime:**");
   });
 
   it("exports only the signed-in account's own reviews", async () => {
@@ -151,6 +166,49 @@ describe("exporting reviews as markdown", () => {
     expect(res.text).not.toMatch(/[^\n]\n---/);
   });
 
+  /**
+   * The filename follows the user's slug, not their username. authentik owns
+   * the username and renames it; the slug is this app's. Two usernames that
+   * reduce to the same slug base would otherwise hand both accounts a file of
+   * the same name.
+   */
+  it("names the file after the account's slug, not its username", async () => {
+    const first: Identity = { uid: "ak-1", username: "Simon.T", email: "a@e.com" };
+    const second: Identity = { uid: "ak-2", username: "Simon T", email: "b@e.com" };
+    const firstCookie = await sessionFor(first);
+    const secondCookie = await sessionFor(second);
+
+    const one = await request(app).get(EXPORT_PATH).set("Cookie", firstCookie);
+    const two = await request(app).get(EXPORT_PATH).set("Cookie", secondCookie);
+
+    expect(one.headers["content-disposition"]).toBe(
+      'attachment; filename="reviews-simon-t.md"'
+    );
+    expect(two.headers["content-disposition"]).not.toBe(
+      one.headers["content-disposition"]
+    );
+  });
+
+  /**
+   * A read that fails before anything is written still has a status line to
+   * spend. Tearing the connection down instead leaves the browser reporting a
+   * network error for what is a server fault.
+   */
+  it("answers 500 when the export cannot be read at all", async () => {
+    const cookie = await sessionFor(ALICE);
+    const real = prisma.review.findMany.bind(prisma.review);
+    // @ts-expect-error replaced for this test only
+    prisma.review.findMany = async () => {
+      throw new Error("database is down");
+    };
+    try {
+      const res = await request(app).get(EXPORT_PATH).set("Cookie", cookie);
+      expect(res.status).toBe(500);
+    } finally {
+      prisma.review.findMany = real;
+    }
+  });
+
   it("returns an empty file rather than an error for an account with no reviews", async () => {
     const cookie = await sessionFor(ALICE);
     const res = await request(app).get(EXPORT_PATH).set("Cookie", cookie);
@@ -160,7 +218,12 @@ describe("exporting reviews as markdown", () => {
 });
 
 describe("formatReview", () => {
-  const base = { gameTitle: "Terraria", rating: 8, content: "Dug a hole." };
+  const base = {
+    gameTitle: "Terraria",
+    rating: 8,
+    yearPlayed: 2024,
+    content: "Dug a hole.",
+  };
 
   it("writes a whole score without a trailing zero", () => {
     expect(formatReview({ ...base, hoursPlayed: 40 })).toContain("**Score:** 8\n");
