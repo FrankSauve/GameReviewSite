@@ -42,6 +42,17 @@ describe("MarkdownEditor", () => {
       expect(textarea().value).toBe("a ***word*** here");
     });
 
+    /**
+     * `maxLength` stops typing past the cap but not an insertion, and the
+     * backend rejects an over-long review outright.
+     */
+    it("refuses a command that would push the body past the cap", () => {
+      render(<Harness initial={"x".repeat(20000)} />);
+      select(0, 20000);
+      fireEvent.click(tool("Bold"));
+      expect(textarea().value).toBe("x".repeat(20000));
+    });
+
     it("inserts a spoiler", () => {
       render(<Harness initial="the butler" />);
       select(4, 10);

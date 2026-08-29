@@ -1,12 +1,8 @@
 /**
  * The text edits behind the editor toolbar.
  *
- * Kept as pure functions over `{ text, start, end }` rather than reaching into a
- * textarea, because the interesting behaviour is entirely about where the
- * selection ends up: wrapping a word has to leave that word selected so a second
- * button applies to it, and toggling a bullet on three lines has to keep all
- * three selected. That is fiddly enough to be worth testing directly, and none
- * of it needs a DOM to be true.
+ * Pure functions over `{ text, start, end }` rather than reaching into a
+ * textarea, because the interesting behaviour is where the selection ends up.
  */
 
 export interface Selection {
@@ -43,11 +39,8 @@ const WRAPPERS: Partial<Record<CommandName, string>> = {
   spoiler: "||",
 };
 
-/**
- * `h3`, not `h1`. The renderer drops `h1` and `h2` so a review cannot outrank
- * the page's own heading — a toolbar that inserted one would be offering
- * something that silently does not render.
- */
+// `h3`, not `h1`: the renderer drops `h1` and `h2`, so a button inserting one
+// would offer something that never renders.
 const PREFIXES: Partial<Record<CommandName, string>> = {
   heading: "### ",
   quote: "> ",
@@ -64,36 +57,43 @@ export function applyCommand(name: CommandName, selection: Selection): Selection
   return link(selection);
 }
 
-/**
- * Is this selection already wrapped in exactly this marker?
- *
- * The length guard is what stops italic reading `**bold**` as an italic wrap
- * around `*bold*` and quietly demoting it. A run longer than the marker means
- * the marker is part of something else, so the command adds a layer instead of
- * removing one.
- */
-function isWrapped(selected: string, marker: string): boolean {
-  if (selected.length < marker.length * 2) return false;
-  if (!selected.startsWith(marker) || !selected.endsWith(marker)) return false;
-  if (marker.length > 1) return true;
-  const inner = selected.slice(marker.length, -marker.length);
-  return !inner.startsWith(marker) && !inner.endsWith(marker);
+/** How many of `char` run from `from`, stepping by `step`. */
+function runLength(text: string, from: number, step: number, char: string): number {
+  let n = 0;
+  for (let i = from; i >= 0 && i < text.length && text[i] === char; i += step) n++;
+  return n;
 }
 
 /**
- * Do this command's markers sit immediately outside the selection?
+ * Can a layer come off a run of markers this long?
  *
- * Same trap as `isWrapped`, from the other side. After bolding a word the
- * selection is the word itself and `**` sits either side of it, so an italic
- * command asking only "is there a `*` next to me?" would answer yes and strip
- * one from each side — turning bold into italic instead of adding it.
+ * Every marker here is one character repeated, so the run is what says which
+ * layers are present. A one-character marker comes off an odd run only: `*` next
+ * to `**word**` is bold, and taking one from each side would demote it rather
+ * than remove an italic. Three is `***word***`, which does have one to remove.
  */
+function canUnwrap(run: number, marker: string): boolean {
+  if (run < marker.length) return false;
+  return marker.length > 1 || run % 2 === 1;
+}
+
+/** Is this selection already wrapped in this marker, markers included? */
+function isWrapped(selected: string, marker: string): boolean {
+  if (selected.length < marker.length * 2) return false;
+  const char = marker[0];
+  const lead = runLength(selected, 0, 1, char);
+  const trail = runLength(selected, selected.length - 1, -1, char);
+  // All markers and no body: one run, counted twice.
+  if (lead + trail > selected.length) return false;
+  return canUnwrap(lead, marker) && canUnwrap(trail, marker);
+}
+
+/** Do this command's markers sit immediately outside the selection? */
 function isSurrounded(before: string, after: string, marker: string): boolean {
-  if (!before.endsWith(marker) || !after.startsWith(marker)) return false;
-  if (marker.length > 1) return true;
+  const char = marker[0];
   return (
-    !before.slice(0, -marker.length).endsWith(marker) &&
-    !after.slice(marker.length).startsWith(marker)
+    canUnwrap(runLength(before, before.length - 1, -1, char), marker) &&
+    canUnwrap(runLength(after, 0, 1, char), marker)
   );
 }
 
@@ -131,23 +131,27 @@ function wrap(selection: Selection, marker: string, placeholder: string): Select
 /**
  * Adds or removes a line prefix across every line the selection touches.
  *
- * Removes only when *all* of them already have it, so a partly quoted block
- * becomes fully quoted rather than half of it being unquoted.
+ * Removes only when all of them already have it, so a partly quoted block
+ * becomes fully quoted rather than half of it being unquoted. Blank lines are
+ * left alone in both directions: they are separators, not list items.
  */
 function prefixLines(selection: Selection, prefix: string): Selection {
   const { text, start, end } = selection;
 
   const blockStart = text.lastIndexOf("\n", start - 1) + 1;
-  const newlineAfter = text.indexOf("\n", end);
+  // A selection ending on a newline stops at that line; the next one is not in it.
+  const lastLine = end > blockStart && text[end - 1] === "\n" ? end - 1 : end;
+  const newlineAfter = text.indexOf("\n", lastLine);
   const blockEnd = newlineAfter === -1 ? text.length : newlineAfter;
 
   const lines = text.slice(blockStart, blockEnd).split("\n");
-  const removing = lines.every((line) => line.startsWith(prefix));
-  const updated = lines
-    .map((line) => (removing ? line.slice(prefix.length) : prefix + line))
-    .join("\n");
+  const filled = lines.filter((line) => line !== "");
+  const removing = filled.length > 0 && filled.every((line) => line.startsWith(prefix));
+  const change = (line: string) =>
+    line === "" ? line : removing ? line.slice(prefix.length) : prefix + line;
 
-  const shift = removing ? -prefix.length : prefix.length;
+  const updated = lines.map(change).join("\n");
+  const shift = change(lines[0]).length - lines[0].length;
   const delta = updated.length - (blockEnd - blockStart);
 
   return {
@@ -158,12 +162,8 @@ function prefixLines(selection: Selection, prefix: string): Selection {
 }
 
 /**
- * Selects whichever half still has to be written, so the click is followed by
- * typing rather than by re-aiming the cursor.
- *
- * With text selected that is the URL: the label is already what the writer
- * highlighted. With nothing selected both halves are placeholders, and the label
- * comes first — reading and writing order agree.
+ * Selects whichever half still has to be written: the URL when there was a
+ * selection to use as the label, otherwise the label.
  */
 function link(selection: Selection): Selection {
   const { text, start, end } = selection;

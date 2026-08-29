@@ -6,12 +6,7 @@ import { applyCommand, type CommandName } from "../lib/markdownCommands";
 /**
  * The review body editor: a toolbar, a Write/Preview switch, and a counter.
  *
- * One component used by both the write and the edit form, which previously had
- * different affordances for the same field — the write form had a preview
- * toggle and the edit form on the review page had a bare textarea, so correcting
- * a review offered less than writing one.
- *
- * The preview renders through the same `Markdown` component the published review
+ * Preview renders through the same `Markdown` component the published review
  * uses, so what it shows and what gets posted cannot drift.
  */
 
@@ -61,14 +56,8 @@ export function MarkdownEditor({
   const [previewing, setPreviewing] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  /**
-   * Where the selection should land once React has written the new value.
-   *
-   * Set during the click and applied in an effect rather than straight after
-   * `onChange`, because the textarea still holds the old text at that point —
-   * setting the range there would place it against the wrong string and the
-   * re-render would drop it anyway.
-   */
+  // Applied in an effect rather than straight after `onChange`: the textarea
+  // still holds the old text at that point.
   const [pendingSelection, setPendingSelection] = useState<[number, number] | null>(
     null
   );
@@ -89,6 +78,9 @@ export function MarkdownEditor({
       start: el.selectionStart,
       end: el.selectionEnd,
     });
+    // The textarea's own maxLength does not cover an insertion, and the backend
+    // rejects the whole review rather than truncating it.
+    if (next.text.length > maxLength) return;
     onChange(next.text);
     setPendingSelection([next.start, next.end]);
   };

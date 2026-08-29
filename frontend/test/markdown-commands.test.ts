@@ -66,6 +66,23 @@ describe("applyCommand", () => {
     it("does not treat a marker-length string as already wrapped", () => {
       expect(run("bold", "[*]")).toBe("**[*]**");
     });
+
+    /**
+     * The run says which layers are there: two `*` is bold and italic adds a
+     * third, three is bold and italic and italic takes one back off.
+     */
+    it("removes the italic from bold italic text", () => {
+      expect(run("italic", "***[word]***")).toBe("**[word]**");
+      expect(run("italic", "[***word***]")).toBe("[**word**]");
+    });
+
+    it("removes the bold from bold italic text", () => {
+      expect(run("bold", "***[word]***")).toBe("*[word]*");
+    });
+
+    it("still adds a layer to an even run", () => {
+      expect(run("italic", "****[word]****")).toBe("*****[word]*****");
+    });
   });
 
   describe("line prefixes", () => {
@@ -92,6 +109,20 @@ describe("applyCommand", () => {
 
     it("leaves earlier lines alone", () => {
       expect(run("quote", "first\nsec|ond")).toBe("first\n> sec|ond");
+    });
+
+    /** A line selected with its trailing newline — what a triple-click gives. */
+    it("does not reach into the line after the selection", () => {
+      expect(run("bullet", "[one\n]two")).toBe("- [one\n]two");
+    });
+
+    it("leaves a blank separator line alone when prefixing", () => {
+      expect(run("bullet", "[one\n\ntwo]")).toBe("- [one\n\n- two]");
+    });
+
+    /** A loose list is still fully prefixed, so the toggle has to remove. */
+    it("removes across a blank line rather than double-prefixing", () => {
+      expect(run("bullet", "[- one\n\n- two]")).toBe("[one\n\ntwo]");
     });
   });
 

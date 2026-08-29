@@ -6,11 +6,11 @@ import { UPDATE_REVIEW, DELETE_REVIEW } from "../graphql/mutations";
 import { GET_GAME } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
 import { formatRating, ratingColor } from "../lib/rating";
-import { REVIEW_CONTENT_MAX } from "../lib/markdown";
 import { currentYear, formatPlaytime, snapHours } from "../lib/playtime";
 import { RatingInput } from "./RatingInput";
 import { PlaytimeInput } from "./PlaytimeInput";
 import { Markdown } from "./Markdown";
+import { MarkdownEditor } from "./MarkdownEditor";
 import { reviewPath, userPath } from "../lib/links";
 
 interface ReviewCardProps {
@@ -170,18 +170,12 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
             size="sm"
           />
 
-          {/* Text area */}
-          <textarea
+          {/* Review body */}
+          <MarkdownEditor
             value={editContent}
-            onChange={(e) => setEditContent(e.target.value)}
-            rows={6}
-            maxLength={REVIEW_CONTENT_MAX}
-            className="input-field w-full resize-none text-sm"
+            onChange={setEditContent}
             placeholder="Update your review…"
           />
-          <p className="text-xs text-gray-600 -mt-1">
-            Markdown: **bold**, *italic*, - lists, &gt; quotes
-          </p>
 
           {/* Actions */}
           <div className="flex items-center gap-2 justify-end">
