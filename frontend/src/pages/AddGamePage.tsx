@@ -84,7 +84,6 @@ export function AddGamePage() {
             />
           </div>
 
-          {/* Genres + platforms. Both are lists, so both are multi-select. */}
           <ChipSelect
             label="Genres"
             options={GENRES}
@@ -156,14 +155,8 @@ function BackIcon() {
   );
 }
 
-/**
- * A capped multi-select rendered as toggle chips.
- *
- * Genres and platforms were each a single `<select>`, which is what the data
- * model used to say they were. They are lists now, and a chip group says the cap
- * out loud — a multiple `<select>` would hide both the count and the limit
- * behind a scroll box.
- */
+// Mirrors MAX_LABELS in backend/src/resolvers/game.ts, which enforces it.
+// Change both together.
 const MAX_LABELS = 5;
 
 function ChipSelect({

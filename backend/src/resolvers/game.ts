@@ -46,29 +46,16 @@ function validateString(value: string, field: string, maxLength = 500): string {
 }
 
 /**
- * How many genres or platforms a game keeps.
- *
- * Enough to say something useful — Elden Ring is on three platforms and nobody
- * needs the other twelve entries RAWG has for Terraria to know what it runs on.
+ * Duplicated as MAX_LABELS in frontend/src/pages/AddGamePage.tsx, which draws
+ * the counter on the form. Change both or the form promises entries the server
+ * silently drops.
  */
 export const MAX_LABELS = 5;
 
 const LABEL_MAX_LENGTH = 100;
 
-/**
- * Cleans a list of genres or platforms.
- *
- * Anything past the cap is **dropped, not refused**. That distinction is the
- * whole bug this replaces: the platform field used to be a single string built
- * by joining RAWG's entire platforms array, and the server correctly refused it
- * for being over 100 characters — with the result that Terraria, on more than a
- * dozen platforms, could not be added at all. A game being on a lot of platforms
- * is not a malformed request, so it does not produce an error.
- *
- * A single entry longer than 100 characters still is malformed, and still fails.
- * Duplicates are dropped case-insensitively but keep the caller's spelling, since
- * RAWG is inconsistent about "macOS" and "MacOS".
- */
+/** Past the cap is dropped, not refused: being on many platforms is not a
+ *  malformed request, and refusing it is what made Terraria unaddable. */
 function validateLabels(values: string[], field: string): string[] {
   const seen = new Set<string>();
   const kept: string[] = [];
