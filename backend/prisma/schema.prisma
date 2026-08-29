@@ -54,18 +54,8 @@ model Game {
   rawgId      String?  @unique
   slug        String   @unique
   title       String
-  /// Genres and platforms as lists rather than single values.
-  ///
-  /// They were one string each, and the search bar filled the platform one by
-  /// joining RAWG's entire platforms array with commas — so a game like Terraria,
-  /// which is on well over a dozen platforms, produced a string past the 100
-  /// character limit and could not be added at all. Storing what they are, a
-  /// list, is the fix; the cap is now on how many entries are kept rather than on
-  /// how long the joined string happens to be.
-  ///
-  /// Scalar lists, not a join table: these are labels copied from RAWG for
-  /// display, never queried across or deduplicated between games, so a Genre
-  /// table would be ceremony for no query anybody makes.
+  /// Scalar lists, not a join table: labels copied from RAWG for display, never
+  /// queried across or deduplicated between games.
   genres      String[]
   platforms   String[]
   description String?

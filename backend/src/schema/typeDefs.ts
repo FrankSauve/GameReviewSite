@@ -19,8 +19,7 @@ export const typeDefs = `#graphql
     rawgId: String
     slug: String!
     title: String!
-    # Lists, capped server-side. A game is rarely one genre and often many
-    # platforms; Terraria alone is on more than a dozen.
+    # Capped server-side.
     genres: [String!]!
     platforms: [String!]!
     description: String
@@ -127,8 +126,7 @@ export const typeDefs = `#graphql
     rawgId: String!
     title: String!
     coverUrl: String
-    # Anything past the server's cap is dropped rather than refused: a game
-    # should not become unaddable for being on too many platforms.
+    # Past the cap is dropped, not refused.
     genres: [String!]
     platforms: [String!]
     releaseYear: Int

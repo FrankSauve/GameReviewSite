@@ -1,16 +1,3 @@
-/**
- * Renders a game's genres or platforms as chips.
- *
- * Both used to be a single string, shown either whole or as
- * `platform.split(",")[0]` — which is what a one-value field looks like once
- * somebody has quietly been storing a list in it. Now that they are lists, the
- * question each caller has is the same: show them all, or show the first few and
- * say how many are left. Hence `limit`.
- *
- * The server already caps how many are stored, so `limit` is about the space a
- * particular card has rather than about keeping the list sane.
- */
-
 interface LabelChipsProps {
   labels?: string[];
   /** How many to show before collapsing the rest into a "+N". */
@@ -41,7 +28,6 @@ export function LabelChips({
       {hidden > 0 && (
         <span
           className={overflowClassName}
-          // The chips are the short version; the full list is worth a hover.
           title={labels.join(", ")}
         >
           +{hidden}
