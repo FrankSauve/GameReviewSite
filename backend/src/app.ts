@@ -14,6 +14,7 @@ import { createMaxRowsRule } from "./lib/maxRows.js";
 import { collapseDuplicateErrors } from "./lib/collapseErrors.js";
 import { sanitizeError } from "./lib/sanitizeError.js";
 import { createAuthRouter } from "./routes/auth.js";
+import { createEmbedRouter } from "./routes/embed.js";
 import { createExportRouter } from "./routes/export.js";
 import {
   allowedOrigins,
@@ -123,6 +124,12 @@ export async function createApp(): Promise<AppHandle> {
   // list bounds and text budget are there to stop a single request returning a
   // whole table, which is precisely what an export is. See routes/export.ts.
   app.use("/export", limiters.exports, createExportRouter());
+
+  // Shares a path with the SPA rather than sitting on one of its own: the URL a
+  // person pastes into a chat window is the URL that has to unfurl, so the proxy
+  // sends crawler user agents here and everyone else to the frontend container.
+  // See routes/embed.ts.
+  app.use("/reviews", limiters.embeds, createEmbedRouter());
 
   app.use(
     GRAPHQL_PATH,

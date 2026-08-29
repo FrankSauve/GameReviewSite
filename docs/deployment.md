@@ -13,7 +13,7 @@ The authentik objects are in [authentik-setup.md](authentik-setup.md).
 - Both on a network the new containers will share. In one compose file that is
   the project's `default` network. If your proxy is a separate project, declare
   its network `external` and attach the frontend and backend to it instead.
-- A DNS record, e.g. `gamereviews.example.com`.
+- A DNS record, e.g. `reviews.example.com`.
 - A **RAWG API key** — free at <https://rawg.io/apidocs>.
 - `docker compose` v2.
 
@@ -57,7 +57,7 @@ GAMEREVIEWS_RAWG_API_KEY=<your RAWG key>
 GAMEREVIEWS_OIDC_ISSUER=https://authentik.example.com/application/o/gamereviews/
 GAMEREVIEWS_OIDC_CLIENT_ID=<from the provider>
 GAMEREVIEWS_OIDC_CLIENT_SECRET=<from the provider>
-GAMEREVIEWS_OIDC_REDIRECT_URI=https://gamereviews.example.com/auth/callback
+GAMEREVIEWS_OIDC_REDIRECT_URI=https://reviews.example.com/auth/callback
 ```
 
 The four `OIDC_` values come from step 5, so you will come back to this file. All
@@ -115,7 +115,7 @@ docker exec swag nginx -s reload
 Public reads work without a session:
 
 ```bash
-curl -s https://gamereviews.example.com/graphql \
+curl -s https://reviews.example.com/graphql \
   -H 'content-type: application/json' -d '{"query":"{recentReviewsCount}"}'
 # {"data":{"recentReviewsCount":0}}
 ```
@@ -123,7 +123,7 @@ curl -s https://gamereviews.example.com/graphql \
 Writes are refused without one:
 
 ```bash
-curl -s https://gamereviews.example.com/graphql \
+curl -s https://reviews.example.com/graphql \
   -H 'content-type: application/json' \
   -d '{"query":"mutation{createGame(input:{title:\"x\"}){id}}"}'
 # UNAUTHENTICATED
@@ -132,7 +132,7 @@ curl -s https://gamereviews.example.com/graphql \
 The old proxy headers are inert:
 
 ```bash
-curl -s https://gamereviews.example.com/graphql \
+curl -s https://reviews.example.com/graphql \
   -H 'content-type: application/json' \
   -H 'X-authentik-uid: forged' -H 'X-authentik-username: admin' \
   -d '{"query":"{me{username}}"}'
@@ -142,7 +142,7 @@ curl -s https://gamereviews.example.com/graphql \
 Another origin is refused:
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://gamereviews.example.com/graphql \
+curl -s -o /dev/null -w '%{http_code}\n' https://reviews.example.com/graphql \
   -H 'content-type: application/json' -H 'Origin: https://evil.example.com' \
   -d '{"query":"{me{username}}"}'
 # 403
@@ -153,7 +153,7 @@ means the backend cannot reach the issuer):
 
 ```bash
 curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' \
-  'https://gamereviews.example.com/auth/login?returnTo=%2F'
+  'https://reviews.example.com/auth/login?returnTo=%2F'
 # 302 https://authentik.example.com/application/o/authorize/?...
 ```
 
@@ -162,8 +162,24 @@ The markdown export refuses an anonymous request (a 404 here means the
 
 ```bash
 curl -s -o /dev/null -w '%{http_code}\n' \
-  https://gamereviews.example.com/export/reviews.md
+  https://reviews.example.com/export/reviews.md
 # 401
+```
+
+A review link unfurls (crawlers are exempt from the geoblock for this path only
+— see the comment above the `map` in the SWAG config — because Discord and the
+rest fetch from cloud IPs no country whitelist covers) — the tags are served to a crawler, and only to one (an
+empty `<div id="root">` in the first response means the `/reviews/` location or
+the `map` above it is missing from the SWAG config):
+
+```bash
+curl -s https://reviews.example.com/reviews/<slug> \
+  -A 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)' \
+  | grep 'og:title'
+# <meta property="og:title" content="Elden Ring — 9.5/10 by alice">
+
+curl -s https://reviews.example.com/reviews/<slug> | grep -c 'og:title'
+# 0
 ```
 
 The database is unreachable from the proxy network:

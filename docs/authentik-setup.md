@@ -16,7 +16,7 @@ exchanged server-side, turned into a session cookie of its own.
 - A working authentik instance, reachable from the backend container over HTTPS.
   They talk server to server — no shared network, no outpost.
 - SWAG, or another reverse proxy terminating TLS for one hostname.
-- A DNS record, e.g. `gamereviews.example.com`.
+- A DNS record, e.g. `reviews.example.com`.
 
 ## 1. Create the OAuth2 provider
 
@@ -27,7 +27,7 @@ exchanged server-side, turned into a session cookie of its own.
 | Name | `gamereviews-oidc` |
 | Authorization flow | your usual explicit or implicit consent flow |
 | Client type | **Confidential** |
-| Redirect URIs | `https://gamereviews.example.com/auth/callback` |
+| Redirect URIs | `https://reviews.example.com/auth/callback` |
 
 Leave the scopes at their defaults. `offline_access` is not needed.
 
@@ -35,7 +35,7 @@ Copy the **Client ID** and **Client secret** from *Protocol settings* — they
 become `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` in step 4.
 
 Optional: to land back on the site after sign-out, add
-`https://gamereviews.example.com/` as a second **Redirect URI** and set
+`https://reviews.example.com/` as a second **Redirect URI** and set
 `OIDC_POST_LOGOUT_REDIRECT_URI` to it. An unregistered value breaks logout.
 
 ## 2. Create the application
@@ -81,7 +81,7 @@ The deployment snippet sets these from `.env`; see
 OIDC_ISSUER=https://authentik.example.com/application/o/gamereviews/
 OIDC_CLIENT_ID=<from step 1>
 OIDC_CLIENT_SECRET=<from step 1>
-OIDC_REDIRECT_URI=https://gamereviews.example.com/auth/callback
+OIDC_REDIRECT_URI=https://reviews.example.com/auth/callback
 TRUST_PROXY_HOPS=1
 NODE_ENV=production
 CORS_ORIGINS=

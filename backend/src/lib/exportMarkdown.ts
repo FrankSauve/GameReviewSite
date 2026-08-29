@@ -14,8 +14,9 @@
  * going to read it, is closed.
  */
 
-/** `8.5` and `9`, never `9.0`. Matches how a score reads on the site. */
-function formatScore(rating: number): string {
+/** `8.5` and `9`, never `9.0`. Matches how a score reads on the site.
+ *  Exported for lib/embed.ts, which puts the same number in an embed title. */
+export function formatScore(rating: number): string {
   return Number.isInteger(rating) ? String(rating) : rating.toFixed(1);
 }
 

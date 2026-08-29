@@ -119,6 +119,7 @@ export interface Limiters {
   rawg: RequestHandler;
   auth: RequestHandler;
   exports: RequestHandler;
+  embeds: RequestHandler;
 }
 
 /**
@@ -164,6 +165,17 @@ export function createLimiters(): Limiters {
       standardHeaders: "draft-7",
       legacyHeaders: false,
       message: "Too many exports, try again shortly.\n",
+    }),
+    // Link previews are fetched by machines, not people: one paste into a busy
+    // channel can mean several unfurls at once, and every one is a database read
+    // for an anonymous caller. Looser than the export bucket, tighter than the
+    // general one, and the responses are cacheable for five minutes anyway.
+    embeds: rateLimit({
+      windowMs: envInt("RATE_LIMIT_WINDOW_MS", 60_000),
+      limit: envInt("EMBED_RATE_LIMIT_MAX", 60),
+      standardHeaders: "draft-7",
+      legacyHeaders: false,
+      message: "Too many requests.\n",
     }),
   };
 }
