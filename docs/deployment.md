@@ -157,6 +157,15 @@ curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' \
 # 302 https://authentik.example.com/application/o/authorize/?...
 ```
 
+The markdown export refuses an anonymous request (a 404 here means the
+`/export/` location is missing from the SWAG config):
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' \
+  https://gamereviews.example.com/export/reviews.md
+# 401
+```
+
 The database is unreachable from the proxy network:
 
 ```bash
@@ -166,7 +175,8 @@ docker exec swag getent hosts gamereviews-db
 
 Then in a browser: load the site signed out and confirm reviews render with a
 **Sign in** button, complete the authentik flow including the 2FA prompt, post a
-review and a comment, then **Sign out**. If sign-in appears to succeed but the
+review and a comment, download your own reviews from the **Export as markdown**
+link on your profile, then **Sign out**. If sign-in appears to succeed but the
 navbar still offers **Sign in**, see
 [troubleshooting](authentik-setup.md#troubleshooting).
 

@@ -22,3 +22,13 @@ export function userPath(user?: Slugged | null, tab = ""): string {
   if (!user) return "#";
   return `/users/${user.slug ?? user.id}${tab ? `/${tab}` : ""}`;
 }
+
+/**
+ * The markdown export of your own reviews.
+ *
+ * Served by the backend rather than the SPA — see backend/src/routes/export.ts —
+ * so it is a same-origin path here for the same reason /graphql is: vite proxies
+ * it in development and the reverse proxy forwards it in production. Nothing is
+ * appended to it; the server decides whose reviews to write from the session.
+ */
+export const EXPORT_REVIEWS_PATH = "/export/reviews.md";

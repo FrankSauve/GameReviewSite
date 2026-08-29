@@ -80,6 +80,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
+        # Cross-origin here, which is why /auth and /export/reviews.md are not
+        # reachable from this stack: both are same-origin backend paths that a
+        # single reverse proxy is expected to front. See deploy/swag/.
         VITE_API_URL: http://localhost:4000/graphql
     restart: unless-stopped
     ports:

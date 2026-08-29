@@ -11,7 +11,7 @@ import {
   type ReviewSummary,
 } from "../lib/grouping";
 import { GroupedReviewList } from "../components/GroupedReviewList";
-import { userPath } from "../lib/links";
+import { EXPORT_REVIEWS_PATH, userPath } from "../lib/links";
 import { useCanonicalPath } from "../hooks/useCanonicalPath";
 
 interface ProfileUser {
@@ -121,6 +121,22 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-violet-900/60 text-violet-300 border border-violet-800">
                 You
               </span>
+            )}
+            {/*
+              A plain link, not a fetch-then-Blob: the request carries the
+              session cookie either way, and letting the browser handle the
+              download means the file never has to exist in memory here. Only
+              on your own profile, because the endpoint only ever writes the
+              reviews of whoever is signed in.
+            */}
+            {isOwnProfile && profile.reviewCount > 0 && (
+              <a
+                href={EXPORT_REVIEWS_PATH}
+                download
+                className="text-xs font-medium text-gray-400 hover:text-violet-300 transition-colors"
+              >
+                Export as markdown
+              </a>
             )}
           </div>
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 pt-2">
