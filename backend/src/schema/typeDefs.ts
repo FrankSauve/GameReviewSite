@@ -6,6 +6,8 @@ export const typeDefs = `#graphql
     username: String!
     # Only returned to the authenticated owner of the account; null otherwise.
     email: String
+    # A self-written introduction, in Markdown. Public, like the reviews.
+    bio: String
     createdAt: String
     updatedAt: String
     # Bounded list. Prefer reviewCount/averageRating when you only need totals.
@@ -200,6 +202,12 @@ export const typeDefs = `#graphql
     published: Boolean
   }
 
+  # Only the account's own fields that authentik does not own — which today is
+  # just the bio. An omitted field is left alone; an explicit empty one clears it.
+  input UpdateProfileInput {
+    bio: String
+  }
+
   input CreateCommentInput {
     reviewId: ID!
     content: String!
@@ -273,6 +281,9 @@ export const typeDefs = `#graphql
 
   type Mutation {
     deleteUser: Boolean!
+    # Edits the signed-in account. There is no id argument: you may only edit
+    # your own profile, so taking one would only invite the attempt.
+    updateProfile(input: UpdateProfileInput!): User!
 
     importGame(input: ImportGameInput!): Game!
     createGame(input: CreateGameInput!): Game!

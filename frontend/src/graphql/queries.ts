@@ -208,6 +208,7 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
       id
       slug
       username
+      bio
       reviewCount
       averageRating
     }

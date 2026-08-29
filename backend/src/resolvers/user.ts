@@ -7,8 +7,20 @@ import {
   clampWindow,
   type PageArgs,
 } from "../lib/pagination.js";
+import { GraphQLError } from "graphql";
 import { requireAuth, type Context } from "../context.js";
 import { byIdOrSlug } from "../lib/slug.js";
+
+/**
+ * Long enough for a paragraph or two about how somebody scores games, short
+ * enough that a profile stays a profile. Enforced here rather than only in the
+ * textarea, which is a suggestion to a browser and nothing at all to a script.
+ */
+export const BIO_MAX = 1000;
+
+interface UpdateProfileInput {
+  bio?: string | null;
+}
 
 export const userResolvers = {
   Query: {
@@ -40,8 +52,39 @@ export const userResolvers = {
   },
 
   Mutation: {
-    // No updateUser: authentik owns username and email, and any local edit
-    // would be overwritten the next time the user makes a request.
+    /**
+     * Edits the fields of an account that this app, rather than authentik, owns
+     * — which today is the bio alone.
+     *
+     * There is still no way to change a username or an email here: authentik is
+     * the source for both, and a local edit would be silently overwritten on the
+     * account's next request. The bio has no counterpart there, so it is safe to
+     * hold and safe to edit.
+     *
+     * Takes no id. You may only edit your own profile, so accepting one would
+     * only invite the attempt and require a check to refuse it.
+     */
+    updateProfile: async (
+      _parent: unknown,
+      { input }: { input: UpdateProfileInput },
+      context: Context
+    ) => {
+      const authUser = requireAuth(context);
+
+      const data: { bio?: string | null } = {};
+      if (input.bio !== undefined) {
+        const trimmed = (input.bio ?? "").trim();
+        if (trimmed.length > BIO_MAX)
+          throw new GraphQLError(`bio must be at most ${BIO_MAX} characters.`);
+        // Cleared and never written are the same state, so an empty string is
+        // stored as null rather than as an empty paragraph to render.
+        data.bio = trimmed || null;
+      }
+
+      const user = await prisma.user.update({ where: { id: authUser.id }, data });
+      return serializeDates(user);
+    },
+
     deleteUser: async (_parent: unknown, _args: unknown, context: Context) => {
       const authUser = requireAuth(context);
       await prisma.user.delete({ where: { id: authUser.id } });
