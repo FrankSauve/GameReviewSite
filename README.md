@@ -14,6 +14,8 @@ reviews, and comment on other people's. Sign-in is delegated to your own
 - Comments on reviews
 - Profile pages with every review and an average score
 - Reviewers leaderboard and a paginated recent-reviews feed
+- Review links unfurl in Discord and elsewhere, with the game's cover, score
+  and the first lines of the review (spoilers redacted)
 - Reviews readable without an account; writing needs one
 - OIDC sign-in with 2FA, handled entirely by authentik
 
