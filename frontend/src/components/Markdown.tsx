@@ -1,6 +1,9 @@
+import type { ComponentProps } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import { remarkSpoiler } from "../lib/remarkSpoiler";
+import { Spoiler } from "./Spoiler";
 
 /**
  * Renders a review body as Markdown.
@@ -19,6 +22,11 @@ import remarkBreaks from "remark-breaks";
  * `remarkBreaks` is not cosmetic. A review pasted from a text file separates its
  * lines with single newlines, which strict Markdown collapses into one paragraph;
  * every imported review would arrive as a wall of text without it.
+ *
+ * `remarkSpoiler` adds `||hidden||`. It produces a node of its own type rather
+ * than raw HTML, and `spoilerHandler` below turns that into the one `span` this
+ * renderer emits — so the spoiler survives the element allow-list without
+ * `rehype-raw` being reintroduced.
  */
 
 /**
@@ -31,6 +39,8 @@ import remarkBreaks from "remark-breaks";
  */
 const ALLOWED = [
   "p", "br", "hr",
+  // Only ever produced by remarkSpoiler; nothing else in this renderer emits one.
+  "span",
   "strong", "em", "del",
   "ul", "ol", "li",
   "blockquote",
@@ -39,6 +49,35 @@ const ALLOWED = [
   "h3", "h4", "h5", "h6",
   "table", "thead", "tbody", "tr", "th", "td",
 ];
+
+/**
+ * Turns the plugin's `spoiler` node into a `span` carrying a marker attribute.
+ *
+ * Registered explicitly rather than leaning on `data.hName`, so the conversion
+ * does not depend on how mdast-util-to-hast happens to treat a node type it has
+ * no handler for.
+ *
+ * The cast is the price of a custom node type. `handlers` is keyed on mdast's
+ * registry of known node types, and `spoiler` is by definition not in it; the
+ * alternative is augmenting the `mdast` module, which buys the same thing at the
+ * cost of a declaration that has to stay in step with a transitive dependency's
+ * type names. It is anchored to the prop's own type rather than `any`, so a
+ * change to the surrounding shape is still caught.
+ */
+type RemarkRehypeOptions = ComponentProps<typeof ReactMarkdown>["remarkRehypeOptions"];
+
+const remarkRehypeOptions = {
+  handlers: {
+    spoiler(state: { all: (node: unknown) => unknown[] }, node: unknown) {
+      return {
+        type: "element",
+        tagName: "span",
+        properties: { dataSpoiler: "true" },
+        children: state.all(node),
+      };
+    },
+  },
+} as RemarkRehypeOptions;
 
 const components: Components = {
   p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
@@ -115,6 +154,15 @@ const components: Components = {
     </span>
   ),
   /**
+   * The only `span` this renderer produces is a spoiler, but it is checked
+   * rather than assumed: `allowedElements` permits the tag generally, and a
+   * future plugin emitting one should not silently become clickable.
+   */
+  span: ({ node, children }) => {
+    const isSpoiler = node?.properties?.["dataSpoiler"] !== undefined;
+    return isSpoiler ? <Spoiler>{children}</Spoiler> : <span>{children}</span>;
+  },
+  /**
    * `noopener noreferrer` because these open in a new tab; `nofollow` because a
    * review body is user-submitted text on a public page, which is exactly what
    * link spam looks for. react-markdown's default `urlTransform` already drops
@@ -141,7 +189,8 @@ export function Markdown({ children, className = "" }: MarkdownProps) {
   return (
     <div className={`break-words ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkBreaks]}
+        remarkPlugins={[remarkGfm, remarkBreaks, remarkSpoiler]}
+        remarkRehypeOptions={remarkRehypeOptions}
         allowedElements={ALLOWED}
         unwrapDisallowed
         components={components}

@@ -17,6 +17,40 @@ describe("toPlainText", () => {
     expect(toPlainText("~~not really~~ good")).toBe("not really good");
   });
 
+  /**
+   * Spoilers are the one construct that must not be unwrapped.
+   *
+   * An excerpt appears on the home feed and the profile views, linking to the
+   * review. Hiding the twist behind a click on the review page achieves nothing
+   * if the card pointing at it prints the twist underneath.
+   */
+  describe("spoilers", () => {
+    it("redacts the hidden text rather than revealing it", () => {
+      expect(toPlainText("The killer is ||the butler||.")).toBe(
+        "The killer is [spoiler]."
+      );
+    });
+
+    it("redacts formatting inside a spoiler too", () => {
+      const out = toPlainText("It turns out ||she was **dead** all along||");
+      expect(out).toBe("It turns out [spoiler]");
+      expect(out).not.toContain("dead");
+    });
+
+    it("redacts each of several spoilers", () => {
+      expect(toPlainText("||one|| then ||two||")).toBe("[spoiler] then [spoiler]");
+    });
+
+    it("does not redact across two separate spoilers", () => {
+      const out = toPlainText("||a|| keep this ||b||");
+      expect(out).toContain("keep this");
+    });
+
+    it("leaves an unclosed marker alone", () => {
+      expect(toPlainText("a || b")).toBe("a || b");
+    });
+  });
+
   it("keeps link text and drops the target", () => {
     expect(toPlainText("see [the wiki](https://example.com/x)")).toBe("see the wiki");
   });

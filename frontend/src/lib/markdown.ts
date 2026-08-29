@@ -21,6 +21,19 @@ export const REVIEW_CONTENT_MAX = 20000;
 export function toPlainText(markdown: string): string {
   return (
     markdown
+      /**
+       * Spoilers are redacted, not unwrapped.
+       *
+       * This function feeds the card excerpts on the home feed and the profile
+       * views, which is exactly where a spoiler must not appear: hiding the
+       * twist behind a click on the review page achieves nothing if the card
+       * linking to it prints the twist underneath. Stripping the markers the way
+       * the emphasis rules below do would have done precisely that.
+       *
+       * Runs first, so the marker pair is still intact — the emphasis rules
+       * would otherwise have already rewritten what is inside it.
+       */
+      .replace(/\|\|[\s\S]+?\|\|/g, "[spoiler]")
       // Fenced code blocks: keep the code, drop the fences.
       .replace(/```[^\n]*\n?([\s\S]*?)```/g, "$1")
       .replace(/`([^`]+)`/g, "$1")
