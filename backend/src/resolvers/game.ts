@@ -73,10 +73,6 @@ function validateCoverUrl(value: string): string {
   return parsed.toString();
 }
 
-/**
- * A free slug for a new game. Insert path only — an existing game keeps its slug,
- * including when `importGame` finds it already there and backfills a description.
- */
 async function newGameSlug(title: string): Promise<string> {
   return uniqueSlug(
     slugify(title, "game"),

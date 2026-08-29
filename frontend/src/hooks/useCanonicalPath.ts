@@ -3,9 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 /**
  * Rewrites the address bar to a page's canonical, slug-bearing path once the
- * entity has loaded, so a UUID link does not stay a UUID. `replace` rather than
- * `push`, so back returns to where the visitor came from rather than to this same
- * page under its old name. `null` while the query is in flight does nothing.
+ * entity has loaded, so a UUID link does not stay a UUID.
  */
 export function useCanonicalPath(canonical: string | null): void {
   const navigate = useNavigate();

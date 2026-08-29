@@ -20,7 +20,6 @@ export function GameDetailPage() {
     skip: !id,
   });
 
-  // A /games/<uuid> link still resolves; this turns it into /games/<slug>.
   useCanonicalPath(data?.game ? gamePath(data.game) : null);
 
   if (loading) return <DetailSkeleton />;

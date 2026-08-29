@@ -52,8 +52,6 @@ model Session {
 model Game {
   id          String   @id @default(uuid())
   rawgId      String?  @unique
-  /// Readable URL identifier, derived from the title at insert and never
-  /// regenerated. See lib/slug.ts.
   slug        String   @unique
   title       String
   genre       String?
@@ -63,9 +61,6 @@ model Game {
   releaseYear Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  // Who added this game. Nullable because rows predating this column have no
-  // recorded creator, and because deleting an account must not delete the games
-  // it contributed — other people's reviews hang off them.
   createdById String?
   createdBy   User?    @relation("GameCreator", fields: [createdById], references: [id], onDelete: SetNull)
   reviews     Review[]
@@ -73,22 +68,10 @@ model Game {
 
 model Review {
   id        String    @id @default(uuid())
-  /// `<game-slug>-by-<username>`, fixed at insert, so it keeps reading the old
-  /// name after a rename on either side. See lib/slug.ts.
   slug      String    @unique
   rating    Float
   content   String
-  /// The year the game was played or finished, which is not the year the review
-  /// was written: a backlog of reviews imported in one sitting would otherwise all
-  /// read as 2026.
-  ///
-  /// Nullable, and required on CreateReviewInput rather than here. Every review
-  /// written through the app carries one, while the row that predates this column
-  /// and any importer that genuinely does not know a year stay representable. The
-  /// migration backfills existing rows from createdAt.
   yearPlayed  Int?
-  /// Hours spent with the game. Nullable for the same reason as yearPlayed, except
-  /// that this one cannot be backfilled — nothing in the database implies it.
   hoursPlayed Float?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -98,8 +81,6 @@ model Review {
   game      Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
   comments  Comment[]
 
-  /// Serves the by-year grouping on a profile, which sorts a single user's
-  /// reviews by the year played.
   @@index([userId, yearPlayed])
 }
 

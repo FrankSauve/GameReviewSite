@@ -2,7 +2,6 @@ import { formatRating } from "./rating";
 
 export interface ReviewSummary {
   id: string;
-  /** Readable URL identifier. */
   slug?: string | null;
   rating: number;
   yearPlayed?: number | null;

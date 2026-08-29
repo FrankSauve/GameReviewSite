@@ -59,7 +59,6 @@ export function ReviewDetailPage() {
     { variables: { id }, skip: !id }
   );
 
-  // A /reviews/<uuid> link still resolves; this turns it into /reviews/<slug>.
   useCanonicalPath(data?.review ? reviewPath(data.review) : null);
 
   const refetchOpts = { refetchQueries: [{ query: GET_REVIEW, variables: { id } }] };

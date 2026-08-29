@@ -1,12 +1,3 @@
-/**
- * The one place that knows what a link to a game, review or profile looks like.
- *
- * The id fallback is not theoretical: the API declares `slug` non-null, but a
- * component reading a cache entry from a query that omitted the field sees
- * `undefined`. The server accepts either, so falling back keeps the link working
- * instead of routing to `/games/undefined`.
- */
-
 interface Slugged {
   id: string;
   slug?: string | null;
@@ -25,9 +16,7 @@ export function reviewPath(review: Slugged): string {
 }
 
 /**
- * `/users/alice`, optionally with one of the profile view tabs appended. "#" for
- * a missing user: a review whose author deleted their account still renders, and
- * its byline should not navigate anywhere.
+ * `/users/alice`, optionally with one of the profile view tabs appended.
  */
 export function userPath(user?: Slugged | null, tab = ""): string {
   if (!user) return "#";

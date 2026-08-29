@@ -3,13 +3,9 @@
  *
  * Slugs replace the UUID in the URL only — primary keys are untouched, and every
  * lookup still accepts a UUID, so links shared before this change keep resolving.
- * Slugs are generated at insert and never regenerated: a slug that follows the
- * title is a slug that breaks every link to it when the title is edited.
  */
 
 export const SLUG_MAX_LENGTH = 60;
-
-/** How many suffixes to try before giving up on disambiguating a slug. */
 const MAX_SUFFIX_ATTEMPTS = 100;
 
 /**
@@ -31,18 +27,10 @@ export function slugify(input: string, fallback = "untitled"): string {
   return slug || fallback;
 }
 
-/** The slug a review would have: the game's slug, then who wrote it. */
 export function reviewSlugBase(gameSlug: string, userSlug: string): string {
   return `${gameSlug}-by-${userSlug}`;
 }
 
-/**
- * Returns `base`, or the first `base-2`, `base-3`… that `taken` says is free.
- *
- * The unique index is the real guard: two concurrent inserts can both be told a
- * candidate is free, and the loser gets a constraint violation rather than a
- * duplicate. At one import at a time, that race is not worth retry logic.
- */
 export async function uniqueSlug(
   base: string,
   taken: (candidate: string) => Promise<boolean>
@@ -55,14 +43,6 @@ export async function uniqueSlug(
   throw new Error(`Could not find a free slug for "${base}".`);
 }
 
-/**
- * Matches a URL segment against either identifier a link may carry.
- *
- * `id` is TEXT in Postgres, so comparing it to a slug is a plain string
- * comparison rather than a cast that could fail. Testing the shape of the key
- * and picking one column would be one index lookup instead of two, but a game
- * whose title slugifies into the shape of a UUID would stop resolving.
- */
 export function byIdOrSlug(key: string): {
   OR: ({ id: string } | { slug: string })[];
 } {

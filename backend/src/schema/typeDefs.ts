@@ -2,8 +2,6 @@ export const typeDefs = `#graphql
 
   type User {
     id: ID!
-    # Readable URL identifier, e.g. "alice". Fixed at first provision, so it does
-    # not follow an authentik rename.
     slug: String!
     username: String!
     # Only returned to the authenticated owner of the account; null otherwise.
@@ -19,7 +17,6 @@ export const typeDefs = `#graphql
   type Game {
     id: ID!
     rawgId: String
-    # Readable URL identifier, e.g. "elden-ring". Fixed at insert.
     slug: String!
     title: String!
     genre: String
@@ -55,7 +52,6 @@ export const typeDefs = `#graphql
   # is the same rows without the expensive field, which can be bounded far higher.
   type ReviewSummary {
     id: ID!
-    # Carried here too: the grouped profile views link straight to each review.
     slug: String!
     rating: Float!
     yearPlayed: Int
@@ -77,7 +73,6 @@ export const typeDefs = `#graphql
 
   type Review {
     id: ID!
-    # Readable URL identifier, e.g. "elden-ring-by-alice". Fixed at insert.
     slug: String!
     userId: ID!
     gameId: ID!
@@ -168,11 +163,6 @@ export const typeDefs = `#graphql
 
   # Every list field takes a bounded window. Omitting the arguments does not mean
   # "all rows" — it means the server's default page size.
-  #
-  # Every field taking the identifier of a single game, review or user accepts
-  # either the UUID or the readable slug, so links shared before slugs existed
-  # keep working. The argument stays named "id" so a caller can pass whatever the
-  # URL gave it.
   type Query {
     me: User
     users(limit: Int, offset: Int): [User!]!

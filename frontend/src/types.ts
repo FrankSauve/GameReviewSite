@@ -1,6 +1,5 @@
 export interface User {
   id: string;
-  /** Readable URL identifier. Optional so a partial cache entry still types. */
   slug?: string | null;
   username: string;
   email?: string;
@@ -15,7 +14,6 @@ export interface Comment {
 
 export interface GameSnippet {
   id: string;
-  /** Readable URL identifier. Optional so a partial cache entry still types. */
   slug?: string | null;
   title: string;
   genre?: string | null;

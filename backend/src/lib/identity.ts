@@ -60,11 +60,6 @@ function conflictsOn(err: unknown, field: string): boolean {
   return names.some((name) => name.toLowerCase().includes(field.toLowerCase()));
 }
 
-/**
- * A free slug for a new account, derived from the username it is created with.
- * Never recomputed afterwards, so an authentik rename does not move the profile
- * URL and a freed username cannot repoint an old link at someone else.
- */
 async function newUserSlug(username: string): Promise<string> {
   return uniqueSlug(
     slugify(username, "user"),
@@ -115,14 +110,6 @@ export async function provisionUser(identity: Identity): Promise<User> {
     }
   }
 
-  // A stale local row may hold the username, the email, or both — most likely
-  // one left behind by an authentik account that was deleted and recreated with
-  // a new uid. Sign-in must still work, so give way on whichever field
-  // collided: suffix the username, and drop the email, which authentik remains
-  // the source of truth for anyway. Postgres reports one constraint per error,
-  // so this concedes one field at a time. The slug is recomputed each attempt,
-  // which both follows a suffixed username and steps past a slug another row
-  // took between the check and the insert.
   let username = identity.username;
   let email = identity.email;
 

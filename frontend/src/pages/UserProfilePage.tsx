@@ -63,8 +63,6 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
     skip: !id,
   });
 
-  // A /users/<uuid> link still resolves; this turns it into /users/<username>,
-  // keeping whichever view tab the visitor arrived on.
   const tabPath = TABS.find((t) => t.grouping === grouping)?.path ?? "";
   useCanonicalPath(data?.user ? userPath(data.user, tabPath) : null);
 

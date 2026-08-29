@@ -163,8 +163,6 @@ export const reviewResolvers = {
       { budget }: Context
     ) => {
       const { take, skip } = clampWindow(args, LIST_BOUNDS.reviews);
-      // Through the relation rather than resolving the key first, so accepting a
-      // slug costs a join instead of a second round trip.
       const reviews = await prisma.review.findMany({
         where: { game: byIdOrSlug(gameId) },
         orderBy: { createdAt: "desc" },
