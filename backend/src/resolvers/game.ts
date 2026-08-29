@@ -150,6 +150,20 @@ export const gameResolvers = {
       const releaseYear =
         input.releaseYear != null ? validateYear(input.releaseYear) : null;
 
+      const existing = await prisma.game.findUnique({ where: { rawgId } });
+
+      /**
+       * The lookup comes before the RAWG call, not after it.
+       *
+       * The detail request exists solely to fill in a description. A game we
+       * already hold and already have a description for cannot use one, so
+       * fetching it first and then discovering the row exists spent a request
+       * from a 20,000-a-month budget to produce a string that was thrown away —
+       * on every re-import of an already-known game, which is the common case
+       * once a group has been using the site for a while.
+       */
+      if (existing?.description) return serializeDates(existing);
+
       let description: string | null = null;
       try {
         const detail = await getRawgGame(parseInt(rawgId, 10));
@@ -158,10 +172,8 @@ export const gameResolvers = {
         // Non-fatal — continue without description
       }
 
-      const existing = await prisma.game.findUnique({ where: { rawgId } });
-
       if (existing) {
-        if (existing.description || !description) return serializeDates(existing);
+        if (!description) return serializeDates(existing);
         const backfilled = await prisma.game.update({
           where: { id: existing.id },
           data: { description },

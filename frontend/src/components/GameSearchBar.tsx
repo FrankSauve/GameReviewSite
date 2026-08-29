@@ -24,9 +24,19 @@ export function GameSearchBar() {
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  /**
+   * `cache-first`, not `network-only`.
+   *
+   * Every debounced keystroke that reaches this is a request against a
+   * 20,000-a-month RAWG quota, and `network-only` spent one even when the query
+   * string was identical to the one just typed — backspacing four characters and
+   * retyping them re-fetched a result already sitting in the cache. Search
+   * results have no freshness requirement inside a session: the catalogue does
+   * not change while somebody is typing a title into the box.
+   */
   const [search, { data, loading: searching }] = useLazyQuery<SearchResult>(
     SEARCH_GAMES_EXTERNAL,
-    { fetchPolicy: "network-only" }
+    { fetchPolicy: "cache-first" }
   );
 
   const [importGame, { loading: importing }] = useMutation<ImportResult>(IMPORT_GAME, {
