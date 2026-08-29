@@ -22,11 +22,12 @@ import { UserProfilePage } from "../src/pages/UserProfilePage";
  * plausible-looking file rather than an error.
  */
 
-const ME = { __typename: "User", id: "u1", username: "simon", email: null };
+const ME = { __typename: "User", id: "u1", slug: "simon", username: "simon", email: null };
 
 /**
- * Routed by username rather than UUID, because the page canonicalises a UUID URL
- * into the username one and the refetch that follows has no mock behind it.
+ * Routed by slug rather than UUID, because the page canonicalises a UUID URL
+ * into the slug one and the refetch that follows has no mock behind it. The
+ * fixtures give each user a slug equal to their username.
  */
 const PROFILES: Record<string, string> = { simon: "u1", "someone-else": "u2" };
 
@@ -41,6 +42,7 @@ function profileMock(username: string, reviewCount: number) {
         user: {
           __typename: "User",
           id: PROFILES[username],
+          slug: username,
           username,
           reviewCount,
           averageRating: 8,
