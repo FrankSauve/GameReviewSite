@@ -1,21 +1,14 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { MockedProvider } from "@apollo/client/testing";
+import { MockedProvider, type MockedResponse } from "@apollo/client/testing";
 
 /** See profile-views.test.tsx: vitest runs without globals, so this is manual. */
 afterEach(cleanup);
 
-import { GET_GAMES } from "../src/graphql/queries";
+import { GET_GAMES, GET_GAME_FACETS, GET_USERS } from "../src/graphql/queries";
 import { GameLibraryPage } from "../src/pages/GameLibraryPage";
-
-/**
- * The page is paged entirely from the server, so what these tests are really
- * checking is that the page number in the URL and the `offset` in the query stay
- * in step. Getting that wrong shows a plausible-looking grid of the wrong games,
- * which is not something a reader would notice.
- */
 
 const PAGE_SIZE = 24;
 const TOTAL = 60;
@@ -33,25 +26,58 @@ const game = (n: number) => ({
   reviewCount: 3,
 });
 
-function pageMock(page: number) {
-  const first = page * PAGE_SIZE + 1;
+/**
+ * Apollo matches a mock on the exact variables, so these double as the
+ * assertion: if the page ever sent a different offset, sort or filter, no mock
+ * would match and nothing would render.
+ */
+function listMock(vars: Record<string, unknown>, first: number, total = TOTAL) {
   return {
     request: {
       query: GET_GAMES,
-      variables: { limit: PAGE_SIZE, offset: page * PAGE_SIZE },
+      variables: { limit: PAGE_SIZE, offset: 0, sort: "NEWEST", ...vars },
     },
     result: {
-      data: {
-        games: [game(first), game(first + 1)],
-        gamesCount: TOTAL,
-      },
+      data: { games: [game(first), game(first + 1)], gamesCount: total },
     },
   };
 }
 
-function renderAt(path: string) {
+const pageMock = (page: number) =>
+  listMock({ offset: page * PAGE_SIZE }, page * PAGE_SIZE + 1);
+
+const facetsMock = {
+  request: { query: GET_GAME_FACETS },
+  result: {
+    data: {
+      gameFacets: { genres: ["FPS", "RPG"], platforms: ["PC", "Switch"] },
+    },
+  },
+};
+
+const usersMock = {
+  request: { query: GET_USERS },
+  result: {
+    data: {
+      users: [
+        {
+          __typename: "User",
+          id: "u1",
+          slug: "alice",
+          username: "alice",
+          reviewCount: 3,
+          averageRating: 8,
+        },
+      ],
+    },
+  },
+};
+
+function renderAt(path: string, extra: MockedResponse[] = []) {
   return render(
-    <MockedProvider mocks={[pageMock(0), pageMock(1), pageMock(2)]}>
+    <MockedProvider
+      mocks={[pageMock(0), pageMock(1), pageMock(2), facetsMock, usersMock, ...extra]}
+    >
       <MemoryRouter initialEntries={[path]}>
         <Routes>
           <Route path="/games" element={<GameLibraryPage />} />
@@ -95,5 +121,46 @@ describe("the games library page", () => {
     for (const label of ["1", "2", "3"]) {
       expect(screen.getByRole("button", { name: label })).toBeTruthy();
     }
+  });
+
+
+  it("carries the sort in the query into the request", async () => {
+    renderAt("/games?sort=TITLE", [listMock({ sort: "TITLE" }, 101)]);
+    await waitFor(() => expect(screen.getByText("Game 101")).toBeTruthy());
+  });
+
+  it("falls back to the default sort when the URL names an unknown one", async () => {
+    renderAt("/games?sort=BOGUS");
+    await waitFor(() => expect(screen.getByText("Game 1")).toBeTruthy());
+  });
+
+  it("sends each filter the URL carries", async () => {
+    renderAt("/games?genre=RPG&platform=PC&reviewedBy=alice&reviewed=1", [
+      listMock(
+        { genre: "RPG", platform: "PC", reviewedBy: "alice", reviewedOnly: true },
+        201
+      ),
+    ]);
+    await waitFor(() => expect(screen.getByText("Game 201")).toBeTruthy());
+  });
+
+  it("offers the catalogue's own labels in the filter menus", async () => {
+    renderAt("/games");
+    await waitFor(() => expect(screen.getByText("Game 1")).toBeTruthy());
+    const genre = screen.getByLabelText("Genre") as HTMLSelectElement;
+    expect([...genre.options].map((o) => o.value)).toEqual(["", "FPS", "RPG"]);
+    const platform = screen.getByLabelText("Platform") as HTMLSelectElement;
+    expect([...platform.options].map((o) => o.value)).toEqual(["", "PC", "Switch"]);
+  });
+
+  /**
+   * A page number describes one result set. Carried across a filter change it
+   * lands the reader on an empty page of a shorter list.
+   */
+  it("returns to page one when a filter changes", async () => {
+    renderAt("/games?page=3", [listMock({ genre: "RPG" }, 301)]);
+    await waitFor(() => expect(screen.getByText("Game 49")).toBeTruthy());
+    fireEvent.change(screen.getByLabelText("Genre"), { target: { value: "RPG" } });
+    await waitFor(() => expect(screen.getByText("Game 301")).toBeTruthy());
   });
 });

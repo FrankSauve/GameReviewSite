@@ -1,24 +1,29 @@
 import { useQuery } from "@apollo/client";
 import { useSearchParams } from "react-router-dom";
-import { GET_GAMES } from "../graphql/queries";
-import type { Game } from "../types";
+import { GET_GAMES, GET_GAME_FACETS, GET_USERS } from "../graphql/queries";
+import type { Game, User } from "../types";
 import { GameCard } from "../components/GameCard";
 import { Pagination } from "../components/Pagination";
 
 /**
- * The games library, on its own page.
- *
- * It used to be a strip on the home page with a "Show all N games" toggle that
- * expanded one unpaginated query in place. That query was already fetching the
- * entire catalogue whether or not the toggle was ever pressed, so the cost was
- * paid on every visit to the home page, and it grew with the catalogue.
- *
- * The page number lives in the query string rather than in component state so a
- * page can be linked to and the browser's back button steps through the pages
- * instead of leaving the library entirely.
+ * The games library. Every control lives in the query string, so a filtered,
+ * sorted page can be linked to and the back button steps through the library
+ * rather than out of it.
  */
 
 const PAGE_SIZE = 24;
+
+const SORTS = [
+  ["NEWEST", "Newest"],
+  ["OLDEST", "Oldest"],
+  ["TITLE", "Title A–Z"],
+  ["RELEASE_YEAR", "Release year"],
+  ["MOST_REVIEWED", "Most reviewed"],
+  ["HIGHEST_RATED", "Highest rated"],
+  ["MOST_PLAYED", "Most played"],
+] as const;
+
+const SORT_VALUES = SORTS.map(([value]) => value) as readonly string[];
 
 function GameGridSkeleton() {
   return (
@@ -37,27 +42,76 @@ function GameGridSkeleton() {
   );
 }
 
+const selectClass =
+  "bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-300 px-2 py-1.5 " +
+  "focus:outline-none focus:border-violet-700 transition-colors";
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="flex items-center gap-1.5 text-xs text-gray-500">
+      {label}
+      {children}
+    </label>
+  );
+}
+
 export function GameLibraryPage() {
   const [params, setParams] = useSearchParams();
 
-  // Clamped low but not high: the total is not known until the query resolves,
-  // so an out-of-range page renders as an empty page rather than being guessed at.
+  // Clamped low but not high: the total is unknown until the query resolves.
   const requested = parseInt(params.get("page") ?? "1", 10);
   const page = Number.isFinite(requested) && requested > 1 ? requested - 1 : 0;
 
+  const genre = params.get("genre") ?? "";
+  const platform = params.get("platform") ?? "";
+  const reviewedBy = params.get("reviewedBy") ?? "";
+  const reviewedOnly = params.get("reviewed") === "1";
+  const sortParam = params.get("sort") ?? "";
+  const sort = SORT_VALUES.includes(sortParam) ? sortParam : "NEWEST";
+
+  const filters = {
+    genre: genre || undefined,
+    platform: platform || undefined,
+    reviewedBy: reviewedBy || undefined,
+    reviewedOnly: reviewedOnly || undefined,
+  };
+
   const { data, loading } = useQuery<{ games: Game[]; gamesCount: number }>(
     GET_GAMES,
-    { variables: { limit: PAGE_SIZE, offset: page * PAGE_SIZE } }
+    { variables: { limit: PAGE_SIZE, offset: page * PAGE_SIZE, sort, ...filters } }
   );
+  const { data: facetData } = useQuery<{
+    gameFacets: { genres: string[]; platforms: string[] };
+  }>(GET_GAME_FACETS);
+  const { data: usersData } = useQuery<{ users: User[] }>(GET_USERS);
 
   const games = data?.games ?? [];
   const total = data?.gamesCount ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
+  const filtered = Boolean(genre || platform || reviewedBy || reviewedOnly);
 
-  const goTo = (next: number) => {
-    // Page one is the bare URL: /games?page=1 and /games are the same page and
-    // should not be two entries in the history.
-    setParams(next === 0 ? {} : { page: String(next + 1) });
+  /**
+   * Changing a control returns to page one. The page number describes a window
+   * onto one particular result set, so carrying it across a filter change lands
+   * the reader on an empty page of a shorter list.
+   */
+  const update = (changes: Record<string, string>) => {
+    const next = new URLSearchParams(params);
+    for (const [key, value] of Object.entries(changes)) {
+      if (value) next.set(key, value);
+      else next.delete(key);
+    }
+    next.delete("page");
+    setParams(next);
+    window.scrollTo({ top: 0 });
+  };
+
+  const goTo = (nextPage: number) => {
+    const next = new URLSearchParams(params);
+    // Page one is the bare URL, so it is not a second history entry.
+    if (nextPage === 0) next.delete("page");
+    else next.set("page", String(nextPage + 1));
+    setParams(next);
     window.scrollTo({ top: 0 });
   };
 
@@ -75,18 +129,110 @@ export function GameLibraryPage() {
         )}
       </div>
 
+      <div className="card p-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <Field label="Sort">
+          <select
+            aria-label="Sort"
+            value={sort}
+            onChange={(e) => update({ sort: e.target.value })}
+            className={selectClass}
+          >
+            {SORTS.map(([value, name]) => (
+              <option key={value} value={value}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Genre">
+          <select
+            aria-label="Genre"
+            value={genre}
+            onChange={(e) => update({ genre: e.target.value })}
+            className={selectClass}
+          >
+            <option value="">Any</option>
+            {(facetData?.gameFacets.genres ?? []).map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Platform">
+          <select
+            aria-label="Platform"
+            value={platform}
+            onChange={(e) => update({ platform: e.target.value })}
+            className={selectClass}
+          >
+            <option value="">Any</option>
+            {(facetData?.gameFacets.platforms ?? []).map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Reviewed by">
+          <select
+            aria-label="Reviewed by"
+            value={reviewedBy}
+            onChange={(e) => update({ reviewedBy: e.target.value })}
+            className={selectClass}
+          >
+            <option value="">Anyone</option>
+            {(usersData?.users ?? []).map((u) => (
+              <option key={u.id} value={u.slug ?? u.id}>
+                {u.username}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={reviewedOnly}
+            onChange={(e) => update({ reviewed: e.target.checked ? "1" : "" })}
+            className="accent-violet-600"
+          />
+          Reviewed only
+        </label>
+
+        {filtered && (
+          <button
+            onClick={() =>
+              update({ genre: "", platform: "", reviewedBy: "", reviewed: "" })
+            }
+            className="ml-auto text-xs text-violet-400 hover:text-violet-300 transition-colors"
+          >
+            Clear filters
+          </button>
+        )}
+      </div>
+
       {loading && <GameGridSkeleton />}
 
       {!loading && games.length === 0 && (
         <div className="card p-12 text-center space-y-3">
           <p className="text-4xl">🎮</p>
           <p className="text-gray-400 font-medium">
-            {total > 0 ? "Nothing on this page" : "No games yet"}
+            {total > 0
+              ? "Nothing on this page"
+              : filtered
+                ? "No games match these filters"
+                : "No games yet"}
           </p>
           <p className="text-sm text-gray-600">
             {total > 0
               ? "The library is not that long — try page one."
-              : "Search for a game in the navbar to add the first one."}
+              : filtered
+                ? "Clear a filter to widen the search."
+                : "Search for a game in the navbar to add the first one."}
           </p>
         </div>
       )}

@@ -33,6 +33,22 @@ export const typeDefs = `#graphql
     averageRating: Float
   }
 
+  enum GameSort {
+    NEWEST
+    OLDEST
+    TITLE
+    RELEASE_YEAR
+    MOST_REVIEWED
+    HIGHEST_RATED
+    MOST_PLAYED
+  }
+
+  # Scalar lists, so the row guard does not have to bound them.
+  type GameFacets {
+    genres: [String!]!
+    platforms: [String!]!
+  }
+
   # A game result from the RAWG external API (not yet in our database)
   type ExternalGame {
     rawgId: String!
@@ -170,13 +186,25 @@ export const typeDefs = `#graphql
     users(limit: Int, offset: Int): [User!]!
     user(id: ID!): User
 
-    # "reviewedOnly" narrows the catalogue to games somebody has actually
-    # reviewed. It is a server-side filter rather than a client-side one on
-    # purpose: filtering after paging drops rows out of an already-short page,
-    # so the page you get is neither the size you asked for nor complete.
-    games(limit: Int, offset: Int, reviewedOnly: Boolean): [Game!]!
-    # Total matching the same filter, for paging controls.
-    gamesCount(reviewedOnly: Boolean): Int!
+    games(
+      limit: Int
+      offset: Int
+      reviewedOnly: Boolean
+      genre: String
+      platform: String
+      # A user id or slug; games that user has reviewed.
+      reviewedBy: ID
+      sort: GameSort
+    ): [Game!]!
+    # Total under the same filter, for paging controls.
+    gamesCount(
+      reviewedOnly: Boolean
+      genre: String
+      platform: String
+      reviewedBy: ID
+    ): Int!
+    # Distinct labels across the catalogue, for the filter menus.
+    gameFacets: GameFacets!
     game(id: ID!): Game
     searchGamesExternal(query: String!): [ExternalGame!]!
 

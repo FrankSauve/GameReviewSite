@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useMutation } from "@apollo/client";
 import { CREATE_GAME } from "../graphql/mutations";
-import { GET_GAMES } from "../graphql/queries";
 import type { Game } from "../types";
 import { gamePath } from "../lib/links";
 
@@ -34,7 +33,9 @@ export function AddGamePage() {
   const [createGame, { loading, error }] = useMutation<{ createGame: Game }>(
     CREATE_GAME,
     {
-      refetchQueries: [{ query: GET_GAMES }],
+      // By name, not by document: GET_GAMES takes paging and filter variables
+      // now, and the object form would only match a call with none of them.
+      refetchQueries: ["GetGames"],
       onCompleted: (data) => navigate(gamePath(data.createGame)),
     }
   );

@@ -3,7 +3,6 @@ import { useLazyQuery, useMutation } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
 import { SEARCH_GAMES_EXTERNAL } from "../graphql/queries";
 import { IMPORT_GAME } from "../graphql/mutations";
-import { GET_GAMES } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
 import type { ExternalGame } from "../types";
 import { gamePath } from "../lib/links";
@@ -30,7 +29,9 @@ export function GameSearchBar() {
   );
 
   const [importGame, { loading: importing }] = useMutation<ImportResult>(IMPORT_GAME, {
-    refetchQueries: [{ query: GET_GAMES }],
+    // By name, not by document: GET_GAMES takes paging and filter variables
+    // now, and the object form would only match a call with none of them.
+    refetchQueries: ["GetGames"],
   });
 
   // Debounced search

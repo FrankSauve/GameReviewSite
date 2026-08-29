@@ -4,11 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { GameSearchBar } from "./GameSearchBar";
 import { userPath } from "../lib/links";
 
-/**
- * Matched on the exact path, so /games/elden-ring does not light up the library
- * link — the game detail page is somewhere else, and highlighting a section the
- * reader is not in is worse than highlighting nothing.
- */
+/** Callers match on the exact path, so /games/elden-ring leaves the link dark. */
 function navLink(active: boolean): string {
   return `text-sm font-medium shrink-0 transition-colors ${
     active ? "text-violet-300" : "text-gray-400 hover:text-gray-100"

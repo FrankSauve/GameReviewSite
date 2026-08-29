@@ -1,11 +1,6 @@
 /**
- * Page controls, shared by the review feed and the games library.
- *
- * The feed grew one of these inline, rendering a button per page. That is fine
- * at four pages and unusable at forty — the row wraps across the width of the
- * page and the current page is lost in it. Since the library needs the same
- * control over a list that only grows, the numbers are windowed here: first,
- * last, and the current page's immediate neighbours, with gaps elided.
+ * Page controls, shared by the review feed and the games library. The numbers
+ * are windowed — first, last, and the current page's neighbours.
  *
  * `page` is zero-based, matching the `offset = page * size` the queries do.
  */
@@ -26,8 +21,7 @@ export function pageItems(page: number, totalPages: number): (number | null)[] {
   const items: (number | null)[] = [];
   let previous: number | null = null;
   for (const p of pages) {
-    // A gap of exactly one is spelled out rather than elided: "1 … 3" is the
-    // same width as "1 2 3" and hides a page for nothing.
+    // "1 … 3" is no narrower than "1 2 3", so a gap of one is spelled out.
     if (previous !== null && p - previous > 1) {
       items.push(p - previous === 2 ? p - 1 : null);
     }

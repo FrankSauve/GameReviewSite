@@ -3,7 +3,7 @@ import { ApolloProvider } from "@apollo/client";
 import { client } from "./apollo";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Navbar } from "./components/Navbar";
-import { GamesPage } from "./pages/GamesPage";
+import { HomePage } from "./pages/HomePage";
 import { GameLibraryPage } from "./pages/GameLibraryPage";
 import { GameDetailPage } from "./pages/GameDetailPage";
 import { UserProfilePage } from "./pages/UserProfilePage";
@@ -19,7 +19,7 @@ function App() {
             <Navbar />
             <main className="max-w-6xl mx-auto px-4 py-8">
               <Routes>
-                <Route path="/" element={<GamesPage />} />
+                <Route path="/" element={<HomePage />} />
                 <Route path="/games" element={<GameLibraryPage />} />
                 <Route path="/games/:id" element={<GameDetailPage />} />
                 {/* By year is the default view: a profile reads as a playing

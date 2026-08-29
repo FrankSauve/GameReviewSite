@@ -11,6 +11,14 @@ import {
 import { requireAuth, type Context } from "../context.js";
 import { searchRawg, getRawgGame, releaseYear } from "../lib/rawg.js";
 import { byIdOrSlug, slugify, uniqueSlug } from "../lib/slug.js";
+import {
+  GAME_SORTS,
+  catalogueCount,
+  catalogueIds,
+  labelValues,
+  type GameFilter,
+  type GameSort,
+} from "../lib/gameCatalogue.js";
 
 interface CreateGameInput {
   title: string;
@@ -121,49 +129,53 @@ function validateRawgId(value: string): string {
   return trimmed;
 }
 
-interface GamesArgs extends PageArgs {
-  reviewedOnly?: boolean | null;
+interface GamesArgs extends PageArgs, GameFilter {
+  sort?: string | null;
 }
 
-/**
- * The catalogue filter, shared by the listing and its count.
- *
- * Both have to read the same way or the paging controls describe a different
- * set from the one being paged: a count of every game against pages holding
- * only the reviewed ones renders trailing pages that are permanently empty.
- */
-function gamesWhere(reviewedOnly?: boolean | null) {
-  return reviewedOnly ? { reviews: { some: {} } } : {};
+function gameSort(value?: string | null): GameSort {
+  return GAME_SORTS.includes(value as GameSort) ? (value as GameSort) : "NEWEST";
+}
+
+function gameFilter({ reviewedOnly, genre, platform, reviewedBy }: GamesArgs): GameFilter {
+  return { reviewedOnly, genre, platform, reviewedBy };
 }
 
 export const gameResolvers = {
   Query: {
-    games: async (
-      _parent: unknown,
-      { reviewedOnly, ...args }: GamesArgs,
-      { budget }: Context
-    ) => {
+    games: async (_parent: unknown, args: GamesArgs, { budget }: Context) => {
       const { take, skip } = clampWindow(args, LIST_BOUNDS.games);
-      const games = await prisma.game.findMany({
-        where: gamesWhere(reviewedOnly),
-        /**
-         * The id breaks ties, and it is not decoration.
-         *
-         * A backlog imported in one go gives dozens of rows the same
-         * `createdAt` to the millisecond, and Postgres is free to order equal
-         * keys differently between two queries. Under an unpaginated listing
-         * that was invisible; under paging it means a game can appear on page
-         * two and again on page three while another is never shown at all.
-         */
-        orderBy: [{ createdAt: "desc" }, { id: "asc" }],
-        take,
-        skip,
-      });
+      const ordered = await prisma.$queryRaw<{ id: string }[]>(
+        catalogueIds(gameFilter(args), gameSort(args.sort), take, skip)
+      );
+      const ids = ordered.map((row) => row.id);
+      const rows = await prisma.game.findMany({ where: { id: { in: ids } } });
+      // findMany does not preserve the order of an `in` list; the SQL above is
+      // what decided it.
+      const byId = new Map(rows.map((game) => [game.id, game]));
+      const games = ids
+        .map((id) => byId.get(id))
+        .filter((game): game is Game => game !== undefined);
       return budget.charge(games).map(serializeDates);
     },
 
-    gamesCount: async (_parent: unknown, { reviewedOnly }: GamesArgs) =>
-      prisma.game.count({ where: gamesWhere(reviewedOnly) }),
+    gamesCount: async (_parent: unknown, args: GamesArgs) => {
+      const [{ count }] = await prisma.$queryRaw<{ count: number }[]>(
+        catalogueCount(gameFilter(args))
+      );
+      return count;
+    },
+
+    gameFacets: async () => {
+      const [genres, platforms] = await Promise.all([
+        prisma.$queryRaw<{ value: string }[]>(labelValues("genres")),
+        prisma.$queryRaw<{ value: string }[]>(labelValues("platforms")),
+      ]);
+      return {
+        genres: genres.map((row) => row.value),
+        platforms: platforms.map((row) => row.value),
+      };
+    },
 
     game: async (_parent: unknown, { id }: { id: string }) => {
       const game = await prisma.game.findFirst({ where: byIdOrSlug(id) });
