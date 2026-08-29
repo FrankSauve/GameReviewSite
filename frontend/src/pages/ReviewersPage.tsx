@@ -7,6 +7,7 @@ import { userPath } from "../lib/links";
 
 interface ReviewerUser {
   id: string;
+  slug?: string | null;
   username: string;
   reviewCount: number;
   averageRating?: number | null;

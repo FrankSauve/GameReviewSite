@@ -8,7 +8,7 @@ import {
   type PageArgs,
 } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
-import { byIdOrUsername } from "../lib/slug.js";
+import { byIdOrSlug } from "../lib/slug.js";
 
 export const userResolvers = {
   Query: {
@@ -33,9 +33,8 @@ export const userResolvers = {
       return budget.charge(users).map(serializeDates);
     },
 
-    /** Accepts a UUID or a username, since a profile URL now carries the latter. */
     user: async (_parent: unknown, { id }: { id: string }) => {
-      const user = await prisma.user.findFirst({ where: byIdOrUsername(id) });
+      const user = await prisma.user.findFirst({ where: byIdOrSlug(id) });
       return user ? serializeDates(user) : null;
     },
   },

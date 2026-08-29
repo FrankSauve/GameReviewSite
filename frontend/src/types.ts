@@ -1,5 +1,7 @@
 export interface User {
   id: string;
+  /** Readable URL identifier. Optional so a partial cache entry still types. */
+  slug?: string | null;
   username: string;
   email?: string;
 }
@@ -61,5 +63,6 @@ export interface ExternalGame {
 
 export interface CurrentUser {
   id: string;
+  slug?: string | null;
   username: string;
 }

@@ -35,8 +35,8 @@ describe("link helpers", () => {
   });
 
   describe("userPath", () => {
-    it("uses the username, which is the readable identifier", () => {
-      expect(userPath({ id: "uuid-3", username: "alice" })).toBe("/users/alice");
+    it("uses the slug, which is the readable identifier", () => {
+      expect(userPath({ id: "uuid-3", slug: "alice" })).toBe("/users/alice");
     });
 
     it("falls back to the id", () => {
@@ -44,13 +44,13 @@ describe("link helpers", () => {
     });
 
     it("appends a profile view tab", () => {
-      expect(userPath({ id: "uuid-3", username: "alice" }, "by-score")).toBe(
+      expect(userPath({ id: "uuid-3", slug: "alice" }, "by-score")).toBe(
         "/users/alice/by-score"
       );
     });
 
     it("leaves the path bare for the default tab", () => {
-      expect(userPath({ id: "uuid-3", username: "alice" }, "")).toBe("/users/alice");
+      expect(userPath({ id: "uuid-3", slug: "alice" }, "")).toBe("/users/alice");
     });
 
     /**

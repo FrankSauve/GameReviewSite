@@ -16,6 +16,7 @@ import { useCanonicalPath } from "../hooks/useCanonicalPath";
 
 interface ProfileUser {
   id: string;
+  slug?: string | null;
   username: string;
   reviewCount: number;
   averageRating?: number | null;

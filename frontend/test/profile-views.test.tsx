@@ -20,7 +20,7 @@ import { UserProfilePage } from "../src/pages/UserProfilePage";
  * grouped along the wrong axis and asking the server for the wrong ordering.
  */
 const USER_ID = "u1";
-const USERNAME = "simon";
+const USER_SLUG = "simon";
 
 const summary = (
   id: string,
@@ -30,7 +30,7 @@ const summary = (
 ) => ({
   __typename: "ReviewSummary",
   id,
-  slug: `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-by-${USERNAME}`,
+  slug: `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-by-${USER_SLUG}`,
   rating,
   yearPlayed,
   hoursPlayed: 12,
@@ -64,6 +64,7 @@ function mockFor(order: string, id: string = USER_ID) {
         user: {
           __typename: "User",
           id: USER_ID,
+          slug: USER_SLUG,
           username: "simon",
           reviewCount: 3,
           averageRating: 9.5,
@@ -83,11 +84,11 @@ function renderAt(path: string) {
         mockFor("YEAR_DESC"),
         mockFor("RATING_DESC"),
         mockFor("RECENT"),
-        // The same three again under the username, for after the canonical
-        // redirect has swapped the UUID out of the URL.
-        mockFor("YEAR_DESC", USERNAME),
-        mockFor("RATING_DESC", USERNAME),
-        mockFor("RECENT", USERNAME),
+        // The same three again under the slug, for after the canonical redirect
+        // has swapped the UUID out of the URL.
+        mockFor("YEAR_DESC", USER_SLUG),
+        mockFor("RATING_DESC", USER_SLUG),
+        mockFor("RECENT", USER_SLUG),
       ]}
     >
       <MemoryRouter initialEntries={[path]}>
@@ -114,7 +115,7 @@ function renderAt(path: string) {
 /**
  * Runs `assert` until it holds.
  *
- * Rendering at a UUID URL rewrites it to the username, which re-runs the query
+ * Rendering at a UUID URL rewrites it to the slug, which re-runs the query
  * under the readable key and drops the page back to its loading skeleton for a
  * tick. A plain `waitFor` for the tabs to appear resolves on the *first* load and
  * the next line then runs against the skeleton, so the assertion has to be the
@@ -173,13 +174,13 @@ describe("profile grouped views", () => {
     renderAt(`/users/${USER_ID}`);
     await eventually(() => {
       expect(screen.getByRole("link", { name: "By score" }).getAttribute("href")).toBe(
-        `/users/${USERNAME}/by-score`
+        `/users/${USER_SLUG}/by-score`
       );
       expect(screen.getByRole("link", { name: "Recent" }).getAttribute("href")).toBe(
-        `/users/${USERNAME}/recent`
+        `/users/${USER_SLUG}/recent`
       );
       expect(screen.getByRole("link", { name: "By year" }).getAttribute("href")).toBe(
-        `/users/${USERNAME}`
+        `/users/${USER_SLUG}`
       );
     });
   });
@@ -189,13 +190,13 @@ describe("profile grouped views", () => {
    * a UUID once it has: the page rewrites the address bar in place, keeping
    * whichever view tab the visitor arrived on.
    */
-  it("rewrites a UUID profile URL to the username", async () => {
+  it("rewrites a UUID profile URL to the slug", async () => {
     renderAt(`/users/${USER_ID}/by-score`);
-    await waitFor(() => expect(screen.getByText(USERNAME)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(USER_SLUG)).toBeTruthy());
     await waitFor(() =>
       expect(
         screen.getByRole("link", { current: "page" }).getAttribute("href")
-      ).toBe(`/users/${USERNAME}/by-score`)
+      ).toBe(`/users/${USER_SLUG}/by-score`)
     );
     // Still the by-score view, not bounced back to the default.
     expect(screen.getByRole("link", { current: "page" }).textContent).toBe("By score");
@@ -207,6 +208,6 @@ describe("profile grouped views", () => {
     // Each row links to the review rather than showing an excerpt of it.
     expect(
       screen.getByText("Best Game").closest("a")?.getAttribute("href")
-    ).toBe(`/reviews/best-game-by-${USERNAME}`);
+    ).toBe(`/reviews/best-game-by-${USER_SLUG}`);
   });
 });

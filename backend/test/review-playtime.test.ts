@@ -192,7 +192,7 @@ describe("review playtime", () => {
   describe("rows predating the columns", () => {
     it("reads back as null rather than failing", async () => {
       const user = await prisma.user.create({
-        data: { authentikUid: "ak-old", username: "old" },
+        data: { authentikUid: "ak-old", username: "old", slug: "old" },
       });
       const review = await prisma.review.create({
         data: {
@@ -214,7 +214,7 @@ describe("review playtime", () => {
 
     it("can be corrected by its author afterwards", async () => {
       const user = await prisma.user.create({
-        data: { authentikUid: ALICE.uid, username: ALICE.username },
+        data: { authentikUid: ALICE.uid, username: ALICE.username, slug: ALICE.username },
       });
       const review = await prisma.review.create({
         data: {

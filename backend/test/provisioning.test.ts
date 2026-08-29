@@ -47,7 +47,7 @@ describe("user provisioning", () => {
 
   it("adopts a pre-authentik row with the same email, keeping its reviews", async () => {
     const legacy = await prisma.user.create({
-      data: { username: "old-alice", email: "alice@example.com" },
+      data: { username: "old-alice", slug: "old-alice", email: "alice@example.com" },
     });
     const game = await prisma.game.create({
       data: { title: "Legacy Game", slug: "legacy-game" },
@@ -77,6 +77,7 @@ describe("user provisioning", () => {
       data: {
         authentikUid: "ak-someone-else",
         username: "claimed",
+        slug: "claimed",
         email: "alice@example.com",
       },
     });
@@ -94,6 +95,7 @@ describe("user provisioning", () => {
       data: {
         authentikUid: "ak-stale",
         username: "alice",
+        slug: "alice",
         email: "alice@example.com",
       },
     });
@@ -107,7 +109,7 @@ describe("user provisioning", () => {
 
   it("disambiguates a username already held by an unrelated account", async () => {
     await prisma.user.create({
-      data: { username: "alice", email: "different@example.com" },
+      data: { username: "alice", slug: "alice", email: "different@example.com" },
     });
 
     const res = await me({ ...ALICE, email: "alice@example.com" });

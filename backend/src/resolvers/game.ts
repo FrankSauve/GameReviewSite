@@ -74,12 +74,8 @@ function validateCoverUrl(value: string): string {
 }
 
 /**
- * A free slug for a new game.
- *
- * Only ever called on the insert path. An existing game keeps the slug it was
- * given, including when `importGame` finds it already there and backfills its
- * description — re-slugging on import would break every link to it the moment
- * RAWG returned a slightly different title.
+ * A free slug for a new game. Insert path only — an existing game keeps its slug,
+ * including when `importGame` finds it already there and backfills a description.
  */
 async function newGameSlug(title: string): Promise<string> {
   return uniqueSlug(

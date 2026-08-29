@@ -67,6 +67,7 @@ export const GET_ME = gql`
   query Me {
     me {
       id
+      slug
       username
       email
     }

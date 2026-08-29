@@ -26,7 +26,12 @@ const AMPLIFYING_QUERY = `{
 async function seed(users: number, gamesEach: number, commentsEach: number) {
   for (let u = 0; u < users; u++) {
     await prisma.user.create({
-      data: { authentikUid: `uid-${u}`, username: `user${u}`, email: `u${u}@e.com` },
+      data: {
+        authentikUid: `uid-${u}`,
+        username: `user${u}`,
+        slug: `user${u}`,
+        email: `u${u}@e.com`,
+      },
     });
   }
   for (let g = 0; g < gamesEach; g++) {

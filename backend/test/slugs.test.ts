@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Express } from "express";
-import { prisma } from "../src/lib/prisma.js";
+import { provisionUser } from "../src/lib/identity.js";
 import { slugify } from "../src/lib/slug.js";
 import {
   ALICE,
@@ -167,20 +167,22 @@ describe("readable URLs", () => {
   });
 
   describe("users", () => {
-    it("resolves a profile by username", async () => {
-      await addGameAs(app, ALICE, "Anything");
-      const res = await publicQuery<{ user: { username: string } | null }>(
+    it("gives a new account a slug derived from its username", async () => {
+      const user = await provisionUser(ALICE);
+      expect(user.slug).toBe("alice");
+    });
+
+    it("resolves a profile by its slug", async () => {
+      const alice = await provisionUser(ALICE);
+      const res = await publicQuery<{ user: { id: string } | null }>(
         app,
-        `{ user(id: "${ALICE.username}") { username } }`
+        `{ user(id: "alice") { id } }`
       );
-      expect(res.data?.user?.username).toBe(ALICE.username);
+      expect(res.data?.user?.id).toBe(alice.id);
     });
 
     it("still resolves a profile by UUID", async () => {
-      await addGameAs(app, ALICE, "Anything");
-      const alice = await prisma.user.findUniqueOrThrow({
-        where: { username: ALICE.username },
-      });
+      const alice = await provisionUser(ALICE);
       const res = await publicQuery<{ user: { username: string } | null }>(
         app,
         `{ user(id: "${alice.id}") { username } }`
@@ -189,17 +191,53 @@ describe("readable URLs", () => {
     });
 
     /**
+     * authentik owns the username and rewrites it here when it drifts. The slug
+     * must not follow, or every profile link shared before the rename breaks.
+     */
+    it("keeps the slug when authentik renames the account", async () => {
+      const before = await provisionUser(ALICE);
+      const after = await provisionUser({ ...ALICE, username: "alice-renamed" });
+
+      expect(after.id).toBe(before.id);
+      expect(after.username).toBe("alice-renamed");
+      expect(after.slug).toBe("alice");
+    });
+
+    /**
+     * The reason the slug is a column rather than the username: a freed username
+     * can be taken by somebody else, and `/users/alice` must not quietly become
+     * a different person's profile.
+     */
+    it("does not hand a freed username's slug to another account", async () => {
+      const alice = await provisionUser(ALICE);
+      await provisionUser({ ...ALICE, username: "alice-renamed" });
+
+      const impostor = await provisionUser({
+        uid: "ak-impostor",
+        username: "alice",
+        email: "impostor@example.com",
+      });
+      expect(impostor.slug).toBe("alice-2");
+
+      const res = await publicQuery<{ user: { id: string } | null }>(
+        app,
+        `{ user(id: "alice") { id } }`
+      );
+      expect(res.data?.user?.id).toBe(alice.id);
+    });
+
+    /**
      * The profile page passes whatever the URL gave it straight through as
-     * `userId`, so this list has to accept a username too or the page renders a
+     * `userId`, so this list has to accept a slug too or the page renders a
      * profile header with no reviews under it.
      */
-    it("lists a user's review summaries by username", async () => {
+    it("lists a user's review summaries by slug", async () => {
       const game = await addGameAs(app, ALICE, "Elden Ring");
       await reviewAs(app, ALICE, game.id);
 
       const res = await publicQuery<{ reviewSummariesByUser: ReviewPayload[] }>(
         app,
-        `{ reviewSummariesByUser(userId: "${ALICE.username}") { slug } }`
+        `{ reviewSummariesByUser(userId: "alice") { slug } }`
       );
       expect(res.errors).toBeUndefined();
       expect(res.data?.reviewSummariesByUser).toHaveLength(1);

@@ -5,6 +5,7 @@ import { startSignIn, startSignOut } from "../lib/auth";
 
 export interface AuthUser {
   id: string;
+  slug?: string | null;
   username: string;
   email?: string | null;
 }

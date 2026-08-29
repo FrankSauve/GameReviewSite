@@ -52,6 +52,7 @@ export const GET_GAME = gql`
         createdAt
         user {
           id
+          slug
           username
         }
         comments {
@@ -60,6 +61,7 @@ export const GET_GAME = gql`
           createdAt
           user {
             id
+            slug
             username
           }
         }
@@ -80,6 +82,7 @@ export const GET_RECENT_REVIEWS = gql`
       createdAt
       user {
         id
+        slug
         username
       }
       game {
@@ -96,6 +99,7 @@ export const GET_RECENT_REVIEWS = gql`
         createdAt
         user {
           id
+          slug
           username
         }
       }
@@ -116,6 +120,7 @@ export const GET_REVIEW = gql`
       createdAt
       user {
         id
+        slug
         username
       }
       game {
@@ -133,6 +138,7 @@ export const GET_REVIEW = gql`
         createdAt
         user {
           id
+          slug
           username
         }
       }
@@ -144,6 +150,7 @@ export const GET_USERS = gql`
   query GetUsers {
     users {
       id
+      slug
       username
       reviewCount
       averageRating
@@ -166,6 +173,7 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
   query GetUserReviewSummaries($id: ID!, $order: ReviewOrder!) {
     user(id: $id) {
       id
+      slug
       username
       reviewCount
       averageRating

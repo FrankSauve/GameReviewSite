@@ -29,7 +29,7 @@ describe("reviewSummariesByUser", () => {
   /** Reviews described as [rating, yearPlayed | null], newest written last. */
   const seed = async (rows: [number, number | null][]) => {
     const user = await prisma.user.create({
-      data: { authentikUid: ALICE.uid, username: ALICE.username },
+      data: { authentikUid: ALICE.uid, username: ALICE.username, slug: ALICE.username },
     });
     userId = user.id;
     // Indexed, not keyed on the row's values: the fixtures deliberately repeat a
@@ -213,7 +213,7 @@ describe("reviewSummariesByUser", () => {
 
   it("returns nothing for a user with no reviews", async () => {
     const user = await prisma.user.create({
-      data: { authentikUid: "ak-empty", username: "empty" },
+      data: { authentikUid: "ak-empty", username: "empty", slug: "empty" },
     });
     const res = await authedQuery<{ reviewSummariesByUser: unknown[] }>(
       app,

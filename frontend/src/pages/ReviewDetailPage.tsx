@@ -13,7 +13,7 @@ import { Markdown } from "../components/Markdown";
 import { gamePath, reviewPath, userPath } from "../lib/links";
 import { useCanonicalPath } from "../hooks/useCanonicalPath";
 
-interface CommentUser { id: string; username: string; }
+interface CommentUser { id: string; slug?: string | null; username: string; }
 interface ReviewComment { id: string; content: string; createdAt: string; user?: CommentUser | null; }
 interface ReviewGame {
   id: string; slug?: string | null; title: string; coverUrl?: string | null;
