@@ -8,6 +8,7 @@ import { useAuth } from "../contexts/AuthContext";
 import type { Game } from "../types";
 import { formatRating, ratingColor } from "../lib/rating";
 import { gamePath } from "../lib/links";
+import { LabelChips } from "../components/LabelChips";
 import { useCanonicalPath } from "../hooks/useCanonicalPath";
 
 export function GameDetailPage() {
@@ -77,16 +78,14 @@ export function GameDetailPage() {
 
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex flex-wrap items-center gap-2">
-              {game.genre && (
-                <span className="text-xs font-medium bg-violet-900/50 text-violet-300 px-2.5 py-1 rounded-full border border-violet-800">
-                  {game.genre}
-                </span>
-              )}
-              {game.platform && (
-                <span className="text-xs font-medium bg-gray-800 text-gray-300 px-2.5 py-1 rounded-full border border-gray-700">
-                  {game.platform.split(",")[0]}
-                </span>
-              )}
+              <LabelChips
+                labels={game.genres}
+                className="text-xs font-medium bg-violet-900/50 text-violet-300 px-2.5 py-1 rounded-full border border-violet-800"
+              />
+              <LabelChips
+                labels={game.platforms}
+                className="text-xs font-medium bg-gray-800 text-gray-300 px-2.5 py-1 rounded-full border border-gray-700"
+              />
               {game.releaseYear && (
                 <span className="text-sm text-gray-500">{game.releaseYear}</span>
               )}

@@ -6,8 +6,8 @@ export const GET_GAMES = gql`
       id
       slug
       title
-      genre
-      platform
+      genres
+      platforms
       coverUrl
       releaseYear
       averageRating
@@ -36,8 +36,8 @@ export const GET_GAME = gql`
       id
       slug
       title
-      genre
-      platform
+      genres
+      platforms
       description
       coverUrl
       releaseYear
@@ -89,7 +89,7 @@ export const GET_RECENT_REVIEWS = gql`
         id
         slug
         title
-        genre
+        genres
         coverUrl
         releaseYear
       }
@@ -129,8 +129,8 @@ export const GET_REVIEW = gql`
         title
         coverUrl
         releaseYear
-        genre
-        platform
+        genres
+        platforms
       }
       comments {
         id
@@ -192,7 +192,7 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
         title
         coverUrl
         releaseYear
-        genre
+        genres
       }
     }
   }

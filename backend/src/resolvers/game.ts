@@ -14,16 +14,16 @@ import { byIdOrSlug, slugify, uniqueSlug } from "../lib/slug.js";
 
 interface CreateGameInput {
   title: string;
-  genre?: string;
-  platform?: string;
+  genres?: string[];
+  platforms?: string[];
   description?: string;
   releaseYear?: number;
 }
 
 interface UpdateGameInput {
   title?: string;
-  genre?: string;
-  platform?: string;
+  genres?: string[];
+  platforms?: string[];
   description?: string;
   releaseYear?: number;
 }
@@ -32,8 +32,8 @@ interface ImportGameInput {
   rawgId: string;
   title: string;
   coverUrl?: string;
-  genre?: string;
-  platform?: string;
+  genres?: string[];
+  platforms?: string[];
   releaseYear?: number;
 }
 
@@ -43,6 +43,52 @@ function validateString(value: string, field: string, maxLength = 500): string {
   if (trimmed.length > maxLength)
     throw new GraphQLError(`${field} must be at most ${maxLength} characters.`);
   return trimmed;
+}
+
+/**
+ * How many genres or platforms a game keeps.
+ *
+ * Enough to say something useful — Elden Ring is on three platforms and nobody
+ * needs the other twelve entries RAWG has for Terraria to know what it runs on.
+ */
+export const MAX_LABELS = 5;
+
+const LABEL_MAX_LENGTH = 100;
+
+/**
+ * Cleans a list of genres or platforms.
+ *
+ * Anything past the cap is **dropped, not refused**. That distinction is the
+ * whole bug this replaces: the platform field used to be a single string built
+ * by joining RAWG's entire platforms array, and the server correctly refused it
+ * for being over 100 characters — with the result that Terraria, on more than a
+ * dozen platforms, could not be added at all. A game being on a lot of platforms
+ * is not a malformed request, so it does not produce an error.
+ *
+ * A single entry longer than 100 characters still is malformed, and still fails.
+ * Duplicates are dropped case-insensitively but keep the caller's spelling, since
+ * RAWG is inconsistent about "macOS" and "MacOS".
+ */
+function validateLabels(values: string[], field: string): string[] {
+  const seen = new Set<string>();
+  const kept: string[] = [];
+
+  for (const value of values) {
+    const trimmed = value.trim();
+    if (!trimmed) continue;
+    if (trimmed.length > LABEL_MAX_LENGTH)
+      throw new GraphQLError(
+        `Each ${field} must be at most ${LABEL_MAX_LENGTH} characters.`
+      );
+
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    kept.push(trimmed);
+    if (kept.length === MAX_LABELS) break;
+  }
+
+  return kept;
 }
 
 function validateYear(year: number): number {
@@ -135,10 +181,8 @@ export const gameResolvers = {
       const rawgId = validateRawgId(input.rawgId);
       const title = validateString(input.title, "title", 200);
       const coverUrl = input.coverUrl ? validateCoverUrl(input.coverUrl) : null;
-      const genre = input.genre ? validateString(input.genre, "genre", 100) : null;
-      const platform = input.platform
-        ? validateString(input.platform, "platform", 100)
-        : null;
+      const genres = validateLabels(input.genres ?? [], "genre");
+      const platforms = validateLabels(input.platforms ?? [], "platform");
       const releaseYear =
         input.releaseYear != null ? validateYear(input.releaseYear) : null;
 
@@ -167,8 +211,8 @@ export const gameResolvers = {
           slug: await newGameSlug(title),
           title,
           coverUrl,
-          genre,
-          platform,
+          genres,
+          platforms,
           releaseYear,
           description,
           createdById: authUser.id,
@@ -190,10 +234,8 @@ export const gameResolvers = {
           rawgId: null,
           slug: await newGameSlug(title),
           title,
-          genre: input.genre ? validateString(input.genre, "genre", 100) : null,
-          platform: input.platform
-            ? validateString(input.platform, "platform", 100)
-            : null,
+          genres: validateLabels(input.genres ?? [], "genre"),
+          platforms: validateLabels(input.platforms ?? [], "platform"),
           description: input.description
             ? validateString(input.description, "description", 2000)
             : null,
@@ -216,14 +258,10 @@ export const gameResolvers = {
       const data: Partial<Omit<Game, "id" | "createdAt" | "updatedAt">> = {};
       if (input.title !== undefined)
         data.title = validateString(input.title, "title", 200);
-      if (input.genre !== undefined)
-        data.genre = input.genre
-          ? validateString(input.genre, "genre", 100)
-          : null;
-      if (input.platform !== undefined)
-        data.platform = input.platform
-          ? validateString(input.platform, "platform", 100)
-          : null;
+      if (input.genres !== undefined)
+        data.genres = validateLabels(input.genres, "genre");
+      if (input.platforms !== undefined)
+        data.platforms = validateLabels(input.platforms, "platform");
       if (input.description !== undefined)
         data.description = input.description
           ? validateString(input.description, "description", 2000)

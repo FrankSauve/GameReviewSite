@@ -79,8 +79,12 @@ export function GameSearchBar() {
             rawgId: game.rawgId,
             title: game.title,
             coverUrl: game.coverUrl ?? null,
-            genre: game.genres?.[0] ?? null,
-            platform: game.platforms?.join(", ") ?? null,
+            // Sent as lists. This used to take the first genre and join every
+            // platform into one comma-separated string, which put a game like
+            // Terraria past the server's length limit and made it unaddable.
+            // The server caps how many it keeps.
+            genres: game.genres ?? [],
+            platforms: game.platforms ?? [],
             releaseYear: game.releaseYear ?? null,
           },
         },

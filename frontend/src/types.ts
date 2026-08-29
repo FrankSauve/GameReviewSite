@@ -16,7 +16,7 @@ export interface GameSnippet {
   id: string;
   slug?: string | null;
   title: string;
-  genre?: string | null;
+  genres?: string[];
   coverUrl?: string | null;
   releaseYear?: number | null;
 }
@@ -39,8 +39,8 @@ export interface Game {
   slug?: string | null;
   rawgId?: string | null;
   title: string;
-  genre?: string | null;
-  platform?: string | null;
+  genres?: string[];
+  platforms?: string[];
   description?: string | null;
   coverUrl?: string | null;
   releaseYear?: number | null;

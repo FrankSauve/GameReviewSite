@@ -75,9 +75,30 @@ export function createMaxRowsRule(maxRows: number = DEFAULT_ROW_BUDGET) {
             return;
           }
 
-          const isList = String(fieldDef.type).includes("[");
+          /**
+           * A list of *rows*, not merely a list.
+           *
+           * `Game.genres` is `[String!]!`, and a list of scalars is part of the
+           * row it hangs off rather than a set of extra rows — asking for it
+           * fetches nothing additional. Counting it as a nested collection
+           * charged a page of games fifty rows per genre and fifty per platform,
+           * putting the games listing the SPA sends on every page load at 5100
+           * against a budget of 3000, and rejecting it outright.
+           *
+           * The presence of a sub-selection is what separates them, and it is
+           * read off the query rather than the schema deliberately: graphql-js
+           * type predicates are `instanceof` checks, and this process ends up
+           * holding more than one copy of the graphql module — Apollo and
+           * graphql-armor each bring their own — so `isCompositeType` on a type
+           * from the other copy throws "from another module or realm" and takes
+           * the whole schema down with it. A list of objects must have a
+           * selection set and a list of scalars cannot have one, so the AST
+           * answers the same question without touching a class identity.
+           */
+          const isRowList =
+            String(fieldDef.type).includes("[") && node.selectionSet != null;
 
-          if (!isList) {
+          if (!isRowList) {
             stack.push(parent);
             return;
           }

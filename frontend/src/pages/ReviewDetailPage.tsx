@@ -17,7 +17,7 @@ interface CommentUser { id: string; slug?: string | null; username: string; }
 interface ReviewComment { id: string; content: string; createdAt: string; user?: CommentUser | null; }
 interface ReviewGame {
   id: string; slug?: string | null; title: string; coverUrl?: string | null;
-  releaseYear?: number | null; genre?: string | null; platform?: string | null;
+  releaseYear?: number | null; genres?: string[]; platforms?: string[];
 }
 interface ReviewDetail {
   id: string; slug?: string | null; rating: number; content: string; createdAt: string;
@@ -183,7 +183,9 @@ export function ReviewDetailPage() {
               </h2>
               <div className="flex items-center gap-2 mt-0.5">
                 {game.releaseYear && <span className="text-xs text-gray-400">{game.releaseYear}</span>}
-                {game.genre && <span className="text-xs text-gray-500">· {game.genre}</span>}
+                {game.genres && game.genres.length > 0 && (
+                  <span className="text-xs text-gray-500">· {game.genres.join(", ")}</span>
+                )}
               </div>
             </div>
           </div>

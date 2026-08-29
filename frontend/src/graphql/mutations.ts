@@ -7,8 +7,8 @@ export const IMPORT_GAME = gql`
       slug
       title
       coverUrl
-      genre
-      platform
+      genres
+      platforms
       releaseYear
     }
   }
@@ -20,8 +20,8 @@ export const CREATE_GAME = gql`
       id
       slug
       title
-      genre
-      platform
+      genres
+      platforms
       description
       releaseYear
     }

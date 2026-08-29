@@ -22,7 +22,7 @@ function timeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
-function genreColor(genre?: string | null): string {
+function genreColor(genre?: string): string {
   const map: Record<string, string> = {
     RPG: "bg-violet-900/60 text-violet-300 border-violet-800",
     "Action RPG": "bg-violet-900/60 text-violet-300 border-violet-800",

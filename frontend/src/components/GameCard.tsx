@@ -64,9 +64,15 @@ export function GameCard({ game }: GameCardProps) {
             </div>
           )}
 
-          {game.platform && (
-            <span className="absolute bottom-2 left-3 text-xs font-medium bg-black/60 text-gray-300 px-2 py-1 rounded-md backdrop-blur-sm">
-              {game.platform.split(",")[0]}
+          {game.platforms && game.platforms.length > 0 && (
+            <span
+              className="absolute bottom-2 left-3 text-xs font-medium bg-black/60 text-gray-300 px-2 py-1 rounded-md backdrop-blur-sm"
+              title={game.platforms.join(", ")}
+            >
+              {game.platforms[0]}
+              {game.platforms.length > 1 && (
+                <span className="text-gray-500"> +{game.platforms.length - 1}</span>
+              )}
             </span>
           )}
         </div>
@@ -78,13 +84,14 @@ export function GameCard({ game }: GameCardProps) {
               {game.title}
             </h3>
             <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-              {game.genre && (
+              {(game.genres ?? []).slice(0, 2).map((genre) => (
                 <span
-                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${genreColor(game.genre)}`}
+                  key={genre}
+                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${genreColor(genre)}`}
                 >
-                  {game.genre}
+                  {genre}
                 </span>
-              )}
+              ))}
               {game.releaseYear && (
                 <span className="text-xs text-gray-500">{game.releaseYear}</span>
               )}

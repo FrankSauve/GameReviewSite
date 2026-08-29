@@ -14,7 +14,7 @@ export interface ReviewSummary {
     title: string;
     coverUrl?: string | null;
     releaseYear?: number | null;
-    genre?: string | null;
+    genres?: string[];
   } | null;
 }
 
