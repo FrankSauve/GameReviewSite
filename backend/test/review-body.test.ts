@@ -128,9 +128,17 @@ describe("review body text budget", () => {
     });
     const content = "x".repeat(REVIEW_CONTENT_MAX);
     for (let i = 0; i < count; i++) {
-      const game = await prisma.game.create({ data: { title: `Game ${i}` } });
+      const game = await prisma.game.create({
+        data: { title: `Game ${i}`, slug: `game-${i}` },
+      });
       await prisma.review.create({
-        data: { userId: user.id, gameId: game.id, rating: 8, content },
+        data: {
+          slug: `${game.slug}-by-${user.username}`,
+          userId: user.id,
+          gameId: game.id,
+          rating: 8,
+          content,
+        },
       });
     }
   };

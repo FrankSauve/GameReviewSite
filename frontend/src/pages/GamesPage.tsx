@@ -8,6 +8,7 @@ import type { Review, Game } from "../types";
 import { formatRating, ratingColor } from "../lib/rating";
 import { excerpt } from "../lib/markdown";
 import { formatPlaytime } from "../lib/playtime";
+import { gamePath, reviewPath, userPath } from "../lib/links";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -78,7 +79,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
     <article className="card overflow-hidden flex flex-col hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
       {/* Main clickable row */}
       <button
-        onClick={() => navigate(`/reviews/${review.id}`)}
+        onClick={() => navigate(reviewPath(review))}
         className="flex gap-0 text-left group w-full"
       >
         {/* Cover art */}
@@ -102,7 +103,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
           {/* Game title + meta */}
           <div className="flex flex-wrap items-center gap-2">
             <Link
-              to={game ? `/games/${game.id}` : "/"}
+              to={gamePath(game)}
               onClick={e => e.stopPropagation()}
               className="font-bold text-gray-100 hover:text-violet-300 transition-colors truncate"
             >
@@ -132,7 +133,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
               {(review.user?.username ?? "?")[0].toUpperCase()}
             </span>
             <Link
-              to={review.user ? `/users/${review.user.id}` : "#"}
+              to={userPath(review.user)}
               onClick={e => e.stopPropagation()}
               className="text-sm font-medium text-violet-400 hover:text-violet-300 transition-colors"
             >
@@ -221,7 +222,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
 
 function GameStrip({ game }: { game: Game }) {
   return (
-    <Link to={`/games/${game.id}`} className="group block">
+    <Link to={gamePath(game)} className="group block">
       <div className="card overflow-hidden hover:border-violet-700 transition-all duration-200">
         <div className="relative h-32 overflow-hidden">
           {game.coverUrl ? (

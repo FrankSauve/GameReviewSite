@@ -4,6 +4,7 @@ export const GET_GAMES = gql`
   query GetGames {
     games {
       id
+      slug
       title
       genre
       platform
@@ -33,6 +34,7 @@ export const GET_GAME = gql`
   query GetGame($id: ID!) {
     game(id: $id) {
       id
+      slug
       title
       genre
       platform
@@ -42,6 +44,7 @@ export const GET_GAME = gql`
       averageRating
       reviews {
         id
+        slug
         rating
         content
         yearPlayed
@@ -69,6 +72,7 @@ export const GET_RECENT_REVIEWS = gql`
   query GetRecentReviews($limit: Int, $offset: Int) {
     recentReviews(limit: $limit, offset: $offset) {
       id
+      slug
       rating
       content
       yearPlayed
@@ -80,6 +84,7 @@ export const GET_RECENT_REVIEWS = gql`
       }
       game {
         id
+        slug
         title
         genre
         coverUrl
@@ -103,6 +108,7 @@ export const GET_REVIEW = gql`
   query GetReview($id: ID!) {
     review(id: $id) {
       id
+      slug
       rating
       content
       yearPlayed
@@ -114,6 +120,7 @@ export const GET_REVIEW = gql`
       }
       game {
         id
+        slug
         title
         coverUrl
         releaseYear
@@ -165,6 +172,7 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
     }
     reviewSummariesByUser(userId: $id, order: $order) {
       id
+      slug
       rating
       yearPlayed
       hoursPlayed
@@ -172,6 +180,7 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
       commentCount
       game {
         id
+        slug
         title
         coverUrl
         releaseYear

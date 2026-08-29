@@ -4,6 +4,7 @@ import { GRAPHQL_PATH, createApp } from "../src/app.js";
 import { prisma } from "../src/lib/prisma.js";
 import { provisionUser, type Identity } from "../src/lib/identity.js";
 import { SESSION_COOKIE, createSession } from "../src/lib/session.js";
+import { slugify } from "../src/lib/slug.js";
 
 export interface GraphQLResponse<T = Record<string, unknown>> {
   status: number;
@@ -93,7 +94,7 @@ export function errorCodes(res: GraphQLResponse): string[] {
 
 /** Creates a game owned by nobody, for tests that need something to review. */
 export async function seedGame(title = "Test Game"): Promise<string> {
-  const game = await prisma.game.create({ data: { title } });
+  const game = await prisma.game.create({ data: { title, slug: slugify(title) } });
   return game.id;
 }
 

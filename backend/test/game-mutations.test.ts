@@ -86,7 +86,9 @@ describe("game mutations", () => {
 
     it("treats a game with no recorded creator as editable by nobody", async () => {
       // A row as it would exist from before the creator column.
-      const legacy = await prisma.game.create({ data: { title: "Legacy Game" } });
+      const legacy = await prisma.game.create({
+        data: { title: "Legacy Game", slug: "legacy-game" },
+      });
       const res = await authedQuery(
         app,
         `mutation { updateGame(id: "${legacy.id}", input: { title: "Taken over" }) { id } }`,
@@ -166,7 +168,12 @@ describe("game mutations", () => {
      */
     it("does not overwrite an existing game's description", async () => {
       const existing = await prisma.game.create({
-        data: { rawgId: "42", title: "Already Here", description: "Original" },
+        data: {
+          rawgId: "42",
+          title: "Already Here",
+          slug: "already-here",
+          description: "Original",
+        },
       });
 
       const res = await authedQuery<{ importGame: GamePayload }>(

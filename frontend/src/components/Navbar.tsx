@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useApolloClient } from "@apollo/client";
 import { useAuth } from "../contexts/AuthContext";
 import { GameSearchBar } from "./GameSearchBar";
+import { userPath } from "../lib/links";
 
 export function Navbar() {
   const location = useLocation();
@@ -35,7 +36,7 @@ export function Navbar() {
         {user ? (
           <div className="flex items-center gap-3 shrink-0">
             <Link
-              to={`/users/${user.id}`}
+              to={userPath(user)}
               className="flex items-center gap-2 bg-violet-900/40 border border-violet-800 rounded-full px-3 py-1.5 hover:bg-violet-900/70 hover:border-violet-600 transition-colors"
             >
               <span className="w-5 h-5 rounded-full bg-violet-600 flex items-center justify-center text-xs font-bold text-white">

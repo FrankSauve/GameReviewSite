@@ -2,6 +2,8 @@ import { formatRating } from "./rating";
 
 export interface ReviewSummary {
   id: string;
+  /** Readable URL identifier; the grouped views link straight to the review. */
+  slug?: string | null;
   rating: number;
   yearPlayed?: number | null;
   hoursPlayed?: number | null;
@@ -9,6 +11,7 @@ export interface ReviewSummary {
   commentCount: number;
   game?: {
     id: string;
+    slug?: string | null;
     title: string;
     coverUrl?: string | null;
     releaseYear?: number | null;

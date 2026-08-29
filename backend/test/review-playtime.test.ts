@@ -195,7 +195,13 @@ describe("review playtime", () => {
         data: { authentikUid: "ak-old", username: "old" },
       });
       const review = await prisma.review.create({
-        data: { userId: user.id, gameId, rating: 7, content: "From before" },
+        data: {
+          slug: "legacy-review-unset",
+          userId: user.id,
+          gameId,
+          rating: 7,
+          content: "From before",
+        },
       });
 
       const res = await authedQuery(
@@ -211,7 +217,13 @@ describe("review playtime", () => {
         data: { authentikUid: ALICE.uid, username: ALICE.username },
       });
       const review = await prisma.review.create({
-        data: { userId: user.id, gameId, rating: 7, content: "From before" },
+        data: {
+          slug: "legacy-review-corrected",
+          userId: user.id,
+          gameId,
+          rating: 7,
+          content: "From before",
+        },
       });
 
       const res = await authedQuery(

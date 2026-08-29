@@ -13,6 +13,8 @@ export interface Comment {
 
 export interface GameSnippet {
   id: string;
+  /** Readable URL identifier. Optional so a partial cache entry still types. */
+  slug?: string | null;
   title: string;
   genre?: string | null;
   coverUrl?: string | null;
@@ -21,6 +23,7 @@ export interface GameSnippet {
 
 export interface Review {
   id: string;
+  slug?: string | null;
   rating: number;
   content: string;
   yearPlayed?: number | null;
@@ -33,6 +36,7 @@ export interface Review {
 
 export interface Game {
   id: string;
+  slug?: string | null;
   rawgId?: string | null;
   title: string;
   genre?: string | null;

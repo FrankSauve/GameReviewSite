@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import type { Game } from "../types";
 import { formatRating, ratingColor } from "../lib/rating";
+import { gamePath } from "../lib/links";
 interface GameCardProps {
   game: Game;
 }
@@ -40,7 +41,7 @@ export function GameCard({ game }: GameCardProps) {
   const reviewCount = game.reviews?.length ?? 0;
 
   return (
-    <Link to={`/games/${game.id}`} className="group block">
+    <Link to={gamePath(game)} className="group block">
       <div className="card overflow-hidden hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
         {/* Cover image or gradient fallback */}
         <div className="relative h-44 overflow-hidden">

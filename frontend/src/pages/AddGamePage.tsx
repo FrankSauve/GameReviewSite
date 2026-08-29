@@ -4,6 +4,7 @@ import { useMutation } from "@apollo/client";
 import { CREATE_GAME } from "../graphql/mutations";
 import { GET_GAMES } from "../graphql/queries";
 import type { Game } from "../types";
+import { gamePath } from "../lib/links";
 
 const GENRES = [
   "Action", "Action RPG", "Adventure", "Fighting", "Horror",
@@ -34,7 +35,7 @@ export function AddGamePage() {
     CREATE_GAME,
     {
       refetchQueries: [{ query: GET_GAMES }],
-      onCompleted: (data) => navigate(`/games/${data.createGame.id}`),
+      onCompleted: (data) => navigate(gamePath(data.createGame)),
     }
   );
 

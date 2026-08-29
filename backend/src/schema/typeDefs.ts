@@ -16,6 +16,9 @@ export const typeDefs = `#graphql
   type Game {
     id: ID!
     rawgId: String
+    # The readable identifier this game is linked by, e.g. "elden-ring". Fixed at
+    # insert, so it keeps reading the old title after a rename.
+    slug: String!
     title: String!
     genre: String
     platform: String
@@ -50,6 +53,9 @@ export const typeDefs = `#graphql
   # is the same rows without the expensive field, which can be bounded far higher.
   type ReviewSummary {
     id: ID!
+    # Carried here as well as on Review because the grouped profile views link
+    # straight to each review without ever fetching its body.
+    slug: String!
     rating: Float!
     yearPlayed: Int
     hoursPlayed: Float
@@ -70,6 +76,9 @@ export const typeDefs = `#graphql
 
   type Review {
     id: ID!
+    # The readable identifier this review is linked by, e.g.
+    # "elden-ring-by-alice". Fixed at insert on both halves.
+    slug: String!
     userId: ID!
     gameId: ID!
     rating: Float!
@@ -159,6 +168,12 @@ export const typeDefs = `#graphql
 
   # Every list field takes a bounded window. Omitting the arguments does not mean
   # "all rows" — it means the server's default page size.
+  #
+  # Every field that takes the identifier of a single game, review or user accepts
+  # either the UUID or the readable slug (a username, for a user). URLs carry the
+  # slug; links shared before slugs existed carry the UUID and keep working. The
+  # argument stays named "id" so a caller can pass whatever the URL gave it
+  # without having to know which of the two it is holding.
   type Query {
     me: User
     users(limit: Int, offset: Int): [User!]!

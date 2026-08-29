@@ -30,14 +30,20 @@ async function seed(users: number, gamesEach: number, commentsEach: number) {
     });
   }
   for (let g = 0; g < gamesEach; g++) {
-    await prisma.game.create({ data: { title: `Game ${g}` } });
+    await prisma.game.create({ data: { title: `Game ${g}`, slug: `game-${g}` } });
   }
   const allUsers = await prisma.user.findMany();
   const allGames = await prisma.game.findMany();
   for (const user of allUsers) {
     for (const game of allGames) {
       const review = await prisma.review.create({
-        data: { userId: user.id, gameId: game.id, rating: 7, content: "x".repeat(200) },
+        data: {
+          slug: `${game.slug}-by-${user.username}`,
+          userId: user.id,
+          gameId: game.id,
+          rating: 7,
+          content: "x".repeat(200),
+        },
       });
       for (let c = 0; c < commentsEach; c++) {
         await prisma.comment.create({

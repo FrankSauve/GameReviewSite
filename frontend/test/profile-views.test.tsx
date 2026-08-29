@@ -20,6 +20,7 @@ import { UserProfilePage } from "../src/pages/UserProfilePage";
  * grouped along the wrong axis and asking the server for the wrong ordering.
  */
 const USER_ID = "u1";
+const USERNAME = "simon";
 
 const summary = (
   id: string,
@@ -29,6 +30,7 @@ const summary = (
 ) => ({
   __typename: "ReviewSummary",
   id,
+  slug: `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-by-${USERNAME}`,
   rating,
   yearPlayed,
   hoursPlayed: 12,
@@ -37,6 +39,7 @@ const summary = (
   game: {
     __typename: "Game",
     id: `g-${id}`,
+    slug: title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
     title,
     coverUrl: null,
     releaseYear: 2015,
@@ -50,11 +53,11 @@ const ROWS = [
   summary("r3", 10, 2019, "Another Great One"),
 ];
 
-function mockFor(order: string) {
+function mockFor(order: string, id: string = USER_ID) {
   return {
     request: {
       query: GET_USER_REVIEW_SUMMARIES,
-      variables: { id: USER_ID, order },
+      variables: { id, order },
     },
     result: {
       data: {
@@ -76,8 +79,16 @@ function renderAt(path: string) {
   // which is what these tests want.
   return render(
     <MockedProvider
-      mocks={[mockFor("YEAR_DESC"), mockFor("RATING_DESC"), mockFor("RECENT")]}
-      addTypename={false}
+      mocks={[
+        mockFor("YEAR_DESC"),
+        mockFor("RATING_DESC"),
+        mockFor("RECENT"),
+        // The same three again under the username, for after the canonical
+        // redirect has swapped the UUID out of the URL.
+        mockFor("YEAR_DESC", USERNAME),
+        mockFor("RATING_DESC", USERNAME),
+        mockFor("RECENT", USERNAME),
+      ]}
     >
       <MemoryRouter initialEntries={[path]}>
         <Routes>
@@ -98,6 +109,19 @@ function renderAt(path: string) {
       </MemoryRouter>
     </MockedProvider>
   );
+}
+
+/**
+ * Runs `assert` until it holds.
+ *
+ * Rendering at a UUID URL rewrites it to the username, which re-runs the query
+ * under the readable key and drops the page back to its loading skeleton for a
+ * tick. A plain `waitFor` for the tabs to appear resolves on the *first* load and
+ * the next line then runs against the skeleton, so the assertion has to be the
+ * retried condition rather than something that merely precedes it.
+ */
+async function eventually(assert: () => void): Promise<void> {
+  await waitFor(assert);
 }
 
 /** Group headings, in the order they appear. */
@@ -140,23 +164,41 @@ describe("profile grouped views", () => {
 
   it("marks the current view in the tab strip", async () => {
     renderAt(`/users/${USER_ID}/by-score`);
-    await waitFor(() => expect(screen.getByText("simon")).toBeTruthy());
-    const current = screen.getByRole("link", { current: "page" });
-    expect(current.textContent).toBe("By score");
+    await eventually(() => {
+      expect(screen.getByRole("link", { current: "page" }).textContent).toBe("By score");
+    });
   });
 
   it("links each tab at its own route", async () => {
     renderAt(`/users/${USER_ID}`);
-    await waitFor(() => expect(screen.getByText("simon")).toBeTruthy());
-    expect(screen.getByRole("link", { name: "By score" }).getAttribute("href")).toBe(
-      `/users/${USER_ID}/by-score`
+    await eventually(() => {
+      expect(screen.getByRole("link", { name: "By score" }).getAttribute("href")).toBe(
+        `/users/${USERNAME}/by-score`
+      );
+      expect(screen.getByRole("link", { name: "Recent" }).getAttribute("href")).toBe(
+        `/users/${USERNAME}/recent`
+      );
+      expect(screen.getByRole("link", { name: "By year" }).getAttribute("href")).toBe(
+        `/users/${USERNAME}`
+      );
+    });
+  });
+
+  /**
+   * A profile link shared before slugs existed still resolves, and does not stay
+   * a UUID once it has: the page rewrites the address bar in place, keeping
+   * whichever view tab the visitor arrived on.
+   */
+  it("rewrites a UUID profile URL to the username", async () => {
+    renderAt(`/users/${USER_ID}/by-score`);
+    await waitFor(() => expect(screen.getByText(USERNAME)).toBeTruthy());
+    await waitFor(() =>
+      expect(
+        screen.getByRole("link", { current: "page" }).getAttribute("href")
+      ).toBe(`/users/${USERNAME}/by-score`)
     );
-    expect(screen.getByRole("link", { name: "Recent" }).getAttribute("href")).toBe(
-      `/users/${USER_ID}/recent`
-    );
-    expect(screen.getByRole("link", { name: "By year" }).getAttribute("href")).toBe(
-      `/users/${USER_ID}`
-    );
+    // Still the by-score view, not bounced back to the default.
+    expect(screen.getByRole("link", { current: "page" }).textContent).toBe("By score");
   });
 
   it("renders no body text, because the query does not fetch one", async () => {
@@ -165,6 +207,6 @@ describe("profile grouped views", () => {
     // Each row links to the review rather than showing an excerpt of it.
     expect(
       screen.getByText("Best Game").closest("a")?.getAttribute("href")
-    ).toBe("/reviews/r1");
+    ).toBe(`/reviews/best-game-by-${USERNAME}`);
   });
 });

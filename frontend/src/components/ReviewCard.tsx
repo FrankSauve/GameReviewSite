@@ -11,6 +11,7 @@ import { currentYear, formatPlaytime, snapHours } from "../lib/playtime";
 import { RatingInput } from "./RatingInput";
 import { PlaytimeInput } from "./PlaytimeInput";
 import { Markdown } from "./Markdown";
+import { reviewPath, userPath } from "../lib/links";
 
 interface ReviewCardProps {
   review: Review;
@@ -80,7 +81,7 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
   return (
     <div
       className="card p-5 relative cursor-pointer hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200"
-      onClick={() => navigate(`/reviews/${review.id}`)}
+      onClick={() => navigate(reviewPath(review))}
     >
       {/* Raised layer so interactive elements stay clickable */}
       <div className="relative z-10 space-y-3">
@@ -92,7 +93,7 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
           </div>
           <div>
             <Link
-              to={review.user ? `/users/${review.user.id}` : "#"}
+              to={userPath(review.user)}
               className="font-semibold text-gray-200 hover:text-violet-300 text-sm transition-colors"
             >
               {review.user?.username ?? "Unknown"}

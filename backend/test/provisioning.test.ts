@@ -49,9 +49,17 @@ describe("user provisioning", () => {
     const legacy = await prisma.user.create({
       data: { username: "old-alice", email: "alice@example.com" },
     });
-    const game = await prisma.game.create({ data: { title: "Legacy Game" } });
+    const game = await prisma.game.create({
+      data: { title: "Legacy Game", slug: "legacy-game" },
+    });
     await prisma.review.create({
-      data: { userId: legacy.id, gameId: game.id, rating: 7, content: "From before" },
+      data: {
+        slug: "legacy-game-by-old-alice",
+        userId: legacy.id,
+        gameId: game.id,
+        rating: 7,
+        content: "From before",
+      },
     });
 
     const res = await me(ALICE);

@@ -7,6 +7,8 @@ import { AddReviewForm } from "../components/AddReviewForm";
 import { useAuth } from "../contexts/AuthContext";
 import type { Game } from "../types";
 import { formatRating, ratingColor } from "../lib/rating";
+import { gamePath } from "../lib/links";
+import { useCanonicalPath } from "../hooks/useCanonicalPath";
 
 export function GameDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +19,9 @@ export function GameDetailPage() {
     variables: { id },
     skip: !id,
   });
+
+  // A /games/<uuid> link still resolves; this turns it into /games/<slug>.
+  useCanonicalPath(data?.game ? gamePath(data.game) : null);
 
   if (loading) return <DetailSkeleton />;
   if (error)
@@ -142,7 +147,7 @@ export function GameDetailPage() {
             <span className="text-2xl">🔐</span>
             <p className="text-sm text-gray-500">
               <button
-                onClick={() => signIn(`/games/${game.id}`)}
+                onClick={() => signIn(gamePath(game))}
                 className="text-violet-400 hover:text-violet-300 font-medium transition-colors"
               >
                 Sign in

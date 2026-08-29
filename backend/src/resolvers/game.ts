@@ -10,6 +10,7 @@ import {
 } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
 import { searchRawg, getRawgGame, releaseYear } from "../lib/rawg.js";
+import { byIdOrSlug, slugify, uniqueSlug } from "../lib/slug.js";
 
 interface CreateGameInput {
   title: string;
@@ -72,6 +73,21 @@ function validateCoverUrl(value: string): string {
   return parsed.toString();
 }
 
+/**
+ * A free slug for a new game.
+ *
+ * Only ever called on the insert path. An existing game keeps the slug it was
+ * given, including when `importGame` finds it already there and backfills its
+ * description — re-slugging on import would break every link to it the moment
+ * RAWG returned a slightly different title.
+ */
+async function newGameSlug(title: string): Promise<string> {
+  return uniqueSlug(
+    slugify(title, "game"),
+    async (candidate) => (await prisma.game.count({ where: { slug: candidate } })) > 0
+  );
+}
+
 /** RAWG identifiers are integers; this is also what gets parsed for the detail fetch. */
 function validateRawgId(value: string): string {
   const trimmed = value.trim();
@@ -93,7 +109,7 @@ export const gameResolvers = {
     },
 
     game: async (_parent: unknown, { id }: { id: string }) => {
-      const game = await prisma.game.findUnique({ where: { id } });
+      const game = await prisma.game.findFirst({ where: byIdOrSlug(id) });
       return game ? serializeDates(game) : null;
     },
 
@@ -156,6 +172,7 @@ export const gameResolvers = {
       const game = await prisma.game.create({
         data: {
           rawgId,
+          slug: await newGameSlug(title),
           title,
           coverUrl,
           genre,
@@ -174,11 +191,13 @@ export const gameResolvers = {
       context: Context,
     ) => {
       const authUser = requireAuth(context);
+      const title = validateString(input.title, "title", 200);
 
       const game = await prisma.game.create({
         data: {
           rawgId: null,
-          title: validateString(input.title, "title", 200),
+          slug: await newGameSlug(title),
+          title,
           genre: input.genre ? validateString(input.genre, "genre", 100) : null,
           platform: input.platform
             ? validateString(input.platform, "platform", 100)

@@ -6,12 +6,13 @@ import { IMPORT_GAME } from "../graphql/mutations";
 import { GET_GAMES } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
 import type { ExternalGame } from "../types";
+import { gamePath } from "../lib/links";
 
 interface SearchResult {
   searchGamesExternal: ExternalGame[];
 }
 interface ImportResult {
-  importGame: { id: string };
+  importGame: { id: string; slug?: string | null };
 }
 
 export function GameSearchBar() {
@@ -84,8 +85,8 @@ export function GameSearchBar() {
           },
         },
       });
-      const id = result.data?.importGame.id;
-      if (id) navigate(`/games/${id}`);
+      const imported = result.data?.importGame;
+      if (imported) navigate(gamePath(imported));
     },
     [user, importGame, navigate]
   );

@@ -32,12 +32,18 @@ describe("reviewSummariesByUser", () => {
       data: { authentikUid: ALICE.uid, username: ALICE.username },
     });
     userId = user.id;
-    for (const [rating, yearPlayed] of rows) {
+    // Indexed, not keyed on the row's values: the fixtures deliberately repeat a
+    // rating and a year, which the unique slug column will not have.
+    for (const [i, [rating, yearPlayed]] of rows.entries()) {
       const game = await prisma.game.create({
-        data: { title: `Game ${rating}-${yearPlayed ?? "none"}` },
+        data: {
+          title: `Game ${rating}-${yearPlayed ?? "none"}`,
+          slug: `game-${i}`,
+        },
       });
       await prisma.review.create({
         data: {
+          slug: `${game.slug}-by-${user.username}`,
           userId: user.id,
           gameId: game.id,
           rating,

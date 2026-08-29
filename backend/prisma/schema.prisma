@@ -48,6 +48,10 @@ model Session {
 model Game {
   id          String   @id @default(uuid())
   rawgId      String?  @unique
+  /// The readable identifier this game is linked by, derived from the title at
+  /// insert and never regenerated — see lib/slug.ts. Not null, so every game has
+  /// a readable URL rather than a fallback to the UUID that would live forever.
+  slug        String   @unique
   title       String
   genre       String?
   platform    String?
@@ -66,6 +70,11 @@ model Game {
 
 model Review {
   id        String    @id @default(uuid())
+  /// `<game-slug>-by-<username>`, fixed at insert. A review is the thing people
+  /// paste into a chat window, so this is the slug that matters most; it keeps
+  /// reading the old name after a rename on either side, which is the price of a
+  /// link that does not rot.
+  slug      String    @unique
   rating    Float
   content   String
   /// The year the game was played or finished, which is not the year the review

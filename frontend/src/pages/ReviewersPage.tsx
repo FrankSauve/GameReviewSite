@@ -3,6 +3,7 @@ import { useQuery } from "@apollo/client";
 import { GET_USERS } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
 import { formatRating, ratingColor } from "../lib/rating";
+import { userPath } from "../lib/links";
 
 interface ReviewerUser {
   id: string;
@@ -73,7 +74,7 @@ export function ReviewersPage() {
             const isMe = me?.id === u.id;
 
             return (
-              <Link key={u.id} to={`/users/${u.id}`} className="group block">
+              <Link key={u.id} to={userPath(u)} className="group block">
                 <div className="card p-5 flex items-center gap-4 hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
                   {/* Avatar */}
                   <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${avatarGradient(u.username)} flex items-center justify-center text-base font-black text-white shrink-0`}>

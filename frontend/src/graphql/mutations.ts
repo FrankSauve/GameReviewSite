@@ -4,6 +4,7 @@ export const IMPORT_GAME = gql`
   mutation ImportGame($input: ImportGameInput!) {
     importGame(input: $input) {
       id
+      slug
       title
       coverUrl
       genre
@@ -17,6 +18,7 @@ export const CREATE_GAME = gql`
   mutation CreateGame($input: CreateGameInput!) {
     createGame(input: $input) {
       id
+      slug
       title
       genre
       platform
@@ -30,6 +32,7 @@ export const CREATE_REVIEW = gql`
   mutation CreateReview($input: CreateReviewInput!) {
     createReview(input: $input) {
       id
+      slug
       rating
       content
       yearPlayed

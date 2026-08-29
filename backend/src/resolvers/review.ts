@@ -9,6 +9,12 @@ import {
   type PageArgs,
 } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
+import {
+  byIdOrSlug,
+  byIdOrUsername,
+  reviewSlugBase,
+  uniqueSlug,
+} from "../lib/slug.js";
 
 interface CreateReviewInput {
   gameId: string;
@@ -138,7 +144,7 @@ export const reviewResolvers = {
     },
 
     review: async (_parent: unknown, { id }: { id: string }) => {
-      const review = await prisma.review.findUnique({ where: { id } });
+      const review = await prisma.review.findFirst({ where: byIdOrSlug(id) });
       return review ? serializeDates(review) : null;
     },
 
@@ -162,8 +168,10 @@ export const reviewResolvers = {
       { budget }: Context
     ) => {
       const { take, skip } = clampWindow(args, LIST_BOUNDS.reviews);
+      // Filtered through the relation rather than by resolving the key to an id
+      // first, so accepting a slug costs a join instead of a second round trip.
       const reviews = await prisma.review.findMany({
-        where: { gameId },
+        where: { game: byIdOrSlug(gameId) },
         orderBy: { createdAt: "desc" },
         take,
         skip,
@@ -178,7 +186,7 @@ export const reviewResolvers = {
     ) => {
       const { take, skip } = clampWindow(args, LIST_BOUNDS.reviews);
       const reviews = await prisma.review.findMany({
-        where: { userId },
+        where: { user: byIdOrUsername(userId) },
         orderBy: { createdAt: "desc" },
         take,
         skip,
@@ -210,7 +218,7 @@ export const reviewResolvers = {
     ) => {
       const { take, skip } = clampWindow(args, LIST_BOUNDS.reviewSummaries);
       const reviews = await prisma.review.findMany({
-        where: { userId },
+        where: { user: byIdOrUsername(userId) },
         orderBy: ORDER_BY[order] ?? ORDER_BY.RECENT,
         take,
         skip,
@@ -239,6 +247,11 @@ export const reviewResolvers = {
 
       const review = await prisma.review.create({
         data: {
+          slug: await uniqueSlug(
+            reviewSlugBase(game.slug, authUser.username),
+            async (candidate) =>
+              (await prisma.review.count({ where: { slug: candidate } })) > 0
+          ),
           userId: authUser.id,
           gameId: input.gameId,
           rating: validateRating(input.rating),

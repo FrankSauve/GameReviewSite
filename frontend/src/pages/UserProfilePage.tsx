@@ -11,6 +11,8 @@ import {
   type ReviewSummary,
 } from "../lib/grouping";
 import { GroupedReviewList } from "../components/GroupedReviewList";
+import { userPath } from "../lib/links";
+import { useCanonicalPath } from "../hooks/useCanonicalPath";
 
 interface ProfileUser {
   id: string;
@@ -59,6 +61,11 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
     variables: { id, order: ORDER_FOR[grouping] },
     skip: !id,
   });
+
+  // A /users/<uuid> link still resolves; this turns it into /users/<username>,
+  // keeping whichever view tab the visitor arrived on.
+  const tabPath = TABS.find((t) => t.grouping === grouping)?.path ?? "";
+  useCanonicalPath(data?.user ? userPath(data.user, tabPath) : null);
 
   if (loading) {
     return (
@@ -151,7 +158,7 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
           return (
             <Link
               key={tab.grouping}
-              to={`/users/${profile.id}${tab.path ? `/${tab.path}` : ""}`}
+              to={userPath(profile, tab.path)}
               aria-current={active ? "page" : undefined}
               className={`px-3 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${
                 active
