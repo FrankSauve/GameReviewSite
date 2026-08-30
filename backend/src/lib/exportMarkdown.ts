@@ -8,14 +8,7 @@
  *
  *     <body>
  *
- * The point of the export is longevity — files that are still readable when this
- * site is not — so it is plain text with no wrapper format, no front matter and
- * no identifiers. Nothing here is designed to be parsed back in; #39, which was
- * going to read it, is closed.
- *
- * One review per file, delivered as a zip. A single concatenated file made the
- * archive one blob to re-split by hand before any of it could be filed, edited
- * or moved somewhere else.
+ * One review per file, delivered as a zip.
  */
 
 import { slugify } from "./slug.js";
@@ -29,20 +22,11 @@ export function formatScore(rating: number): string {
 export interface ExportableReview {
   gameTitle: string;
   rating: number;
-  /** Null for the rows that predate the column, and for imports without one. */
   hoursPlayed?: number | null;
-  /** Null for the same reason. */
   yearPlayed?: number | null;
   content: string;
 }
 
-/**
- * One review as its own file.
- *
- * A missing playtime or year drops its line rather than writing "unknown": a
- * person reading this file later should not have to decide whether a zero means
- * "no time" or "no record".
- */
 export function formatReview(review: ExportableReview): string {
   const lines = [`# ${review.gameTitle}`, `**Score:** ${formatScore(review.rating)}`];
   if (review.hoursPlayed != null) {
@@ -67,10 +51,6 @@ export function exportFilename(usernameSlug: string): string {
 
 /**
  * The directory every entry sits under, e.g. `reviews-alice/`.
- *
- * `unzip` on the command line extracts into the working directory, so a flat
- * archive scatters a backlog's worth of loose files across whatever the user
- * happened to be standing in.
  */
 export function exportDirectory(usernameSlug: string): string {
   return `reviews-${usernameSlug}`;
@@ -78,11 +58,6 @@ export function exportDirectory(usernameSlug: string): string {
 
 /**
  * Names the file for one review, e.g. `reviews-alice/elden-ring.md`.
- *
- * `taken` carries the names already used by this archive and is added to here.
- * Two entries of the same name is a zip an extractor may unpack as one file, and
- * the same game slug can reappear: a title that reduces to the same slug as
- * another, or the same game reviewed twice after a re-slug.
  */
 export function reviewEntryName(
   directory: string,
