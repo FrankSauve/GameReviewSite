@@ -1,4 +1,4 @@
-import { GraphQLError } from "graphql";
+import { badInput } from "./badInput.js";
 
 /**
  * Trims a caller-supplied string and refuses it if it is empty or too long.
@@ -18,8 +18,8 @@ export function validateString(
   maxLength: number
 ): string {
   const trimmed = value?.trim() ?? "";
-  if (!trimmed) throw new GraphQLError(`${field} must not be empty.`);
+  if (!trimmed) throw badInput(`${field} must not be empty.`);
   if (trimmed.length > maxLength)
-    throw new GraphQLError(`${field} must be at most ${maxLength} characters.`);
+    throw badInput(`${field} must be at most ${maxLength} characters.`);
   return trimmed;
 }

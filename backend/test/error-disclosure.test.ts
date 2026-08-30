@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Express } from "express";
-import { publicQuery, resetDatabase } from "./helpers.js";
+import { ALICE, authedQuery, publicQuery, resetDatabase } from "./helpers.js";
 
 /**
  * Apollo Server does not mask error messages by default. It strips the stack
@@ -91,6 +91,28 @@ describe("error message disclosure", () => {
     );
     expect(anonWrite.errors?.[0]?.extensions?.code).toBe("UNAUTHENTICATED");
     expect(anonWrite.errors?.[0]?.message).toMatch(/signed in/i);
+
+    await stop();
+  });
+
+  /**
+   * The case the three above missed. A resolver's own validation is the only
+   * account a caller gets of what the rule is, and a bare GraphQLError carries
+   * no code, so Apollo defaulted it to INTERNAL_SERVER_ERROR and every one of
+   * these messages was replaced in production. Schema validation and auth both
+   * set their own codes, so neither showed it.
+   */
+  it("returns a resolver's own validation message in production", async () => {
+    const { app, stop } = await appFor("production");
+
+    const res = await authedQuery(
+      app,
+      'mutation { createGame(input: { title: "   " }) { id } }',
+      ALICE
+    );
+
+    expect(res.errors?.[0]?.extensions?.code).toBe("BAD_USER_INPUT");
+    expect(res.errors?.[0]?.message).toMatch(/must not be empty/);
 
     await stop();
   });
