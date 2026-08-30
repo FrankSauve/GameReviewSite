@@ -51,7 +51,9 @@ function avatarGradient(username: string): string {
 }
 
 export function ReviewDetailPage() {
-  const { id } = useParams<{ id: string }>();
+  // The whole path under /reviews is the key: `alice/elden-ring` is what the
+  // review stores as its slug, and a UUID arrives as the same single string.
+  const id = useParams()["*"] || undefined;
   const { user, signIn } = useAuth();
 
   const { data, loading, error } = useQuery<{ review: ReviewDetail | null }>(

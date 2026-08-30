@@ -133,7 +133,7 @@ describe("review body text budget", () => {
       });
       await prisma.review.create({
         data: {
-          slug: `${game.slug}-by-${user.username}`,
+          slug: `${user.username}/${game.slug}`,
           userId: user.id,
           gameId: game.id,
           rating: 8,

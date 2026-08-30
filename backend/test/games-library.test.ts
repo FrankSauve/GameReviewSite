@@ -52,7 +52,7 @@ async function reviewGame(title: string): Promise<void> {
       content: "Played it.",
       yearPlayed: 2024,
       hoursPlayed: 12,
-      slug: `${game.slug}-by-${user.username}`,
+      slug: `${user.username}/${game.slug}`,
       gameId: game.id,
       userId: user.id,
     },

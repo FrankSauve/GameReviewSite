@@ -10,7 +10,7 @@ export function gamePath(game?: Slugged | null): string {
   return game ? `/games/${game.slug ?? game.id}` : "/";
 }
 
-/** `/reviews/elden-ring-by-alice`. */
+/** `/reviews/alice/elden-ring`. The two segments live in the slug itself. */
 export function reviewPath(review: Slugged): string {
   return `/reviews/${review.slug ?? review.id}`;
 }
