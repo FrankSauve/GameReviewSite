@@ -59,8 +59,8 @@ model Game {
   title       String
   /// Scalar lists, not a join table: labels copied from RAWG for display, never
   /// queried across or deduplicated between games.
-  genres      String[]
-  platforms   String[]
+  genres      String[] @default([])
+  platforms   String[] @default([])
   description String?
   coverUrl    String?
   releaseYear Int?
