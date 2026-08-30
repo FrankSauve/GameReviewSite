@@ -50,7 +50,7 @@ export function ArticleEditorPage() {
   }, [existing?.id]);
 
   const done = (article?: Article | null) => {
-    navigate(article ? articlePath(article) : "/articles");
+    void navigate(article ? articlePath(article) : "/articles");
   };
 
   const [createArticle, { loading: creating, error: createError }] =

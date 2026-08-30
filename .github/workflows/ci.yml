@@ -11,8 +11,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  format:
-    name: Formatting
+  lint:
+    name: Format and lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
@@ -26,6 +26,8 @@ jobs:
       - run: npm ci
 
       - run: npm run format:check
+
+      - run: npm run lint
 
   backend:
     name: Backend (typecheck, tests)

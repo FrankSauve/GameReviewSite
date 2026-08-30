@@ -31,7 +31,7 @@ export function ArticleDetailPage() {
     // The index is a separate query and would otherwise still list the article
     // that no longer exists.
     refetchQueries: ["GetArticles"],
-    onCompleted: () => navigate("/articles"),
+    onCompleted: () => void navigate("/articles"),
   });
 
   if (loading) {

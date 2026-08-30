@@ -62,7 +62,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
     e.preventDefault();
     const trimmed = newComment.trim();
     if (!trimmed || submitting) return;
-    createComment({
+    void createComment({
       variables: { input: { reviewId: review.id, content: trimmed } },
     });
   };
@@ -73,7 +73,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
     <article className="card overflow-hidden flex flex-col hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
       {/* Main clickable row */}
       <button
-        onClick={() => navigate(reviewPath(review))}
+        onClick={() => void navigate(reviewPath(review))}
         className="flex gap-0 text-left group w-full"
       >
         {/* Cover art */}

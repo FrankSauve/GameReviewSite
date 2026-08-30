@@ -96,7 +96,7 @@ export function GameSearchBar() {
         },
       });
       const imported = result.data?.importGame;
-      if (imported) navigate(gamePath(imported));
+      if (imported) void navigate(gamePath(imported));
     },
     [user, importGame, navigate],
   );

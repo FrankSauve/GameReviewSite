@@ -190,7 +190,7 @@ export function ReviewDetailPage() {
     e.preventDefault();
     const trimmed = newComment.trim();
     if (!trimmed || submitting) return;
-    createComment({
+    void createComment({
       variables: { input: { reviewId: review.id, content: trimmed } },
     });
     setNewComment("");

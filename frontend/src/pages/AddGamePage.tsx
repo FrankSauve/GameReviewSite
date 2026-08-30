@@ -58,7 +58,7 @@ export function AddGamePage() {
       // By name, not by document: GET_GAMES takes paging and filter variables
       // now, and the object form would only match a call with none of them.
       refetchQueries: ["GetGames"],
-      onCompleted: (data) => navigate(gamePath(data.createGame)),
+      onCompleted: (data) => void navigate(gamePath(data.createGame)),
     },
   );
 
