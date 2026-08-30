@@ -59,7 +59,7 @@ export function Navbar() {
               className="flex items-center gap-2 bg-violet-900/40 border border-violet-800 rounded-full px-3 py-1.5 hover:bg-violet-900/70 hover:border-violet-600 transition-colors"
             >
               <span className="w-5 h-5 rounded-full bg-violet-600 flex items-center justify-center text-xs font-bold text-white">
-                {user.username[0].toUpperCase()}
+                {user.username.charAt(0).toUpperCase()}
               </span>
               <span className="text-sm font-medium text-violet-300 hidden sm:block">
                 {user.username}

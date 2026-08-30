@@ -197,7 +197,7 @@ describe("the games listing", () => {
             data: {
               rating,
               content: "Played it.",
-              hoursPlayed: hours[i],
+              hoursPlayed: hours[i] ?? null,
               slug: `${game.slug}-${i}`,
               gameId: game.id,
               userId: bob.id,
@@ -258,7 +258,7 @@ describe("the games listing", () => {
 
     it("refuses a sort that is not in the enum", async () => {
       const res = await publicQuery<ListPayload>(app, LIST, {}, { sort: "DROP TABLE" });
-      expect(res.errors?.[0].message).toMatch(/GameSort/);
+      expect(res.errors?.[0]?.message).toMatch(/GameSort/);
     });
   });
 

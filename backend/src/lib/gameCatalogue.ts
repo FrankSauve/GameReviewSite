@@ -23,11 +23,11 @@ export type GameSort =
   | "MOST_PLAYED";
 
 export interface GameFilter {
-  reviewedOnly?: boolean | null;
-  genre?: string | null;
-  platform?: string | null;
+  reviewedOnly?: boolean | null | undefined;
+  genre?: string | null | undefined;
+  platform?: string | null | undefined;
   /** A user id or slug; games that user has reviewed. */
-  reviewedBy?: string | null;
+  reviewedBy?: string | null | undefined;
 }
 
 function whereFragment(filter: GameFilter): Prisma.Sql {

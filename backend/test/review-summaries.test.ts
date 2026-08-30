@@ -205,7 +205,7 @@ describe("reviewSummariesByUser", () => {
       const res = await query("order: RECENT", "id commentCount game { id title }");
       expect(res.errors).toBeUndefined();
       expect(res.data?.reviewSummariesByUser).toHaveLength(50);
-      expect(res.data?.reviewSummariesByUser[0].game).toMatchObject({
+      expect(res.data?.reviewSummariesByUser[0]?.game).toMatchObject({
         title: expect.any(String),
       });
     });

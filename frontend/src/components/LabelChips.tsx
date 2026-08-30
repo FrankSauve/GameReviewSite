@@ -1,7 +1,7 @@
 interface LabelChipsProps {
-  labels?: string[];
+  labels?: string[] | undefined;
   /** How many to show before collapsing the rest into a "+N". */
-  limit?: number;
+  limit?: number | undefined;
   className: string;
   /** Applied to the "+N" chip, which is deliberately quieter than the rest. */
   overflowClassName?: string;

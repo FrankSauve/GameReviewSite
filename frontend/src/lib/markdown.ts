@@ -33,7 +33,7 @@ export function toPlainText(markdown: string): string {
       // hidden text must not appear. Confined to a single block, because the
       // renderer never pairs markers across a blank line either.
       .replace(/\|\|(?:(?!\n[ \t]*\n)[\s\S])+?\|\|/g, "[spoiler]")
-      .replace(/\u0000(\d+)\u0000/g, (_m, i: string) => code[Number(i)])
+      .replace(/\u0000(\d+)\u0000/g, (_m, i: string) => code[Number(i)] ?? "")
       // Links and any images that predate the renderer's element list.
       .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
       .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")

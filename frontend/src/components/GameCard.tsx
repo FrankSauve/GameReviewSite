@@ -24,7 +24,7 @@ function genreColor(genre?: string | null) {
 
 // Deterministic gradient fallback for games without cover art
 function titleGradient(title: string): string {
-  const gradients = [
+  const gradients: [string, ...string[]] = [
     "from-violet-900 via-indigo-900 to-gray-900",
     "from-rose-900 via-pink-900 to-gray-900",
     "from-emerald-900 via-teal-900 to-gray-900",
@@ -34,7 +34,7 @@ function titleGradient(title: string): string {
   ];
   const idx =
     [...title].reduce((acc, c) => acc + c.charCodeAt(0), 0) % gradients.length;
-  return gradients[idx];
+  return gradients[idx] ?? gradients[0];
 }
 
 export function GameCard({ game }: GameCardProps) {
