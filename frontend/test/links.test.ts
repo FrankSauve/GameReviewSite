@@ -24,8 +24,8 @@ describe("link helpers", () => {
 
   describe("reviewPath", () => {
     it("uses the slug when there is one", () => {
-      expect(reviewPath({ id: "uuid-2", slug: "elden-ring-by-alice" })).toBe(
-        "/reviews/elden-ring-by-alice"
+      expect(reviewPath({ id: "uuid-2", slug: "alice/elden-ring" })).toBe(
+        "/reviews/alice/elden-ring"
       );
     });
 

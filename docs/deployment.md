@@ -173,12 +173,12 @@ geoblock on this path alone, because Discord and the rest fetch from cloud IPs
 no country whitelist covers; see the comment above that `map`.
 
 ```bash
-curl -s https://reviews.example.com/reviews/<slug> \
+curl -s https://reviews.example.com/reviews/<user>/<game> \
   -A 'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)' \
   | grep 'og:title'
 # <meta property="og:title" content="Elden Ring — 9.5/10 by alice">
 
-curl -s https://reviews.example.com/reviews/<slug> | grep -c 'og:title'
+curl -s https://reviews.example.com/reviews/<user>/<game> | grep -c 'og:title'
 # 0
 ```
 

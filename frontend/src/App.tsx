@@ -42,7 +42,10 @@ function App() {
                   path="/users/:id/by-year"
                   element={<UserProfilePage grouping="year" />}
                 />
-                <Route path="/reviews/:id" element={<ReviewDetailPage />} />
+                {/* A splat, because a review is at /reviews/<user>/<game>
+                    while a UUID -- or a slug from before the move to two
+                    segments -- is a single one. */}
+                <Route path="/reviews/*" element={<ReviewDetailPage />} />
                 <Route path="/reviewers" element={<ReviewersPage />} />
                 {/* Manifestos and other prose. `new` before `:id` for the
                     reader's benefit; the router ranks the static segment higher

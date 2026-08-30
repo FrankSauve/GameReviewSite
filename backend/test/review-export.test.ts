@@ -45,7 +45,7 @@ async function seedReview(identity: Identity, review: SeedReview): Promise<void>
       content: review.content ?? "It was good.",
       yearPlayed: review.yearPlayed === undefined ? 2024 : review.yearPlayed,
       hoursPlayed: review.hoursPlayed === undefined ? 12 : review.hoursPlayed,
-      slug: `${game.slug}-by-${user.username}`,
+      slug: `${user.username}/${game.slug}`,
       gameId: game.id,
       userId: user.id,
       ...(review.createdAt ? { createdAt: review.createdAt } : {}),

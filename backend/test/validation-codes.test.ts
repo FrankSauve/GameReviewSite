@@ -120,7 +120,7 @@ describe("validation messages carry a code, so they survive production", () => {
         data: {
           rating: 8,
           content: "ok",
-          slug: "hades-by-alice",
+          slug: "alice/hades",
           gameId: game.id,
           userId: user.id,
         },

@@ -30,7 +30,7 @@ const summary = (
 ) => ({
   __typename: "ReviewSummary",
   id,
-  slug: `${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-by-${USER_SLUG}`,
+  slug: `${USER_SLUG}/${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
   rating,
   yearPlayed,
   hoursPlayed: 12,
@@ -212,6 +212,6 @@ describe("profile grouped views", () => {
     // Each row links to the review rather than showing an excerpt of it.
     expect(
       screen.getByText("Best Game").closest("a")?.getAttribute("href")
-    ).toBe(`/reviews/best-game-by-${USER_SLUG}`);
+    ).toBe(`/reviews/${USER_SLUG}/best-game`);
   });
 });

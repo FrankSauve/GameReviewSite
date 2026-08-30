@@ -43,7 +43,7 @@ async function seed(users: number, gamesEach: number, commentsEach: number) {
     for (const game of allGames) {
       const review = await prisma.review.create({
         data: {
-          slug: `${game.slug}-by-${user.username}`,
+          slug: `${user.username}/${game.slug}`,
           userId: user.id,
           gameId: game.id,
           rating: 7,

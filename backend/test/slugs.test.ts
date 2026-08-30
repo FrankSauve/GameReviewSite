@@ -241,7 +241,7 @@ describe("readable URLs", () => {
       );
       expect(res.errors).toBeUndefined();
       expect(res.data?.reviewSummariesByUser).toHaveLength(1);
-      expect(res.data?.reviewSummariesByUser[0].slug).toBe("elden-ring-by-alice");
+      expect(res.data?.reviewSummariesByUser[0].slug).toBe("alice/elden-ring");
     });
   });
 
@@ -249,7 +249,7 @@ describe("readable URLs", () => {
     it("names a review after its game and its author", async () => {
       const game = await addGameAs(app, ALICE, "Elden Ring");
       const review = await reviewAs(app, ALICE, game.id);
-      expect(review.slug).toBe("elden-ring-by-alice");
+      expect(review.slug).toBe("alice/elden-ring");
     });
 
     it("resolves a review by its slug", async () => {
@@ -257,7 +257,7 @@ describe("readable URLs", () => {
       const review = await reviewAs(app, ALICE, game.id);
       const res = await publicQuery<{ review: ReviewPayload | null }>(
         app,
-        `{ review(id: "elden-ring-by-alice") { id } }`
+        `{ review(id: "alice/elden-ring") { id } }`
       );
       expect(res.data?.review?.id).toBe(review.id);
     });
@@ -269,15 +269,15 @@ describe("readable URLs", () => {
         app,
         `{ review(id: "${review.id}") { slug } }`
       );
-      expect(res.data?.review?.slug).toBe("elden-ring-by-alice");
+      expect(res.data?.review?.slug).toBe("alice/elden-ring");
     });
 
     it("gives two people reviewing the same game distinct slugs", async () => {
       const game = await addGameAs(app, ALICE, "Elden Ring");
       const byAlice = await reviewAs(app, ALICE, game.id);
       const byBob = await reviewAs(app, BOB, game.id);
-      expect(byAlice.slug).toBe("elden-ring-by-alice");
-      expect(byBob.slug).toBe("elden-ring-by-bob");
+      expect(byAlice.slug).toBe("alice/elden-ring");
+      expect(byBob.slug).toBe("bob/elden-ring");
     });
 
     it("lists a game's reviews by the game's slug", async () => {

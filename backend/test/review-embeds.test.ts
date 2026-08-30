@@ -41,7 +41,7 @@ async function seedReview(options: {
       content: options.content ?? "It was good.",
       yearPlayed: 2024,
       hoursPlayed: 12,
-      slug: `${game.slug}-by-${user.username}`,
+      slug: `${user.username}/${game.slug}`,
       gameId: game.id,
       userId: user.id,
     },
@@ -139,7 +139,7 @@ describe("review link previews", () => {
   it("answers a path under /reviews that is not a review at all", async () => {
     // A crawler walking the site reaches these; Express's own error page is not
     // an embed, and the stub exists for exactly this.
-    for (const path of ["/reviews/", "/reviews/a/b"]) {
+    for (const path of ["/reviews/", "/reviews/a/b/c"]) {
       const res = await request(app).get(path);
       expect(res.status).toBe(404);
       expect(meta(res.text, "og:title")).toBe("Review not found — GameReviews");
