@@ -1,16 +1,15 @@
 import { Prisma } from "@prisma/client";
 
 /**
- * The catalogue query, in SQL because two of the sorts are aggregates over
- * reviews and Prisma can only order by a relation's count.
+ * The catalogue query, in SQL because two sorts are aggregates over reviews and
+ * Prisma can only order by a relation's count.
  *
- * It selects ids, not rows: Prisma coerces a NULL scalar list to `[]` on read
- * and raw SQL does not, so a `SELECT g.*` here would hand GraphQL a null for
- * the non-nullable `Game.genres`. Choosing the rows in SQL and loading them
- * through Prisma keeps one authority for what a row looks like.
+ * Selects ids, not rows: Prisma coerces a NULL scalar list to `[]` on read and
+ * raw SQL does not, so `SELECT g.*` would hand GraphQL a null for the
+ * non-nullable `Game.genres`.
  *
- * The filter is built once and used by both the listing and the count, so the
- * paging controls cannot come to describe a different set from the pages.
+ * One filter serves both the listing and the count, so the paging controls
+ * cannot describe a different set from the pages.
  */
 
 export type GameSort =

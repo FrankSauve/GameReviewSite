@@ -24,15 +24,7 @@ import {
   trustProxyHops,
 } from "./security.js";
 
-/**
- * One endpoint, and authorization decided per field.
- *
- * This used to be two: nginx's `auth_request` cannot read a GraphQL body, so it
- * could not tell a mutation from a query, and the only way to gate writes at the
- * proxy was to serve the schema twice — once guarded, once not. Now that this
- * app is the OAuth2 client and reads its own session cookie, `requireAuth` makes
- * that decision where the resolvers are, and the split has no reason to exist.
- */
+/** One endpoint; `requireAuth` decides authorization per field. */
 export const GRAPHQL_PATH = "/graphql";
 
 export interface AppHandle {
@@ -42,15 +34,10 @@ export interface AppHandle {
 }
 
 function buildArmor(): ApolloArmor {
-  // The schema is cyclic (Review → user → reviews → comments → review → …), so
-  // an unbounded query can recurse until the process falls over. The deepest
-  // query the frontend actually sends is 5 levels.
-  //
-  // These bound the *shape* of a query. They do not bound the size of the
-  // result — cost is scored before a single row is read — which is why every
-  // list field is separately clamped in lib/pagination.ts. Depth 6 rather than
-  // 8 because nothing legitimate needs 8 and each extra level multiplies the
-  // rows a single request can reach.
+  // The schema is cyclic (Review → user → reviews → comments → review → …).
+  // Depth 6 because the deepest query the frontend sends is 5, and each extra
+  // level multiplies the rows one request can reach. Shape only; result size is
+  // bounded in lib/pagination.ts.
   return new ApolloArmor({
     maxDepth: { n: 6 },
     maxAliases: { n: 15 },
@@ -81,14 +68,10 @@ export async function createApp(): Promise<AppHandle> {
     // load-bearing: a cookie-borne session means a cross-site form POST would
     // carry credentials, and this is what rejects it. See sameOriginOnly.
     csrfPrevention: true,
-    // graphql-armor ships no `exports` map, so its type declarations resolve
-    // @apollo/server through the `require` condition while this package, now
-    // ESM, resolves the `import` one. The two describe the same runtime class,
-    // but HeaderMap carries a private field, so TypeScript treats them as
-    // unrelated types. The cast is safe rather than convenient: armor declares
-    // @apollo/server as an optional peer and has zero runtime references to it,
-    // and there is a single hoisted copy, so no second instance exists to be
-    // confused with. Remove this once armor publishes dual-condition types.
+    // graphql-armor ships no `exports` map, so its types resolve @apollo/server
+    // through `require` while this package resolves `import` — same runtime
+    // class, unrelated to TypeScript. Safe because armor has zero runtime
+    // references to it. Remove once armor publishes dual-condition types.
     plugins: [
       ...(protection.plugins as unknown as ApolloServerPlugin[]),
       collapseDuplicateErrors(),

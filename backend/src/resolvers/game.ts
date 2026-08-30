@@ -305,11 +305,7 @@ export const gameResolvers = {
       return budget.charge(page).map(serializeDates);
     },
 
-    /**
-     * Aggregated in the database. The games listing needs the total but not the
-     * rows, and fetching the rows to length them was the largest single
-     * contributor to the response size of that page.
-     */
+    /** Aggregated in the database: the listing needs the total, not the rows. */
     reviewCount: async (parent: Game, _args: unknown, { loaders }: Context) =>
       (await loaders.reviewStatsByGameId.load(parent.id)).count,
 
@@ -319,14 +315,9 @@ export const gameResolvers = {
 };
 
 /**
- * Game rows are shared: everybody's reviews hang off the same catalogue entry.
- * That is exactly why editing one was the wrong thing to leave open to any
- * signed-in account — a single title or description change rewrites the context
- * of every review attached to it, and nothing recorded who put it there.
- *
- * A game with no recorded creator predates that column and is treated as owned
- * by nobody, so nobody may edit it. RAWG remains the source for imported
- * metadata, and the manual path can always add a fresh entry.
+ * Game rows are shared, so one edit rewrites the context of every review
+ * attached. A game with no recorded creator is owned by nobody and nobody may
+ * edit it.
  */
 async function requireGameOwnership(id: string, userId: string): Promise<Game> {
   const game = await prisma.game.findUnique({ where: { id } });

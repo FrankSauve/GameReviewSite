@@ -11,14 +11,11 @@ import {
 } from "../lib/embed.js";
 
 /**
- * Link previews for reviews: `GET /reviews/:user/:game`, and `GET /reviews/:key`
+ * Link previews for reviews, on the same path the SPA serves: the URL people
+ * paste is the URL that has to unfurl. The proxy routes crawler user agents
+ * here; see `location /reviews/` in deploy/swag/gamereviews.subdomain.conf.
  *
- * The same path the SPA serves, because the URL people paste is the URL that has
- * to unfurl. The proxy routes crawler user agents here; see the
- * `location /reviews/` block in deploy/swag/gamereviews.subdomain.conf.
- *
- * Anonymous by design — nothing here reads a session, so nothing here can leak
- * one person's view of the site to another.
+ * Anonymous by design — nothing here reads a session.
  */
 
 /** Public origin for the canonical URL. Derived from the forwarded headers SWAG

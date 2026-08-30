@@ -25,13 +25,9 @@ interface BuildContextArgs {
 }
 
 /**
- * Derives the request context from the session cookie.
- *
- * There is no password handling here and no token in the browser: authentik
- * authenticates people over OIDC, including 2FA, and lib/session.ts turns the
- * result into a session of this app's own. A request with no session, an
- * unknown one, or an expired one is anonymous — which is an ordinary state,
- * because reviews are public.
+ * Derives the request context from the session cookie. No session, an unknown
+ * one, or an expired one is anonymous — an ordinary state, because reviews are
+ * public.
  */
 export async function buildContext({ req }: BuildContextArgs): Promise<Context> {
   const loaders = createLoaders();

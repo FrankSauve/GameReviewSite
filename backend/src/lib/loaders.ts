@@ -4,12 +4,9 @@ import { prisma } from "./prisma.js";
 import { LIST_BOUNDS } from "./pagination.js";
 
 /**
- * Per-request batching for the relation fields.
- *
- * Loaders are built per request, not per process: a DataLoader caches for its
- * lifetime, and a process-wide cache would serve one request stale rows written
- * by another — and, for the email field, would risk serving one caller a row
- * loaded while a different caller was authenticated.
+ * Per-request batching for the relation fields. Built per request, never per
+ * process: a DataLoader caches for its lifetime, so a shared one would serve
+ * stale rows and, for the email field, rows loaded under another caller's auth.
  */
 export interface Loaders {
   userById: DataLoader<string, User | null>;

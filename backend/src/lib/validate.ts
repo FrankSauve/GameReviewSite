@@ -3,14 +3,9 @@ import { badInput } from "./badInput.js";
 /**
  * Trims a caller-supplied string and refuses it if it is empty or too long.
  *
- * `maxLength` is required rather than defaulted: four resolvers used to hold a
- * copy of this function, each with its own default, and a reader had to know
- * which copy was in scope to know what the limit was.
- *
- * Accepts null because every optional input field is nullable in the schema, so
- * a client can send an explicit null as well as omit the field. Omission is the
- * caller's business — each resolver skips on `undefined` — but a null that
- * reaches here is an empty value, not an internal error.
+ * `maxLength` is required, never defaulted, so the limit is readable at the
+ * call site. A null is an empty value here, not an internal error — resolvers
+ * skip on `undefined` before calling.
  */
 export function validateString(
   value: string | null | undefined,

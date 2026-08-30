@@ -17,12 +17,7 @@ const CLIENT_ERROR_CODES = new Set([
 
 const GENERIC_MESSAGE = "Internal server error.";
 
-/**
- * Strips everything from an error that the client has no business seeing.
- *
- * Only in production: locally the real message is what makes a failure
- * debuggable, and the tests assert against it.
- */
+/** Strips an error down in production only; locally the real message stands. */
 export function sanitizeError(
   formatted: GraphQLFormattedError
 ): GraphQLFormattedError {
