@@ -12,6 +12,7 @@ import { requireAuth, type Context } from "../context.js";
 import { searchRawg, getRawgGame, releaseYear } from "../lib/rawg.js";
 import { byIdOrSlug, slugify, uniqueSlug } from "../lib/slug.js";
 import { validateString } from "../lib/validate.js";
+import { badInput } from "../lib/badInput.js";
 import {
   GAME_SORTS,
   catalogueCount,
@@ -65,9 +66,7 @@ function validateLabels(values: string[], field: string): string[] {
     const trimmed = value.trim();
     if (!trimmed) continue;
     if (trimmed.length > LABEL_MAX_LENGTH)
-      throw new GraphQLError(
-        `Each ${field} must be at most ${LABEL_MAX_LENGTH} characters.`
-      );
+      throw badInput(`Each ${field} must be at most ${LABEL_MAX_LENGTH} characters.`);
 
     const key = trimmed.toLowerCase();
     if (seen.has(key)) continue;
@@ -82,7 +81,7 @@ function validateLabels(values: string[], field: string): string[] {
 function validateYear(year: number): number {
   const num = Math.trunc(year);
   if (num < 1950 || num > new Date().getFullYear() + 5)
-    throw new GraphQLError("releaseYear must be a valid game release year.");
+    throw badInput("releaseYear must be a valid game release year.");
   return num;
 }
 
@@ -94,16 +93,16 @@ function validateYear(year: number): number {
 function validateCoverUrl(value: string): string {
   const trimmed = value.trim();
   if (trimmed.length > 2000)
-    throw new GraphQLError("coverUrl must be at most 2000 characters.");
+    throw badInput("coverUrl must be at most 2000 characters.");
 
   let parsed: URL;
   try {
     parsed = new URL(trimmed);
   } catch {
-    throw new GraphQLError("coverUrl must be an absolute URL.");
+    throw badInput("coverUrl must be an absolute URL.");
   }
   if (parsed.protocol !== "https:")
-    throw new GraphQLError("coverUrl must use https.");
+    throw badInput("coverUrl must use https.");
   return parsed.toString();
 }
 
@@ -118,7 +117,7 @@ async function newGameSlug(title: string): Promise<string> {
 function validateRawgId(value: string): string {
   const trimmed = value.trim();
   if (!/^\d{1,12}$/.test(trimmed))
-    throw new GraphQLError("rawgId must be a positive integer.");
+    throw badInput("rawgId must be a positive integer.");
   return trimmed;
 }
 
