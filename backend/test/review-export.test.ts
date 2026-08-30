@@ -1,9 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import request from "supertest";
 import type { Express } from "express";
+import { fromBuffer, type Entry, type ZipFile } from "yauzl";
 import { prisma } from "../src/lib/prisma.js";
 import { slugify } from "../src/lib/slug.js";
-import { formatReview } from "../src/lib/exportMarkdown.js";
+import { formatReview, reviewEntryName } from "../src/lib/exportMarkdown.js";
 import {
   ALICE,
   BOB,
@@ -14,17 +15,66 @@ import {
 } from "./helpers.js";
 
 /**
- * The markdown export.
+ * The review export: a zip holding one markdown file per review.
  *
  * Two things can go wrong here that nothing else in the suite would catch: the
- * file could contain somebody else's reviews, and it could be quietly
+ * archive could contain somebody else's reviews, and it could be quietly
  * incomplete. Both produce a download that looks perfectly fine.
  */
 
-const EXPORT_PATH = "/export/reviews.md";
+const EXPORT_PATH = "/export/reviews.zip";
+
+/**
+ * The archive's entries, keyed by name.
+ *
+ * Read with a real zip reader rather than by scanning the bytes: an archive
+ * whose central directory disagrees with its local headers still contains every
+ * string a substring assertion would look for, and that is the shape of
+ * corruption these tests exist to catch.
+ */
+async function readArchive(body: Buffer): Promise<Map<string, string>> {
+  const zip = await new Promise<ZipFile>((resolve, reject) => {
+    fromBuffer(body, { lazyEntries: true }, (err, file) =>
+      err ? reject(err) : resolve(file!)
+    );
+  });
+  const entries = new Map<string, string>();
+  await new Promise<void>((resolve, reject) => {
+    zip.on("error", reject);
+    zip.on("end", resolve);
+    zip.on("entry", (entry: Entry) => {
+      zip.openReadStream(entry, (err, stream) => {
+        if (err || !stream) return reject(err ?? new Error("no stream"));
+        const chunks: Buffer[] = [];
+        stream.on("data", (chunk: Buffer) => chunks.push(chunk));
+        stream.on("end", () => {
+          entries.set(entry.fileName, Buffer.concat(chunks).toString("utf8"));
+          zip.readEntry();
+        });
+        stream.on("error", reject);
+      });
+    });
+    zip.readEntry();
+  });
+  return entries;
+}
+
+/** Supertest only buffers text bodies unless told the response is binary. */
+function getExport(app: Express, cookie: string) {
+  return request(app).get(EXPORT_PATH).set("Cookie", cookie).responseType("arraybuffer");
+}
+
+async function bodyOf(pending: ReturnType<typeof getExport>): Promise<Buffer> {
+  const res = await pending;
+  expect(res.status).toBe(200);
+  return res.body as Buffer;
+}
 
 interface SeedReview {
   title: string;
+  /** Defaults to the title's slug; set it where two titles collide, as the app
+   *  itself does when it uniquifies a game slug. */
+  gameSlug?: string;
   rating?: number;
   hoursPlayed?: number | null;
   yearPlayed?: number | null;
@@ -37,7 +87,10 @@ async function seedReview(identity: Identity, review: SeedReview): Promise<void>
     where: { username: identity.username },
   });
   const game = await prisma.game.create({
-    data: { title: review.title, slug: slugify(review.title, "game") },
+    data: {
+      title: review.title,
+      slug: review.gameSlug ?? slugify(review.title, "game"),
+    },
   });
   await prisma.review.create({
     data: {
@@ -53,7 +106,7 @@ async function seedReview(identity: Identity, review: SeedReview): Promise<void>
   });
 }
 
-describe("exporting reviews as markdown", () => {
+describe("exporting reviews as a zip of markdown files", () => {
   let app: Express;
   let stop: () => Promise<void>;
 
@@ -74,17 +127,34 @@ describe("exporting reviews as markdown", () => {
     expect(res.status).toBe(401);
   });
 
-  it("offers the file as a download named after the account", async () => {
+  it("offers the archive as a download named after the account", async () => {
     const cookie = await sessionFor(ALICE);
-    const res = await request(app).get(EXPORT_PATH).set("Cookie", cookie);
+    const res = await getExport(app, cookie);
 
     expect(res.status).toBe(200);
-    expect(res.headers["content-type"]).toContain("text/markdown");
+    expect(res.headers["content-type"]).toContain("application/zip");
     expect(res.headers["content-disposition"]).toBe(
-      'attachment; filename="reviews-alice.md"'
+      'attachment; filename="reviews-alice.zip"'
     );
     // A shared cache holding one account's reviews would serve them to another.
     expect(res.headers["cache-control"]).toContain("no-store");
+  });
+
+  /**
+   * One file per review is the whole point of the archive: a single
+   * concatenated file had to be re-split by hand before any one review could be
+   * filed or edited somewhere else.
+   */
+  it("gives each review its own file under a folder named for the account", async () => {
+    const cookie = await sessionFor(ALICE);
+    await seedReview(ALICE, { title: "Elden Ring" });
+    await seedReview(ALICE, { title: "Hollow Knight" });
+
+    const entries = await readArchive(await bodyOf(getExport(app, cookie)));
+    expect([...entries.keys()].sort()).toEqual([
+      "reviews-alice/elden-ring.md",
+      "reviews-alice/hollow-knight.md",
+    ]);
   });
 
   it("writes a review in the format the issue specifies", async () => {
@@ -96,29 +166,61 @@ describe("exporting reviews as markdown", () => {
       content: "Best of its kind.",
     });
 
-    const res = await request(app).get(EXPORT_PATH).set("Cookie", cookie);
-    expect(res.text).toBe(
+    const entries = await readArchive(await bodyOf(getExport(app, cookie)));
+    expect(entries.get("reviews-alice/elden-ring.md")).toBe(
       "# Elden Ring\n**Score:** 9.5\n**Playtime:** 120 hrs\n" +
         "**Year played:** 2024\n\nBest of its kind.\n"
     );
+  });
+
+  /**
+   * Two games can reduce to the same slug. Two entries of one name is an
+   * archive that unpacks to a single file, so one review vanishes on extraction
+   * while the download itself looks complete.
+   */
+  it("keeps both reviews when two titles reduce to the same slug", async () => {
+    const cookie = await sessionFor(ALICE);
+    await seedReview(ALICE, { title: "Portal 2", content: "One." });
+    await seedReview(ALICE, {
+      title: "Portal: 2",
+      gameSlug: "portal-2-2",
+      content: "Two.",
+    });
+
+    const entries = await readArchive(await bodyOf(getExport(app, cookie)));
+    expect([...entries.keys()].sort()).toEqual([
+      "reviews-alice/portal-2-2.md",
+      "reviews-alice/portal-2.md",
+    ]);
+  });
+
+  /** A title in a script the slug cannot carry still needs a filename. */
+  it("falls back to a usable name for a title that does not slugify", async () => {
+    const cookie = await sessionFor(ALICE);
+    await seedReview(ALICE, { title: "ドラゴンクエスト" });
+
+    const entries = await readArchive(await bodyOf(getExport(app, cookie)));
+    expect([...entries.keys()]).toEqual(["reviews-alice/review.md"]);
   });
 
   it("leaves the playtime line out when there are no hours recorded", async () => {
     const cookie = await sessionFor(ALICE);
     await seedReview(ALICE, { title: "Old Import", hoursPlayed: null });
 
-    const res = await request(app).get(EXPORT_PATH).set("Cookie", cookie);
-    expect(res.text).not.toContain("Playtime");
-    expect(res.text).toContain("**Score:**");
+    const entries = await readArchive(await bodyOf(getExport(app, cookie)));
+    const file = entries.get("reviews-alice/old-import.md")!;
+    expect(file).not.toContain("Playtime");
+    expect(file).toContain("**Score:**");
   });
 
   it("leaves the year line out when no year was recorded", async () => {
     const cookie = await sessionFor(ALICE);
     await seedReview(ALICE, { title: "Old Import", yearPlayed: null });
 
-    const res = await request(app).get(EXPORT_PATH).set("Cookie", cookie);
-    expect(res.text).not.toContain("Year played");
-    expect(res.text).toContain("**Playtime:**");
+    const entries = await readArchive(await bodyOf(getExport(app, cookie)));
+    const file = entries.get("reviews-alice/old-import.md")!;
+    expect(file).not.toContain("Year played");
+    expect(file).toContain("**Playtime:**");
   });
 
   it("exports only the signed-in account's own reviews", async () => {
@@ -127,9 +229,8 @@ describe("exporting reviews as markdown", () => {
     await seedReview(ALICE, { title: "Mine" });
     await seedReview(BOB, { title: "Not Mine" });
 
-    const res = await request(app).get(EXPORT_PATH).set("Cookie", cookie);
-    expect(res.text).toContain("# Mine");
-    expect(res.text).not.toContain("Not Mine");
+    const entries = await readArchive(await bodyOf(getExport(app, cookie)));
+    expect([...entries.keys()]).toEqual(["reviews-alice/mine.md"]);
   });
 
   /**
@@ -147,23 +248,11 @@ describe("exporting reviews as markdown", () => {
       await seedReview(ALICE, { title, createdAt: at });
     }
 
-    const res = await request(app).get(EXPORT_PATH).set("Cookie", cookie);
-    const headings = [...res.text.matchAll(/^# (.+)$/gm)].map((m) => m[1]);
+    const entries = await readArchive(await bodyOf(getExport(app, cookie)));
+    const headings = [...entries.values()].map((file) => file.split("\n")[0]);
 
-    expect(headings).toHaveLength(120);
-    expect([...new Set(headings)].sort()).toEqual([...titles].sort());
-  });
-
-  it("separates reviews with a rule that cannot be read as a heading", async () => {
-    const cookie = await sessionFor(ALICE);
-    await seedReview(ALICE, { title: "First", content: "One." });
-    await seedReview(ALICE, { title: "Second", content: "Two." });
-
-    const res = await request(app).get(EXPORT_PATH).set("Cookie", cookie);
-    // A `---` directly under a line of text underlines it into a heading. The
-    // blank line above is what keeps the body a body.
-    expect(res.text).toContain("\n\n---\n\n");
-    expect(res.text).not.toMatch(/[^\n]\n---/);
+    expect(entries.size).toBe(120);
+    expect(headings.sort()).toEqual(titles.map((t) => `# ${t}`).sort());
   });
 
   /**
@@ -173,8 +262,16 @@ describe("exporting reviews as markdown", () => {
    * the same name.
    */
   it("names the file after the account's slug, not its username", async () => {
-    const first: Identity = { uid: "ak-1", username: "Simon.T", email: "a@e.com" };
-    const second: Identity = { uid: "ak-2", username: "Simon T", email: "b@e.com" };
+    const first: Identity = {
+      uid: "ak-1",
+      username: "Simon.T",
+      email: "a@e.com",
+    };
+    const second: Identity = {
+      uid: "ak-2",
+      username: "Simon T",
+      email: "b@e.com",
+    };
     const firstCookie = await sessionFor(first);
     const secondCookie = await sessionFor(second);
 
@@ -182,7 +279,7 @@ describe("exporting reviews as markdown", () => {
     const two = await request(app).get(EXPORT_PATH).set("Cookie", secondCookie);
 
     expect(one.headers["content-disposition"]).toBe(
-      'attachment; filename="reviews-simon-t.md"'
+      'attachment; filename="reviews-simon-t.zip"'
     );
     expect(two.headers["content-disposition"]).not.toBe(
       one.headers["content-disposition"]
@@ -209,11 +306,26 @@ describe("exporting reviews as markdown", () => {
     }
   });
 
-  it("returns an empty file rather than an error for an account with no reviews", async () => {
+  it("returns an empty archive rather than an error for an account with no reviews", async () => {
     const cookie = await sessionFor(ALICE);
-    const res = await request(app).get(EXPORT_PATH).set("Cookie", cookie);
+    const res = await getExport(app, cookie);
     expect(res.status).toBe(200);
-    expect(res.text).toBe("");
+    expect(await readArchive(await bodyOf(getExport(app, cookie)))).toEqual(new Map());
+  });
+});
+
+describe("reviewEntryName", () => {
+  it("names a review after its game, under the archive's folder", () => {
+    expect(reviewEntryName("reviews-alice", "Elden Ring", new Set())).toBe(
+      "reviews-alice/elden-ring.md"
+    );
+  });
+
+  it("suffixes a name already claimed rather than repeating it", () => {
+    const taken = new Set<string>();
+    expect(reviewEntryName("r", "Portal 2", taken)).toBe("r/portal-2.md");
+    expect(reviewEntryName("r", "Portal 2", taken)).toBe("r/portal-2-2.md");
+    expect(reviewEntryName("r", "Portal 2", taken)).toBe("r/portal-2-3.md");
   });
 });
 

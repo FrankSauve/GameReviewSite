@@ -137,7 +137,7 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
                 download
                 className="text-xs font-medium text-gray-400 hover:text-violet-300 transition-colors"
               >
-                Export as markdown
+                Export as zip
               </a>
             )}
           </div>
