@@ -19,11 +19,21 @@ export const REVIEW_CONTENT_MAX = 20000;
  * first.
  */
 export function toPlainText(markdown: string): string {
+  // Code is set aside before the spoiler pass so that a `||` typed inside it
+  // cannot pair with a real marker, as it cannot in the renderer.
+  const code: string[] = [];
+  const stash = (body: string) => `\u0000${code.push(body) - 1}\u0000`;
+
   return (
     markdown
       // Fenced code blocks: keep the code, drop the fences.
-      .replace(/```[^\n]*\n?([\s\S]*?)```/g, "$1")
-      .replace(/`([^`]+)`/g, "$1")
+      .replace(/```[^\n]*\n?([\s\S]*?)```/g, (_m, body: string) => stash(body))
+      .replace(/`([^`]+)`/g, (_m, body: string) => stash(body))
+      // Spoilers are redacted, not unwrapped: an excerpt is the one place the
+      // hidden text must not appear. Confined to a single block, because the
+      // renderer never pairs markers across a blank line either.
+      .replace(/\|\|(?:(?!\n[ \t]*\n)[\s\S])+?\|\|/g, "[spoiler]")
+      .replace(/\u0000(\d+)\u0000/g, (_m, i: string) => code[Number(i)])
       // Links and any images that predate the renderer's element list.
       .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
       .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")

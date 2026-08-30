@@ -66,6 +66,10 @@ function mockFor(order: string, id: string = USER_ID) {
           id: USER_ID,
           slug: USER_SLUG,
           username: "simon",
+          // Queried by GET_USER_REVIEW_SUMMARIES since the profile grew a bio.
+          // Apollo writes an incomplete result for a mock missing a queried
+          // field, and the page then never leaves its loading skeleton.
+          bio: null,
           reviewCount: 3,
           averageRating: 9.5,
         },

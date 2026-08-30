@@ -11,6 +11,7 @@ import {
   type ReviewSummary,
 } from "../lib/grouping";
 import { GroupedReviewList } from "../components/GroupedReviewList";
+import { ProfileBio } from "../components/ProfileBio";
 import { EXPORT_REVIEWS_PATH, userPath } from "../lib/links";
 import { useCanonicalPath } from "../hooks/useCanonicalPath";
 
@@ -18,6 +19,7 @@ interface ProfileUser {
   id: string;
   slug?: string | null;
   username: string;
+  bio?: string | null;
   reviewCount: number;
   averageRating?: number | null;
 }
@@ -139,6 +141,10 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
               </a>
             )}
           </div>
+          <div className="pt-1">
+            <ProfileBio bio={profile.bio} isOwnProfile={isOwnProfile} />
+          </div>
+
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 pt-2">
             <div className="text-center">
               <p className="text-lg font-bold text-gray-100">{profile.reviewCount}</p>

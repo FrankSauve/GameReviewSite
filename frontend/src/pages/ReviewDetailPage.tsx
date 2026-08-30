@@ -5,11 +5,11 @@ import { GET_REVIEW } from "../graphql/queries";
 import { CREATE_COMMENT, DELETE_COMMENT, DELETE_REVIEW, UPDATE_REVIEW } from "../graphql/mutations";
 import { useAuth } from "../contexts/AuthContext";
 import { formatRating, ratingColor } from "../lib/rating";
-import { REVIEW_CONTENT_MAX } from "../lib/markdown";
 import { currentYear, formatPlaytime, snapHours } from "../lib/playtime";
 import { RatingInput } from "../components/RatingInput";
 import { PlaytimeInput } from "../components/PlaytimeInput";
 import { Markdown } from "../components/Markdown";
+import { MarkdownEditor } from "../components/MarkdownEditor";
 import { gamePath, reviewPath, userPath } from "../lib/links";
 import { useCanonicalPath } from "../hooks/useCanonicalPath";
 
@@ -264,17 +264,11 @@ export function ReviewDetailPage() {
               onHoursChange={setEditHours}
               size="sm"
             />
-            <textarea
+            <MarkdownEditor
               value={editContent}
-              onChange={e => setEditContent(e.target.value)}
-              rows={6}
-              maxLength={REVIEW_CONTENT_MAX}
-              className="input-field w-full resize-none text-sm"
+              onChange={setEditContent}
               placeholder="Update your review…"
             />
-            <p className="text-xs text-gray-600">
-              Markdown: **bold**, *italic*, - lists, &gt; quotes
-            </p>
             <div className="flex items-center gap-2 justify-end">
               <button
                 onClick={() => setEditing(false)}

@@ -21,6 +21,8 @@ model User {
   slug      String    @unique
   username  String    @unique
   email     String?   @unique
+  /// A self-written introduction, in Markdown. Null rather than "" when absent.
+  bio       String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   reviews   Review[]

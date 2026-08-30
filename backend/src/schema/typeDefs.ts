@@ -6,6 +6,8 @@ export const typeDefs = `#graphql
     username: String!
     # Only returned to the authenticated owner of the account; null otherwise.
     email: String
+    # A self-written introduction, in Markdown. Public, like the reviews.
+    bio: String
     createdAt: String
     updatedAt: String
     # Bounded list. Prefer reviewCount/averageRating when you only need totals.
@@ -200,6 +202,11 @@ export const typeDefs = `#graphql
     published: Boolean
   }
 
+  # An omitted field is left alone; an explicit empty one clears it.
+  input UpdateProfileInput {
+    bio: String
+  }
+
   input CreateCommentInput {
     reviewId: ID!
     content: String!
@@ -273,6 +280,8 @@ export const typeDefs = `#graphql
 
   type Mutation {
     deleteUser: Boolean!
+    # Edits the signed-in account. No id: you may only edit your own profile.
+    updateProfile(input: UpdateProfileInput!): User!
 
     importGame(input: ImportGameInput!): Game!
     createGame(input: CreateGameInput!): Game!

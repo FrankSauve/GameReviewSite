@@ -7,8 +7,16 @@ import {
   clampWindow,
   type PageArgs,
 } from "../lib/pagination.js";
+import { GraphQLError } from "graphql";
 import { requireAuth, type Context } from "../context.js";
 import { byIdOrSlug } from "../lib/slug.js";
+
+/** Enforced here; the textarea's maxLength is only a hint to the browser. */
+export const BIO_MAX = 1000;
+
+interface UpdateProfileInput {
+  bio?: string | null;
+}
 
 export const userResolvers = {
   Query: {
@@ -40,8 +48,31 @@ export const userResolvers = {
   },
 
   Mutation: {
-    // No updateUser: authentik owns username and email, and any local edit
-    // would be overwritten the next time the user makes a request.
+    // Edits the fields authentik does not own, which today is the bio alone.
+    // Still no username or email: authentik is the source for both. No id
+    // argument either — you may only ever edit your own profile.
+    updateProfile: async (
+      _parent: unknown,
+      { input }: { input: UpdateProfileInput },
+      context: Context
+    ) => {
+      const authUser = requireAuth(context);
+
+      const data: { bio?: string | null } = {};
+      if (input.bio !== undefined) {
+        const trimmed = (input.bio ?? "").trim();
+        if (trimmed.length > BIO_MAX)
+          throw new GraphQLError(`bio must be at most ${BIO_MAX} characters.`, {
+            extensions: { code: "BAD_USER_INPUT" },
+          });
+        // Cleared and never written are the same state.
+        data.bio = trimmed || null;
+      }
+
+      const user = await prisma.user.update({ where: { id: authUser.id }, data });
+      return serializeDates(user);
+    },
+
     deleteUser: async (_parent: unknown, _args: unknown, context: Context) => {
       const authUser = requireAuth(context);
       await prisma.user.delete({ where: { id: authUser.id } });

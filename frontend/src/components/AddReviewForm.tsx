@@ -3,11 +3,10 @@ import { useMutation } from "@apollo/client";
 import { CREATE_REVIEW } from "../graphql/mutations";
 import { GET_GAME } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
-import { REVIEW_CONTENT_MAX } from "../lib/markdown";
 import { currentYear, snapHours } from "../lib/playtime";
 import { RatingInput } from "./RatingInput";
 import { PlaytimeInput } from "./PlaytimeInput";
-import { Markdown } from "./Markdown";
+import { MarkdownEditor } from "./MarkdownEditor";
 
 interface AddReviewFormProps {
   gameId: string;
@@ -23,7 +22,6 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
   const [rating, setRating] = useState<number>(DEFAULT_RATING);
   const [yearPlayed, setYearPlayed] = useState<number>(currentYear());
   const [hoursPlayed, setHoursPlayed] = useState("");
-  const [previewing, setPreviewing] = useState(false);
 
   const [createReview, { loading, error }] = useMutation(CREATE_REVIEW, {
     refetchQueries: [{ query: GET_GAME, variables: { id: gameId } }],
@@ -32,7 +30,6 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
       setRating(DEFAULT_RATING);
       setYearPlayed(currentYear());
       setHoursPlayed("");
-      setPreviewing(false);
       onSuccess?.();
     },
   });
@@ -88,45 +85,16 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
       />
 
       <div>
-        <div className="flex items-baseline justify-between mb-1.5">
-          <label htmlFor={bodyId} className="block text-sm font-medium text-gray-400">
-            Your Review
-          </label>
-          <button
-            type="button"
-            onClick={() => setPreviewing((p) => !p)}
-            disabled={!content.trim()}
-            className="text-xs text-violet-400 hover:text-violet-300 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
-          >
-            {previewing ? "Write" : "Preview"}
-          </button>
-        </div>
-
-        {previewing ? (
-          <div className="input-field min-h-[6.5rem] text-sm text-gray-300 leading-relaxed overflow-y-auto">
-            <Markdown>{content}</Markdown>
-          </div>
-        ) : (
-          <textarea
-            id={bodyId}
-            className="input-field resize-none"
-            rows={6}
-            placeholder="Share your thoughts on this game..."
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            maxLength={REVIEW_CONTENT_MAX}
-            required
-          />
-        )}
-
-        <div className="flex items-baseline justify-between mt-1">
-          <p className="text-xs text-gray-600">
-            Markdown: **bold**, *italic*, - lists, &gt; quotes
-          </p>
-          <p className="text-xs text-gray-600">
-            {content.length}/{REVIEW_CONTENT_MAX}
-          </p>
-        </div>
+        <label htmlFor={bodyId} className="block text-sm font-medium text-gray-400 mb-1.5">
+          Your Review
+        </label>
+        <MarkdownEditor
+          id={bodyId}
+          value={content}
+          onChange={setContent}
+          placeholder="Share your thoughts on this game..."
+          required
+        />
       </div>
 
       {error && (

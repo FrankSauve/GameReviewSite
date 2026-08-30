@@ -63,6 +63,15 @@ export const CREATE_COMMENT = gql`
   }
 `;
 
+export const UPDATE_PROFILE = gql`
+  mutation UpdateProfile($input: UpdateProfileInput!) {
+    updateProfile(input: $input) {
+      id
+      bio
+    }
+  }
+`;
+
 export const GET_ME = gql`
   query Me {
     me {

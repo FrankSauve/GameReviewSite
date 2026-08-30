@@ -1,6 +1,9 @@
+import type { ComponentProps } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import { remarkSpoiler } from "../lib/remarkSpoiler";
+import { Spoiler } from "./Spoiler";
 
 /**
  * Renders a review body as Markdown.
@@ -19,6 +22,9 @@ import remarkBreaks from "remark-breaks";
  * `remarkBreaks` is not cosmetic. A review pasted from a text file separates its
  * lines with single newlines, which strict Markdown collapses into one paragraph;
  * every imported review would arrive as a wall of text without it.
+ *
+ * `remarkSpoiler` adds `||hidden||` as a node of its own type rather than raw
+ * HTML, so it survives the element allow-list without `rehype-raw`.
  */
 
 /**
@@ -31,6 +37,8 @@ import remarkBreaks from "remark-breaks";
  */
 const ALLOWED = [
   "p", "br", "hr",
+  // Only ever produced by remarkSpoiler; nothing else in this renderer emits one.
+  "span",
   "strong", "em", "del",
   "ul", "ol", "li",
   "blockquote",
@@ -39,6 +47,26 @@ const ALLOWED = [
   "h3", "h4", "h5", "h6",
   "table", "thead", "tbody", "tr", "th", "td",
 ];
+
+/**
+ * Turns the plugin's `spoiler` node into a `span` carrying a marker attribute.
+ * The cast is the price of a custom node type: `handlers` is keyed on mdast's
+ * known node types, and `spoiler` is by definition not one.
+ */
+type RemarkRehypeOptions = ComponentProps<typeof ReactMarkdown>["remarkRehypeOptions"];
+
+const remarkRehypeOptions = {
+  handlers: {
+    spoiler(state: { all: (node: unknown) => unknown[] }, node: unknown) {
+      return {
+        type: "element",
+        tagName: "span",
+        properties: { dataSpoiler: "true" },
+        children: state.all(node),
+      };
+    },
+  },
+} as RemarkRehypeOptions;
 
 const components: Components = {
   p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
@@ -114,6 +142,12 @@ const components: Components = {
       {alt ? `[image: ${alt}]` : "[image]"}
     </span>
   ),
+  // Checked rather than assumed: a future plugin emitting a `span` should not
+  // silently become clickable.
+  span: ({ node, children }) => {
+    const isSpoiler = node?.properties?.["dataSpoiler"] !== undefined;
+    return isSpoiler ? <Spoiler>{children}</Spoiler> : <span>{children}</span>;
+  },
   /**
    * `noopener noreferrer` because these open in a new tab; `nofollow` because a
    * review body is user-submitted text on a public page, which is exactly what
@@ -141,7 +175,8 @@ export function Markdown({ children, className = "" }: MarkdownProps) {
   return (
     <div className={`break-words ${className}`}>
       <ReactMarkdown
-        remarkPlugins={[remarkGfm, remarkBreaks]}
+        remarkPlugins={[remarkGfm, remarkBreaks, remarkSpoiler]}
+        remarkRehypeOptions={remarkRehypeOptions}
         allowedElements={ALLOWED}
         unwrapDisallowed
         components={components}
