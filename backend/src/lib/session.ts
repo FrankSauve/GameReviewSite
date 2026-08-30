@@ -5,21 +5,13 @@ import { prisma } from "./prisma.js";
 import { isProduction } from "../security.js";
 
 /**
- * Server-side sessions for the browser.
+ * Server-side sessions for the browser, issued after the OIDC code flow
+ * completes (see lib/oidc.ts).
  *
- * The backend is the OIDC client (see lib/oidc.ts), so after the authorization
- * code flow completes it issues its own session instead of asking authentik
- * again on every request.
- *
- * Sessions are stored rather than being self-contained signed cookies, because
- * a stored session can be deleted. authentik's provider defaults do not grant
- * `offline_access`, so there is no refresh token and therefore no way to ask
- * authentik whether an account is still valid — the only revocation available
- * is deleting the row, and a stateless cookie would not offer even that.
- *
- * The consequence, worth being explicit about: revoking someone in authentik
- * does not end a session already issued here. It lasts until it expires or is
- * deleted. SESSION_TTL_HOURS is the outer bound on that lag.
+ * Stored rather than signed cookies, because there is no refresh token —
+ * authentik grants no `offline_access` — so deleting the row is the only
+ * revocation there is. Revoking someone in authentik therefore does not end a
+ * session already issued here; SESSION_TTL_HOURS bounds that lag.
  */
 
 export const SESSION_COOKIE = "gr_session";
@@ -69,13 +61,7 @@ export interface ResolvedSession {
   idToken: string;
 }
 
-/**
- * Looks up the session a request carries, or null if it carries none, an
- * unknown one, or an expired one.
- *
- * Fails closed in every one of those cases. This is the whole trust boundary
- * now that identity is no longer asserted by proxy headers.
- */
+/** Fails closed on a missing, unknown or expired session. The trust boundary. */
 export async function readSession(req: Request): Promise<ResolvedSession | null> {
   const token = req.cookies?.[SESSION_COOKIE];
   if (typeof token !== "string" || token.length === 0) return null;

@@ -10,11 +10,9 @@ export function isProduction(): boolean {
 }
 
 /**
- * Number of reverse proxies in front of this app.
- *
- * SWAG proxies straight to this service, so 1. Getting it wrong means every
- * rate limiter keys on the proxy's IP instead of the client's, so a single
- * abusive client would lock out everybody.
+ * Number of reverse proxies in front of this app; SWAG proxies straight here,
+ * so 1. Wrong, and every rate limiter keys on the proxy's IP, so one abusive
+ * client locks out everybody.
  */
 export function trustProxyHops(): number {
   const parsed = parseInt(process.env["TRUST_PROXY_HOPS"] ?? "0", 10);
@@ -24,11 +22,8 @@ export function trustProxyHops(): number {
 const DEV_ORIGINS = ["http://localhost:5173", "http://localhost:3000"];
 
 /**
- * Allowed browser origins.
- *
- * In the target deployment the SPA and the API share one hostname, so no
- * cross-origin access is needed and the default of `false` sends no CORS
- * headers at all.
+ * Allowed browser origins. The SPA and API share a hostname in production, so
+ * the default of `false` sends no CORS headers at all.
  */
 export function allowedOrigins(): string[] | false {
   const configured = (process.env["CORS_ORIGINS"] ?? "")
@@ -44,22 +39,16 @@ export function allowedOrigins(): string[] | false {
 const RAWG_FIELDS = ["searchGamesExternal", "importGame"];
 
 /**
- * Refuses browser requests that came from another site.
+ * Refuses browser requests from another site: identity is a cookie, and
+ * browsers attach cookies to requests a foreign page initiates, so this is the
+ * CSRF boundary.
  *
- * This matters more than it did. Identity used to arrive in headers the proxy
- * injected, which no third-party page could cause to be sent. It now arrives in
- * a cookie, and browsers attach cookies to requests a foreign page initiates —
- * so this is the CSRF boundary.
+ * One of three overlapping defences — SameSite=Lax, Apollo's csrfPrevention,
+ * and this — so the guarantee does not rest on a default in someone else's
+ * library.
  *
- * It is one of three overlapping defences, and they stop different things:
- * SameSite=Lax on the session cookie means it is not attached to a cross-site
- * POST at all; Apollo's csrfPrevention rejects the simple form POSTs that
- * SameSite=None cookies would otherwise permit; and this rejects anything from
- * a browser that names a different origin, so the guarantee does not rest on a
- * default in someone else's library.
- *
- * A request with no Origin header is allowed through: that is curl, the test
- * suite, and the healthcheck, none of which carry ambient credentials.
+ * No Origin header is allowed through: curl, the tests and the healthcheck,
+ * none of which carry ambient credentials.
  */
 export function sameOriginOnly(): RequestHandler {
   return (req, res, next) => {
@@ -84,14 +73,10 @@ export function sameOriginOnly(): RequestHandler {
 }
 
 /**
- * Where the GraphQL document lives on this request.
- *
- * Apollo serves queries over GET as well as POST, and `express.json()` does not
- * populate `req.body` for a GET — so reading only the body let a caller move the
- * exact same operation to the query string and skip the RAWG bucket entirely,
- * falling back to the general limit of 300/min instead of 30/min. Verified: with
- * the bucket set to 2 and already exhausted by POSTs, 12 GETs of the same
- * operation were all served.
+ * Where the GraphQL document lives on this request. Apollo serves queries over
+ * GET too, and `express.json()` leaves `req.body` empty there, so reading only
+ * the body lets a caller move an operation to the query string and skip its
+ * rate-limit bucket.
  */
 function documents(req: Request): string[] {
   const found: string[] = [];

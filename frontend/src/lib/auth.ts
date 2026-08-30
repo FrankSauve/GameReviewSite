@@ -1,14 +1,9 @@
 /**
- * Sign-in and sign-out, which are ordinary navigations to this app's own
- * backend rather than anything authentik-specific.
+ * Sign-in and sign-out as ordinary navigations to this app's own backend.
  *
- * The browser never handles a token. The backend is the OAuth2 client: it runs
- * the authorization code flow, and the only thing that ends up here is a
- * HttpOnly session cookie the JavaScript cannot read.
- *
- * These paths are same-origin, which in production they are — SWAG serves the
- * SPA and the API from one hostname. Locally the API is on another port and
- * these routes are not reachable, which is what AUTH_DEV_IDENTITY is for.
+ * These paths are same-origin in production, where SWAG serves the SPA and the
+ * API from one hostname. Locally the API is on another port and they are not
+ * reachable, which is what AUTH_DEV_IDENTITY is for.
  */
 
 const LOGIN_PATH = "/auth/login";

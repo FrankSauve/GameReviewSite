@@ -24,14 +24,7 @@ const AuthContext = createContext<AuthContextValue>({
   signOut: () => undefined,
 });
 
-/**
- * Identity comes from the session cookie the backend issued after the OIDC
- * login flow. There is no token to store, and none the JavaScript could read
- * even if there were: the server tells us who we are via the `me` query.
- *
- * A signed-out visitor gets `{ me: null }` with a 200. That is the ordinary
- * anonymous path, not an error — reviews are public, so the app carries on.
- */
+/** A signed-out visitor gets `{ me: null }` with a 200, not an error. */
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { data, loading } = useQuery<{ me: AuthUser | null }>(GET_ME);
 

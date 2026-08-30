@@ -6,17 +6,13 @@
 export const REVIEW_CONTENT_MAX = 20000;
 
 /**
- * Turns a Markdown review body into plain text for a card excerpt.
+ * Turns a Markdown review body into plain text for a card excerpt. Strips the
+ * syntax rather than rendering it: an excerpt sits inside a link, and real
+ * markup there would nest a link in a link.
  *
- * Card excerpts used to `slice(0, 180)` the stored text, which was fine while
- * that text was plain and shows raw `**`, `#` and `[label](url)` the moment it is
- * not. This strips the syntax rather than rendering it, because an excerpt is one
- * line inside a link and nesting real markup there would put a link inside a link.
- *
- * Deliberately not a Markdown parser. It handles the constructs the renderer
- * allows and leaves anything stranger as-is, on the grounds that a slightly odd
- * excerpt is a much smaller problem than a second parser to keep in step with the
- * first.
+ * Deliberately not a Markdown parser — a slightly odd excerpt beats a second
+ * parser to keep in step. The authoritative copy of this rule;
+ * `embedDescription` in backend/src/lib/embed.ts mirrors it.
  */
 export function toPlainText(markdown: string): string {
   // Code is set aside before the spoiler pass so that a `||` typed inside it

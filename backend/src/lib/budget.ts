@@ -1,30 +1,17 @@
 import { GraphQLError } from "graphql";
 
 /**
- * A per-request ceiling on how many list rows one GraphQL operation may return.
- *
- * The resolvers share a budget. Every list field draws its rows from it, and
- * the operation fails once it is exhausted.
- *
- * The default is roughly ten times the heaviest page the SPA legitimately asks
- * for (a game with fifty reviews, each fully commented).
+ * A per-request ceiling on list rows, shared by every list field in one
+ * operation. Roughly ten times the heaviest page the SPA legitimately asks for.
  */
 export const DEFAULT_ROW_BUDGET = 3000;
 
 /**
- * A per-request ceiling on how many characters of long-form body one operation
- * may return — review bodies, and the articles in resolvers/article.ts.
+ * A per-request ceiling on characters of long-form body — review and article
+ * content. Rows are the wrong unit once one row can be 20000 characters: a
+ * 930-row query sits inside the row budget and still returns megabytes.
  *
- * The row budget alone stopped being sufficient when review bodies grew from 5000
- * characters to 20000. Rows are the wrong unit once one row can be large: the
- * shape `reviews(limit: 30) { content user { reviews(limit: 30) { content } } }`
- * is 930 rows, comfortably inside the 3000-row budget, and was measured returning
- * **18.66 MB** — worse than the 2.6 MB that motivated these guards in the first
- * place.
- *
- * Two million characters is roughly twice the heaviest page the SPA legitimately
- * asks for (a game with fifty maximal reviews is about one million), and about a
- * tenth of what the row budget alone would have permitted.
+ * Roughly twice the heaviest page the SPA legitimately asks for.
  */
 export const DEFAULT_TEXT_BUDGET = 2_000_000;
 
@@ -53,14 +40,8 @@ export class RowBudget {
   }
 
   /**
-   * Charged once per body actually returned, from the `Review.content` and
-   * `Article.content` field resolvers — one place per type that every query shape
-   * has to go through, rather than a call to remember at each of the six
-   * resolvers that return review rows.
-   *
-   * `noun` names what filled the budget up, because the two types share it and a
-   * message that says "review text" when it was a manifesto sends the reader
-   * looking in the wrong place.
+   * Charged from the `Review.content` and `Article.content` field resolvers:
+   * one choke point per type that every query shape must pass through.
    */
   chargeText(text: string, noun = "review text"): string {
     this.remainingText -= text.length;

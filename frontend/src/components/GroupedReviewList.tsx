@@ -4,13 +4,6 @@ import { formatHours } from "../lib/playtime";
 import type { ReviewGroup } from "../lib/grouping";
 import { reviewPath } from "../lib/links";
 
-/**
- * One review as a row inside a grouped profile view.
- *
- * Deliberately compact and body-free: the grouped views exist to be scanned, and
- * the query behind them does not fetch `content` at all. Clicking through is how
- * you read the review.
- */
 function ReviewRow({ item }: { item: ReviewGroup["items"][number] }) {
   const game = item.game;
 

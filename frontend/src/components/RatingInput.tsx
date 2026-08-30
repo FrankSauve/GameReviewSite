@@ -15,13 +15,9 @@ interface RatingInputProps {
 }
 
 /**
- * The score picker, shared by the write form and the inline edit form on a card.
- *
- * Both used to hand-roll a row of ten buttons, which cannot express a half point:
- * nineteen buttons would fit no layout here and would leave the control
- * unreachable by keyboard. A range input gets arrow keys, Home/End and a screen
- * reader announcement for free, and `step` makes an off-scale value
- * unrepresentable rather than merely validated.
+ * A range input rather than a row of buttons: `step` makes an off-scale value
+ * unrepresentable rather than merely validated, and the keyboard handling comes
+ * for free.
  */
 export function RatingInput({ value, onChange, size = "md" }: RatingInputProps) {
   const id = useId();

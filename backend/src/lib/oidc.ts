@@ -2,17 +2,11 @@ import * as oidc from "openid-client";
 import { isProduction } from "../security.js";
 
 /**
- * GameReviews as a confidential OIDC client.
+ * GameReviews as a confidential OIDC client, with authentik as the provider.
  *
- * authentik is the OpenID Provider; this app is the Relying Party. The browser
- * never sees a token — the authorization code is exchanged server-side and the
- * result becomes a session cookie (see lib/session.ts). That is the
- * backend-for-frontend shape, and it is what makes it safe for the SPA and the
- * API to share one origin.
- *
- * Only the ID token matters here. This app never calls authentik again after
- * login: it does not read userinfo, does not introspect, and does not refresh.
- * All it needs is proof of who the user is, once.
+ * The browser never sees a token: the code is exchanged server-side and the
+ * result becomes a session cookie (see lib/session.ts). Only the ID token is
+ * used — this app never calls authentik again after login.
  */
 
 const SCOPES = "openid profile email";
@@ -53,12 +47,7 @@ export function oidcConfigured(): boolean {
   return oidcConfig() !== null;
 }
 
-/**
- * Refuses to serve production traffic with no way for anybody to sign in.
- *
- * Called from createApp before the port is bound, replacing the equivalent
- * check that used to guard the proxy shared secret.
- */
+/** Refuses to boot production with no way for anybody to sign in. */
 export function assertOidcConfig(): void {
   if (isProduction() && !oidcConfigured()) {
     throw new Error(
@@ -71,10 +60,9 @@ export function assertOidcConfig(): void {
 }
 
 /**
- * Discovery is a network call, so it happens once and is memoised. The promise
- * itself is cached rather than the result, so concurrent first requests share
- * one round trip. A failure is not cached — otherwise authentik being briefly
- * unreachable at boot would poison sign-in until the next restart.
+ * The promise is cached, not the result, so concurrent first requests share one
+ * round trip. A failure is not cached: authentik briefly unreachable at boot
+ * would otherwise poison sign-in until the next restart.
  */
 let configPromise: Promise<oidc.Configuration> | null = null;
 
@@ -113,10 +101,9 @@ export interface AuthorizationRequest {
 }
 
 /**
- * PKCE is used even though this is a confidential client with a secret. It costs
- * nothing and it binds the authorization code to this specific request, so a
- * code leaked from a redirect (browser history, a referrer, a proxy log) cannot
- * be redeemed by anyone else.
+ * PKCE even though this is a confidential client: it binds the code to this
+ * request, so a code leaked from history, a referrer or a proxy log cannot be
+ * redeemed by anyone else.
  */
 export async function createAuthorizationRequest(): Promise<AuthorizationRequest> {
   const settings = oidcConfig();
@@ -150,12 +137,7 @@ export interface OidcIdentity {
   idToken: string;
 }
 
-/**
- * Falls back through the claims authentik might supply. `preferred_username`
- * is what the profile scope normally yields; the rest are here so a provider
- * configured with unusual scope mappings still produces something usable rather
- * than failing the login.
- */
+/** Falls back through the claims, so unusual scope mappings still log in. */
 function pickUsername(claims: Record<string, unknown>, sub: string): string {
   for (const key of ["preferred_username", "nickname", "name"]) {
     const value = claims[key];
@@ -174,23 +156,17 @@ export interface CallbackParams {
   nonce: string;
   codeVerifier: string;
   /**
-   * The callback URL as it was actually requested, query string included.
-   * openid-client derives the `redirect_uri` it sends to the token endpoint
-   * from this, so it has to be the registered value rather than anything
-   * reconstructed loosely.
+   * The callback URL as actually requested, query string included.
+   * openid-client derives the token endpoint's `redirect_uri` from it, so it
+   * must be the registered value, not anything loosely reconstructed.
    */
   currentUrl: URL;
 }
 
 /**
- * Completes the code exchange.
- *
- * `authorizationCodeGrant` is doing the security-critical work: it verifies the
- * ID token signature against the provider's JWKS, checks `iss`, `aud` and
- * expiry, confirms the `state` and `nonce` match what was asked for, and sends
- * the PKCE verifier so the provider can confirm the code was issued to this
- * request. It throws on any of those failing, which is why the caller treats an
- * exception as "not signed in" rather than trying to interpret a partial result.
+ * Completes the code exchange. `authorizationCodeGrant` throws on any
+ * verification failure, so the caller treats an exception as "not signed in"
+ * rather than interpreting a partial result.
  */
 export async function completeAuthorization({
   state,
@@ -227,10 +203,8 @@ export async function completeAuthorization({
 }
 
 /**
- * Where to send the browser so authentik ends its own session too, not just
- * ours. Returns null when OIDC is unconfigured or the provider advertises no
- * end-session endpoint, in which case the caller has still cleared the local
- * session and simply has nowhere further to send anyone.
+ * Where to send the browser so authentik ends its own session too. Null when
+ * unconfigured or unadvertised; the local session is cleared either way.
  */
 export async function endSessionUrl(idToken: string): Promise<string | null> {
   const settings = oidcConfig();
