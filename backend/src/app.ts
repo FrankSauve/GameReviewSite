@@ -125,10 +125,8 @@ export async function createApp(): Promise<AppHandle> {
   // whole table, which is precisely what an export is. See routes/export.ts.
   app.use("/export", limiters.exports, createExportRouter());
 
-  // Shares a path with the SPA rather than sitting on one of its own: the URL a
-  // person pastes into a chat window is the URL that has to unfurl, so the proxy
-  // sends crawler user agents here and everyone else to the frontend container.
-  // See routes/embed.ts.
+  // Shares a path with the SPA: the proxy sends crawler user agents here and
+  // everyone else to the frontend container. See routes/embed.ts.
   app.use("/reviews", limiters.embeds, createEmbedRouter());
 
   app.use(

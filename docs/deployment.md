@@ -54,7 +54,7 @@ In the `.env` next to your compose file:
 ```env
 GAMEREVIEWS_DB_PASSWORD=<the 24-byte value>
 GAMEREVIEWS_RAWG_API_KEY=<your RAWG key>
-GAMEREVIEWS_OIDC_ISSUER=https://authentik.example.com/application/o/gamereviews/
+GAMEREVIEWS_OIDC_ISSUER=https://authentik.example.com/application/o/reviews/
 GAMEREVIEWS_OIDC_CLIENT_ID=<from the provider>
 GAMEREVIEWS_OIDC_CLIENT_SECRET=<from the provider>
 GAMEREVIEWS_OIDC_REDIRECT_URI=https://reviews.example.com/auth/callback
@@ -166,11 +166,11 @@ curl -s -o /dev/null -w '%{http_code}\n' \
 # 401
 ```
 
-A review link unfurls (crawlers are exempt from the geoblock for this path only
-— see the comment above the `map` in the SWAG config — because Discord and the
-rest fetch from cloud IPs no country whitelist covers) — the tags are served to a crawler, and only to one (an
-empty `<div id="root">` in the first response means the `/reviews/` location or
-the `map` above it is missing from the SWAG config):
+A review link unfurls, and the tags are served to a crawler only. An empty
+`<div id="root">` in the first response means the `/reviews/` location or the
+`map` above it is missing from the SWAG config. Crawlers are exempt from the
+geoblock on this path alone, because Discord and the rest fetch from cloud IPs
+no country whitelist covers; see the comment above that `map`.
 
 ```bash
 curl -s https://reviews.example.com/reviews/<slug> \

@@ -1,15 +1,8 @@
 /**
- * The HTML stub crawlers get for a review link.
- *
- * The site is a static SPA: the markup nginx serves is an empty `<div id="root">`
- * and every word on the page arrives later, from JavaScript. Discord, Slack,
- * Mastodon and the rest do not run JavaScript, so a pasted review currently
- * unfurls into nothing at all. Meta tags therefore have to be *served*, which
- * means they have to come from the backend — see routes/embed.ts for how a
+ * The HTML stub crawlers get for a review link. See routes/embed.ts for how a
  * crawler is routed here while a person still gets the SPA.
  *
- * Everything in this module is pure so that the tags themselves can be tested
- * without a database or a socket.
+ * Pure, so the tags can be tested without a database or a socket.
  */
 
 import { formatScore } from "./exportMarkdown.js";
@@ -24,12 +17,8 @@ export const THEME_COLOR = "#8b5cf6";
 export const SITE_NAME = "GameReviews";
 
 /**
- * Escapes text for use in an HTML attribute or text node.
- *
- * Every value below reaches this page from something a person typed — a game
- * title imported from RAWG, a username from authentik, a review body — and lands
- * inside a double-quoted `content="…"`. A single unescaped quote would end the
- * attribute and let the rest of the title write tags of its own.
+ * Escapes text for an HTML attribute or text node. Every value on this page is
+ * user-supplied and lands inside a double-quoted `content="…"`.
  */
 export function escapeHtml(value: string): string {
   return value
@@ -43,20 +32,23 @@ export function escapeHtml(value: string): string {
 /**
  * A review body reduced to one line of plain text for `og:description`.
  *
- * Mirrors `toPlainText`/`excerpt` in frontend/src/lib/markdown.ts, including its
- * spoiler redaction: an unfurl is the one place a spoiler is most likely to be
- * read by someone who did not ask for it, and it is the one place with no
- * click-to-reveal to hide behind. Duplicated rather than shared because the two
- * live in separate packages and this one only has to handle the constructs the
- * renderer allows.
+ * Must stay in step with `toPlainText`/`excerpt` in frontend/src/lib/markdown.ts,
+ * which is the authoritative copy of this rule (#66). Spoilers are redacted rather
+ * than unwrapped: an unfurl has no click-to-reveal to hide behind.
  */
 export function embedDescription(markdown: string, limit = DESCRIPTION_MAX): string {
+  // Code is set aside before the spoiler pass so that a `||` typed inside it
+  // cannot pair with a real marker, as it cannot in the renderer.
+  const code: string[] = [];
+  const stash = (body: string) => `\u0000${code.push(body) - 1}\u0000`;
+
   const text = markdown
-    // Spoilers first: the markers are stripped by the emphasis rules below, and
-    // a redaction that runs after them would have nothing left to match.
-    .replace(/\|\|[\s\S]+?\|\|/g, "[spoiler]")
-    .replace(/```[^\n]*\n?([\s\S]*?)```/g, "$1")
-    .replace(/`([^`]+)`/g, "$1")
+    .replace(/```[^\n]*\n?([\s\S]*?)```/g, (_m, body: string) => stash(body))
+    .replace(/`([^`]+)`/g, (_m, body: string) => stash(body))
+    // Confined to a single block, because the renderer never pairs markers
+    // across a blank line either.
+    .replace(/\|\|(?:(?!\n[ \t]*\n)[\s\S])+?\|\|/g, "[spoiler]")
+    .replace(/\u0000(\d+)\u0000/g, (_m, i: string) => code[Number(i)] ?? "")
     .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
     .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
     .replace(/\*\*([^*]+)\*\*/g, "$1")
@@ -99,11 +91,8 @@ function tag(attr: "property" | "name", key: string, value: string): string {
   return `    <meta ${attr}="${key}" content="${escapeHtml(value)}">`;
 }
 
-/**
- * The whole document. Small on purpose: a crawler reads `<head>` and stops, and
- * the body exists only for the rare person who arrives here with a user agent
- * that looks like a bot.
- */
+/** The whole document. The body is only for a person whose user agent was
+ *  mistaken for a bot; a crawler reads `<head>` and stops. */
 export function renderReviewEmbed(embed: ReviewEmbed): string {
   const lines = [
     tag("property", "og:type", "article"),
@@ -144,9 +133,8 @@ ${lines.join("\n")}
 `;
 }
 
-/** The stub for a link to a review that is not there — deleted, or a slug typed
- *  wrong. Still an embed: a client that unfurls it should say so rather than
- *  showing the raw URL as if the fetch had failed. */
+/** Deleted, or a slug typed wrong. Still an embed, so a client says so rather
+ *  than showing the raw URL as if the fetch had failed. */
 export function renderMissingEmbed(url: string): string {
   return renderReviewEmbed({
     title: `Review not found — ${SITE_NAME}`,
@@ -155,9 +143,8 @@ export function renderMissingEmbed(url: string): string {
   });
 }
 
-/** The stub for a request this app could not answer. Distinct from the missing
- *  one because "gone" and "broken" are different facts, and a crawler that
- *  caches the wrong one of them is wrong for a long time. */
+/** Distinct from the missing stub: a crawler that caches "gone" for "broken"
+ *  is wrong for a long time. */
 export function renderUnavailableEmbed(url: string): string {
   return renderReviewEmbed({
     title: `Review unavailable — ${SITE_NAME}`,

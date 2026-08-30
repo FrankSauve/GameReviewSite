@@ -45,7 +45,7 @@ Optional: to land back on the site after sign-out, add
 | Field | Value |
 | ----- | ----- |
 | Name | `GameReviews` |
-| Slug | `gamereviews` |
+| Slug | `reviews` |
 | Provider | `gamereviews-oidc` |
 
 The slug appears in the issuer URL needed in step 4.
@@ -78,7 +78,7 @@ The deployment snippet sets these from `.env`; see
 [deployment.md](deployment.md).
 
 ```env
-OIDC_ISSUER=https://authentik.example.com/application/o/gamereviews/
+OIDC_ISSUER=https://authentik.example.com/application/o/reviews/
 OIDC_CLIENT_ID=<from step 1>
 OIDC_CLIENT_SECRET=<from step 1>
 OIDC_REDIRECT_URI=https://reviews.example.com/auth/callback
@@ -91,7 +91,7 @@ CORS_ORIGINS=
 slash. Confirm it:
 
 ```bash
-curl -s https://authentik.example.com/application/o/gamereviews/.well-known/openid-configuration | jq .issuer
+curl -s https://authentik.example.com/application/o/reviews/.well-known/openid-configuration | jq .issuer
 ```
 
 `OIDC_REDIRECT_URI` must match the provider's entry exactly, scheme and port

@@ -136,6 +136,16 @@ describe("review link previews", () => {
     expect(meta(res.text, "og:title")).toBe("Review not found — GameReviews");
   });
 
+  it("answers a path under /reviews that is not a review at all", async () => {
+    // A crawler walking the site reaches these; Express's own error page is not
+    // an embed, and the stub exists for exactly this.
+    for (const path of ["/reviews/", "/reviews/a/b"]) {
+      const res = await request(app).get(path);
+      expect(res.status).toBe(404);
+      expect(meta(res.text, "og:title")).toBe("Review not found — GameReviews");
+    }
+  });
+
   it("lets a shared cache hold a preview", async () => {
     const { slug } = await seedReview({ title: "Hades" });
 
@@ -154,6 +164,24 @@ describe("embedDescription", () => {
     expect(embedDescription("Then ||the dog dies|| and it ends.")).toBe(
       "Then [spoiler] and it ends."
     );
+  });
+
+  it("does not pair a spoiler marker with a pipe inside code", () => {
+    // The three cases #53 fixed in the frontend copy of this rule. Each puts a
+    // stray `||` before a real spoiler; pairing left to right across it prints
+    // the hidden text instead of redacting it.
+    expect(embedDescription("The check is `a || b`. Then ||the dog dies|| ends it.")).toBe(
+      "The check is a || b. Then [spoiler] ends it."
+    );
+    expect(embedDescription("```\nx || y\n```\nAnd ||he was dead||.")).toBe(
+      "x || y And [spoiler]."
+    );
+  });
+
+  it("does not pair a spoiler marker across a blank line", () => {
+    expect(
+      embedDescription("A row: || not a spoiler\n\nThen ||she is the killer|| at the end.")
+    ).toBe("A row: || not a spoiler Then [spoiler] at the end.");
   });
 
   it("strips markdown down to one line", () => {
