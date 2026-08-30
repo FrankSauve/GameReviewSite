@@ -2,6 +2,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Express } from "express";
 import { MAX_LABELS } from "../src/resolvers/game.js";
 import { ALICE, authedQuery, publicQuery, resetDatabase, startApp } from "./helpers.js";
+import { prisma } from "../src/lib/prisma.js";
 
 interface GamePayload {
   id: string;
@@ -258,5 +259,42 @@ describe("genres and platforms", () => {
       );
       expect(res.data?.updateGame.platforms).toEqual(["PC"]);
     });
+  });
+});
+
+/**
+ * The columns, not the resolvers.
+ *
+ * `String[]` in schema.prisma is non-nullable, but the column was created
+ * nullable with no default and Prisma coerced the NULL to [] on read — so the
+ * app could not see the divergence and every other reader could. These assert
+ * the database itself, because that is where the disagreement lived.
+ */
+describe("the label columns", () => {
+  beforeEach(resetDatabase);
+
+  it("refuses a NULL, which the schema has always claimed it did", async () => {
+    await expect(
+      prisma.$executeRawUnsafe(`
+        INSERT INTO "Game" (id, slug, title, genres, "createdAt", "updatedAt")
+        VALUES (gen_random_uuid(), 'null-labels', 'Null Labels', NULL, now(), now())
+      `)
+    ).rejects.toThrow();
+  });
+
+  it("defaults an omitted column to the empty array", async () => {
+    await prisma.$executeRawUnsafe(`
+      INSERT INTO "Game" (id, slug, title, "createdAt", "updatedAt")
+      VALUES (gen_random_uuid(), 'omitted', 'Omitted', now(), now())
+    `);
+
+    const [row] = await prisma.$queryRawUnsafe<
+      { genres_is_null: boolean; platforms_is_null: boolean }[]
+    >(`SELECT genres IS NULL AS genres_is_null, platforms IS NULL AS platforms_is_null
+       FROM "Game" WHERE slug = 'omitted'`);
+
+    // Not just "Prisma reports []" — that was true before, and was the problem.
+    expect(row?.genres_is_null).toBe(false);
+    expect(row?.platforms_is_null).toBe(false);
   });
 });
