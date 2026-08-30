@@ -25,7 +25,7 @@ interface RatingInputProps {
  */
 export function RatingInput({ value, onChange, size = "md" }: RatingInputProps) {
   const id = useId();
-  const readout = size === "md" ? "text-3xl" : "text-xl";
+  const readout = size === "md" ? "text-4xl" : "text-2xl";
 
   return (
     <div className="flex items-center gap-4">
@@ -42,7 +42,7 @@ export function RatingInput({ value, onChange, size = "md" }: RatingInputProps) 
           aria-label="Score out of 10"
           aria-valuetext={`${formatRating(value)} out of ${RATING_MAX}`}
         />
-        <div className="flex justify-between text-xs text-gray-600 mt-0.5 select-none">
+        <div className="flex justify-between text-sm text-gray-600 mt-0.5 select-none">
           <span>{RATING_MIN}</span>
           <span>{RATING_MAX}</span>
         </div>
@@ -52,7 +52,7 @@ export function RatingInput({ value, onChange, size = "md" }: RatingInputProps) 
         <span className={`${readout} font-extrabold tabular-nums ${ratingColor(value)}`}>
           {formatRating(value)}
         </span>
-        <span className="text-xs text-gray-600">/ {RATING_MAX}</span>
+        <span className="text-sm text-gray-600">/ {RATING_MAX}</span>
       </div>
     </div>
   );

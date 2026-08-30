@@ -18,7 +18,7 @@ export function PlaytimeInput({
 }: PlaytimeInputProps) {
   const yearId = useId();
   const hoursId = useId();
-  const label = size === "md" ? "text-sm text-gray-400" : "text-xs text-gray-400";
+  const label = size === "md" ? "text-base text-gray-400" : "text-sm text-gray-400";
 
   return (
     <div className="flex gap-3">

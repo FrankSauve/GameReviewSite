@@ -71,7 +71,7 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-400 mb-2">
+        <label className="block text-base font-medium text-gray-400 mb-2">
           Your Rating
         </label>
         <RatingInput value={rating} onChange={setRating} />
@@ -85,7 +85,7 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
       />
 
       <div>
-        <label htmlFor={bodyId} className="block text-sm font-medium text-gray-400 mb-1.5">
+        <label htmlFor={bodyId} className="block text-base font-medium text-gray-400 mb-1.5">
           Your Review
         </label>
         <MarkdownEditor

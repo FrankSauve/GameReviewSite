@@ -54,6 +54,10 @@ export function MarkdownEditor({
   maxLength = REVIEW_CONTENT_MAX,
 }: MarkdownEditorProps) {
   const [previewing, setPreviewing] = useState(false);
+  // Write and Preview share a height so switching tabs does not resize the form.
+  // Only the full-size editor gets the taller desktop pane; short fields (a bio)
+  // keep the height their `rows` asked for.
+  const bodyHeight = rows >= 6 ? "min-h-[9rem] md:min-h-[20rem]" : "min-h-[6.5rem]";
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Applied in an effect rather than straight after `onChange`: the textarea
@@ -86,7 +90,7 @@ export function MarkdownEditor({
   };
 
   const tab = (active: boolean) =>
-    `px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${
+    `px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
       active
         ? "bg-gray-800 text-gray-200"
         : "text-gray-500 hover:text-gray-300"
@@ -131,7 +135,7 @@ export function MarkdownEditor({
                 // selection the command is about to act on with it.
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => run(tool.name)}
-                className={`w-7 h-7 rounded-md text-xs text-gray-400 hover:text-gray-100 hover:bg-gray-800 transition-colors ${tool.className ?? ""}`}
+                className={`w-8 h-8 rounded-md text-sm text-gray-400 hover:text-gray-100 hover:bg-gray-800 transition-colors ${tool.className ?? ""}`}
               >
                 {tool.label}
               </button>
@@ -141,14 +145,14 @@ export function MarkdownEditor({
       </div>
 
       {previewing ? (
-        <div className="input-field min-h-[6.5rem] text-sm text-gray-300 leading-relaxed overflow-y-auto">
+        <div className={`input-field ${bodyHeight} text-base text-gray-300 leading-relaxed overflow-y-auto`}>
           <Markdown>{value}</Markdown>
         </div>
       ) : (
         <textarea
           id={id}
           ref={textareaRef}
-          className="input-field w-full resize-none text-sm"
+          className={`input-field w-full resize-none text-base ${bodyHeight}`}
           rows={rows}
           placeholder={placeholder}
           value={value}
@@ -159,10 +163,10 @@ export function MarkdownEditor({
       )}
 
       <div className="flex items-baseline justify-between mt-1">
-        <p className="text-xs text-gray-600">
+        <p className="text-sm text-gray-600">
           Markdown supported, including ||spoilers||
         </p>
-        <p className="text-xs text-gray-600">
+        <p className="text-sm text-gray-600">
           {value.length}/{maxLength}
         </p>
       </div>
