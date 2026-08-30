@@ -133,7 +133,7 @@ export function ArticleEditorPage() {
       </h1>
 
       <div>
-        <label htmlFor={titleId} className="block text-sm font-medium text-gray-400 mb-1.5">
+        <label htmlFor={titleId} className="block text-base font-medium text-gray-400 mb-1.5">
           Title
         </label>
         <input
@@ -149,14 +149,14 @@ export function ArticleEditorPage() {
 
       <div>
         <div className="flex items-baseline justify-between mb-1.5">
-          <label htmlFor={bodyId} className="block text-sm font-medium text-gray-400">
+          <label htmlFor={bodyId} className="block text-base font-medium text-gray-400">
             Body
           </label>
           <button
             type="button"
             onClick={() => setPreviewing((p) => !p)}
             disabled={!content.trim()}
-            className="text-xs text-violet-400 hover:text-violet-300 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
+            className="text-sm text-violet-400 hover:text-violet-300 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
           >
             {previewing ? "Write" : "Preview"}
           </button>
@@ -180,10 +180,10 @@ export function ArticleEditorPage() {
         )}
 
         <div className="flex items-baseline justify-between mt-1">
-          <p className="text-xs text-gray-600">
+          <p className="text-sm text-gray-600">
             Markdown: **bold**, *italic*, - lists, &gt; quotes
           </p>
-          <p className="text-xs text-gray-600">
+          <p className="text-sm text-gray-600">
             {content.length}/{CONTENT_MAX}
           </p>
         </div>
