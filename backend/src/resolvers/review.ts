@@ -10,6 +10,7 @@ import {
 } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
 import { byIdOrSlug, reviewSlugBase, uniqueSlug } from "../lib/slug.js";
+import { validateString } from "../lib/validate.js";
 
 interface CreateReviewInput {
   gameId: string;
@@ -28,8 +29,8 @@ interface UpdateReviewInput {
 
 /**
  * Reviews are Markdown, and a decade of backlog includes long ones, so the body
- * limit is generous. Comments and game fields are unaffected — each resolver has
- * its own `validateString` with its own default (2000 and 500 respectively).
+ * limit is generous. Comments and game fields are unaffected — they pass their
+ * own limits to `validateString` in lib/validate.ts.
  *
  * This does widen the worst-case response, and it is worth being precise about how
  * much. The guards in lib/budget.ts and lib/maxRows.ts count rows, not bytes: the
@@ -44,14 +45,6 @@ interface UpdateReviewInput {
  * in the commit that turns Markdown on.
  */
 export const REVIEW_CONTENT_MAX = 20000;
-
-function validateString(value: string, field: string, maxLength = REVIEW_CONTENT_MAX): string {
-  const trimmed = value.trim();
-  if (!trimmed) throw new GraphQLError(`${field} must not be empty.`);
-  if (trimmed.length > maxLength)
-    throw new GraphQLError(`${field} must be at most ${maxLength} characters.`);
-  return trimmed;
-}
 
 /**
  * Scores are whole or half points on a 1–10 scale: 9.5 is a score, 9.4 is a typo.
@@ -248,7 +241,7 @@ export const reviewResolvers = {
           userId: authUser.id,
           gameId: input.gameId,
           rating: validateRating(input.rating),
-          content: validateString(input.content, "content"),
+          content: validateString(input.content, "content", REVIEW_CONTENT_MAX),
           yearPlayed: validateYearPlayed(input.yearPlayed),
           hoursPlayed: validateHoursPlayed(input.hoursPlayed),
         },
@@ -268,7 +261,7 @@ export const reviewResolvers = {
       > = {};
       if (input.rating !== undefined) data.rating = validateRating(input.rating);
       if (input.content !== undefined)
-        data.content = validateString(input.content, "content");
+        data.content = validateString(input.content, "content", REVIEW_CONTENT_MAX);
       if (input.yearPlayed !== undefined)
         data.yearPlayed = validateYearPlayed(input.yearPlayed);
       if (input.hoursPlayed !== undefined)

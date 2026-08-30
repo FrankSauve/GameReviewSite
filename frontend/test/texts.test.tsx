@@ -25,7 +25,7 @@ import { CREATE_ARTICLE } from "../src/graphql/mutations";
  * to find out.
  */
 
-const ME = { __typename: "User", id: "u1", username: "simon", email: null };
+const ME = { __typename: "User", id: "u1", slug: "simon", username: "simon", email: null };
 const OTHER = { __typename: "User", id: "u2", username: "someone-else", email: null };
 
 function meMock(user: typeof ME | null) {
@@ -195,6 +195,20 @@ describe("writing a text", () => {
     expect(screen.queryByLabelText("Title")).toBeNull();
   });
 
+  it("refuses to fill the form with somebody else's text", async () => {
+    renderPage(
+      [meMock(ME), detailMock({ author: OTHER })],
+      "/texts/our-manifesto/edit",
+      "/texts/:id/edit",
+      <TextEditorPage />
+    );
+
+    await waitFor(() =>
+      expect(screen.getByText("This text is not yours to edit")).toBeTruthy()
+    );
+    expect(screen.queryByLabelText("Title")).toBeNull();
+  });
+
   it("sends what was typed, published by default", async () => {
     const create = {
       request: {
@@ -218,7 +232,7 @@ describe("writing a text", () => {
     };
 
     render(
-      <MockedProvider mocks={[meMock(ME), create, indexMock([])] as never}>
+      <MockedProvider mocks={[meMock(ME), create] as never}>
         <AuthProvider>
           <MemoryRouter initialEntries={["/texts/new"]}>
             <Routes>

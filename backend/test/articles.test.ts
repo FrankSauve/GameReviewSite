@@ -36,6 +36,12 @@ const LIST = `
 
 const ONE = `query One($id: ID!) { article(id: $id) { id slug title content } }`;
 
+const RETITLE = `
+  mutation Retitle($id: ID!, $title: String!) {
+    updateArticle(id: $id, input: { title: $title }) { id slug title }
+  }
+`;
+
 async function seedArticle(
   username: string,
   fields: { title: string; slug?: string; publishedAt?: Date | null }
@@ -231,5 +237,94 @@ describe("texts", () => {
     const res = await publicQuery<{ articles: unknown[] }>(app, LIST, {}, { limit: 500 });
 
     expect(res.data?.articles).toHaveLength(3);
+  });
+
+  /**
+   * A hand-written text at a time cannot collide, but a seed or an import
+   * inserts a batch inside one transaction and every row gets the same stamp.
+   * Untiebroken, paging over 500 such rows lost three and repeated three;
+   * over 5000, it lost 146.
+   */
+  it("pages over texts sharing a timestamp without losing or repeating one", async () => {
+    await provisionUser(ALICE);
+    const alice = await prisma.user.findUniqueOrThrow({ where: { username: "alice" } });
+    const stamp = new Date("2026-01-01T00:00:00.000Z");
+    await prisma.article.createMany({
+      data: Array.from({ length: 500 }, (_, n) => ({
+        title: `Text ${n}`,
+        slug: `text-${n}`,
+        content: "Body.",
+        publishedAt: stamp,
+        createdAt: stamp,
+        authorId: alice.id,
+      })),
+    });
+
+    const seen: string[] = [];
+    for (let offset = 0; offset < 500; offset += 50) {
+      const res = await publicQuery<{ articles: { slug: string }[] }>(
+        app,
+        LIST,
+        {},
+        { limit: 50, offset }
+      );
+      for (const article of res.data?.articles ?? []) seen.push(article.slug);
+    }
+
+    expect(new Set(seen).size).toBe(500);
+  });
+
+  it("re-slugs a text that is renamed, and leaves one that is not", async () => {
+    await provisionUser(ALICE);
+    const id = await seedArticle("alice", { title: "First Draft", slug: "first-draft" });
+    await seedArticle("alice", { title: "Second Thoughts", slug: "second-thoughts" });
+
+    const renamed = await authedQuery<{ updateArticle: { slug: string } }>(
+      app,
+      RETITLE,
+      ALICE,
+      {},
+      { id, title: "Our Manifesto" }
+    );
+    expect(renamed.data?.updateArticle.slug).toBe("our-manifesto");
+
+    // Saving without changing the title must not walk the slug onto a suffix by
+    // finding the row's own slug already taken.
+    const again = await authedQuery<{ updateArticle: { slug: string } }>(
+      app,
+      RETITLE,
+      ALICE,
+      {},
+      { id, title: "Our Manifesto" }
+    );
+    expect(again.data?.updateArticle.slug).toBe("our-manifesto");
+
+    // And a rename onto a slug somebody else holds is suffixed, not refused.
+    const collided = await authedQuery<{ updateArticle: { slug: string } }>(
+      app,
+      RETITLE,
+      ALICE,
+      {},
+      { id, title: "Second Thoughts" }
+    );
+    expect(collided.data?.updateArticle.slug).toBe("second-thoughts-2");
+  });
+
+  /** `title` is nullable in the schema, so a client can send an explicit null. */
+  it("refuses a null title rather than failing internally", async () => {
+    await provisionUser(ALICE);
+    const id = await seedArticle("alice", { title: "Manifesto" });
+
+    const res = await authedQuery(
+      app,
+      `mutation ($id: ID!, $input: UpdateArticleInput!) {
+        updateArticle(id: $id, input: $input) { title }
+      }`,
+      ALICE,
+      {},
+      { id, input: { title: null } }
+    );
+
+    expect(res.errors?.[0]?.message).toBe("title must not be empty.");
   });
 });

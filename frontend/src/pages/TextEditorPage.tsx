@@ -1,7 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { useMutation, useQuery } from "@apollo/client";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { GET_ARTICLE, GET_ARTICLES } from "../graphql/queries";
+import { GET_ARTICLE } from "../graphql/queries";
 import { CREATE_ARTICLE, UPDATE_ARTICLE } from "../graphql/mutations";
 import type { Article } from "../types";
 import { useAuth } from "../contexts/AuthContext";
@@ -9,19 +9,14 @@ import { textPath } from "../lib/links";
 import { Markdown } from "../components/Markdown";
 
 /**
- * Writing a text, and editing one.
+ * Writing a text, and editing one: the two differ only in which mutation runs,
+ * whether the fields start empty, and what the button says.
  *
- * One component for both because the two differ in exactly three places — which
- * mutation runs, whether the fields start empty, and what the button says — and
- * a second copy of a form with a preview toggle is a second copy to keep in step.
- *
- * The plain textarea is deliberate but temporary: #46 adds a proper Markdown
- * editor component, and this form should adopt it once that lands rather than
- * grow its own toolbar in the meantime.
+ * The plain textarea is temporary — this form should adopt the MarkdownEditor
+ * from #46 once that lands.
  */
 
-/** Kept in step with ARTICLE_CONTENT_MAX in backend/src/resolvers/article.ts,
- *  which is the side that enforces it. */
+/** Kept in step with ARTICLE_CONTENT_MAX in backend/src/resolvers/article.ts. */
 const CONTENT_MAX = 50000;
 const TITLE_MAX = 200;
 
@@ -60,14 +55,14 @@ export function TextEditorPage() {
   const [createArticle, { loading: creating, error: createError }] = useMutation<{
     createArticle: Article;
   }>(CREATE_ARTICLE, {
-    refetchQueries: [{ query: GET_ARTICLES, variables: { limit: 20, offset: 0 } }],
+    refetchQueries: ["GetArticles"],
     onCompleted: (result) => done(result.createArticle),
   });
 
   const [updateArticle, { loading: updating, error: updateError }] = useMutation<{
     updateArticle: Article;
   }>(UPDATE_ARTICLE, {
-    refetchQueries: [{ query: GET_ARTICLES, variables: { limit: 20, offset: 0 } }],
+    refetchQueries: ["GetArticles"],
     onCompleted: (result) => done(result.updateArticle),
   });
 
@@ -95,6 +90,19 @@ export function TextEditorPage() {
         <p className="text-gray-400 font-medium">This text is not here</p>
         <Link to="/texts" className="text-sm text-violet-400 hover:text-violet-300">
           Back to the texts
+        </Link>
+      </div>
+    );
+  }
+
+  // The server refuses the mutation anyway; without this the form still fills
+  // in with somebody else's text and every save fails.
+  if (editing && existing && existing.author && existing.author.id !== user.id) {
+    return (
+      <div className="card p-12 text-center space-y-3 max-w-3xl mx-auto">
+        <p className="text-gray-400 font-medium">This text is not yours to edit</p>
+        <Link to={textPath(existing)} className="text-sm text-violet-400 hover:text-violet-300">
+          Read it instead
         </Link>
       </div>
     );

@@ -11,6 +11,7 @@ import {
 import { requireAuth, type Context } from "../context.js";
 import { searchRawg, getRawgGame, releaseYear } from "../lib/rawg.js";
 import { byIdOrSlug, slugify, uniqueSlug } from "../lib/slug.js";
+import { validateString } from "../lib/validate.js";
 import {
   GAME_SORTS,
   catalogueCount,
@@ -43,14 +44,6 @@ interface ImportGameInput {
   genres?: string[];
   platforms?: string[];
   releaseYear?: number;
-}
-
-function validateString(value: string, field: string, maxLength = 500): string {
-  const trimmed = value.trim();
-  if (!trimmed) throw new GraphQLError(`${field} must not be empty.`);
-  if (trimmed.length > maxLength)
-    throw new GraphQLError(`${field} must be at most ${maxLength} characters.`);
-  return trimmed;
 }
 
 /**

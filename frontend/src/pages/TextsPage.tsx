@@ -7,12 +7,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { Pagination } from "../components/Pagination";
 
 /**
- * The texts index: manifestos and anything else that is not a review.
- *
- * Drafts appear here for their author and for nobody else — the server decides
- * that, not this page, so there is no filtering to get wrong on the way in. They
- * are labelled, because a list where a draft looks exactly like a published text
- * is a list you cannot use to tell whether you published the thing.
+ * The texts index. The server decides whose drafts are in it; this page only
+ * labels them, so a draft cannot be mistaken for something published.
  */
 
 const PAGE_SIZE = 20;

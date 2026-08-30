@@ -113,7 +113,8 @@ export const typeDefs = `#graphql
   # the app; see resolvers/article.ts for why it is not a Review with no game.
   type Article {
     id: ID!
-    # Readable identifier, e.g. "our-manifesto". Fixed at insert.
+    # Readable identifier, e.g. "our-manifesto". Re-derived if the title changes,
+    # so a link shared before a rename stops resolving.
     slug: String!
     title: String!
     content: String!

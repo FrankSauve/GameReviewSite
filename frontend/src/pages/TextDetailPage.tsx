@@ -1,19 +1,13 @@
 import { useQuery, useMutation } from "@apollo/client";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { GET_ARTICLE, GET_ARTICLES } from "../graphql/queries";
+import { GET_ARTICLE } from "../graphql/queries";
 import { DELETE_ARTICLE } from "../graphql/mutations";
 import type { Article } from "../types";
 import { useAuth } from "../contexts/AuthContext";
 import { userPath } from "../lib/links";
 import { Markdown } from "../components/Markdown";
 
-/**
- * One text, rendered.
- *
- * Wider prose than a review and no score, playtime or game beside it — a
- * manifesto is the thing on the page rather than an opinion attached to
- * something else.
- */
+/** One text, rendered. No score, playtime or game beside it. */
 
 function formatDate(iso?: string | null): string {
   if (!iso) return "";
@@ -34,9 +28,9 @@ export function TextDetailPage() {
   });
 
   const [deleteArticle, { loading: deleting }] = useMutation(DELETE_ARTICLE, {
-    // The index is a separate query and would otherwise still list the text that
-    // no longer exists.
-    refetchQueries: [{ query: GET_ARTICLES, variables: { limit: 20, offset: 0 } }],
+    // The index is a separate query and would otherwise still list the text
+    // that no longer exists.
+    refetchQueries: ["GetArticles"],
     onCompleted: () => navigate("/texts"),
   });
 

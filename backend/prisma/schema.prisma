@@ -87,28 +87,23 @@ model Review {
   @@index([userId, yearPlayed])
 }
 
-/// A manifesto, an essay, a changelog note — anything that is not a review.
-///
-/// Called an Article here and reached at /texts in the app: "text" is what the
-/// people writing them call these, and is also a word Postgres and every ORM
-/// already use for something else.
+/// A manifesto, an essay — anything that is not a review. Reached at /texts in
+/// the app; named Article here because "text" is a word Postgres already owns.
 model Article {
   id          String    @id @default(uuid())
-  /// Derived from the title at insert and never regenerated, like every other
-  /// slug here. See lib/slug.ts.
+  /// Derived from the title, and re-derived when the title changes: a text is
+  /// its title in a way a game or a review is not. See lib/slug.ts.
   slug        String    @unique
   title       String
   content     String
-  /// Null means a draft: visible to its author, to nobody else, and absent from
-  /// the index. A boolean would answer "is it public" without answering "since
-  /// when", and the index is ordered by publication rather than by creation.
+  /// Null means a draft: visible to its author and to nobody else. A date rather
+  /// than a boolean because the index is ordered by publication.
   publishedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
   authorId    String
   author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-  /// The index reads along this: published texts, newest first.
   @@index([publishedAt])
   @@index([authorId])
 }

@@ -5,15 +5,9 @@ import { serializeDates } from "../lib/serialize.js";
 import { LIST_BOUNDS, clampWindow, type PageArgs } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
 import { byIdOrSlug, slugify, uniqueSlug } from "../lib/slug.js";
+import { validateString } from "../lib/validate.js";
 
-/**
- * Texts: manifestos, essays, anything that is not a review.
- *
- * Modelled separately rather than as a review with no game, because almost
- * nothing a review has applies — no score, no playtime, no year played, no game
- * — and a Review row with five null columns would make every one of those fields
- * nullable for the reviews too.
- */
+/** Texts: manifestos, essays, anything that is not a review. */
 
 interface CreateArticleInput {
   title: string;
@@ -22,35 +16,18 @@ interface CreateArticleInput {
 }
 
 interface UpdateArticleInput {
-  title?: string;
-  content?: string;
+  title?: string | null;
+  content?: string | null;
   published?: boolean | null;
 }
 
-/**
- * Longer than a review's 20000, because a manifesto is the one thing here
- * written to be long. It is still bounded: the text budget in lib/budget.ts
- * counts these characters against the same per-request ceiling reviews draw
- * from, so an unbounded body would let one query return a book.
- */
+/** Longer than a review's 20000; still charged against the text budget. */
 export const ARTICLE_CONTENT_MAX = 50000;
 export const ARTICLE_TITLE_MAX = 200;
 
-function validateString(value: string, field: string, maxLength: number): string {
-  const trimmed = value.trim();
-  if (!trimmed) throw new GraphQLError(`${field} must not be empty.`);
-  if (trimmed.length > maxLength)
-    throw new GraphQLError(`${field} must be at most ${maxLength} characters.`);
-  return trimmed;
-}
-
 /**
- * What the caller is allowed to see.
- *
- * A draft is visible to its author and to nobody else. Written as a filter
- * rather than as a check after the read so that paging stays honest: filtering a
- * page after it has been fetched returns short pages and a total that disagrees
- * with them.
+ * A draft is visible to its author and to nobody else. A filter, not a check
+ * after the read, so the count and the page agree.
  */
 function visibleTo(userId: string | undefined) {
   const published = { publishedAt: { not: null } };
@@ -58,11 +35,9 @@ function visibleTo(userId: string | undefined) {
 }
 
 /**
- * `serializeDates` only knows about createdAt and updatedAt, and `publishedAt`
- * is a third one. Left to itself, graphql-js coerces a Date for a String field
- * through `valueOf()` and returns epoch milliseconds as a string — a different
- * shape from the ISO-8601 every other timestamp in this API uses, and one the
- * SPA would have to special-case.
+ * `serializeDates` knows only createdAt and updatedAt. Left to itself, graphql-js
+ * coerces a Date for a String field through `valueOf()` and the field arrives as
+ * epoch milliseconds rather than the ISO-8601 every other timestamp here uses.
  */
 function serializeArticle(article: Article) {
   return {
@@ -77,9 +52,13 @@ export const articleResolvers = {
       const { take, skip } = clampWindow(args, LIST_BOUNDS.articles);
       const articles = await prisma.article.findMany({
         where: visibleTo(context.user?.id),
-        // By publication, not by creation: a draft written first and published
-        // last belongs at the top of the index on the day it goes out.
-        orderBy: [{ publishedAt: { sort: "desc", nulls: "first" } }, { createdAt: "desc" }],
+        // By publication, not by creation. `id` breaks the remaining ties, or
+        // offset paging repeats a row on one page and drops another.
+        orderBy: [
+          { publishedAt: { sort: "desc", nulls: "first" } },
+          { createdAt: "desc" },
+          { id: "desc" },
+        ],
         take,
         skip,
       });
@@ -109,15 +88,10 @@ export const articleResolvers = {
 
       const article = await prisma.article.create({
         data: {
-          slug: await uniqueSlug(
-            slugify(title, "text"),
-            async (candidate) =>
-              (await prisma.article.count({ where: { slug: candidate } })) > 0
-          ),
+          slug: await slugFor(title),
           title,
           content: validateString(input.content, "content", ARTICLE_CONTENT_MAX),
-          // Published unless the author asked for a draft: writing something and
-          // then wondering why nobody can see it is the worse default.
+          // Published unless the author asked for a draft.
           publishedAt: input.published === false ? null : new Date(),
           authorId: authUser.id,
         },
@@ -133,15 +107,20 @@ export const articleResolvers = {
       const authUser = requireAuth(context);
       const existing = await requireAuthorship(id, authUser.id);
 
-      const data: Partial<Pick<Article, "title" | "content" | "publishedAt">> = {};
-      if (input.title !== undefined)
+      const data: Partial<Pick<Article, "title" | "slug" | "content" | "publishedAt">> = {};
+      if (input.title !== undefined) {
         data.title = validateString(input.title, "title", ARTICLE_TITLE_MAX);
+        // The URL follows the title. A text is its title in a way a game or a
+        // review is not, so a renamed one whose link still reads
+        // /texts/first-draft is worse than a link that stops resolving.
+        if (data.title !== existing.title)
+          data.slug = await slugFor(data.title, existing.id);
+      }
       if (input.content !== undefined)
         data.content = validateString(input.content, "content", ARTICLE_CONTENT_MAX);
       if (input.published !== undefined && input.published !== null) {
-        // Publishing an already-published text does not move its date: the index
-        // is ordered by publication, and a typo fixed a year later should not
-        // send it back to the top.
+        // Re-publishing does not move the date: a typo fixed a year later
+        // should not send the text back to the top of the index.
         if (input.published) data.publishedAt = existing.publishedAt ?? new Date();
         else data.publishedAt = null;
       }
@@ -163,8 +142,7 @@ export const articleResolvers = {
   },
 
   Article: {
-    /** Charged against the same per-request text budget review bodies draw from;
-     *  see lib/budget.ts. */
+    /** Charged against the same text budget as review bodies; see lib/budget.ts. */
     content: (parent: Article, _args: unknown, { budget }: Context) =>
       budget.chargeText(parent.content, "text"),
 
@@ -176,9 +154,21 @@ export const articleResolvers = {
 };
 
 /**
- * Accepts a slug as well as a UUID, like every other single-entity lookup, so
- * the edit form can act on whatever the URL gave it.
+ * The first free slug for a title. `exclude` is the row being renamed, which
+ * would otherwise count as holding the slug it already has and push a text that
+ * kept its title onto a "-2" suffix.
  */
+async function slugFor(title: string, exclude?: string): Promise<string> {
+  return uniqueSlug(
+    slugify(title, "text"),
+    async (candidate) =>
+      (await prisma.article.count({
+        where: exclude ? { slug: candidate, NOT: { id: exclude } } : { slug: candidate },
+      })) > 0
+  );
+}
+
+/** Accepts a slug as well as a UUID, so the edit form can use whatever the URL gave it. */
 async function requireAuthorship(key: string, userId: string): Promise<Article> {
   const article = await prisma.article.findFirst({ where: byIdOrSlug(key) });
   if (!article)
