@@ -18,7 +18,7 @@ function formatDate(iso?: string | null): string {
   });
 }
 
-export function TextDetailPage() {
+export function ArticleDetailPage() {
   const { id = "" } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -28,10 +28,10 @@ export function TextDetailPage() {
   });
 
   const [deleteArticle, { loading: deleting }] = useMutation(DELETE_ARTICLE, {
-    // The index is a separate query and would otherwise still list the text
+    // The index is a separate query and would otherwise still list the article
     // that no longer exists.
     refetchQueries: ["GetArticles"],
-    onCompleted: () => navigate("/texts"),
+    onCompleted: () => navigate("/articles"),
   });
 
   if (loading) {
@@ -50,19 +50,19 @@ export function TextDetailPage() {
     return (
       <div className="card p-12 text-center space-y-3 max-w-3xl mx-auto">
         <p className="text-4xl">📜</p>
-        <p className="text-gray-400 font-medium">This text is not here</p>
+        <p className="text-gray-400 font-medium">This article is not here</p>
         <p className="text-sm text-gray-600">
           It may have been deleted, or it may still be a draft.
         </p>
-        <Link to="/texts" className="text-sm text-violet-400 hover:text-violet-300">
-          Back to the texts
+        <Link to="/articles" className="text-sm text-violet-400 hover:text-violet-300">
+          Back to the articles
         </Link>
       </div>
     );
   }
 
   // The server already refuses to return somebody else's draft, so this only
-  // decides whether to offer the controls, never whether the text is readable.
+  // decides whether to offer the controls, never whether the article is readable.
   const isAuthor = Boolean(user && article.author && user.id === article.author.id);
 
   return (
@@ -93,13 +93,13 @@ export function TextDetailPage() {
       </div>
 
       <div className="flex items-center justify-between">
-        <Link to="/texts" className="text-sm text-gray-500 hover:text-gray-300">
-          ← All texts
+        <Link to="/articles" className="text-sm text-gray-500 hover:text-gray-300">
+          ← All articles
         </Link>
         {isAuthor && (
           <div className="flex items-center gap-4">
             <Link
-              to={`/texts/${article.slug ?? article.id}/edit`}
+              to={`/articles/${article.slug ?? article.id}/edit`}
               className="text-sm text-violet-400 hover:text-violet-300"
             >
               Edit

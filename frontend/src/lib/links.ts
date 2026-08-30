@@ -23,9 +23,9 @@ export function userPath(user?: Slugged | null, tab = ""): string {
   return `/users/${user.slug ?? user.id}${tab ? `/${tab}` : ""}`;
 }
 
-/** `/texts/our-manifesto`. The index itself is at `/texts`. */
-export function textPath(article: Slugged): string {
-  return `/texts/${article.slug ?? article.id}`;
+/** `/articles/our-manifesto`. The index itself is at `/articles`. */
+export function articlePath(article: Slugged): string {
+  return `/articles/${article.slug ?? article.id}`;
 }
 
 /**

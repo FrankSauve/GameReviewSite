@@ -89,11 +89,11 @@ model Review {
   @@index([userId, yearPlayed])
 }
 
-/// A manifesto, an essay — anything that is not a review. Reached at /texts in
-/// the app; named Article here because "text" is a word Postgres already owns.
+/// A manifesto, an essay — anything that is not a review. Reached at /articles
+/// in the app.
 model Article {
   id          String    @id @default(uuid())
-  /// Derived from the title, and re-derived when the title changes: a text is
+  /// Derived from the title, and re-derived when the title changes: an article is
   /// its title in a way a game or a review is not. See lib/slug.ts.
   slug        String    @unique
   title       String
