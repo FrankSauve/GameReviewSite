@@ -41,13 +41,13 @@ function timeAgo(iso: string): string {
 }
 
 function avatarGradient(username: string): string {
-  const gradients = [
+  const gradients: [string, ...string[]] = [
     "from-violet-600 to-indigo-700", "from-rose-600 to-pink-700",
     "from-emerald-600 to-teal-700", "from-blue-600 to-cyan-700",
     "from-amber-600 to-orange-700", "from-fuchsia-600 to-purple-700",
   ];
   const idx = [...username].reduce((a, c) => a + c.charCodeAt(0), 0) % gradients.length;
-  return gradients[idx];
+  return gradients[idx] ?? gradients[0];
 }
 
 export function ReviewDetailPage() {
@@ -201,7 +201,7 @@ export function ReviewDetailPage() {
           <div className="flex items-center gap-3">
             <Link to={userPath(review.user)}>
               <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarGradient(review.user?.username ?? "?")} flex items-center justify-center text-sm font-bold text-white shrink-0`}>
-                {(review.user?.username ?? "?")[0].toUpperCase()}
+                {(review.user?.username ?? "?").charAt(0).toUpperCase()}
               </div>
             </Link>
             <div>
@@ -324,7 +324,7 @@ export function ReviewDetailPage() {
               <div key={comment.id} className="flex gap-3 pt-4 first:pt-0">
                 <Link to={userPath(comment.user)} className="shrink-0">
                   <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarGradient(comment.user?.username ?? "?")} flex items-center justify-center text-xs font-bold text-white`}>
-                    {(comment.user?.username ?? "?")[0].toUpperCase()}
+                    {(comment.user?.username ?? "?").charAt(0).toUpperCase()}
                   </div>
                 </Link>
                 <div className="flex-1 min-w-0">
@@ -359,7 +359,7 @@ export function ReviewDetailPage() {
         {user ? (
           <form onSubmit={handleSubmitComment} className="flex items-center gap-3 pt-2 border-t border-gray-800">
             <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarGradient(user.username)} flex items-center justify-center text-xs font-bold text-white shrink-0`}>
-              {user.username[0].toUpperCase()}
+              {user.username.charAt(0).toUpperCase()}
             </div>
             <input
               type="text"

@@ -152,10 +152,10 @@ export const gameResolvers = {
     },
 
     gamesCount: async (_parent: unknown, args: GamesArgs) => {
-      const [{ count }] = await prisma.$queryRaw<{ count: number }[]>(
+      const rows = await prisma.$queryRaw<{ count: number }[]>(
         catalogueCount(gameFilter(args))
       );
-      return count;
+      return rows[0]?.count ?? 0;
     },
 
     gameFacets: async () => {

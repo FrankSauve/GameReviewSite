@@ -24,7 +24,7 @@ function timeAgo(iso: string): string {
 }
 
 function titleGradient(title: string): string {
-  const gradients = [
+  const gradients: [string, ...string[]] = [
     "from-violet-900 to-indigo-900",
     "from-rose-900 to-pink-900",
     "from-emerald-900 to-teal-900",
@@ -33,7 +33,7 @@ function titleGradient(title: string): string {
     "from-fuchsia-900 to-purple-900",
   ];
   const idx = [...title].reduce((a, c) => a + c.charCodeAt(0), 0) % gradients.length;
-  return gradients[idx];
+  return gradients[idx] ?? gradients[0];
 }
 
 // ─── Review feed card ────────────────────────────────────────────────────────
@@ -117,7 +117,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
           {/* Footer: reviewer + time */}
           <div className="flex items-center gap-2 pt-1 border-t border-gray-800/60">
             <span className="w-6 h-6 rounded-full bg-violet-700 flex items-center justify-center text-xs font-bold text-white shrink-0">
-              {(review.user?.username ?? "?")[0].toUpperCase()}
+              {(review.user?.username ?? "?").charAt(0).toUpperCase()}
             </span>
             <Link
               to={userPath(review.user)}
@@ -158,7 +158,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
                 {localComments.map(comment => (
                   <div key={comment.id} className="flex gap-2">
                     <span className="w-5 h-5 rounded-full bg-gradient-to-br from-emerald-700 to-teal-800 flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5">
-                      {(comment.user?.username ?? "?")[0].toUpperCase()}
+                      {(comment.user?.username ?? "?").charAt(0).toUpperCase()}
                     </span>
                     <div className="min-w-0">
                       <span className="text-xs font-semibold text-gray-300">{comment.user?.username ?? "Unknown"}</span>
@@ -174,7 +174,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
             {user ? (
               <form onSubmit={handleSubmitComment} className="flex items-center gap-2 pt-1">
                 <span className="w-6 h-6 rounded-full bg-violet-700 flex items-center justify-center text-xs font-bold text-white shrink-0">
-                  {user.username[0].toUpperCase()}
+                  {user.username.charAt(0).toUpperCase()}
                 </span>
                 <input
                   type="text"

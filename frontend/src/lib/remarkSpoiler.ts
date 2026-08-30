@@ -59,7 +59,7 @@ function wrap(tokens: Token[]): MdastNode[] {
   const out: MdastNode[] = [];
 
   for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
+    const token = tokens[i]!;
     if (token !== MARKER_TOKEN) {
       out.push(token);
       continue;

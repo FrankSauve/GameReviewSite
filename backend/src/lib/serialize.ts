@@ -4,8 +4,8 @@
 
 type WithDates<T> = T & { createdAt?: Date | string; updatedAt?: Date | string };
 type Serialized<T> = Omit<T, "createdAt" | "updatedAt"> & {
-  createdAt?: string;
-  updatedAt?: string;
+  createdAt?: string | undefined;
+  updatedAt?: string | undefined;
 };
 
 export function serializeDates<T extends object>(obj: WithDates<T>): Serialized<T> {

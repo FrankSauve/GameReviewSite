@@ -30,7 +30,7 @@ interface ProfileData {
 }
 
 function avatarGradient(username: string): string {
-  const gradients = [
+  const gradients: [string, ...string[]] = [
     "from-violet-600 to-indigo-700",
     "from-rose-600 to-pink-700",
     "from-emerald-600 to-teal-700",
@@ -39,7 +39,7 @@ function avatarGradient(username: string): string {
     "from-fuchsia-600 to-purple-700",
   ];
   const idx = [...username].reduce((a, c) => a + c.charCodeAt(0), 0) % gradients.length;
-  return gradients[idx];
+  return gradients[idx] ?? gradients[0];
 }
 
 const TABS: { grouping: Grouping; label: string; path: string }[] = [
@@ -114,7 +114,7 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
         <div
           className={`w-16 h-16 rounded-full bg-gradient-to-br ${avatarGradient(profile.username)} flex items-center justify-center text-2xl font-black text-white shrink-0`}
         >
-          {profile.username[0].toUpperCase()}
+          {profile.username.charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 text-center sm:text-left space-y-1">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">

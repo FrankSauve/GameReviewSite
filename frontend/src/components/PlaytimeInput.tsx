@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { HOURS_PLAYED_MAX, yearOptions } from "../lib/playtime";
+import { yearOptions } from "../lib/playtime";
 
 interface PlaytimeInputProps {
   year: number;

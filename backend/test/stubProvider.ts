@@ -1,6 +1,6 @@
 import { createServer, type Server } from "node:http";
 import { createSign, generateKeyPairSync, type KeyObject } from "node:crypto";
-import { AddressInfo } from "node:net";
+import type { AddressInfo } from "node:net";
 
 /**
  * A minimal OpenID Provider, in-process.

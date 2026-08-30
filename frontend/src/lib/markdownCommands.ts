@@ -80,7 +80,7 @@ function canUnwrap(run: number, marker: string): boolean {
 /** Is this selection already wrapped in this marker, markers included? */
 function isWrapped(selected: string, marker: string): boolean {
   if (selected.length < marker.length * 2) return false;
-  const char = marker[0];
+  const char = marker[0] ?? "";
   const lead = runLength(selected, 0, 1, char);
   const trail = runLength(selected, selected.length - 1, -1, char);
   // All markers and no body: one run, counted twice.
@@ -90,7 +90,7 @@ function isWrapped(selected: string, marker: string): boolean {
 
 /** Do this command's markers sit immediately outside the selection? */
 function isSurrounded(before: string, after: string, marker: string): boolean {
-  const char = marker[0];
+  const char = marker[0] ?? "";
   return (
     canUnwrap(runLength(before, before.length - 1, -1, char), marker) &&
     canUnwrap(runLength(after, 0, 1, char), marker)
@@ -151,7 +151,8 @@ function prefixLines(selection: Selection, prefix: string): Selection {
     line === "" ? line : removing ? line.slice(prefix.length) : prefix + line;
 
   const updated = lines.map(change).join("\n");
-  const shift = change(lines[0]).length - lines[0].length;
+  const first = lines[0] ?? "";
+  const shift = change(first).length - first.length;
   const delta = updated.length - (blockEnd - blockStart);
 
   return {
