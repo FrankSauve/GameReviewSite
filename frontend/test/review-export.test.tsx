@@ -44,6 +44,7 @@ function profileMock(username: string, reviewCount: number) {
           id: PROFILES[username],
           slug: username,
           username,
+          bio: null,
           reviewCount,
           averageRating: 8,
         },
