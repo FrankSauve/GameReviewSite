@@ -11,11 +11,7 @@ import { GraphQLError } from "graphql";
 import { requireAuth, type Context } from "../context.js";
 import { byIdOrSlug } from "../lib/slug.js";
 
-/**
- * Long enough for a paragraph or two about how somebody scores games, short
- * enough that a profile stays a profile. Enforced here rather than only in the
- * textarea, which is a suggestion to a browser and nothing at all to a script.
- */
+/** Enforced here; the textarea's maxLength is only a hint to the browser. */
 export const BIO_MAX = 1000;
 
 interface UpdateProfileInput {
@@ -52,18 +48,9 @@ export const userResolvers = {
   },
 
   Mutation: {
-    /**
-     * Edits the fields of an account that this app, rather than authentik, owns
-     * — which today is the bio alone.
-     *
-     * There is still no way to change a username or an email here: authentik is
-     * the source for both, and a local edit would be silently overwritten on the
-     * account's next request. The bio has no counterpart there, so it is safe to
-     * hold and safe to edit.
-     *
-     * Takes no id. You may only edit your own profile, so accepting one would
-     * only invite the attempt and require a check to refuse it.
-     */
+    // Edits the fields authentik does not own, which today is the bio alone.
+    // Still no username or email: authentik is the source for both. No id
+    // argument either — you may only ever edit your own profile.
     updateProfile: async (
       _parent: unknown,
       { input }: { input: UpdateProfileInput },
@@ -75,9 +62,10 @@ export const userResolvers = {
       if (input.bio !== undefined) {
         const trimmed = (input.bio ?? "").trim();
         if (trimmed.length > BIO_MAX)
-          throw new GraphQLError(`bio must be at most ${BIO_MAX} characters.`);
-        // Cleared and never written are the same state, so an empty string is
-        // stored as null rather than as an empty paragraph to render.
+          throw new GraphQLError(`bio must be at most ${BIO_MAX} characters.`, {
+            extensions: { code: "BAD_USER_INPUT" },
+          });
+        // Cleared and never written are the same state.
         data.bio = trimmed || null;
       }
 

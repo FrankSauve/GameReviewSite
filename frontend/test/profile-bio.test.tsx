@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { MockedProvider } from "@apollo/client/testing";
+import { MockedProvider, type MockedResponse } from "@apollo/client/testing";
 import { ProfileBio } from "../src/components/ProfileBio";
 import { UPDATE_PROFILE } from "../src/graphql/mutations";
 
@@ -21,7 +21,7 @@ function updateMock(bio: string, result = bio) {
 
 function renderBio(
   props: { bio?: string | null; isOwnProfile: boolean },
-  mocks: ReturnType<typeof updateMock>[] = []
+  mocks: readonly MockedResponse[] = []
 ) {
   return render(
     <MockedProvider mocks={mocks}>
@@ -113,6 +113,24 @@ describe("ProfileBio", () => {
       expect((screen.getByRole("textbox") as HTMLTextAreaElement).value).toBe(
         "original"
       );
+    });
+
+    /** A failed save's message describes that attempt, not the next one. */
+    it("does not carry a failed save's error into the next edit", async () => {
+      renderBio({ bio: "original", isOwnProfile: true }, [
+        {
+          request: { query: UPDATE_PROFILE, variables: { input: { bio: "nope" } } },
+          error: new Error("something went wrong"),
+        },
+      ]);
+      fireEvent.click(screen.getByRole("button", { name: "Edit bio" }));
+      fireEvent.change(screen.getByRole("textbox"), { target: { value: "nope" } });
+      fireEvent.click(screen.getByRole("button", { name: "Save" }));
+      await screen.findByText("something went wrong");
+
+      fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+      fireEvent.click(screen.getByRole("button", { name: "Edit bio" }));
+      expect(screen.queryByText("something went wrong")).toBeNull();
     });
 
     it("gives the editor the bio limit rather than the review one", () => {

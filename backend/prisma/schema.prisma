@@ -21,13 +21,7 @@ model User {
   slug      String    @unique
   username  String    @unique
   email     String?   @unique
-  /// A self-written introduction, rendered as Markdown on the profile page.
-  ///
-  /// Unlike username and email this is not owned by authentik and has no
-  /// meaning to it, so it is the one part of an account this app may edit.
-  /// Nullable rather than defaulted to "": an account that has never written one
-  /// and an account that has cleared it are the same thing, and both should read
-  /// as absent rather than as an empty paragraph.
+  /// A self-written introduction, in Markdown. Null rather than "" when absent.
   bio       String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

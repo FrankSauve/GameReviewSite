@@ -22,13 +22,7 @@ const UPDATE = `mutation Update($input: UpdateProfileInput!) {
   updateProfile(input: $input) { id bio }
 }`;
 
-/**
- * The account's UUID.
- *
- * Profiles are looked up by id on this branch. Readable URLs (#44) let `user`
- * take a username too, but that is a separate change and this file should not
- * quietly depend on whether it has landed yet.
- */
+/** Profiles are looked up by id on this branch; #44 adds usernames separately. */
 async function idOf(username: string): Promise<string> {
   const user = await prisma.user.findUniqueOrThrow({ where: { username } });
   return user.id;
@@ -133,9 +127,15 @@ describe("profile bio", () => {
       expect(res.data?.updateProfile.bio).toHaveLength(BIO_MAX);
     });
 
+    /**
+     * BAD_USER_INPUT, not the default INTERNAL_SERVER_ERROR: `sanitizeError`
+     * replaces the message of anything else with "Internal server error." in
+     * production, so the cap would be enforced without ever saying so.
+     */
     it("refuses one over it", async () => {
       const res = await setBio(app, ALICE, "x".repeat(BIO_MAX + 1));
       expect(res.errors?.[0]?.message).toMatch(/at most/);
+      expect(errorCodes(res)).toContain("BAD_USER_INPUT");
     });
 
     /** The cap is on what is stored, so padding does not count against it. */

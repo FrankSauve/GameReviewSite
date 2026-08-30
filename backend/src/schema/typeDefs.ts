@@ -202,8 +202,7 @@ export const typeDefs = `#graphql
     published: Boolean
   }
 
-  # Only the account's own fields that authentik does not own — which today is
-  # just the bio. An omitted field is left alone; an explicit empty one clears it.
+  # An omitted field is left alone; an explicit empty one clears it.
   input UpdateProfileInput {
     bio: String
   }
@@ -281,8 +280,7 @@ export const typeDefs = `#graphql
 
   type Mutation {
     deleteUser: Boolean!
-    # Edits the signed-in account. There is no id argument: you may only edit
-    # your own profile, so taking one would only invite the attempt.
+    # Edits the signed-in account. No id: you may only edit your own profile.
     updateProfile(input: UpdateProfileInput!): User!
 
     importGame(input: ImportGameInput!): Game!

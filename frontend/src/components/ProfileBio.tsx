@@ -4,18 +4,6 @@ import { UPDATE_PROFILE } from "../graphql/mutations";
 import { Markdown } from "./Markdown";
 import { MarkdownEditor } from "./MarkdownEditor";
 
-/**
- * The bio on a profile: read-only for visitors, editable in place by its owner.
- *
- * Rendered as Markdown through the same component reviews use, because somebody
- * describing how they score games will want a list of what a 7 means to them,
- * and a second flavour of formatting on the one site would be worse than either.
- *
- * Kept out of `UserProfilePage` so that the page stays a layout: this owns the
- * editing state, the mutation and the two empty cases, none of which the rest of
- * the profile has any reason to know about.
- */
-
 /** Matches `BIO_MAX` in `backend/src/resolvers/user.ts`, which enforces it. */
 export const BIO_MAX = 1000;
 
@@ -24,16 +12,21 @@ interface ProfileBioProps {
   isOwnProfile: boolean;
 }
 
+/** Read-only for visitors, editable in place by its owner. */
 export function ProfileBio({ bio, isOwnProfile }: ProfileBioProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
 
-  const [updateProfile, { loading, error }] = useMutation(UPDATE_PROFILE, {
+  const [updateProfile, { loading, error, reset }] = useMutation(UPDATE_PROFILE, {
     onCompleted: () => setEditing(false),
+    // Reported below, so the promise must not also reject unhandled.
+    onError: () => undefined,
   });
 
   const startEditing = () => {
     setDraft(bio ?? "");
+    // A failed save's message does not describe this attempt.
+    reset();
     setEditing(true);
   };
 
@@ -75,8 +68,7 @@ export function ProfileBio({ bio, isOwnProfile }: ProfileBioProps) {
     );
   }
 
-  // Nothing written, and nobody here who could write it: render nothing at all
-  // rather than an empty region on every visitor's view of the profile.
+  // Nothing written and nobody here who could write it: render nothing at all.
   if (!bio && !isOwnProfile) return null;
 
   if (!bio) {
