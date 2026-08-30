@@ -1,0 +1,17 @@
+{
+  "name": "gamereviews",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Workspace root. backend and frontend are the deployable packages; shared is code they have to agree on exactly.",
+  "workspaces": [
+    "shared",
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "build:shared": "npm run build --workspace @gamereviews/shared"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0"
+  }
+}

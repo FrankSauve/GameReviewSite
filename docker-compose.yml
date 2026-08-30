@@ -23,8 +23,10 @@ services:
   # ── Backend (GraphQL API) ───────────────────────────────────────────────────
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      # The repository root, because the backend depends on the shared
+      # workspace and a build context cannot reach outside itself.
+      context: .
+      dockerfile: backend/Dockerfile
     restart: unless-stopped
     environment:
       PORT: 4000
@@ -73,12 +75,15 @@ services:
           action: rebuild
         - path: ./backend/package.json
           action: rebuild
+        - path: ./shared/src
+          action: rebuild
 
   # ── Frontend (React + nginx) ────────────────────────────────────────────────
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      # The repository root, for the same reason as the backend above.
+      context: .
+      dockerfile: frontend/Dockerfile
       args:
         # Cross-origin here, which is why /auth and /export/reviews.md are not
         # reachable from this stack: both are same-origin backend paths that a
@@ -103,6 +108,8 @@ services:
         - path: ./frontend/index.html
           action: rebuild
         - path: ./frontend/package.json
+          action: rebuild
+        - path: ./shared/src
           action: rebuild
 
 volumes:

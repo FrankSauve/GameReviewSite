@@ -1,0 +1,26 @@
+# The build context is the repository root now, for both images, because both
+# depend on the `shared` workspace. Without this the whole tree — every
+# node_modules, the git history, the deployment docs — is sent to the daemon on
+# every build.
+
+**/node_modules
+**/dist
+**/.env
+**/.env.*
+!**/.env.example
+
+.git
+.github
+.claude
+.gitignore
+.dockerignore
+
+docs
+deploy
+*.md
+renovate.json
+
+# Test output and local scratch
+**/coverage
+**/*.log
+**/.DS_Store
