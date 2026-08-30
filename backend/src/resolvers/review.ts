@@ -11,6 +11,7 @@ import {
 import { requireAuth, type Context } from "../context.js";
 import { byIdOrSlug, reviewSlugBase, uniqueSlug } from "../lib/slug.js";
 import { validateString } from "../lib/validate.js";
+import { badInput } from "../lib/badInput.js";
 
 interface CreateReviewInput {
   gameId: string;
@@ -63,11 +64,9 @@ export const RATING_MAX = 10;
 function validateRating(rating: number): number {
   const num = Number(rating);
   if (!Number.isFinite(num) || num < RATING_MIN || num > RATING_MAX)
-    throw new GraphQLError(
-      `rating must be between ${RATING_MIN} and ${RATING_MAX}.`
-    );
+    throw badInput(`rating must be between ${RATING_MIN} and ${RATING_MAX}.`);
   if (!Number.isInteger(num * 2))
-    throw new GraphQLError("rating must be a whole or half point, such as 9 or 9.5.");
+    throw badInput("rating must be a whole or half point, such as 9 or 9.5.");
   return num;
 }
 
@@ -77,7 +76,7 @@ function validateYearPlayed(year: number): number {
   const num = Number(year);
   const max = new Date().getFullYear() + 1;
   if (!Number.isInteger(num) || num < YEAR_PLAYED_MIN || num > max)
-    throw new GraphQLError(
+    throw badInput(
       `yearPlayed must be a whole year between ${YEAR_PLAYED_MIN} and ${max}.`
     );
   return num;
@@ -91,7 +90,7 @@ export const HOURS_PLAYED_MAX = 30000;
 function validateHoursPlayed(hours: number): number {
   const num = Number(hours);
   if (!Number.isFinite(num) || num <= 0 || num > HOURS_PLAYED_MAX)
-    throw new GraphQLError(
+    throw badInput(
       `hoursPlayed must be greater than 0 and at most ${HOURS_PLAYED_MAX}.`
     );
   return Math.round(num * 10) / 10;
@@ -229,7 +228,7 @@ export const reviewResolvers = {
         where: { userId: authUser.id, gameId: input.gameId },
       });
       if (existing)
-        throw new GraphQLError("You have already reviewed this game.");
+        throw badInput("You have already reviewed this game.");
 
       const review = await prisma.review.create({
         data: {
