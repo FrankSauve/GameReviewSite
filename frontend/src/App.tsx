@@ -9,9 +9,9 @@ import { GameDetailPage } from "./pages/GameDetailPage";
 import { UserProfilePage } from "./pages/UserProfilePage";
 import { ReviewDetailPage } from "./pages/ReviewDetailPage";
 import { ReviewersPage } from "./pages/ReviewersPage";
-import { TextsPage } from "./pages/TextsPage";
-import { TextDetailPage } from "./pages/TextDetailPage";
-import { TextEditorPage } from "./pages/TextEditorPage";
+import { ArticlesPage } from "./pages/ArticlesPage";
+import { ArticleDetailPage } from "./pages/ArticleDetailPage";
+import { ArticleEditorPage } from "./pages/ArticleEditorPage";
 
 function App() {
   return (
@@ -48,10 +48,10 @@ function App() {
                 {/* Manifestos and other prose. `new` before `:id` for the
                     reader's benefit; the router ranks the static segment higher
                     either way. */}
-                <Route path="/texts" element={<TextsPage />} />
-                <Route path="/texts/new" element={<TextEditorPage />} />
-                <Route path="/texts/:id" element={<TextDetailPage />} />
-                <Route path="/texts/:id/edit" element={<TextEditorPage />} />
+                <Route path="/articles" element={<ArticlesPage />} />
+                <Route path="/articles/new" element={<ArticleEditorPage />} />
+                <Route path="/articles/:id" element={<ArticleDetailPage />} />
+                <Route path="/articles/:id/edit" element={<ArticleEditorPage />} />
                 {/* Login and registration are handled by authentik, not by
                     this app, so /login and /register no longer exist. */}
                 <Route path="/login" element={<Navigate to="/" replace />} />

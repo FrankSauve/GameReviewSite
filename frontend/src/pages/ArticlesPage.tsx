@@ -2,18 +2,18 @@ import { useQuery } from "@apollo/client";
 import { Link, useSearchParams } from "react-router-dom";
 import { GET_ARTICLES } from "../graphql/queries";
 import type { Article } from "../types";
-import { textPath } from "../lib/links";
+import { articlePath } from "../lib/links";
 import { useAuth } from "../contexts/AuthContext";
 import { Pagination } from "../components/Pagination";
 
 /**
- * The texts index. The server decides whose drafts are in it; this page only
+ * The articles index. The server decides whose drafts are in it; this page only
  * labels them, so a draft cannot be mistaken for something published.
  */
 
 const PAGE_SIZE = 20;
 
-/** The date a text went out, or the day it was started while it is a draft. */
+/** The date an article went out, or the day it was started while it is a draft. */
 function dateLine(article: Article): string {
   const stamp = article.publishedAt ?? article.createdAt;
   if (!stamp) return "";
@@ -24,7 +24,7 @@ function dateLine(article: Article): string {
   });
 }
 
-export function TextsPage() {
+export function ArticlesPage() {
   const { user } = useAuth();
   const [params, setParams] = useSearchParams();
 
@@ -49,11 +49,11 @@ export function TextsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-100 flex items-center gap-2">
           <span className="w-1 h-5 bg-violet-500 rounded-full inline-block" />
-          Texts
+          Articles
         </h1>
         {user && (
-          <Link to="/texts/new" className="btn-primary text-sm py-1.5 px-3">
-            Write a text
+          <Link to="/articles/new" className="btn-primary text-sm py-1.5 px-3">
+            Write an article
           </Link>
         )}
       </div>
@@ -84,7 +84,7 @@ export function TextsPage() {
           <ul className="space-y-3">
             {articles.map((article) => (
               <li key={article.id} className="card p-5 hover:border-violet-800 transition-colors">
-                <Link to={textPath(article)} className="block space-y-1">
+                <Link to={articlePath(article)} className="block space-y-1">
                   <div className="flex items-baseline gap-2">
                     <h2 className="font-bold text-gray-100">{article.title}</h2>
                     {!article.publishedAt && (
@@ -104,7 +104,7 @@ export function TextsPage() {
             page={page}
             totalPages={Math.ceil(total / PAGE_SIZE)}
             onChange={goTo}
-            label="Texts pages"
+            label="Articles pages"
           />
         </>
       )}

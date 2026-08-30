@@ -7,7 +7,7 @@ import { requireAuth, type Context } from "../context.js";
 import { byIdOrSlug, slugify, uniqueSlug } from "../lib/slug.js";
 import { validateString } from "../lib/validate.js";
 
-/** Texts: manifestos, essays, anything that is not a review. */
+/** Articles: manifestos, essays, anything that is not a review. */
 
 interface CreateArticleInput {
   title: string;
@@ -21,7 +21,7 @@ interface UpdateArticleInput {
   published?: boolean | null;
 }
 
-/** Longer than a review's 20000; still charged against the text budget. */
+/** Longer than a review's 20000; still charged against the article budget. */
 export const ARTICLE_CONTENT_MAX = 50000;
 export const ARTICLE_TITLE_MAX = 200;
 
@@ -112,7 +112,7 @@ export const articleResolvers = {
         data.title = validateString(input.title, "title", ARTICLE_TITLE_MAX);
         // The URL follows the title. A text is its title in a way a game or a
         // review is not, so a renamed one whose link still reads
-        // /texts/first-draft is worse than a link that stops resolving.
+        // /articles/first-draft is worse than a link that stops resolving.
         if (data.title !== existing.title)
           data.slug = await slugFor(data.title, existing.id);
       }
@@ -120,7 +120,7 @@ export const articleResolvers = {
         data.content = validateString(input.content, "content", ARTICLE_CONTENT_MAX);
       if (input.published !== undefined && input.published !== null) {
         // Re-publishing does not move the date: a typo fixed a year later
-        // should not send the text back to the top of the index.
+        // should not send the article back to the top of the index.
         if (input.published) data.publishedAt = existing.publishedAt ?? new Date();
         else data.publishedAt = null;
       }
@@ -155,7 +155,7 @@ export const articleResolvers = {
 
 /**
  * The first free slug for a title. `exclude` is the row being renamed, which
- * would otherwise count as holding the slug it already has and push a text that
+ * would otherwise count as holding the slug it already has and push an article that
  * kept its title onto a "-2" suffix.
  */
 async function slugFor(title: string, exclude?: string): Promise<string> {
@@ -174,7 +174,7 @@ async function requireAuthorship(key: string, userId: string): Promise<Article> 
   if (!article)
     throw new GraphQLError("Text not found.", { extensions: { code: "NOT_FOUND" } });
   if (article.authorId !== userId)
-    throw new GraphQLError("You can only modify your own texts.", {
+    throw new GraphQLError("You can only modify your own articles.", {
       extensions: { code: "FORBIDDEN" },
     });
   return article;

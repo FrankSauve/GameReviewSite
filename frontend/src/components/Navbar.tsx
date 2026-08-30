@@ -42,10 +42,10 @@ export function Navbar() {
           Reviewers
         </Link>
         <Link
-          to="/texts"
-          className={navLink(location.pathname === "/texts")}
+          to="/articles"
+          className={navLink(location.pathname === "/articles")}
         >
-          Texts
+          Articles
         </Link>
 
         {/* Search bar (fills available space) */}

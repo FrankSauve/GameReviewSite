@@ -67,7 +67,7 @@ export interface CurrentUser {
 
 /**
  * A manifesto, an essay — anything that is not a review. Called an Article by
- * the API and reached at /texts here; see backend/src/resolvers/article.ts.
+ * the API and reached at /articles here; see backend/src/resolvers/article.ts.
  */
 export interface Article {
   id: string;

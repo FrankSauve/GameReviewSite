@@ -13,7 +13,7 @@ import {
 } from "./helpers.js";
 
 /**
- * Texts: manifestos and anything else that is not a review.
+ * Articles: manifestos and anything else that is not a review.
  *
  * The part worth testing hard is visibility. A draft is a piece of writing its
  * author has explicitly not published, so it leaking into the index — or into
@@ -59,7 +59,7 @@ async function seedArticle(
   return article.id;
 }
 
-describe("texts", () => {
+describe("articles", () => {
   let app: Express;
   let stop: () => Promise<void>;
 
@@ -199,7 +199,7 @@ describe("texts", () => {
       mutation ($id: ID!) { updateArticle(id: $id, input: { published: true }) { id } }
     `, ALICE, {}, { id });
 
-    // A typo fixed a year later should not send a text back to the top of the
+    // A typo fixed a year later should not send an article back to the top of the
     // index.
     expect((await prisma.article.findUniqueOrThrow({ where: { id } })).publishedAt)
       .toEqual(published);
@@ -245,7 +245,7 @@ describe("texts", () => {
    * Untiebroken, paging over 500 such rows lost three and repeated three;
    * over 5000, it lost 146.
    */
-  it("pages over texts sharing a timestamp without losing or repeating one", async () => {
+  it("pages over articles sharing a timestamp without losing or repeating one", async () => {
     await provisionUser(ALICE);
     const alice = await prisma.user.findUniqueOrThrow({ where: { username: "alice" } });
     const stamp = new Date("2026-01-01T00:00:00.000Z");
@@ -274,7 +274,7 @@ describe("texts", () => {
     expect(new Set(seen).size).toBe(500);
   });
 
-  it("re-slugs a text that is renamed, and leaves one that is not", async () => {
+  it("re-slugs an article that is renamed, and leaves one that is not", async () => {
     await provisionUser(ALICE);
     const id = await seedArticle("alice", { title: "First Draft", slug: "first-draft" });
     await seedArticle("alice", { title: "Second Thoughts", slug: "second-thoughts" });

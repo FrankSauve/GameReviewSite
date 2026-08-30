@@ -111,7 +111,7 @@ export const typeDefs = `#graphql
     commentCount: Int!
   }
 
-  # A manifesto, an essay, anything that is not a review. Reached at /texts in
+  # A manifesto, an essay, anything that is not a review. Reached at /articles in
   # the app; see resolvers/article.ts for why it is not a Review with no game.
   type Article {
     id: ID!
@@ -268,7 +268,7 @@ export const typeDefs = `#graphql
     comments(reviewId: ID!, limit: Int, offset: Int): [Comment!]!
     comment(id: ID!): Comment
 
-    # Published texts, newest publication first, plus your own drafts when you
+    # Published articles, newest publication first, plus your own drafts when you
     # are signed in. The count matches the same visibility, so paging controls
     # never render a page that is always empty.
     articles(limit: Int, offset: Int): [Article!]!

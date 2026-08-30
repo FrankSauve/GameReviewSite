@@ -233,7 +233,7 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
 `;
 
 /**
- * The texts index, plus the total the paging controls need.
+ * The articles index, plus the total the paging controls need.
  *
  * No `content`: the index shows an excerpt, and a page of twenty full
  * manifestos is the shape the server's text budget exists to refuse.

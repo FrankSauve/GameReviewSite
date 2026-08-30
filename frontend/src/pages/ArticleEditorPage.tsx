@@ -5,11 +5,11 @@ import { GET_ARTICLE } from "../graphql/queries";
 import { CREATE_ARTICLE, UPDATE_ARTICLE } from "../graphql/mutations";
 import type { Article } from "../types";
 import { useAuth } from "../contexts/AuthContext";
-import { textPath } from "../lib/links";
+import { articlePath } from "../lib/links";
 import { Markdown } from "../components/Markdown";
 
 /**
- * Writing a text, and editing one: the two differ only in which mutation runs,
+ * Writing an article, and editing one: the two differ only in which mutation runs,
  * whether the fields start empty, and what the button says.
  *
  * The plain textarea is temporary — this form should adopt the MarkdownEditor
@@ -20,7 +20,7 @@ import { Markdown } from "../components/Markdown";
 const CONTENT_MAX = 50000;
 const TITLE_MAX = 200;
 
-export function TextEditorPage() {
+export function ArticleEditorPage() {
   const { id } = useParams();
   const editing = Boolean(id);
   const navigate = useNavigate();
@@ -39,7 +39,7 @@ export function TextEditorPage() {
   );
   const existing = data?.article;
 
-  // Fills the form once the text arrives. Keyed on the id so switching between
+  // Fills the form once the article arrives. Keyed on the id so switching between
   // two edit URLs reloads rather than keeping the first one's body.
   useEffect(() => {
     if (!existing) return;
@@ -49,7 +49,7 @@ export function TextEditorPage() {
   }, [existing?.id]);
 
   const done = (article?: Article | null) => {
-    navigate(article ? textPath(article) : "/texts");
+    navigate(article ? articlePath(article) : "/articles");
   };
 
   const [createArticle, { loading: creating, error: createError }] = useMutation<{
@@ -75,7 +75,7 @@ export function TextEditorPage() {
         >
           Sign in
         </button>{" "}
-        to write a text.
+        to write an article.
       </p>
     );
   }
@@ -87,21 +87,21 @@ export function TextEditorPage() {
   if (editing && !existing) {
     return (
       <div className="card p-12 text-center space-y-3 max-w-3xl mx-auto">
-        <p className="text-gray-400 font-medium">This text is not here</p>
-        <Link to="/texts" className="text-sm text-violet-400 hover:text-violet-300">
-          Back to the texts
+        <p className="text-gray-400 font-medium">This article is not here</p>
+        <Link to="/articles" className="text-sm text-violet-400 hover:text-violet-300">
+          Back to the articles
         </Link>
       </div>
     );
   }
 
   // The server refuses the mutation anyway; without this the form still fills
-  // in with somebody else's text and every save fails.
+  // in with somebody else's article and every save fails.
   if (editing && existing && existing.author && existing.author.id !== user.id) {
     return (
       <div className="card p-12 text-center space-y-3 max-w-3xl mx-auto">
-        <p className="text-gray-400 font-medium">This text is not yours to edit</p>
-        <Link to={textPath(existing)} className="text-sm text-violet-400 hover:text-violet-300">
+        <p className="text-gray-400 font-medium">This article is not yours to edit</p>
+        <Link to={articlePath(existing)} className="text-sm text-violet-400 hover:text-violet-300">
           Read it instead
         </Link>
       </div>
@@ -127,7 +127,7 @@ export function TextEditorPage() {
     <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-4">
       <h1 className="text-xl font-bold text-gray-100 flex items-center gap-2">
         <span className="w-1 h-5 bg-violet-500 rounded-full inline-block" />
-        {editing ? "Edit text" : "Write a text"}
+        {editing ? "Edit article" : "Write an article"}
       </h1>
 
       <div>
@@ -208,7 +208,7 @@ export function TextEditorPage() {
           {saving ? "Saving…" : editing ? "Save changes" : "Publish"}
         </button>
         <Link
-          to={editing && existing ? textPath(existing) : "/texts"}
+          to={editing && existing ? articlePath(existing) : "/articles"}
           className="text-sm text-gray-500 hover:text-gray-300"
         >
           Cancel

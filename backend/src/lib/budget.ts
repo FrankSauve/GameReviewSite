@@ -13,7 +13,7 @@ export const DEFAULT_ROW_BUDGET = 3000;
 
 /**
  * A per-request ceiling on how many characters of long-form body one operation
- * may return — review bodies, and the texts in resolvers/article.ts.
+ * may return — review bodies, and the articles in resolvers/article.ts.
  *
  * The row budget alone stopped being sufficient when review bodies grew from 5000
  * characters to 20000. Rows are the wrong unit once one row can be large: the

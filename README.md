@@ -12,7 +12,7 @@ reviews, and comment on other people's. Sign-in is delegated to your own
 - Each review records the year the game was played and the hours spent on it, so
   an imported backlog reads by when it was played rather than when it was typed up
 - Comments on reviews
-- Texts: manifestos and other prose, written in Markdown, with drafts
+- Articles: manifestos and other prose, written in Markdown, with drafts
 - Profile pages with every review and an average score
 - Reviewers leaderboard and a paginated recent-reviews feed
 - Review links unfurl in Discord and elsewhere, with the game's cover, score
