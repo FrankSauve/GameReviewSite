@@ -1,0 +1,12 @@
+{
+  "name": "gamereviews",
+  "private": true,
+  "description": "Repo-level tooling. The app lives in backend/ and frontend/, which have their own package.json.",
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2"
+  }
+}

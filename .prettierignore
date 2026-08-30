@@ -1,0 +1,6 @@
+node_modules/
+dist/
+*.tsbuildinfo
+backend/prisma/migrations/
+package-lock.json
+.claude/
