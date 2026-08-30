@@ -209,6 +209,9 @@ export const gameResolvers = {
       const releaseYear =
         input.releaseYear != null ? validateYear(input.releaseYear) : null;
 
+      const existing = await prisma.game.findUnique({ where: { rawgId } });
+      if (existing?.description) return serializeDates(existing);
+
       let description: string | null = null;
       try {
         const detail = await getRawgGame(parseInt(rawgId, 10));
@@ -217,10 +220,8 @@ export const gameResolvers = {
         // Non-fatal — continue without description
       }
 
-      const existing = await prisma.game.findUnique({ where: { rawgId } });
-
       if (existing) {
-        if (existing.description || !description) return serializeDates(existing);
+        if (!description) return serializeDates(existing);
         const backfilled = await prisma.game.update({
           where: { id: existing.id },
           data: { description },
