@@ -1,11 +1,8 @@
 /**
- * Discord-style spoilers: `||hidden text||`.
- *
- * A remark plugin rather than a pass over the rendered output, so the markers
- * are understood alongside the rest of the Markdown: `||` inside code is never a
- * marker, and `||the **twist**||` hides an emphasised word rather than showing
- * its asterisks. That is why it works over a parent's whole child list rather
- * than one text node at a time.
+ * Discord-style spoilers: `||hidden text||`. A remark plugin, not a pass over
+ * rendered output, so `||` inside code is never a marker and `||the **twist**||`
+ * hides an emphasised word — hence working over a parent's whole child list
+ * rather than one text node at a time.
  */
 
 const MARKER = "||";

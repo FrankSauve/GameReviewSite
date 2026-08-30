@@ -29,11 +29,8 @@ export function articlePath(article: Slugged): string {
 }
 
 /**
- * The export of your own reviews: a zip of one markdown file per review.
- *
- * Served by the backend rather than the SPA — see backend/src/routes/export.ts —
- * so it is a same-origin path here for the same reason /graphql is: vite proxies
- * it in development and the reverse proxy forwards it in production. Nothing is
- * appended to it; the server decides whose reviews to write from the session.
+ * Served by the backend (backend/src/routes/export.ts), proxied like /graphql.
+ * Nothing is appended: the server decides whose reviews to write from the
+ * session.
  */
 export const EXPORT_REVIEWS_PATH = "/export/reviews.zip";
