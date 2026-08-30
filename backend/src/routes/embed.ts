@@ -12,7 +12,6 @@ import {
 
 /**
  * Link previews for reviews: `GET /reviews/:user/:game`, and `GET /reviews/:key`
- * for a UUID or a slug from before reviews moved to a two-segment path.
  *
  * The same path the SPA serves, because the URL people paste is the URL that has
  * to unfurl. The proxy routes crawler user agents here; see the
@@ -30,7 +29,6 @@ function publicOrigin(req: Request): string {
   return `${req.protocol}://${req.get("host") ?? "localhost"}`;
 }
 
-/** Escapes each segment but keeps the separator a review slug carries. */
 function encodePath(key: string): string {
   return key.split("/").map(encodeURIComponent).join("/");
 }
@@ -39,20 +37,14 @@ export function createEmbedRouter(): Router {
   const router = Router();
 
   const handler = async (req: Request, res: Response) => {
-    // Express 5 types a route parameter as possibly repeated; these cannot be,
-    // but the narrowing has to be written down.
     const one = (name: string) => {
       const raw = req.params[name];
       return typeof raw === "string" ? raw : "";
     };
-    // Both segments when the path carries them, so the key matches what is
-    // stored in Review.slug; the whole segment otherwise, for a UUID.
     const game = one("game");
     const key = game ? `${one("user")}/${game}` : one("key");
     const origin = publicOrigin(req);
 
-    // Nothing here varies by cookie, and a link pasted into a busy channel is
-    // fetched once per client that saw it.
     res.type("text/html; charset=utf-8");
     res.setHeader("Cache-Control", "public, max-age=300");
 

@@ -28,10 +28,10 @@ export function slugify(input: string, fallback = "untitled"): string {
 }
 
 /**
- * `alice/elden-ring`: two segments, the reviewer first.
+ * `alice/elden-ring`
  *
  * Stored whole in Review.slug, slash included, so the column stays a single
- * unique key and every lookup keeps taking one string.
+ * unique key and every lookup takes one string.
  */
 export function reviewSlugBase(gameSlug: string, userSlug: string): string {
   return `${userSlug}/${gameSlug}`;
