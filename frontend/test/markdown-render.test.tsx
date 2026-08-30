@@ -108,21 +108,22 @@ describe("Markdown is not an HTML injection point", () => {
 });
 
 describe("Markdown element allow-list", () => {
-  /**
-   * Excluded so a review cannot render a heading that outranks the page's own.
-   * `unwrapDisallowed` keeps the words and drops the tag.
-   */
-  it("does not let a review emit an h1 or h2", () => {
+  /** Demoted two ranks, so neither can outrank the page's own heading. */
+  it("renders # and ## as headings, but never as an h1 or h2", () => {
     const { container } = render(<Markdown>{"# Huge\n\n## Large"}</Markdown>);
     expect(container.querySelector("h1")).toBeNull();
     expect(container.querySelector("h2")).toBeNull();
-    expect(container.textContent).toContain("Huge");
-    expect(container.textContent).toContain("Large");
+    expect(container.querySelector("h3")?.textContent).toBe("Huge");
+    expect(container.querySelector("h4")?.textContent).toBe("Large");
   });
 
-  it("allows the smaller headings", () => {
-    const { container } = render(<Markdown>{"### Verdict"}</Markdown>);
-    expect(container.querySelector("h3")?.textContent).toBe("Verdict");
+  it("keeps the deeper headings distinct and clamped at h6", () => {
+    const { container } = render(
+      <Markdown>{"### Verdict\n\n#### Detail\n\n###### Aside"}</Markdown>,
+    );
+    expect(container.querySelector("h5")?.textContent).toBe("Verdict");
+    const sixes = [...container.querySelectorAll("h6")].map((h) => h.textContent);
+    expect(sixes).toEqual(["Detail", "Aside"]);
   });
 
   /**

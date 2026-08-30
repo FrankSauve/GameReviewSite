@@ -1,4 +1,4 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps, ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
@@ -30,8 +30,9 @@ import { Spoiler } from "./Spoiler";
 /**
  * The elements a review may produce.
  *
- * `h1` and `h2` are absent so a review cannot render a heading that outranks the
- * page's own. Anything not listed is dropped, keeping its children.
+ * All six heading levels are parsed; each is demoted two ranks on the way out so
+ * none outranks the page's own heading — see the heading components below.
+ * Anything not listed is dropped, keeping its children.
  *
  * `img` is listed but renders no `<img>` — see the `img` component below.
  */
@@ -44,7 +45,7 @@ const ALLOWED = [
   "blockquote",
   "code", "pre",
   "a", "img",
-  "h3", "h4", "h5", "h6",
+  "h1", "h2", "h3", "h4", "h5", "h6",
   "table", "thead", "tbody", "tr", "th", "td",
 ];
 
@@ -67,6 +68,20 @@ const remarkRehypeOptions = {
     },
   },
 } as RemarkRehypeOptions;
+
+/**
+ * A heading rendered at `tag` rather than at its Markdown rank.
+ *
+ * Every level is demoted two ranks and clamped at `h6`, so a review's `#` lands
+ * at `h3` and can never outrank the page's own title. The size still tracks the
+ * Markdown level, so `#####` and `######` differ on screen despite sharing a tag.
+ */
+function heading(tag: "h3" | "h4" | "h5" | "h6", className: string) {
+  const Tag = tag;
+  return function Heading({ children }: { children?: ReactNode }) {
+    return <Tag className={className}>{children}</Tag>;
+  };
+}
 
 const components: Components = {
   p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
@@ -98,18 +113,12 @@ const components: Components = {
     </pre>
   ),
   hr: () => <hr className="border-gray-800 my-4" />,
-  h3: ({ children }) => (
-    <h3 className="font-bold text-gray-100 text-base mt-4 mb-2 first:mt-0">{children}</h3>
-  ),
-  h4: ({ children }) => (
-    <h4 className="font-semibold text-gray-200 mt-3 mb-1.5 first:mt-0">{children}</h4>
-  ),
-  h5: ({ children }) => (
-    <h5 className="font-semibold text-gray-300 mt-3 mb-1.5 first:mt-0">{children}</h5>
-  ),
-  h6: ({ children }) => (
-    <h6 className="font-semibold text-gray-400 mt-3 mb-1.5 first:mt-0">{children}</h6>
-  ),
+  h1: heading("h3", "font-bold text-gray-100 text-xl mt-5 mb-2 first:mt-0"),
+  h2: heading("h4", "font-bold text-gray-100 text-lg mt-4 mb-2 first:mt-0"),
+  h3: heading("h5", "font-bold text-gray-100 text-base mt-4 mb-2 first:mt-0"),
+  h4: heading("h6", "font-semibold text-gray-200 mt-3 mb-1.5 first:mt-0"),
+  h5: heading("h6", "font-semibold text-gray-300 mt-3 mb-1.5 first:mt-0"),
+  h6: heading("h6", "font-semibold text-gray-400 mt-3 mb-1.5 first:mt-0"),
   table: ({ children }) => (
     <div className="overflow-x-auto mb-3 last:mb-0">
       <table className="text-xs border-collapse">{children}</table>
