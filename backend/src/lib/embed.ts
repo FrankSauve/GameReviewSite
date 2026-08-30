@@ -70,10 +70,10 @@ export function embedDescription(markdown: string, limit = DESCRIPTION_MAX): str
   return (lastSpace > limit * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
 }
 
-/** `Elden Ring — 9.5/10 by alice`. The score belongs in the title because that
- *  is the line every client renders, however little room it gives the rest. */
-export function embedTitle(gameTitle: string, rating: number, username: string): string {
-  return `${gameTitle} — ${formatScore(rating)}/10 by ${username}`;
+/** `Elden Ring — 9.5/10`. The score belongs in the title because that is the
+ *  line every client renders, however little room it gives the rest. */
+export function embedTitle(gameTitle: string, rating: number): string {
+  return `${gameTitle} — ${formatScore(rating)}/10`;
 }
 
 export interface ReviewEmbed {
