@@ -70,14 +70,14 @@ function renderProfile(username: string, reviewCount = 3) {
   );
 }
 
-const exportLink = () => screen.queryByRole("link", { name: "Export as markdown" });
+const exportLink = () => screen.queryByRole("link", { name: "Export as zip" });
 
 describe("the review export link", () => {
   it("points at the backend's export endpoint and asks for a download", async () => {
     renderProfile("simon");
     await waitFor(() => expect(exportLink()).not.toBeNull());
     const link = exportLink() as HTMLAnchorElement;
-    expect(link.getAttribute("href")).toBe("/export/reviews.md");
+    expect(link.getAttribute("href")).toBe("/export/reviews.zip");
     expect(link.hasAttribute("download")).toBe(true);
   });
 
@@ -87,7 +87,7 @@ describe("the review export link", () => {
     expect(exportLink()).toBeNull();
   });
 
-  /** An empty file is a confusing thing to hand someone. */
+  /** An empty archive is a confusing thing to hand someone. */
   it("is not offered when there is nothing to export", async () => {
     renderProfile("simon", 0);
     await waitFor(() => expect(screen.getByText("simon")).toBeTruthy());

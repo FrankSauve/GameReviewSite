@@ -31,7 +31,8 @@
     "graphql": "^16.11.0",
     "helmet": "^8.1.0",
     "openid-client": "^6.8.7",
-    "prisma": "^6.19.3"
+    "prisma": "^6.19.3",
+    "yazl": "^3.3.1"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
@@ -39,11 +40,14 @@
     "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
     "@types/supertest": "^6.0.2",
+    "@types/yauzl": "^3.4.0",
+    "@types/yazl": "^3.3.1",
     "esbuild": "0.25.0",
     "supertest": "^7.0.0",
     "tsx": "^4.19.0",
     "typescript": "^5.6.0",
-    "vitest": "^3.0.0"
+    "vitest": "^3.0.0",
+    "yauzl": "^3.4.0"
   },
   "overrides": {
     "deepmerge-ts": "^8.0.0"

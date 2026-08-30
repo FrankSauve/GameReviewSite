@@ -1,19 +1,22 @@
 import { once } from "node:events";
+import type { Readable } from "node:stream";
 import { Router, type Request, type Response } from "express";
 import { Prisma } from "@prisma/client";
+import { ZipFile } from "yazl";
 
 import { prisma } from "../lib/prisma.js";
 import { readSession } from "../lib/session.js";
 import {
-  REVIEW_SEPARATOR,
+  exportDirectory,
   exportFilename,
   formatReview,
+  reviewEntryName,
 } from "../lib/exportMarkdown.js";
 
 /**
- * Downloading your own reviews as one markdown file.
+ * Downloading your own reviews as a zip of markdown files, one per review.
  *
- *   GET /export/reviews.md
+ *   GET /export/reviews.zip
  *
  * Deliberately not a GraphQL field. Every list in the schema is bounded, and the
  * text budget in lib/budget.ts would refuse a backlog of any size — those guards
@@ -29,8 +32,18 @@ import {
  */
 
 /** Rows held in memory at once. Only one batch is resident: the loop waits for
- *  the socket to drain before reading the next. */
+ *  the archive to drain before reading the next. */
 const BATCH_SIZE = 50;
+
+/**
+ * How much review text may sit in the zip's queue before the next batch waits.
+ *
+ * yazl buffers whatever it has been handed and is not yet able to write, so
+ * without this the read loop runs to completion at memory speed and the whole
+ * backlog is resident after all — the same failure as ignoring `write`'s return
+ * value on a plain stream.
+ */
+const QUEUE_HIGH_WATER = 1 << 20;
 
 /** The last row of a batch, as the position the next one resumes from. */
 interface Cursor {
@@ -39,29 +52,81 @@ interface Cursor {
 }
 
 /**
- * Writes a chunk, waiting for the socket if it is full. Returns false once the
- * client has gone, which ends the export rather than reading a backlog nobody
- * is receiving.
+ * The zip being written to the response, with a queue the reader can wait on.
  *
- * Ignoring the return value of `write` is what makes a "streaming" response
- * hold the whole file: the loop runs to completion at memory speed and every
- * batch it read piles up in the socket buffer.
+ * `pending` is bytes handed to yazl minus bytes it has emitted, so it falls only
+ * as the socket accepts output. It goes negative once the archive's own headers
+ * are counted on the way out, which is fine: it is a watermark, not a ledger.
  */
-async function writeChunk(res: Response, chunk: string, gone: AbortSignal) {
-  if (res.write(chunk)) return true;
-  if (gone.aborted) return false;
-  try {
-    await once(res, "drain", { signal: gone });
-    return true;
-  } catch {
-    return false;
+class ArchiveWriter {
+  private readonly zip = new ZipFile();
+  private pending = 0;
+  private drained: (() => void) | null = null;
+
+  constructor(
+    private readonly res: Response,
+    gone: AbortSignal
+  ) {
+    this.zip.outputStream.on("data", (chunk: Buffer) => {
+      this.pending -= chunk.length;
+      if (this.pending < QUEUE_HIGH_WATER) this.release();
+    });
+    this.zip.outputStream.pipe(res);
+    // One listener for the writer's whole life. Registering it per wait would
+    // pile up a listener per batch on an export long enough to need many.
+    gone.addEventListener("abort", () => this.release(), { once: true });
+  }
+
+  add(name: string, body: string, mtime: Date): void {
+    const buffer = Buffer.from(body, "utf8");
+    this.pending += buffer.length;
+    this.zip.addBuffer(buffer, name, { mtime });
+  }
+
+  /** Resolves once the queue has room, or immediately if the client has gone —
+   *  the caller checks the signal, and an aborted wait would never be woken. */
+  async waitForRoom(gone: AbortSignal): Promise<void> {
+    if (this.pending < QUEUE_HIGH_WATER || gone.aborted) return;
+    await new Promise<void>((resolve) => {
+      this.drained = resolve;
+    });
+  }
+
+  /**
+   * Finishes the archive and resolves when the last byte has reached the wire,
+   * or when the client leaves before it does — a "finish" that never comes
+   * would otherwise hold the handler open for the life of the process.
+   */
+  async finish(gone: AbortSignal): Promise<void> {
+    this.zip.end();
+    if (this.res.writableEnded || gone.aborted) return;
+    try {
+      await once(this.res, "finish", { signal: gone });
+    } catch {
+      // Aborted: the socket is already gone, so there is nothing left to flush.
+    }
+  }
+
+  /** Tears the response down mid-archive, leaving a truncated download that
+   *  cannot be mistaken for a complete one. */
+  abandon(): void {
+    this.zip.outputStream.unpipe(this.res);
+    // yazl types its output as the legacy readable interface; it is a Readable.
+    (this.zip.outputStream as Readable).destroy();
+    this.res.destroy();
+  }
+
+  private release(): void {
+    const waiter = this.drained;
+    this.drained = null;
+    waiter?.();
   }
 }
 
 export function createExportRouter(): Router {
   const router = Router();
 
-  router.get("/reviews.md", async (req: Request, res: Response) => {
+  router.get("/reviews.zip", async (req: Request, res: Response) => {
     const session = await readSession(req);
     if (!session) {
       res.status(401).type("text/plain").send("Sign in to export your reviews.\n");
@@ -73,8 +138,9 @@ export function createExportRouter(): Router {
     // url-safe, so it cannot inject a newline into the header — whereas the
     // username reaches us from authentik unconstrained.
     const filename = exportFilename(session.user.slug);
+    const directory = exportDirectory(session.user.slug);
 
-    res.type("text/markdown; charset=utf-8");
+    res.type("application/zip");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
     // Someone else's export must never be served from a shared cache, and one's
     // own is stale the moment a review is written.
@@ -83,8 +149,9 @@ export function createExportRouter(): Router {
     const departed = new AbortController();
     res.on("close", () => departed.abort());
 
+    let archive: ArchiveWriter | null = null;
     try {
-      let written = 0;
+      const taken = new Set<string>();
       let cursor: Cursor | null = null;
       for (;;) {
         // Resume from the last row rather than counting past it. An offset is a
@@ -119,31 +186,34 @@ export function createExportRouter(): Router {
             game: { select: { title: true } },
           },
         });
+        // Opening the archive only once a read has succeeded leaves the status
+        // line unspent for a database that is down, including for the very
+        // first read. An account with no reviews still gets an empty archive.
+        archive ??= new ArchiveWriter(res, departed.signal);
         if (batch.length === 0) break;
 
         for (const review of batch) {
-          const section = written > 0 ? REVIEW_SEPARATOR : "";
-          const ok = await writeChunk(
-            res,
-            section +
-              formatReview({
-                gameTitle: review.game.title,
-                rating: review.rating,
-                hoursPlayed: review.hoursPlayed,
-                yearPlayed: review.yearPlayed,
-                content: review.content,
-              }),
-            departed.signal
+          archive.add(
+            reviewEntryName(directory, review.game.title, taken),
+            formatReview({
+              gameTitle: review.game.title,
+              rating: review.rating,
+              hoursPlayed: review.hoursPlayed,
+              yearPlayed: review.yearPlayed,
+              content: review.content,
+            }),
+            review.createdAt
           );
-          if (!ok) return;
-          written += 1;
         }
+
+        await archive.waitForRoom(departed.signal);
+        if (departed.signal.aborted) return;
 
         if (batch.length < BATCH_SIZE) break;
         const last = batch[batch.length - 1]!;
         cursor = { createdAt: last.createdAt, id: last.id };
       }
-      res.end();
+      await archive!.finish(departed.signal);
     } catch (err: unknown) {
       console.error("Export failed:", err);
       if (!res.headersSent) {
@@ -151,9 +221,9 @@ export function createExportRouter(): Router {
         return;
       }
       // Past the status line the only honest signal left is an incomplete
-      // response. Ending the stream normally would hand over a truncated file
-      // that looks complete.
-      res.destroy();
+      // response. Ending the archive normally would hand over a zip whose
+      // central directory claims it holds everything.
+      archive?.abandon();
     }
   });
 

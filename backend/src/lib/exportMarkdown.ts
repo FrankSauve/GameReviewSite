@@ -8,11 +8,17 @@
  *
  *     <body>
  *
- * The point of the export is longevity — a file that is still readable when this
+ * The point of the export is longevity — files that are still readable when this
  * site is not — so it is plain text with no wrapper format, no front matter and
  * no identifiers. Nothing here is designed to be parsed back in; #39, which was
  * going to read it, is closed.
+ *
+ * One review per file, delivered as a zip. A single concatenated file made the
+ * archive one blob to re-split by hand before any of it could be filed, edited
+ * or moved somewhere else.
  */
+
+import { slugify } from "./slug.js";
 
 /** `8.5` and `9`, never `9.0`. Matches how a score reads on the site.
  *  Exported for lib/embed.ts, which puts the same number in an embed title. */
@@ -31,7 +37,7 @@ export interface ExportableReview {
 }
 
 /**
- * One review as its own section.
+ * One review as its own file.
  *
  * A missing playtime or year drops its line rather than writing "unknown": a
  * person reading this file later should not have to decide whether a zero means
@@ -54,17 +60,40 @@ function formatHoursPlayed(hours: number): string {
   return Number.isInteger(hours) ? String(hours) : hours.toFixed(1);
 }
 
-/**
- * The separator between two reviews.
- *
- * A blank line on either side of the rule is load-bearing. A body that ends
- * without one turns `---` into a setext underline, which silently promotes that
- * last paragraph to a heading — the sort of corruption nobody notices until they
- * are reading the file years later.
- */
-export const REVIEW_SEPARATOR = "\n---\n\n";
-
-/** The filename offered to the browser, e.g. `reviews-alice.md`. */
+/** The archive offered to the browser, e.g. `reviews-alice.zip`. */
 export function exportFilename(usernameSlug: string): string {
-  return `reviews-${usernameSlug}.md`;
+  return `reviews-${usernameSlug}.zip`;
+}
+
+/**
+ * The directory every entry sits under, e.g. `reviews-alice/`.
+ *
+ * `unzip` on the command line extracts into the working directory, so a flat
+ * archive scatters a backlog's worth of loose files across whatever the user
+ * happened to be standing in.
+ */
+export function exportDirectory(usernameSlug: string): string {
+  return `reviews-${usernameSlug}`;
+}
+
+/**
+ * Names the file for one review, e.g. `reviews-alice/elden-ring.md`.
+ *
+ * `taken` carries the names already used by this archive and is added to here.
+ * Two entries of the same name is a zip an extractor may unpack as one file, and
+ * the same game slug can reappear: a title that reduces to the same slug as
+ * another, or the same game reviewed twice after a re-slug.
+ */
+export function reviewEntryName(
+  directory: string,
+  gameTitle: string,
+  taken: Set<string>
+): string {
+  const base = slugify(gameTitle, "review");
+  let name = `${directory}/${base}.md`;
+  for (let n = 2; taken.has(name); n++) {
+    name = `${directory}/${base}-${n}.md`;
+  }
+  taken.add(name);
+  return name;
 }
