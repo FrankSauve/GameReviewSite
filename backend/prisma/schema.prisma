@@ -15,6 +15,10 @@ model User {
   // Stable subject identifier from authentik: the OIDC `sub` claim. Nullable so
   // rows created before the authentik migration can be adopted on first login.
   authentikUid String? @unique
+  /// Readable URL identifier, fixed at first provision. Not the username: that
+  /// is authentik's to rename, and a freed username can be taken by a different
+  /// account, which would quietly repoint every old profile link.
+  slug      String    @unique
   username  String    @unique
   email     String?   @unique
   createdAt DateTime  @default(now())
@@ -23,6 +27,7 @@ model User {
   comments  Comment[]
   addedGames Game[]   @relation("GameCreator")
   sessions  Session[]
+  articles  Article[]
 }
 
 /// A signed-in browser.
@@ -48,17 +53,17 @@ model Session {
 model Game {
   id          String   @id @default(uuid())
   rawgId      String?  @unique
+  slug        String   @unique
   title       String
-  genre       String?
-  platform    String?
+  /// Scalar lists, not a join table: labels copied from RAWG for display, never
+  /// queried across or deduplicated between games.
+  genres      String[]
+  platforms   String[]
   description String?
   coverUrl    String?
   releaseYear Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  // Who added this game. Nullable because rows predating this column have no
-  // recorded creator, and because deleting an account must not delete the games
-  // it contributed — other people's reviews hang off them.
   createdById String?
   createdBy   User?    @relation("GameCreator", fields: [createdById], references: [id], onDelete: SetNull)
   reviews     Review[]
@@ -66,19 +71,10 @@ model Game {
 
 model Review {
   id        String    @id @default(uuid())
+  slug      String    @unique
   rating    Float
   content   String
-  /// The year the game was played or finished, which is not the year the review
-  /// was written: a backlog of reviews imported in one sitting would otherwise all
-  /// read as 2026.
-  ///
-  /// Nullable, and required on CreateReviewInput rather than here. Every review
-  /// written through the app carries one, while the row that predates this column
-  /// and any importer that genuinely does not know a year stay representable. The
-  /// migration backfills existing rows from createdAt.
   yearPlayed  Int?
-  /// Hours spent with the game. Nullable for the same reason as yearPlayed, except
-  /// that this one cannot be backfilled — nothing in the database implies it.
   hoursPlayed Float?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -88,9 +84,28 @@ model Review {
   game      Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
   comments  Comment[]
 
-  /// Serves the by-year grouping on a profile, which sorts a single user's
-  /// reviews by the year played.
   @@index([userId, yearPlayed])
+}
+
+/// A manifesto, an essay — anything that is not a review. Reached at /texts in
+/// the app; named Article here because "text" is a word Postgres already owns.
+model Article {
+  id          String    @id @default(uuid())
+  /// Derived from the title, and re-derived when the title changes: a text is
+  /// its title in a way a game or a review is not. See lib/slug.ts.
+  slug        String    @unique
+  title       String
+  content     String
+  /// Null means a draft: visible to its author and to nobody else. A date rather
+  /// than a boolean because the index is ordered by publication.
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  authorId    String
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([publishedAt])
+  @@index([authorId])
 }
 
 model Comment {

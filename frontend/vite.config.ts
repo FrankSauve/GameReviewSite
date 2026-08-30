@@ -12,6 +12,7 @@ export default defineConfig({
     proxy: {
       "/graphql": "http://localhost:4000",
       "/auth": "http://localhost:4000",
+      "/export": "http://localhost:4000",
     },
   },
 });

@@ -26,18 +26,29 @@ const AMPLIFYING_QUERY = `{
 async function seed(users: number, gamesEach: number, commentsEach: number) {
   for (let u = 0; u < users; u++) {
     await prisma.user.create({
-      data: { authentikUid: `uid-${u}`, username: `user${u}`, email: `u${u}@e.com` },
+      data: {
+        authentikUid: `uid-${u}`,
+        username: `user${u}`,
+        slug: `user${u}`,
+        email: `u${u}@e.com`,
+      },
     });
   }
   for (let g = 0; g < gamesEach; g++) {
-    await prisma.game.create({ data: { title: `Game ${g}` } });
+    await prisma.game.create({ data: { title: `Game ${g}`, slug: `game-${g}` } });
   }
   const allUsers = await prisma.user.findMany();
   const allGames = await prisma.game.findMany();
   for (const user of allUsers) {
     for (const game of allGames) {
       const review = await prisma.review.create({
-        data: { userId: user.id, gameId: game.id, rating: 7, content: "x".repeat(200) },
+        data: {
+          slug: `${game.slug}-by-${user.username}`,
+          userId: user.id,
+          gameId: game.id,
+          rating: 7,
+          content: "x".repeat(200),
+        },
       });
       for (let c = 0; c < commentsEach; c++) {
         await prisma.comment.create({
@@ -162,9 +173,9 @@ describe("response size bounds", () => {
     const review = await prisma.review.findFirst();
 
     const queries = [
-      "{ games { id title genre platform coverUrl releaseYear averageRating reviewCount } }",
+      "{ games { id title genres platforms coverUrl releaseYear averageRating reviewCount } }",
       "{ users { id username createdAt reviewCount averageRating } }",
-      "{ recentReviews(limit: 10, offset: 0) { id rating content createdAt user { id username } game { id title genre coverUrl releaseYear } comments { id content createdAt user { id username } } } recentReviewsCount }",
+      "{ recentReviews(limit: 10, offset: 0) { id rating content createdAt user { id username } game { id title genres coverUrl releaseYear } comments { id content createdAt user { id username } } } recentReviewsCount }",
       `{ game(id: "${game?.id}") { id title description averageRating reviews { id rating content user { id username } comments { id content user { id username } } } } }`,
       `{ user(id: "${user?.id}") { id username createdAt reviews { id rating content game { id title } comments { id } } } }`,
       `{ review(id: "${review?.id}") { id rating content user { id username } game { id title } comments { id content user { id username } } } }`,

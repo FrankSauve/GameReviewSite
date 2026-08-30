@@ -3,11 +3,15 @@ import { ApolloProvider } from "@apollo/client";
 import { client } from "./apollo";
 import { AuthProvider } from "./contexts/AuthContext";
 import { Navbar } from "./components/Navbar";
-import { GamesPage } from "./pages/GamesPage";
+import { HomePage } from "./pages/HomePage";
+import { GameLibraryPage } from "./pages/GameLibraryPage";
 import { GameDetailPage } from "./pages/GameDetailPage";
 import { UserProfilePage } from "./pages/UserProfilePage";
 import { ReviewDetailPage } from "./pages/ReviewDetailPage";
 import { ReviewersPage } from "./pages/ReviewersPage";
+import { TextsPage } from "./pages/TextsPage";
+import { TextDetailPage } from "./pages/TextDetailPage";
+import { TextEditorPage } from "./pages/TextEditorPage";
 
 function App() {
   return (
@@ -18,7 +22,8 @@ function App() {
             <Navbar />
             <main className="max-w-6xl mx-auto px-4 py-8">
               <Routes>
-                <Route path="/" element={<GamesPage />} />
+                <Route path="/" element={<HomePage />} />
+                <Route path="/games" element={<GameLibraryPage />} />
                 <Route path="/games/:id" element={<GameDetailPage />} />
                 {/* By year is the default view: a profile reads as a playing
                     history rather than a posting log. */}
@@ -39,6 +44,13 @@ function App() {
                 />
                 <Route path="/reviews/:id" element={<ReviewDetailPage />} />
                 <Route path="/reviewers" element={<ReviewersPage />} />
+                {/* Manifestos and other prose. `new` before `:id` for the
+                    reader's benefit; the router ranks the static segment higher
+                    either way. */}
+                <Route path="/texts" element={<TextsPage />} />
+                <Route path="/texts/new" element={<TextEditorPage />} />
+                <Route path="/texts/:id" element={<TextDetailPage />} />
+                <Route path="/texts/:id/edit" element={<TextEditorPage />} />
                 {/* Login and registration are handled by authentik, not by
                     this app, so /login and /register no longer exist. */}
                 <Route path="/login" element={<Navigate to="/" replace />} />

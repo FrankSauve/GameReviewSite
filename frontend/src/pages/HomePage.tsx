@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@apollo/client";
-import { GET_RECENT_REVIEWS, GET_GAMES } from "../graphql/queries";
+import { GET_RECENT_REVIEWS } from "../graphql/queries";
 import { CREATE_COMMENT } from "../graphql/mutations";
 import { useAuth } from "../contexts/AuthContext";
-import type { Review, Game } from "../types";
+import type { Review } from "../types";
 import { formatRating, ratingColor } from "../lib/rating";
 import { excerpt } from "../lib/markdown";
 import { formatPlaytime } from "../lib/playtime";
+import { gamePath, reviewPath, userPath } from "../lib/links";
+import { Pagination } from "../components/Pagination";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -19,20 +21,6 @@ function timeAgo(iso: string): string {
   const days = Math.floor(hrs / 24);
   if (days < 30) return `${days}d ago`;
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-}
-
-function genreColor(genre?: string | null): string {
-  const map: Record<string, string> = {
-    RPG: "bg-violet-900/60 text-violet-300 border-violet-800",
-    "Action RPG": "bg-violet-900/60 text-violet-300 border-violet-800",
-    Action: "bg-red-900/60 text-red-300 border-red-800",
-    Adventure: "bg-emerald-900/60 text-emerald-300 border-emerald-800",
-    Strategy: "bg-blue-900/60 text-blue-300 border-blue-800",
-    Shooter: "bg-orange-900/60 text-orange-300 border-orange-800",
-    Sports: "bg-cyan-900/60 text-cyan-300 border-cyan-800",
-    Horror: "bg-rose-900/60 text-rose-300 border-rose-800",
-  };
-  return map[genre ?? ""] ?? "bg-gray-800 text-gray-400 border-gray-700";
 }
 
 function titleGradient(title: string): string {
@@ -78,7 +66,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
     <article className="card overflow-hidden flex flex-col hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
       {/* Main clickable row */}
       <button
-        onClick={() => navigate(`/reviews/${review.id}`)}
+        onClick={() => navigate(reviewPath(review))}
         className="flex gap-0 text-left group w-full"
       >
         {/* Cover art */}
@@ -102,7 +90,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
           {/* Game title + meta */}
           <div className="flex flex-wrap items-center gap-2">
             <Link
-              to={game ? `/games/${game.id}` : "/"}
+              to={gamePath(game)}
               onClick={e => e.stopPropagation()}
               className="font-bold text-gray-100 hover:text-violet-300 transition-colors truncate"
             >
@@ -132,7 +120,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
               {(review.user?.username ?? "?")[0].toUpperCase()}
             </span>
             <Link
-              to={review.user ? `/users/${review.user.id}` : "#"}
+              to={userPath(review.user)}
               onClick={e => e.stopPropagation()}
               className="text-sm font-medium text-violet-400 hover:text-violet-300 transition-colors"
             >
@@ -217,45 +205,6 @@ function ReviewFeedCard({ review }: { review: Review }) {
   );
 }
 
-// ─── Compact game card for the library strip ─────────────────────────────────
-
-function GameStrip({ game }: { game: Game }) {
-  return (
-    <Link to={`/games/${game.id}`} className="group block">
-      <div className="card overflow-hidden hover:border-violet-700 transition-all duration-200">
-        <div className="relative h-32 overflow-hidden">
-          {game.coverUrl ? (
-            <>
-              <img
-                src={game.coverUrl}
-                alt={game.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 to-transparent" />
-            </>
-          ) : (
-            <div className={`w-full h-full bg-gradient-to-br ${titleGradient(game.title)}`} />
-          )}
-          {game.averageRating != null && (
-            <span className={`absolute bottom-2 right-2 text-sm font-black drop-shadow ${ratingColor(game.averageRating)}`}>
-              {formatRating(game.averageRating)}
-            </span>
-          )}
-        </div>
-        <div className="p-3">
-          <p className="text-xs font-semibold text-gray-200 line-clamp-1 group-hover:text-violet-300 transition-colors">
-            {game.title}
-          </p>
-          {game.releaseYear && (
-            <p className="text-xs text-gray-600 mt-0.5">{game.releaseYear}</p>
-          )}
-        </div>
-      </div>
-    </Link>
-  );
-}
-
 // ─── Skeletons ────────────────────────────────────────────────────────────────
 
 function ReviewFeedSkeleton() {
@@ -280,8 +229,7 @@ function ReviewFeedSkeleton() {
 
 const PAGE_SIZE = 10;
 
-export function GamesPage() {
-  const [showAllGames, setShowAllGames] = useState(false);
+export function HomePage() {
   const [page, setPage] = useState(0);
 
   const { data: reviewsData, loading: reviewsLoading } = useQuery<{ recentReviews: Review[]; recentReviewsCount: number }>(
@@ -289,13 +237,9 @@ export function GamesPage() {
     { variables: { limit: PAGE_SIZE, offset: page * PAGE_SIZE }, fetchPolicy: "network-only" }
   );
 
-  const { data: gamesData, loading: gamesLoading } = useQuery<{ games: Game[] }>(GET_GAMES);
-
   const reviews = reviewsData?.recentReviews ?? [];
   const totalReviews = reviewsData?.recentReviewsCount ?? 0;
   const totalPages = Math.ceil(totalReviews / PAGE_SIZE);
-  const games = (gamesData?.games ?? []).filter(g => (g.reviewCount ?? 0) > 0);
-  const visibleGames = showAllGames ? games : games.slice(0, 12);
 
   return (
     <div className="space-y-10">
@@ -332,92 +276,16 @@ export function GamesPage() {
               ))}
             </div>
 
-            {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 pt-4">
-                <button
-                  onClick={() => setPage(p => p - 1)}
-                  disabled={page === 0}
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  ← Prev
-                </button>
-
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }).map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setPage(i)}
-                      className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                        i === page
-                          ? "bg-violet-600 text-white"
-                          : "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  onClick={() => setPage(p => p + 1)}
-                  disabled={page >= totalPages - 1}
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-                >
-                  Next →
-                </button>
-              </div>
-            )}
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              onChange={setPage}
+              label="Recent review pages"
+            />
           </>
         )}
       </section>
 
-      {/* ── Games Library ────────────────────────────────────────────── */}
-      {(gamesLoading || games.length > 0) && (
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-gray-100 flex items-center gap-2">
-              <span className="w-1 h-5 bg-violet-500 rounded-full inline-block" />
-              Games Library
-            </h2>
-            {games.length > 0 && (
-              <span className="text-xs text-gray-600">{games.length} {games.length === 1 ? "game" : "games"}</span>
-            )}
-          </div>
-
-          {gamesLoading && (
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div key={i} className="card overflow-hidden animate-pulse">
-                  <div className="h-32 bg-gray-800" />
-                  <div className="p-3 space-y-1.5">
-                    <div className="h-3 bg-gray-800 rounded" />
-                    <div className="h-2 bg-gray-800 rounded w-1/2" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {!gamesLoading && (
-            <>
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                {visibleGames.map((game) => (
-                  <GameStrip key={game.id} game={game} />
-                ))}
-              </div>
-
-              {games.length > 12 && (
-                <button
-                  onClick={() => setShowAllGames((v) => !v)}
-                  className="mt-4 text-sm text-violet-400 hover:text-violet-300 transition-colors"
-                >
-                  {showAllGames ? "Show less" : `Show all ${games.length} games`}
-                </button>
-              )}
-            </>
-          )}
-        </section>
-      )}
     </div>
   );
 }

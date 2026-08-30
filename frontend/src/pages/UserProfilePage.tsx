@@ -11,9 +11,12 @@ import {
   type ReviewSummary,
 } from "../lib/grouping";
 import { GroupedReviewList } from "../components/GroupedReviewList";
+import { EXPORT_REVIEWS_PATH, userPath } from "../lib/links";
+import { useCanonicalPath } from "../hooks/useCanonicalPath";
 
 interface ProfileUser {
   id: string;
+  slug?: string | null;
   username: string;
   reviewCount: number;
   averageRating?: number | null;
@@ -59,6 +62,9 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
     variables: { id, order: ORDER_FOR[grouping] },
     skip: !id,
   });
+
+  const tabPath = TABS.find((t) => t.grouping === grouping)?.path ?? "";
+  useCanonicalPath(data?.user ? userPath(data.user, tabPath) : null);
 
   if (loading) {
     return (
@@ -116,6 +122,22 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
                 You
               </span>
             )}
+            {/*
+              A plain link, not a fetch-then-Blob: the request carries the
+              session cookie either way, and letting the browser handle the
+              download means the file never has to exist in memory here. Only
+              on your own profile, because the endpoint only ever writes the
+              reviews of whoever is signed in.
+            */}
+            {isOwnProfile && profile.reviewCount > 0 && (
+              <a
+                href={EXPORT_REVIEWS_PATH}
+                download
+                className="text-xs font-medium text-gray-400 hover:text-violet-300 transition-colors"
+              >
+                Export as markdown
+              </a>
+            )}
           </div>
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 pt-2">
             <div className="text-center">
@@ -151,7 +173,7 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
           return (
             <Link
               key={tab.grouping}
-              to={`/users/${profile.id}${tab.path ? `/${tab.path}` : ""}`}
+              to={userPath(profile, tab.path)}
               aria-current={active ? "page" : undefined}
               className={`px-3 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${
                 active

@@ -1,6 +1,7 @@
 import type { User } from "@prisma/client";
 import { prisma } from "./prisma.js";
 import { isProduction } from "../security.js";
+import { slugify, uniqueSlug } from "./slug.js";
 
 /**
  * Who a request is from, as established by the OIDC login flow.
@@ -59,6 +60,13 @@ function conflictsOn(err: unknown, field: string): boolean {
   return names.some((name) => name.toLowerCase().includes(field.toLowerCase()));
 }
 
+async function newUserSlug(username: string): Promise<string> {
+  return uniqueSlug(
+    slugify(username, "user"),
+    async (candidate) => (await prisma.user.count({ where: { slug: candidate } })) > 0
+  );
+}
+
 /**
  * Maps an authentik identity onto a local row, creating it on first sight.
  *
@@ -102,28 +110,28 @@ export async function provisionUser(identity: Identity): Promise<User> {
     }
   }
 
-  // A stale local row may hold the username, the email, or both — most likely
-  // one left behind by an authentik account that was deleted and recreated with
-  // a new uid. Sign-in must still work, so give way on whichever field
-  // collided: suffix the username, and drop the email, which authentik remains
-  // the source of truth for anyway. Postgres reports one constraint per error,
-  // so this concedes one field at a time.
   let username = identity.username;
   let email = identity.email;
 
   for (let attempt = 0; ; attempt++) {
     try {
       return await prisma.user.create({
-        data: { authentikUid: identity.uid, username, email },
+        data: {
+          authentikUid: identity.uid,
+          slug: await newUserSlug(username),
+          username,
+          email,
+        },
       });
     } catch (err) {
       if (!isUniqueViolation(err) || attempt >= 2) throw err;
 
       const usernameClash = conflictsOn(err, "username");
       const emailClash = conflictsOn(err, "email");
+      const slugClash = conflictsOn(err, "slug");
       // Something else is unique-conflicting (a concurrent request on the same
       // uid, say). Retrying would just fail identically.
-      if (!usernameClash && !emailClash) throw err;
+      if (!usernameClash && !emailClash && !slugClash) throw err;
 
       if (usernameClash) username = `${identity.username}-${identity.uid.slice(0, 6)}`;
       if (emailClash) email = null;

@@ -3,6 +3,7 @@ import type { Comment } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { serializeDates } from "../lib/serialize.js";
 import { LIST_BOUNDS, clampWindow, type PageArgs } from "../lib/pagination.js";
+import { validateString } from "../lib/validate.js";
 import { requireAuth, type Context } from "../context.js";
 
 interface CreateCommentInput {
@@ -14,13 +15,7 @@ interface UpdateCommentInput {
   content: string;
 }
 
-function validateString(value: string, field: string, maxLength = 2000): string {
-  const trimmed = value.trim();
-  if (!trimmed) throw new GraphQLError(`${field} must not be empty.`);
-  if (trimmed.length > maxLength)
-    throw new GraphQLError(`${field} must be at most ${maxLength} characters.`);
-  return trimmed;
-}
+const COMMENT_CONTENT_MAX = 2000;
 
 export const commentResolvers = {
   Query: {
@@ -61,7 +56,7 @@ export const commentResolvers = {
         data: {
           userId: authUser.id,
           reviewId: input.reviewId,
-          content: validateString(input.content, "content"),
+          content: validateString(input.content, "content", COMMENT_CONTENT_MAX),
         },
       });
       return serializeDates(comment);
@@ -76,7 +71,7 @@ export const commentResolvers = {
       await requireOwnership(id, authUser.id);
       const comment = await prisma.comment.update({
         where: { id },
-        data: { content: validateString(input.content, "content") },
+        data: { content: validateString(input.content, "content", COMMENT_CONTENT_MAX) },
       });
       return serializeDates(comment);
     },

@@ -29,15 +29,21 @@ describe("reviewSummariesByUser", () => {
   /** Reviews described as [rating, yearPlayed | null], newest written last. */
   const seed = async (rows: [number, number | null][]) => {
     const user = await prisma.user.create({
-      data: { authentikUid: ALICE.uid, username: ALICE.username },
+      data: { authentikUid: ALICE.uid, username: ALICE.username, slug: ALICE.username },
     });
     userId = user.id;
-    for (const [rating, yearPlayed] of rows) {
+    // Indexed, not keyed on the row's values: the fixtures deliberately repeat a
+    // rating and a year, which the unique slug column will not have.
+    for (const [i, [rating, yearPlayed]] of rows.entries()) {
       const game = await prisma.game.create({
-        data: { title: `Game ${rating}-${yearPlayed ?? "none"}` },
+        data: {
+          title: `Game ${rating}-${yearPlayed ?? "none"}`,
+          slug: `game-${i}`,
+        },
       });
       await prisma.review.create({
         data: {
+          slug: `${game.slug}-by-${user.username}`,
           userId: user.id,
           gameId: game.id,
           rating,
@@ -207,7 +213,7 @@ describe("reviewSummariesByUser", () => {
 
   it("returns nothing for a user with no reviews", async () => {
     const user = await prisma.user.create({
-      data: { authentikUid: "ak-empty", username: "empty" },
+      data: { authentikUid: "ak-empty", username: "empty", slug: "empty" },
     });
     const res = await authedQuery<{ reviewSummariesByUser: unknown[] }>(
       app,

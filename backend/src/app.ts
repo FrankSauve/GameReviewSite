@@ -14,6 +14,8 @@ import { createMaxRowsRule } from "./lib/maxRows.js";
 import { collapseDuplicateErrors } from "./lib/collapseErrors.js";
 import { sanitizeError } from "./lib/sanitizeError.js";
 import { createAuthRouter } from "./routes/auth.js";
+import { createEmbedRouter } from "./routes/embed.js";
+import { createExportRouter } from "./routes/export.js";
 import {
   allowedOrigins,
   createLimiters,
@@ -117,6 +119,15 @@ export async function createApp(): Promise<AppHandle> {
   // in is not a GraphQL operation, and these routes must stay reachable when
   // nobody is signed in.
   app.use("/auth", limiters.auth, createAuthRouter(isProduction()));
+
+  // Also outside GraphQL, and for the opposite reason to /auth: the schema's
+  // list bounds and text budget are there to stop a single request returning a
+  // whole table, which is precisely what an export is. See routes/export.ts.
+  app.use("/export", limiters.exports, createExportRouter());
+
+  // Shares a path with the SPA: the proxy sends crawler user agents here and
+  // everyone else to the frontend container. See routes/embed.ts.
+  app.use("/reviews", limiters.embeds, createEmbedRouter());
 
   app.use(
     GRAPHQL_PATH,

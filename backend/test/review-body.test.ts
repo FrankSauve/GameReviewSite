@@ -124,13 +124,21 @@ describe("review body text budget", () => {
   /** `count` games, one maximal review each, all by the same author. */
   const seedMaximalReviews = async (count: number) => {
     const user = await prisma.user.create({
-      data: { authentikUid: "ak-bulk", username: "bulk" },
+      data: { authentikUid: "ak-bulk", username: "bulk", slug: "bulk" },
     });
     const content = "x".repeat(REVIEW_CONTENT_MAX);
     for (let i = 0; i < count; i++) {
-      const game = await prisma.game.create({ data: { title: `Game ${i}` } });
+      const game = await prisma.game.create({
+        data: { title: `Game ${i}`, slug: `game-${i}` },
+      });
       await prisma.review.create({
-        data: { userId: user.id, gameId: game.id, rating: 8, content },
+        data: {
+          slug: `${game.slug}-by-${user.username}`,
+          userId: user.id,
+          gameId: game.id,
+          rating: 8,
+          content,
+        },
       });
     }
   };

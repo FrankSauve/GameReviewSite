@@ -118,6 +118,8 @@ export interface Limiters {
   general: RequestHandler;
   rawg: RequestHandler;
   auth: RequestHandler;
+  exports: RequestHandler;
+  embeds: RequestHandler;
 }
 
 /**
@@ -153,6 +155,26 @@ export function createLimiters(): Limiters {
       standardHeaders: "draft-7",
       legacyHeaders: false,
       message: { errors: [{ message: "Too many sign-in attempts." }] },
+    }),
+    // An export reads every review one account has, so it is the most expensive
+    // thing an authenticated request can ask for. Nobody downloads their own
+    // backlog more than a few times in a minute.
+    exports: rateLimit({
+      windowMs: envInt("RATE_LIMIT_WINDOW_MS", 60_000),
+      limit: envInt("EXPORT_RATE_LIMIT_MAX", 10),
+      standardHeaders: "draft-7",
+      legacyHeaders: false,
+      message: "Too many exports, try again shortly.\n",
+    }),
+    // One paste into a busy channel means several unfurls at once, each an
+    // anonymous database read. Looser than exports, tighter than the general
+    // bucket.
+    embeds: rateLimit({
+      windowMs: envInt("RATE_LIMIT_WINDOW_MS", 60_000),
+      limit: envInt("EMBED_RATE_LIMIT_MAX", 60),
+      standardHeaders: "draft-7",
+      legacyHeaders: false,
+      message: "Too many requests.\n",
     }),
   };
 }

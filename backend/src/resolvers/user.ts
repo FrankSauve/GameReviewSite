@@ -8,6 +8,7 @@ import {
   type PageArgs,
 } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
+import { byIdOrSlug } from "../lib/slug.js";
 
 export const userResolvers = {
   Query: {
@@ -33,7 +34,7 @@ export const userResolvers = {
     },
 
     user: async (_parent: unknown, { id }: { id: string }) => {
-      const user = await prisma.user.findUnique({ where: { id } });
+      const user = await prisma.user.findFirst({ where: byIdOrSlug(id) });
       return user ? serializeDates(user) : null;
     },
   },

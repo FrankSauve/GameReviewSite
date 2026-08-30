@@ -34,6 +34,7 @@ const EXPLICIT_BOUNDS: Record<string, Bounds> = {
   "Query.users": LIST_BOUNDS.users,
   "Query.games": LIST_BOUNDS.games,
   "Query.comments": LIST_BOUNDS.nested,
+  "Query.articles": LIST_BOUNDS.articles,
   // RAWG caps its own page size, and the result never touches our database.
   "Query.searchGamesExternal": { def: 12, max: 12 },
 };
@@ -75,9 +76,13 @@ export function createMaxRowsRule(maxRows: number = DEFAULT_ROW_BUDGET) {
             return;
           }
 
-          const isList = String(fieldDef.type).includes("[");
+          // Read off the AST rather than the schema: graphql-js type predicates
+          // are `instanceof` and this process holds more than one copy of the
+          // module, so isCompositeType throws "from another module or realm".
+          const isRowList =
+            String(fieldDef.type).includes("[") && node.selectionSet != null;
 
-          if (!isList) {
+          if (!isRowList) {
             stack.push(parent);
             return;
           }

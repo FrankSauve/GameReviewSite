@@ -10,15 +10,17 @@ import { currentYear, formatPlaytime, snapHours } from "../lib/playtime";
 import { RatingInput } from "../components/RatingInput";
 import { PlaytimeInput } from "../components/PlaytimeInput";
 import { Markdown } from "../components/Markdown";
+import { gamePath, reviewPath, userPath } from "../lib/links";
+import { useCanonicalPath } from "../hooks/useCanonicalPath";
 
-interface CommentUser { id: string; username: string; }
+interface CommentUser { id: string; slug?: string | null; username: string; }
 interface ReviewComment { id: string; content: string; createdAt: string; user?: CommentUser | null; }
 interface ReviewGame {
-  id: string; title: string; coverUrl?: string | null;
-  releaseYear?: number | null; genre?: string | null; platform?: string | null;
+  id: string; slug?: string | null; title: string; coverUrl?: string | null;
+  releaseYear?: number | null; genres?: string[]; platforms?: string[];
 }
 interface ReviewDetail {
-  id: string; rating: number; content: string; createdAt: string;
+  id: string; slug?: string | null; rating: number; content: string; createdAt: string;
   yearPlayed?: number | null;
   hoursPlayed?: number | null;
   user?: CommentUser | null;
@@ -56,6 +58,8 @@ export function ReviewDetailPage() {
     GET_REVIEW,
     { variables: { id }, skip: !id }
   );
+
+  useCanonicalPath(data?.review ? reviewPath(data.review) : null);
 
   const refetchOpts = { refetchQueries: [{ query: GET_REVIEW, variables: { id } }] };
 
@@ -150,7 +154,7 @@ export function ReviewDetailPage() {
         <span className="text-gray-700">/</span>
         {game && (
           <>
-            <Link to={`/games/${game.id}`} className="text-gray-500 hover:text-gray-300 transition-colors truncate max-w-xs">
+            <Link to={gamePath(game)} className="text-gray-500 hover:text-gray-300 transition-colors truncate max-w-xs">
               {game.title}
             </Link>
             <span className="text-gray-700">/</span>
@@ -161,7 +165,7 @@ export function ReviewDetailPage() {
 
       {/* ── Game banner ── */}
       {game && (
-        <Link to={`/games/${game.id}`} className="group block">
+        <Link to={gamePath(game)} className="group block">
           <div className="relative h-40 rounded-xl overflow-hidden">
             {game.coverUrl ? (
               <img
@@ -179,7 +183,9 @@ export function ReviewDetailPage() {
               </h2>
               <div className="flex items-center gap-2 mt-0.5">
                 {game.releaseYear && <span className="text-xs text-gray-400">{game.releaseYear}</span>}
-                {game.genre && <span className="text-xs text-gray-500">· {game.genre}</span>}
+                {game.genres && game.genres.length > 0 && (
+                  <span className="text-xs text-gray-500">· {game.genres.join(", ")}</span>
+                )}
               </div>
             </div>
           </div>
@@ -191,14 +197,14 @@ export function ReviewDetailPage() {
         {/* Header: avatar + name + rating + actions */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <Link to={review.user ? `/users/${review.user.id}` : "#"}>
+            <Link to={userPath(review.user)}>
               <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${avatarGradient(review.user?.username ?? "?")} flex items-center justify-center text-sm font-bold text-white shrink-0`}>
                 {(review.user?.username ?? "?")[0].toUpperCase()}
               </div>
             </Link>
             <div>
               <Link
-                to={review.user ? `/users/${review.user.id}` : "#"}
+                to={userPath(review.user)}
                 className="font-semibold text-gray-100 hover:text-violet-300 transition-colors"
               >
                 {review.user?.username ?? "Unknown"}
@@ -226,7 +232,7 @@ export function ReviewDetailPage() {
           <div className="flex items-center gap-3 bg-red-950/40 border border-red-900/50 rounded-lg px-3 py-2.5">
             <p className="text-sm text-red-300 flex-1">Delete this review?</p>
             <Link
-              to={game ? `/games/${game.id}` : "/"}
+              to={gamePath(game)}
               onClick={() => void deleteReview({ variables: { id: review.id } })}
               className="text-xs font-semibold bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded-lg transition-colors disabled:opacity-50"
             >
@@ -320,7 +326,7 @@ export function ReviewDetailPage() {
           <div className="space-y-4 divide-y divide-gray-800">
             {comments.map(comment => (
               <div key={comment.id} className="flex gap-3 pt-4 first:pt-0">
-                <Link to={comment.user ? `/users/${comment.user.id}` : "#"} className="shrink-0">
+                <Link to={userPath(comment.user)} className="shrink-0">
                   <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarGradient(comment.user?.username ?? "?")} flex items-center justify-center text-xs font-bold text-white`}>
                     {(comment.user?.username ?? "?")[0].toUpperCase()}
                   </div>
@@ -328,7 +334,7 @@ export function ReviewDetailPage() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-baseline justify-between gap-2">
                     <Link
-                      to={comment.user ? `/users/${comment.user.id}` : "#"}
+                      to={userPath(comment.user)}
                       className="text-sm font-semibold text-gray-200 hover:text-violet-300 transition-colors"
                     >
                       {comment.user?.username ?? "Unknown"}

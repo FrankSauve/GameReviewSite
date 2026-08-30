@@ -7,6 +7,7 @@ import { RowBudget } from "./lib/budget.js";
 
 export interface AuthUser {
   id: string;
+  slug: string;
   username: string;
   email: string | null;
 }
@@ -41,7 +42,7 @@ export async function buildContext({ req }: BuildContextArgs): Promise<Context> 
   if (dev) {
     const user = await provisionUser(dev);
     return {
-      user: { id: user.id, username: user.username, email: user.email },
+      user: { id: user.id, slug: user.slug, username: user.username, email: user.email },
       loaders,
       budget,
     };
@@ -53,6 +54,7 @@ export async function buildContext({ req }: BuildContextArgs): Promise<Context> 
   return {
     user: {
       id: session.user.id,
+      slug: session.user.slug,
       username: session.user.username,
       email: session.user.email,
     },

@@ -2,6 +2,7 @@ export const typeDefs = `#graphql
 
   type User {
     id: ID!
+    slug: String!
     username: String!
     # Only returned to the authenticated owner of the account; null otherwise.
     email: String
@@ -16,9 +17,11 @@ export const typeDefs = `#graphql
   type Game {
     id: ID!
     rawgId: String
+    slug: String!
     title: String!
-    genre: String
-    platform: String
+    # Capped server-side.
+    genres: [String!]!
+    platforms: [String!]!
     description: String
     coverUrl: String
     releaseYear: Int
@@ -28,6 +31,22 @@ export const typeDefs = `#graphql
     reviews(limit: Int, offset: Int): [Review!]
     reviewCount: Int!
     averageRating: Float
+  }
+
+  enum GameSort {
+    NEWEST
+    OLDEST
+    TITLE
+    RELEASE_YEAR
+    MOST_REVIEWED
+    HIGHEST_RATED
+    MOST_PLAYED
+  }
+
+  # Scalar lists, so the row guard does not have to bound them.
+  type GameFacets {
+    genres: [String!]!
+    platforms: [String!]!
   }
 
   # A game result from the RAWG external API (not yet in our database)
@@ -50,6 +69,7 @@ export const typeDefs = `#graphql
   # is the same rows without the expensive field, which can be bounded far higher.
   type ReviewSummary {
     id: ID!
+    slug: String!
     rating: Float!
     yearPlayed: Int
     hoursPlayed: Float
@@ -70,6 +90,7 @@ export const typeDefs = `#graphql
 
   type Review {
     id: ID!
+    slug: String!
     userId: ID!
     gameId: ID!
     rating: Float!
@@ -88,6 +109,23 @@ export const typeDefs = `#graphql
     commentCount: Int!
   }
 
+  # A manifesto, an essay, anything that is not a review. Reached at /texts in
+  # the app; see resolvers/article.ts for why it is not a Review with no game.
+  type Article {
+    id: ID!
+    # Readable identifier, e.g. "our-manifesto". Re-derived if the title changes,
+    # so a link shared before a rename stops resolving.
+    slug: String!
+    title: String!
+    content: String!
+    # Null while it is a draft. A draft is returned only to its author, and never
+    # appears in the index for anybody else.
+    publishedAt: String
+    createdAt: String
+    updatedAt: String
+    author: User
+  }
+
   type Comment {
     id: ID!
     userId: ID!
@@ -103,16 +141,16 @@ export const typeDefs = `#graphql
 
   input CreateGameInput {
     title: String!
-    genre: String
-    platform: String
+    genres: [String!]
+    platforms: [String!]
     description: String
     releaseYear: Int
   }
 
   input UpdateGameInput {
     title: String
-    genre: String
-    platform: String
+    genres: [String!]
+    platforms: [String!]
     description: String
     releaseYear: Int
   }
@@ -121,8 +159,9 @@ export const typeDefs = `#graphql
     rawgId: String!
     title: String!
     coverUrl: String
-    genre: String
-    platform: String
+    # Past the cap is dropped, not refused.
+    genres: [String!]
+    platforms: [String!]
     releaseYear: Int
   }
 
@@ -146,6 +185,21 @@ export const typeDefs = `#graphql
     hoursPlayed: Float
   }
 
+  # authorId is taken from the session — not supplied by the client.
+  input CreateArticleInput {
+    title: String!
+    content: String!
+    # Defaults to true: writing something and then wondering why nobody can see
+    # it is the worse default.
+    published: Boolean
+  }
+
+  input UpdateArticleInput {
+    title: String
+    content: String
+    published: Boolean
+  }
+
   input CreateCommentInput {
     reviewId: ID!
     content: String!
@@ -164,7 +218,25 @@ export const typeDefs = `#graphql
     users(limit: Int, offset: Int): [User!]!
     user(id: ID!): User
 
-    games(limit: Int, offset: Int): [Game!]!
+    games(
+      limit: Int
+      offset: Int
+      reviewedOnly: Boolean
+      genre: String
+      platform: String
+      # A user id or slug; games that user has reviewed.
+      reviewedBy: ID
+      sort: GameSort
+    ): [Game!]!
+    # Total under the same filter, for paging controls.
+    gamesCount(
+      reviewedOnly: Boolean
+      genre: String
+      platform: String
+      reviewedBy: ID
+    ): Int!
+    # Distinct labels across the catalogue, for the filter menus.
+    gameFacets: GameFacets!
     game(id: ID!): Game
     searchGamesExternal(query: String!): [ExternalGame!]!
 
@@ -188,6 +260,13 @@ export const typeDefs = `#graphql
 
     comments(reviewId: ID!, limit: Int, offset: Int): [Comment!]!
     comment(id: ID!): Comment
+
+    # Published texts, newest publication first, plus your own drafts when you
+    # are signed in. The count matches the same visibility, so paging controls
+    # never render a page that is always empty.
+    articles(limit: Int, offset: Int): [Article!]!
+    articlesCount: Int!
+    article(id: ID!): Article
   }
 
   # ── Mutations ────────────────────────────────────────────────────────────────
@@ -202,6 +281,10 @@ export const typeDefs = `#graphql
     createReview(input: CreateReviewInput!): Review!
     updateReview(id: ID!, input: UpdateReviewInput!): Review!
     deleteReview(id: ID!): Boolean!
+
+    createArticle(input: CreateArticleInput!): Article!
+    updateArticle(id: ID!, input: UpdateArticleInput!): Article!
+    deleteArticle(id: ID!): Boolean!
 
     createComment(input: CreateCommentInput!): Comment!
     updateComment(id: ID!, input: UpdateCommentInput!): Comment!

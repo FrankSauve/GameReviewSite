@@ -2,6 +2,7 @@ import { formatRating } from "./rating";
 
 export interface ReviewSummary {
   id: string;
+  slug?: string | null;
   rating: number;
   yearPlayed?: number | null;
   hoursPlayed?: number | null;
@@ -9,10 +10,11 @@ export interface ReviewSummary {
   commentCount: number;
   game?: {
     id: string;
+    slug?: string | null;
     title: string;
     coverUrl?: string | null;
     releaseYear?: number | null;
-    genre?: string | null;
+    genres?: string[];
   } | null;
 }
 

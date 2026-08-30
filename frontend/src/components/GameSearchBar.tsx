@@ -3,15 +3,15 @@ import { useLazyQuery, useMutation } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
 import { SEARCH_GAMES_EXTERNAL } from "../graphql/queries";
 import { IMPORT_GAME } from "../graphql/mutations";
-import { GET_GAMES } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
 import type { ExternalGame } from "../types";
+import { gamePath } from "../lib/links";
 
 interface SearchResult {
   searchGamesExternal: ExternalGame[];
 }
 interface ImportResult {
-  importGame: { id: string };
+  importGame: { id: string; slug?: string | null };
 }
 
 export function GameSearchBar() {
@@ -29,7 +29,9 @@ export function GameSearchBar() {
   );
 
   const [importGame, { loading: importing }] = useMutation<ImportResult>(IMPORT_GAME, {
-    refetchQueries: [{ query: GET_GAMES }],
+    // By name, not by document: GET_GAMES takes paging and filter variables
+    // now, and the object form would only match a call with none of them.
+    refetchQueries: ["GetGames"],
   });
 
   // Debounced search
@@ -78,14 +80,14 @@ export function GameSearchBar() {
             rawgId: game.rawgId,
             title: game.title,
             coverUrl: game.coverUrl ?? null,
-            genre: game.genres?.[0] ?? null,
-            platform: game.platforms?.join(", ") ?? null,
+            genres: game.genres ?? [],
+            platforms: game.platforms ?? [],
             releaseYear: game.releaseYear ?? null,
           },
         },
       });
-      const id = result.data?.importGame.id;
-      if (id) navigate(`/games/${id}`);
+      const imported = result.data?.importGame;
+      if (imported) navigate(gamePath(imported));
     },
     [user, importGame, navigate]
   );

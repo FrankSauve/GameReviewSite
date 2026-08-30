@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useMutation } from "@apollo/client";
 import { CREATE_GAME } from "../graphql/mutations";
-import { GET_GAMES } from "../graphql/queries";
 import type { Game } from "../types";
+import { gamePath } from "../lib/links";
 
 const GENRES = [
   "Action", "Action RPG", "Adventure", "Fighting", "Horror",
@@ -20,11 +20,11 @@ export function AddGamePage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     title: "",
-    genre: "",
-    platform: "",
     description: "",
     releaseYear: "",
   });
+  const [genres, setGenres] = useState<string[]>([]);
+  const [platforms, setPlatforms] = useState<string[]>([]);
 
   const set = (field: string) => (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -33,8 +33,10 @@ export function AddGamePage() {
   const [createGame, { loading, error }] = useMutation<{ createGame: Game }>(
     CREATE_GAME,
     {
-      refetchQueries: [{ query: GET_GAMES }],
-      onCompleted: (data) => navigate(`/games/${data.createGame.id}`),
+      // By name, not by document: GET_GAMES takes paging and filter variables
+      // now, and the object form would only match a call with none of them.
+      refetchQueries: ["GetGames"],
+      onCompleted: (data) => navigate(gamePath(data.createGame)),
     }
   );
 
@@ -44,8 +46,8 @@ export function AddGamePage() {
       variables: {
         input: {
           title: form.title.trim(),
-          genre: form.genre || undefined,
-          platform: form.platform || undefined,
+          genres,
+          platforms,
           description: form.description.trim() || undefined,
           releaseYear: form.releaseYear ? parseInt(form.releaseYear, 10) : undefined,
         },
@@ -83,27 +85,18 @@ export function AddGamePage() {
             />
           </div>
 
-          {/* Genre + Platform row */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1.5">Genre</label>
-              <select className="input-field" value={form.genre} onChange={set("genre")}>
-                <option value="">Select…</option>
-                {GENRES.map((g) => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1.5">Platform</label>
-              <select className="input-field" value={form.platform} onChange={set("platform")}>
-                <option value="">Select…</option>
-                {PLATFORMS.map((p) => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+          <ChipSelect
+            label="Genres"
+            options={GENRES}
+            selected={genres}
+            onChange={setGenres}
+          />
+          <ChipSelect
+            label="Platforms"
+            options={PLATFORMS}
+            selected={platforms}
+            onChange={setPlatforms}
+          />
 
           {/* Release year */}
           <div>
@@ -160,5 +153,65 @@ function BackIcon() {
     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
     </svg>
+  );
+}
+
+// Mirrors MAX_LABELS in backend/src/resolvers/game.ts, which enforces it.
+// Change both together.
+const MAX_LABELS = 5;
+
+function ChipSelect({
+  label,
+  options,
+  selected,
+  onChange,
+}: {
+  label: string;
+  options: readonly string[];
+  selected: string[];
+  onChange: (next: string[]) => void;
+}) {
+  const full = selected.length >= MAX_LABELS;
+
+  const toggle = (option: string) => {
+    if (selected.includes(option)) {
+      onChange(selected.filter((s) => s !== option));
+    } else if (!full) {
+      onChange([...selected, option]);
+    }
+  };
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-1.5">
+        <label className="block text-sm font-medium text-gray-400">{label}</label>
+        <span className="text-xs text-gray-600">
+          {selected.length}/{MAX_LABELS}
+        </span>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {options.map((option) => {
+          const isSelected = selected.includes(option);
+          return (
+            <button
+              key={option}
+              type="button"
+              aria-pressed={isSelected}
+              // Only the unselected ones are disabled once full, so the way back
+              // under the cap is never blocked.
+              disabled={!isSelected && full}
+              onClick={() => toggle(option)}
+              className={`text-xs font-medium px-2.5 py-1 rounded-full border transition-colors ${
+                isSelected
+                  ? "bg-violet-900/60 text-violet-200 border-violet-700"
+                  : "bg-gray-800 text-gray-400 border-gray-700 hover:text-gray-200 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-gray-400"
+              }`}
+            >
+              {option}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

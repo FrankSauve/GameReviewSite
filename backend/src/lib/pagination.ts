@@ -47,6 +47,12 @@ export const LIST_BOUNDS = {
    * reviews loads in one request without a caller having to know to ask.
    */
   reviewSummaries: { def: 200, max: 500 },
+  /**
+   * Lower than the review lists, because a text is the longest thing anyone
+   * writes here: the body cap is 50000 characters against a review's 20000, so
+   * twenty of them is already a megabyte against the text budget.
+   */
+  articles: { def: 20, max: 50 },
 } as const satisfies Record<string, Bounds>;
 
 function intOr(value: number | null | undefined, fallback: number): number {

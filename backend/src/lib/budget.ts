@@ -12,8 +12,8 @@ import { GraphQLError } from "graphql";
 export const DEFAULT_ROW_BUDGET = 3000;
 
 /**
- * A per-request ceiling on how many characters of review body one operation may
- * return.
+ * A per-request ceiling on how many characters of long-form body one operation
+ * may return — review bodies, and the texts in resolvers/article.ts.
  *
  * The row budget alone stopped being sufficient when review bodies grew from 5000
  * characters to 20000. Rows are the wrong unit once one row can be large: the
@@ -53,17 +53,22 @@ export class RowBudget {
   }
 
   /**
-   * Charged once per review body actually returned, from the `Review.content`
-   * field resolver — one place that every query shape has to go through, rather
-   * than a call to remember at each of the six resolvers that return review rows.
+   * Charged once per body actually returned, from the `Review.content` and
+   * `Article.content` field resolvers — one place per type that every query shape
+   * has to go through, rather than a call to remember at each of the six
+   * resolvers that return review rows.
+   *
+   * `noun` names what filled the budget up, because the two types share it and a
+   * message that says "review text" when it was a manifesto sends the reader
+   * looking in the wrong place.
    */
-  chargeText(text: string): string {
+  chargeText(text: string, noun = "review text"): string {
     this.remainingText -= text.length;
     if (this.remainingText < 0) {
       throw new GraphQLError(
         `This query would return more than ${DEFAULT_TEXT_BUDGET} characters of ` +
-          "review text. Narrow it with the limit and offset arguments, or ask for " +
-          "fewer review bodies.",
+          `${noun}. Narrow it with the limit and offset arguments, or ask for ` +
+          "fewer bodies.",
         { extensions: { code: "QUERY_TOO_LARGE" } }
       );
     }

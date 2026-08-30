@@ -1,5 +1,6 @@
 export interface User {
   id: string;
+  slug?: string | null;
   username: string;
   email?: string;
 }
@@ -13,14 +14,16 @@ export interface Comment {
 
 export interface GameSnippet {
   id: string;
+  slug?: string | null;
   title: string;
-  genre?: string | null;
+  genres?: string[];
   coverUrl?: string | null;
   releaseYear?: number | null;
 }
 
 export interface Review {
   id: string;
+  slug?: string | null;
   rating: number;
   content: string;
   yearPlayed?: number | null;
@@ -33,10 +36,11 @@ export interface Review {
 
 export interface Game {
   id: string;
+  slug?: string | null;
   rawgId?: string | null;
   title: string;
-  genre?: string | null;
-  platform?: string | null;
+  genres?: string[];
+  platforms?: string[];
   description?: string | null;
   coverUrl?: string | null;
   releaseYear?: number | null;
@@ -57,5 +61,22 @@ export interface ExternalGame {
 
 export interface CurrentUser {
   id: string;
+  slug?: string | null;
   username: string;
+}
+
+/**
+ * A manifesto, an essay — anything that is not a review. Called an Article by
+ * the API and reached at /texts here; see backend/src/resolvers/article.ts.
+ */
+export interface Article {
+  id: string;
+  slug?: string | null;
+  title: string;
+  content: string;
+  /** Null while it is a draft, and a draft is only ever returned to its author. */
+  publishedAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+  author?: User | null;
 }

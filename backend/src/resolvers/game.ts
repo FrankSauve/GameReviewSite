@@ -10,19 +10,29 @@ import {
 } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
 import { searchRawg, getRawgGame, releaseYear } from "../lib/rawg.js";
+import { byIdOrSlug, slugify, uniqueSlug } from "../lib/slug.js";
+import { validateString } from "../lib/validate.js";
+import {
+  GAME_SORTS,
+  catalogueCount,
+  catalogueIds,
+  labelValues,
+  type GameFilter,
+  type GameSort,
+} from "../lib/gameCatalogue.js";
 
 interface CreateGameInput {
   title: string;
-  genre?: string;
-  platform?: string;
+  genres?: string[];
+  platforms?: string[];
   description?: string;
   releaseYear?: number;
 }
 
 interface UpdateGameInput {
   title?: string;
-  genre?: string;
-  platform?: string;
+  genres?: string[];
+  platforms?: string[];
   description?: string;
   releaseYear?: number;
 }
@@ -31,17 +41,42 @@ interface ImportGameInput {
   rawgId: string;
   title: string;
   coverUrl?: string;
-  genre?: string;
-  platform?: string;
+  genres?: string[];
+  platforms?: string[];
   releaseYear?: number;
 }
 
-function validateString(value: string, field: string, maxLength = 500): string {
-  const trimmed = value.trim();
-  if (!trimmed) throw new GraphQLError(`${field} must not be empty.`);
-  if (trimmed.length > maxLength)
-    throw new GraphQLError(`${field} must be at most ${maxLength} characters.`);
-  return trimmed;
+/**
+ * Duplicated as MAX_LABELS in frontend/src/pages/AddGamePage.tsx, which draws
+ * the counter on the form. Change both or the form promises entries the server
+ * silently drops.
+ */
+export const MAX_LABELS = 5;
+
+const LABEL_MAX_LENGTH = 100;
+
+/** Past the cap is dropped, not refused: being on many platforms is not a
+ *  malformed request, and refusing it is what made Terraria unaddable. */
+function validateLabels(values: string[], field: string): string[] {
+  const seen = new Set<string>();
+  const kept: string[] = [];
+
+  for (const value of values) {
+    const trimmed = value.trim();
+    if (!trimmed) continue;
+    if (trimmed.length > LABEL_MAX_LENGTH)
+      throw new GraphQLError(
+        `Each ${field} must be at most ${LABEL_MAX_LENGTH} characters.`
+      );
+
+    const key = trimmed.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    kept.push(trimmed);
+    if (kept.length === MAX_LABELS) break;
+  }
+
+  return kept;
 }
 
 function validateYear(year: number): number {
@@ -72,6 +107,13 @@ function validateCoverUrl(value: string): string {
   return parsed.toString();
 }
 
+async function newGameSlug(title: string): Promise<string> {
+  return uniqueSlug(
+    slugify(title, "game"),
+    async (candidate) => (await prisma.game.count({ where: { slug: candidate } })) > 0
+  );
+}
+
 /** RAWG identifiers are integers; this is also what gets parsed for the detail fetch. */
 function validateRawgId(value: string): string {
   const trimmed = value.trim();
@@ -80,20 +122,56 @@ function validateRawgId(value: string): string {
   return trimmed;
 }
 
+interface GamesArgs extends PageArgs, GameFilter {
+  sort?: string | null;
+}
+
+function gameSort(value?: string | null): GameSort {
+  return GAME_SORTS.includes(value as GameSort) ? (value as GameSort) : "NEWEST";
+}
+
+function gameFilter({ reviewedOnly, genre, platform, reviewedBy }: GamesArgs): GameFilter {
+  return { reviewedOnly, genre, platform, reviewedBy };
+}
+
 export const gameResolvers = {
   Query: {
-    games: async (_parent: unknown, args: PageArgs, { budget }: Context) => {
+    games: async (_parent: unknown, args: GamesArgs, { budget }: Context) => {
       const { take, skip } = clampWindow(args, LIST_BOUNDS.games);
-      const games = await prisma.game.findMany({
-        orderBy: { createdAt: "desc" },
-        take,
-        skip,
-      });
+      const ordered = await prisma.$queryRaw<{ id: string }[]>(
+        catalogueIds(gameFilter(args), gameSort(args.sort), take, skip)
+      );
+      const ids = ordered.map((row) => row.id);
+      const rows = await prisma.game.findMany({ where: { id: { in: ids } } });
+      // findMany does not preserve the order of an `in` list; the SQL above is
+      // what decided it.
+      const byId = new Map(rows.map((game) => [game.id, game]));
+      const games = ids
+        .map((id) => byId.get(id))
+        .filter((game): game is Game => game !== undefined);
       return budget.charge(games).map(serializeDates);
     },
 
+    gamesCount: async (_parent: unknown, args: GamesArgs) => {
+      const [{ count }] = await prisma.$queryRaw<{ count: number }[]>(
+        catalogueCount(gameFilter(args))
+      );
+      return count;
+    },
+
+    gameFacets: async () => {
+      const [genres, platforms] = await Promise.all([
+        prisma.$queryRaw<{ value: string }[]>(labelValues("genres")),
+        prisma.$queryRaw<{ value: string }[]>(labelValues("platforms")),
+      ]);
+      return {
+        genres: genres.map((row) => row.value),
+        platforms: platforms.map((row) => row.value),
+      };
+    },
+
     game: async (_parent: unknown, { id }: { id: string }) => {
-      const game = await prisma.game.findUnique({ where: { id } });
+      const game = await prisma.game.findFirst({ where: byIdOrSlug(id) });
       return game ? serializeDates(game) : null;
     },
 
@@ -127,10 +205,8 @@ export const gameResolvers = {
       const rawgId = validateRawgId(input.rawgId);
       const title = validateString(input.title, "title", 200);
       const coverUrl = input.coverUrl ? validateCoverUrl(input.coverUrl) : null;
-      const genre = input.genre ? validateString(input.genre, "genre", 100) : null;
-      const platform = input.platform
-        ? validateString(input.platform, "platform", 100)
-        : null;
+      const genres = validateLabels(input.genres ?? [], "genre");
+      const platforms = validateLabels(input.platforms ?? [], "platform");
       const releaseYear =
         input.releaseYear != null ? validateYear(input.releaseYear) : null;
 
@@ -156,10 +232,11 @@ export const gameResolvers = {
       const game = await prisma.game.create({
         data: {
           rawgId,
+          slug: await newGameSlug(title),
           title,
           coverUrl,
-          genre,
-          platform,
+          genres,
+          platforms,
           releaseYear,
           description,
           createdById: authUser.id,
@@ -174,15 +251,15 @@ export const gameResolvers = {
       context: Context,
     ) => {
       const authUser = requireAuth(context);
+      const title = validateString(input.title, "title", 200);
 
       const game = await prisma.game.create({
         data: {
           rawgId: null,
-          title: validateString(input.title, "title", 200),
-          genre: input.genre ? validateString(input.genre, "genre", 100) : null,
-          platform: input.platform
-            ? validateString(input.platform, "platform", 100)
-            : null,
+          slug: await newGameSlug(title),
+          title,
+          genres: validateLabels(input.genres ?? [], "genre"),
+          platforms: validateLabels(input.platforms ?? [], "platform"),
           description: input.description
             ? validateString(input.description, "description", 2000)
             : null,
@@ -205,14 +282,10 @@ export const gameResolvers = {
       const data: Partial<Omit<Game, "id" | "createdAt" | "updatedAt">> = {};
       if (input.title !== undefined)
         data.title = validateString(input.title, "title", 200);
-      if (input.genre !== undefined)
-        data.genre = input.genre
-          ? validateString(input.genre, "genre", 100)
-          : null;
-      if (input.platform !== undefined)
-        data.platform = input.platform
-          ? validateString(input.platform, "platform", 100)
-          : null;
+      if (input.genres !== undefined)
+        data.genres = validateLabels(input.genres, "genre");
+      if (input.platforms !== undefined)
+        data.platforms = validateLabels(input.platforms, "platform");
       if (input.description !== undefined)
         data.description = input.description
           ? validateString(input.description, "description", 2000)
