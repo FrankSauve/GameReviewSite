@@ -18,6 +18,8 @@ import { Markdown } from "../components/Markdown";
 
 /** Kept in step with ARTICLE_CONTENT_MAX in backend/src/resolvers/article.ts. */
 const CONTENT_MAX = 50000;
+/** Write and Preview share it, so switching tabs does not resize the form. */
+const BODY_HEIGHT = "min-h-[28rem]";
 const TITLE_MAX = 200;
 
 export function ArticleEditorPage() {
@@ -161,13 +163,13 @@ export function ArticleEditorPage() {
         </div>
 
         {previewing ? (
-          <div className="input-field min-h-[16rem] text-sm text-gray-300 leading-relaxed overflow-y-auto">
+          <div className={`input-field ${BODY_HEIGHT} text-gray-300 leading-relaxed overflow-y-auto`}>
             <Markdown>{content}</Markdown>
           </div>
         ) : (
           <textarea
             id={bodyId}
-            className="input-field resize-none"
+            className={`input-field resize-none ${BODY_HEIGHT}`}
             rows={18}
             placeholder="Write in Markdown…"
             value={content}
