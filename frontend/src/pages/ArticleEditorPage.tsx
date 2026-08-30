@@ -18,6 +18,8 @@ import { Markdown } from "../components/Markdown";
 
 /** Kept in step with ARTICLE_CONTENT_MAX in backend/src/resolvers/article.ts. */
 const CONTENT_MAX = 50000;
+/** Write and Preview share it, so switching tabs does not resize the form. */
+const BODY_HEIGHT = "min-h-[28rem]";
 const TITLE_MAX = 200;
 
 export function ArticleEditorPage() {
@@ -131,7 +133,7 @@ export function ArticleEditorPage() {
       </h1>
 
       <div>
-        <label htmlFor={titleId} className="block text-sm font-medium text-gray-400 mb-1.5">
+        <label htmlFor={titleId} className="block text-base font-medium text-gray-400 mb-1.5">
           Title
         </label>
         <input
@@ -147,27 +149,27 @@ export function ArticleEditorPage() {
 
       <div>
         <div className="flex items-baseline justify-between mb-1.5">
-          <label htmlFor={bodyId} className="block text-sm font-medium text-gray-400">
+          <label htmlFor={bodyId} className="block text-base font-medium text-gray-400">
             Body
           </label>
           <button
             type="button"
             onClick={() => setPreviewing((p) => !p)}
             disabled={!content.trim()}
-            className="text-xs text-violet-400 hover:text-violet-300 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
+            className="text-sm text-violet-400 hover:text-violet-300 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
           >
             {previewing ? "Write" : "Preview"}
           </button>
         </div>
 
         {previewing ? (
-          <div className="input-field min-h-[16rem] text-sm text-gray-300 leading-relaxed overflow-y-auto">
+          <div className={`input-field ${BODY_HEIGHT} text-gray-300 leading-relaxed overflow-y-auto`}>
             <Markdown>{content}</Markdown>
           </div>
         ) : (
           <textarea
             id={bodyId}
-            className="input-field resize-none"
+            className={`input-field resize-none ${BODY_HEIGHT}`}
             rows={18}
             placeholder="Write in Markdown…"
             value={content}
@@ -178,10 +180,10 @@ export function ArticleEditorPage() {
         )}
 
         <div className="flex items-baseline justify-between mt-1">
-          <p className="text-xs text-gray-600">
+          <p className="text-sm text-gray-600">
             Markdown: **bold**, *italic*, - lists, &gt; quotes
           </p>
-          <p className="text-xs text-gray-600">
+          <p className="text-sm text-gray-600">
             {content.length}/{CONTENT_MAX}
           </p>
         </div>

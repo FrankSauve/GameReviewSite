@@ -55,9 +55,10 @@ export function MarkdownEditor({
 }: MarkdownEditorProps) {
   const [previewing, setPreviewing] = useState(false);
   // Write and Preview share a height so switching tabs does not resize the form.
-  // Only the full-size editor gets the taller desktop pane; short fields (a bio)
+  // The full-size editor is tall at every width — a review runs long, and a
+  // narrow window is no reason to write it through a slot. Short fields (a bio)
   // keep the height their `rows` asked for.
-  const bodyHeight = rows >= 6 ? "min-h-[9rem] md:min-h-[20rem]" : "min-h-[6.5rem]";
+  const bodyHeight = rows >= 6 ? "min-h-[18rem] md:min-h-[26rem]" : "min-h-[6.5rem]";
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Applied in an effect rather than straight after `onChange`: the textarea
