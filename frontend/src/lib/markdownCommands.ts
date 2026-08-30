@@ -39,10 +39,10 @@ const WRAPPERS: Partial<Record<CommandName, string>> = {
   spoiler: "||",
 };
 
-// `h3`, not `h1`: the renderer drops `h1` and `h2`, so a button inserting one
-// would offer something that never renders.
+// `##`, not `#`: the button is for a section inside a review, and the renderer
+// demotes every level anyway.
 const PREFIXES: Partial<Record<CommandName, string>> = {
-  heading: "### ",
+  heading: "## ",
   quote: "> ",
   bullet: "- ",
 };

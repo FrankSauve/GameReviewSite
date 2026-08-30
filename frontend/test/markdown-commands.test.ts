@@ -103,8 +103,8 @@ describe("applyCommand", () => {
       expect(run("bullet", "[- one\ntwo]")).toBe("- [- one\n- two]");
     });
 
-    it("uses h3, the largest heading the renderer allows", () => {
-      expect(run("heading", "|Verdict")).toBe("### |Verdict");
+    it("inserts a section heading", () => {
+      expect(run("heading", "|Verdict")).toBe("## |Verdict");
     });
 
     it("leaves earlier lines alone", () => {
