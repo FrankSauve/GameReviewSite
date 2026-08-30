@@ -29,17 +29,16 @@ describe("email privacy", () => {
     const res = await authedQuery<{ me: { id: string } }>(
       app,
       "{ me { id } }",
-      ALICE
+      ALICE,
     );
     return res.data!.me.id;
   }
 
   it("hides email from the anonymous users list", async () => {
     await provision();
-    const res = await publicQuery<{ users: { username: string; email: null }[] }>(
-      app,
-      "{ users { username email } }"
-    );
+    const res = await publicQuery<{
+      users: { username: string; email: null }[];
+    }>(app, "{ users { username email } }");
     expect(res.data?.users).toHaveLength(1);
     expect(res.data?.users[0]?.email).toBeNull();
     expect(res.data?.users[0]?.username).toBe("alice");
@@ -49,7 +48,7 @@ describe("email privacy", () => {
     const id = await provision();
     const res = await publicQuery<{ user: { email: null } }>(
       app,
-      `{ user(id: "${id}") { username email } }`
+      `{ user(id: "${id}") { username email } }`,
     );
     expect(res.data?.user.email).toBeNull();
   });
@@ -59,7 +58,7 @@ describe("email privacy", () => {
     const res = await authedQuery<{ user: { email: null } }>(
       app,
       `{ user(id: "${aliceId}") { username email } }`,
-      BOB
+      BOB,
     );
     expect(res.data?.user.email).toBeNull();
   });
@@ -69,7 +68,7 @@ describe("email privacy", () => {
     const res = await authedQuery<{ user: { email: string } }>(
       app,
       `{ user(id: "${aliceId}") { email } }`,
-      ALICE
+      ALICE,
     );
     expect(res.data?.user.email).toBe("alice@example.com");
   });
@@ -80,7 +79,7 @@ describe("email privacy", () => {
     const res = await authedQuery(
       app,
       'mutation { updateUser(input: { username: "renamed" }) { id } }',
-      ALICE
+      ALICE,
     );
     expect(res.errors?.[0]?.message).toMatch(/Cannot query field "updateUser"/);
   });

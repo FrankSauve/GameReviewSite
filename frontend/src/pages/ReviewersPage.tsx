@@ -22,7 +22,8 @@ function avatarGradient(username: string): string {
     "from-amber-600 to-orange-700",
     "from-fuchsia-600 to-purple-700",
   ];
-  const idx = [...username].reduce((a, c) => a + c.charCodeAt(0), 0) % gradients.length;
+  const idx =
+    [...username].reduce((a, c) => a + c.charCodeAt(0), 0) % gradients.length;
   return gradients[idx];
 }
 
@@ -31,7 +32,7 @@ export function ReviewersPage() {
   const { data, loading } = useQuery<{ users: ReviewerUser[] }>(GET_USERS);
 
   const users = [...(data?.users ?? [])].sort(
-    (a, b) => b.reviewCount - a.reviewCount
+    (a, b) => b.reviewCount - a.reviewCount,
   );
 
   return (
@@ -42,14 +43,19 @@ export function ReviewersPage() {
           Reviewers
         </h1>
         {!loading && (
-          <span className="text-xs text-gray-600">{users.length} {users.length === 1 ? "member" : "members"}</span>
+          <span className="text-xs text-gray-600">
+            {users.length} {users.length === 1 ? "member" : "members"}
+          </span>
         )}
       </div>
 
       {loading && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="card p-5 flex items-center gap-4 animate-pulse">
+            <div
+              key={i}
+              className="card p-5 flex items-center gap-4 animate-pulse"
+            >
               <div className="w-12 h-12 rounded-full bg-gray-800 shrink-0" />
               <div className="space-y-2 flex-1">
                 <div className="h-4 bg-gray-800 rounded w-2/3" />
@@ -78,7 +84,9 @@ export function ReviewersPage() {
               <Link key={u.id} to={userPath(u)} className="group block">
                 <div className="card p-5 flex items-center gap-4 hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
                   {/* Avatar */}
-                  <div className={`w-11 h-11 rounded-full bg-gradient-to-br ${avatarGradient(u.username)} flex items-center justify-center text-base font-black text-white shrink-0`}>
+                  <div
+                    className={`w-11 h-11 rounded-full bg-gradient-to-br ${avatarGradient(u.username)} flex items-center justify-center text-base font-black text-white shrink-0`}
+                  >
                     {u.username[0].toUpperCase()}
                   </div>
 
@@ -101,7 +109,9 @@ export function ReviewersPage() {
                       {avgRating !== null && (
                         <>
                           <span className="text-gray-700 text-xs">·</span>
-                          <span className={`text-xs font-semibold ${ratingColor(avgRating)}`}>
+                          <span
+                            className={`text-xs font-semibold ${ratingColor(avgRating)}`}
+                          >
                             avg {formatRating(avgRating)}
                           </span>
                         </>

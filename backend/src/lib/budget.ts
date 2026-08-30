@@ -34,7 +34,7 @@ export class RowBudget {
 
   constructor(
     total: number = DEFAULT_ROW_BUDGET,
-    totalText: number = DEFAULT_TEXT_BUDGET
+    totalText: number = DEFAULT_TEXT_BUDGET,
   ) {
     this.remaining = total;
     this.remainingText = totalText;
@@ -46,7 +46,7 @@ export class RowBudget {
       throw new GraphQLError(
         `This query would return more than ${DEFAULT_ROW_BUDGET} records. ` +
           "Narrow it with the limit and offset arguments.",
-        { extensions: { code: "QUERY_TOO_LARGE" } }
+        { extensions: { code: "QUERY_TOO_LARGE" } },
       );
     }
     return rows;
@@ -69,7 +69,7 @@ export class RowBudget {
         `This query would return more than ${DEFAULT_TEXT_BUDGET} characters of ` +
           `${noun}. Narrow it with the limit and offset arguments, or ask for ` +
           "fewer bodies.",
-        { extensions: { code: "QUERY_TOO_LARGE" } }
+        { extensions: { code: "QUERY_TOO_LARGE" } },
       );
     }
     return text;

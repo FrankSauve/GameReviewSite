@@ -47,7 +47,10 @@ const PREFIXES: Partial<Record<CommandName, string>> = {
   bullet: "- ",
 };
 
-export function applyCommand(name: CommandName, selection: Selection): Selection {
+export function applyCommand(
+  name: CommandName,
+  selection: Selection,
+): Selection {
   const wrapper = WRAPPERS[name];
   if (wrapper) return wrap(selection, wrapper, PLACEHOLDER[name] ?? "");
 
@@ -58,9 +61,15 @@ export function applyCommand(name: CommandName, selection: Selection): Selection
 }
 
 /** How many of `char` run from `from`, stepping by `step`. */
-function runLength(text: string, from: number, step: number, char: string): number {
+function runLength(
+  text: string,
+  from: number,
+  step: number,
+  char: string,
+): number {
   let n = 0;
-  for (let i = from; i >= 0 && i < text.length && text[i] === char; i += step) n++;
+  for (let i = from; i >= 0 && i < text.length && text[i] === char; i += step)
+    n++;
   return n;
 }
 
@@ -97,7 +106,11 @@ function isSurrounded(before: string, after: string, marker: string): boolean {
   );
 }
 
-function wrap(selection: Selection, marker: string, placeholder: string): Selection {
+function wrap(
+  selection: Selection,
+  marker: string,
+  placeholder: string,
+): Selection {
   const { text, start, end } = selection;
   const selected = text.slice(start, end);
   const before = text.slice(0, start);
@@ -113,7 +126,8 @@ function wrap(selection: Selection, marker: string, placeholder: string): Select
   // button twice is a round trip rather than `****bold****`.
   if (isSurrounded(before, after, marker)) {
     return {
-      text: before.slice(0, -marker.length) + selected + after.slice(marker.length),
+      text:
+        before.slice(0, -marker.length) + selected + after.slice(marker.length),
       start: start - marker.length,
       end: end - marker.length,
     };
@@ -146,7 +160,8 @@ function prefixLines(selection: Selection, prefix: string): Selection {
 
   const lines = text.slice(blockStart, blockEnd).split("\n");
   const filled = lines.filter((line) => line !== "");
-  const removing = filled.length > 0 && filled.every((line) => line.startsWith(prefix));
+  const removing =
+    filled.length > 0 && filled.every((line) => line.startsWith(prefix));
   const change = (line: string) =>
     line === "" ? line : removing ? line.slice(prefix.length) : prefix + line;
 

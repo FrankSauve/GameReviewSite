@@ -74,10 +74,15 @@ describe("the games listing", () => {
   describe("paging", () => {
     it("returns the window asked for", async () => {
       await seedBatch(["A", "B", "C", "D", "E"], new Date("2026-01-01"));
-      const res = await publicQuery<ListPayload>(app, LIST, {}, {
-        limit: 2,
-        offset: 2,
-      });
+      const res = await publicQuery<ListPayload>(
+        app,
+        LIST,
+        {},
+        {
+          limit: 2,
+          offset: 2,
+        },
+      );
       expect(res.errors).toBeUndefined();
       expect(res.data?.games).toHaveLength(2);
     });
@@ -99,10 +104,15 @@ describe("the games listing", () => {
 
       const seen: string[] = [];
       for (let page = 0; page < 10; page++) {
-        const res = await publicQuery<ListPayload>(app, LIST, {}, {
-          limit: 3,
-          offset: page * 3,
-        });
+        const res = await publicQuery<ListPayload>(
+          app,
+          LIST,
+          {},
+          {
+            limit: 3,
+            offset: page * 3,
+          },
+        );
         seen.push(...(res.data?.games ?? []).map((g) => g.title));
       }
 
@@ -117,21 +127,24 @@ describe("the games listing", () => {
      */
     it("serves a game whose labels were never set", async () => {
       await prisma.game.create({ data: { title: "Bare", slug: "bare" } });
-      const res = await publicQuery<{ games: { genres: string[]; platforms: string[] }[] }>(
-        app,
-        `{ games { genres platforms } }`,
-        {}
-      );
+      const res = await publicQuery<{
+        games: { genres: string[]; platforms: string[] }[];
+      }>(app, `{ games { genres platforms } }`, {});
       expect(res.errors).toBeUndefined();
       expect(res.data?.games[0]).toEqual({ genres: [], platforms: [] });
     });
 
     it("returns an empty page past the end rather than erroring", async () => {
       await seedBatch(["A"], new Date("2026-01-01"));
-      const res = await publicQuery<ListPayload>(app, LIST, {}, {
-        limit: 10,
-        offset: 100,
-      });
+      const res = await publicQuery<ListPayload>(
+        app,
+        LIST,
+        {},
+        {
+          limit: 10,
+          offset: 100,
+        },
+      );
       expect(res.errors).toBeUndefined();
       expect(res.data?.games).toEqual([]);
       // The total still describes the library, so the client can recover.
@@ -146,9 +159,14 @@ describe("the games listing", () => {
     });
 
     it("drops games nobody has reviewed", async () => {
-      const res = await publicQuery<ListPayload>(app, LIST, {}, {
-        reviewedOnly: true,
-      });
+      const res = await publicQuery<ListPayload>(
+        app,
+        LIST,
+        {},
+        {
+          reviewedOnly: true,
+        },
+      );
       expect(res.data?.games.map((g) => g.title)).toEqual(["Reviewed"]);
     });
 
@@ -158,13 +176,17 @@ describe("the games listing", () => {
     });
 
     it("counts what the same filter would list", async () => {
-      const res = await publicQuery<ListPayload>(app, LIST, {}, {
-        reviewedOnly: true,
-      });
+      const res = await publicQuery<ListPayload>(
+        app,
+        LIST,
+        {},
+        {
+          reviewedOnly: true,
+        },
+      );
       expect(res.data?.gamesCount).toBe(1);
     });
   });
-
 
   describe("sorting", () => {
     /**
@@ -173,7 +195,12 @@ describe("the games listing", () => {
      */
     beforeEach(async () => {
       const bob = await prisma.user.create({
-        data: { authentikUid: "b", username: "bob", email: "b@e.com", slug: "bob" },
+        data: {
+          authentikUid: "b",
+          username: "bob",
+          email: "b@e.com",
+          slug: "bob",
+        },
       });
       const seed = [
         // title, year, genre, platform, ratings, hours
@@ -216,11 +243,21 @@ describe("the games listing", () => {
     it("orders by title without regard to case", async () => {
       // "doom" belongs at the front, not after "Zelda" where a raw byte sort
       // would put a lowercase initial.
-      expect(await order(app, "TITLE")).toEqual(["doom", "Myst", "Unplayed", "Zelda"]);
+      expect(await order(app, "TITLE")).toEqual([
+        "doom",
+        "Myst",
+        "Unplayed",
+        "Zelda",
+      ]);
     });
 
     it("orders by release year, newest first", async () => {
-      expect(await order(app, "RELEASE_YEAR")).toEqual(["Zelda", "doom", "Myst", "Unplayed"]);
+      expect(await order(app, "RELEASE_YEAR")).toEqual([
+        "Zelda",
+        "doom",
+        "Myst",
+        "Unplayed",
+      ]);
     });
 
     it("orders by review count", async () => {
@@ -229,11 +266,19 @@ describe("the games listing", () => {
 
     it("orders by average rating, not by rating total", async () => {
       // doom has the most reviews and the lowest average; it must not lead.
-      expect(await order(app, "HIGHEST_RATED")).toEqual(["Zelda", "Myst", "doom", "Unplayed"]);
+      expect(await order(app, "HIGHEST_RATED")).toEqual([
+        "Zelda",
+        "Myst",
+        "doom",
+        "Unplayed",
+      ]);
     });
 
     it("orders by hours played", async () => {
-      expect((await order(app, "MOST_PLAYED"))?.slice(0, 2)).toEqual(["Zelda", "doom"]);
+      expect((await order(app, "MOST_PLAYED"))?.slice(0, 2)).toEqual([
+        "Zelda",
+        "doom",
+      ]);
     });
 
     /** A game nobody has rated sorts to the end, which is not where DESC puts NULL. */
@@ -257,7 +302,12 @@ describe("the games listing", () => {
     });
 
     it("refuses a sort that is not in the enum", async () => {
-      const res = await publicQuery<ListPayload>(app, LIST, {}, { sort: "DROP TABLE" });
+      const res = await publicQuery<ListPayload>(
+        app,
+        LIST,
+        {},
+        { sort: "DROP TABLE" },
+      );
       expect(res.errors?.[0].message).toMatch(/GameSort/);
     });
   });
@@ -266,33 +316,73 @@ describe("the games listing", () => {
     beforeEach(async () => {
       const [alice, bob] = await Promise.all([
         prisma.user.create({
-          data: { authentikUid: "a", username: "alice", email: "a@e.com", slug: "alice" },
+          data: {
+            authentikUid: "a",
+            username: "alice",
+            email: "a@e.com",
+            slug: "alice",
+          },
         }),
         prisma.user.create({
-          data: { authentikUid: "b", username: "bob", email: "b@e.com", slug: "bob" },
+          data: {
+            authentikUid: "b",
+            username: "bob",
+            email: "b@e.com",
+            slug: "bob",
+          },
         }),
       ]);
       const shooter = await prisma.game.create({
-        data: { title: "Shooter", slug: "shooter", genres: ["FPS"], platforms: ["PC"] },
+        data: {
+          title: "Shooter",
+          slug: "shooter",
+          genres: ["FPS"],
+          platforms: ["PC"],
+        },
       });
       const puzzler = await prisma.game.create({
-        data: { title: "Puzzler", slug: "puzzler", genres: ["Puzzle"], platforms: ["Switch"] },
+        data: {
+          title: "Puzzler",
+          slug: "puzzler",
+          genres: ["Puzzle"],
+          platforms: ["Switch"],
+        },
       });
       await prisma.game.create({
-        data: { title: "Untouched", slug: "untouched", genres: ["FPS"], platforms: ["PC"] },
+        data: {
+          title: "Untouched",
+          slug: "untouched",
+          genres: ["FPS"],
+          platforms: ["PC"],
+        },
       });
       await prisma.review.create({
-        data: { rating: 7, content: "c", slug: "r-a", gameId: shooter.id, userId: alice.id },
+        data: {
+          rating: 7,
+          content: "c",
+          slug: "r-a",
+          gameId: shooter.id,
+          userId: alice.id,
+        },
       });
       await prisma.review.create({
-        data: { rating: 7, content: "c", slug: "r-b", gameId: puzzler.id, userId: bob.id },
+        data: {
+          rating: 7,
+          content: "c",
+          slug: "r-b",
+          gameId: puzzler.id,
+          userId: bob.id,
+        },
       });
     });
 
     const titles = async (vars: Record<string, unknown>) => {
       const res = await publicQuery<ListPayload>(app, LIST, {}, vars);
       expect(res.errors).toBeUndefined();
-      return { titles: res.data?.games.map((g) => g.title).sort(), count: res.data?.gamesCount };
+      return {
+        titles: res.data?.games.map((g) => g.title).sort(),
+        count: res.data?.gamesCount,
+      };
     };
 
     it("filters by genre", async () => {
@@ -303,13 +393,24 @@ describe("the games listing", () => {
     });
 
     it("filters by platform", async () => {
-      expect(await titles({ platform: "Switch" })).toEqual({ titles: ["Puzzler"], count: 1 });
+      expect(await titles({ platform: "Switch" })).toEqual({
+        titles: ["Puzzler"],
+        count: 1,
+      });
     });
 
     it("filters by the user who reviewed, by slug or by id", async () => {
-      expect(await titles({ reviewedBy: "alice" })).toEqual({ titles: ["Shooter"], count: 1 });
-      const alice = await prisma.user.findFirstOrThrow({ where: { username: "alice" } });
-      expect(await titles({ reviewedBy: alice.id })).toEqual({ titles: ["Shooter"], count: 1 });
+      expect(await titles({ reviewedBy: "alice" })).toEqual({
+        titles: ["Shooter"],
+        count: 1,
+      });
+      const alice = await prisma.user.findFirstOrThrow({
+        where: { username: "alice" },
+      });
+      expect(await titles({ reviewedBy: alice.id })).toEqual({
+        titles: ["Shooter"],
+        count: 1,
+      });
     });
 
     it("combines filters rather than picking one", async () => {
@@ -321,7 +422,10 @@ describe("the games listing", () => {
 
     /** The filter values are parameters, not string-pasted SQL. */
     it("treats a filter value that looks like SQL as a value", async () => {
-      expect(await titles({ genre: "' OR 1=1 --" })).toEqual({ titles: [], count: 0 });
+      expect(await titles({ genre: "' OR 1=1 --" })).toEqual({
+        titles: [],
+        count: 0,
+      });
     });
 
     it("lists the distinct labels in the catalogue for the menus", async () => {

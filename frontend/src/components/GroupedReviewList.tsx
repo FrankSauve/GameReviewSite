@@ -51,7 +51,9 @@ function ReviewRow({ item }: { item: ReviewGroup["items"][number] }) {
           </div>
 
           <div className="flex items-baseline gap-0.5 shrink-0">
-            <span className={`text-lg font-extrabold ${ratingColor(item.rating)}`}>
+            <span
+              className={`text-lg font-extrabold ${ratingColor(item.rating)}`}
+            >
               {formatRating(item.rating)}
             </span>
             <span className="text-xs text-gray-700">/10</span>
@@ -68,7 +70,10 @@ interface GroupedReviewListProps {
   showGroupAverage: boolean;
 }
 
-export function GroupedReviewList({ groups, showGroupAverage }: GroupedReviewListProps) {
+export function GroupedReviewList({
+  groups,
+  showGroupAverage,
+}: GroupedReviewListProps) {
   return (
     <div className="space-y-6">
       {groups.map((group) => (
@@ -81,7 +86,9 @@ export function GroupedReviewList({ groups, showGroupAverage }: GroupedReviewLis
                 {group.items.length === 1 ? " game" : " games"}
               </span>
               {showGroupAverage && (
-                <span className={`text-xs font-semibold ${ratingColor(group.average)}`}>
+                <span
+                  className={`text-xs font-semibold ${ratingColor(group.average)}`}
+                >
                   avg {formatRating(Math.round(group.average * 10) / 10)}
                 </span>
               )}

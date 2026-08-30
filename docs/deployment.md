@@ -38,9 +38,9 @@ Your image updater is a separate process and needs the same credentials. For
 Watchtower:
 
 ```yaml
-  watchtower:
-    volumes:
-      - /root/.docker/config.json:/config.json:ro
+watchtower:
+  volumes:
+    - /root/.docker/config.json:/config.json:ro
 ```
 
 ## 3. Set the environment values
@@ -217,7 +217,7 @@ Majors are held back for a human: Renovate labels them `needs-review`.
 Change `latest` to an immutable tag and bring it up:
 
 ```yaml
-    image: ghcr.io/franksauve/gamereviews-backend:sha-1a2b3c4
+image: ghcr.io/franksauve/gamereviews-backend:sha-1a2b3c4
 ```
 
 ```bash

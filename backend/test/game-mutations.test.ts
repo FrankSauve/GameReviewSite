@@ -21,12 +21,12 @@ interface GamePayload {
 async function addGameAs(
   app: Express,
   identity: typeof ALICE,
-  title: string
+  title: string,
 ): Promise<string> {
   const res = await authedQuery<{ createGame: GamePayload }>(
     app,
     `mutation { createGame(input: { title: "${title}" }) { id title } }`,
-    identity
+    identity,
   );
   expect(res.errors).toBeUndefined();
   return res.data!.createGame.id;
@@ -50,7 +50,7 @@ describe("game mutations", () => {
       const res = await authedQuery<{ updateGame: GamePayload }>(
         app,
         `mutation { updateGame(id: "${id}", input: { title: "Corrected" }) { id title } }`,
-        ALICE
+        ALICE,
       );
       expect(res.errors).toBeUndefined();
       expect(res.data?.updateGame.title).toBe("Corrected");
@@ -66,7 +66,7 @@ describe("game mutations", () => {
       const res = await authedQuery(
         app,
         `mutation { updateGame(id: "${id}", input: { title: "VANDALISED", description: "pwned" }) { id title } }`,
-        BOB
+        BOB,
       );
       expect(errorCodes(res)).toContain("FORBIDDEN");
 
@@ -79,7 +79,7 @@ describe("game mutations", () => {
       const id = await addGameAs(app, ALICE, "Alice's Game");
       const res = await publicQuery(
         app,
-        `mutation { updateGame(id: "${id}", input: { title: "VANDALISED" }) { id } }`
+        `mutation { updateGame(id: "${id}", input: { title: "VANDALISED" }) { id } }`,
       );
       expect(errorCodes(res)).toContain("UNAUTHENTICATED");
     });
@@ -92,7 +92,7 @@ describe("game mutations", () => {
       const res = await authedQuery(
         app,
         `mutation { updateGame(id: "${legacy.id}", input: { title: "Taken over" }) { id } }`,
-        ALICE
+        ALICE,
       );
       expect(errorCodes(res)).toContain("FORBIDDEN");
     });
@@ -106,7 +106,7 @@ describe("game mutations", () => {
         `mutation Import($input: ImportGameInput!) { importGame(input: $input) { id } }`,
         ALICE,
         {},
-        { input: { rawgId: "1", title: long } }
+        { input: { rawgId: "1", title: long } },
       );
       expect(imported.errors?.[0]?.message).toMatch(/at most 200 characters/);
     });
@@ -123,10 +123,10 @@ describe("game mutations", () => {
           `mutation Import($input: ImportGameInput!) { importGame(input: $input) { id } }`,
           ALICE,
           {},
-          { input: { rawgId: "1", title: "Fine", coverUrl } }
+          { input: { rawgId: "1", title: "Fine", coverUrl } },
         );
         expect(res.errors?.[0]?.message, coverUrl).toMatch(
-          /coverUrl must (use https|be an absolute URL)/
+          /coverUrl must (use https|be an absolute URL)/,
         );
       }
     });
@@ -143,11 +143,11 @@ describe("game mutations", () => {
             title: "Fine",
             coverUrl: "https://media.rawg.io/media/games/a.jpg",
           },
-        }
+        },
       );
       expect(res.errors).toBeUndefined();
       expect(res.data?.importGame.coverUrl).toBe(
-        "https://media.rawg.io/media/games/a.jpg"
+        "https://media.rawg.io/media/games/a.jpg",
       );
     });
 
@@ -157,9 +157,11 @@ describe("game mutations", () => {
         `mutation Import($input: ImportGameInput!) { importGame(input: $input) { id } }`,
         ALICE,
         {},
-        { input: { rawgId: "../../etc/passwd", title: "Fine" } }
+        { input: { rawgId: "../../etc/passwd", title: "Fine" } },
       );
-      expect(res.errors?.[0]?.message).toMatch(/rawgId must be a positive integer/);
+      expect(res.errors?.[0]?.message).toMatch(
+        /rawgId must be a positive integer/,
+      );
     });
 
     /**
@@ -181,11 +183,13 @@ describe("game mutations", () => {
         `mutation Import($input: ImportGameInput!) { importGame(input: $input) { id title description } }`,
         BOB,
         {},
-        { input: { rawgId: "42", title: "Renamed By Bob" } }
+        { input: { rawgId: "42", title: "Renamed By Bob" } },
       );
 
       expect(res.errors).toBeUndefined();
-      const after = await prisma.game.findUnique({ where: { id: existing.id } });
+      const after = await prisma.game.findUnique({
+        where: { id: existing.id },
+      });
       expect(after?.title).toBe("Already Here");
       expect(after?.description).toBe("Original");
     });
@@ -196,7 +200,7 @@ describe("game mutations", () => {
         `mutation Import($input: ImportGameInput!) { importGame(input: $input) { id } }`,
         ALICE,
         {},
-        { input: { rawgId: "7", title: "Imported" } }
+        { input: { rawgId: "7", title: "Imported" } },
       );
       const game = await prisma.game.findUnique({
         where: { id: res.data!.importGame.id },

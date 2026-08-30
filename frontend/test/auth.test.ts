@@ -19,13 +19,13 @@ describe("loginUrl", () => {
    */
   it("encodes a returnTo that contains query characters", () => {
     expect(loginUrl("/search?q=a&b=c#top")).toBe(
-      "/auth/login?returnTo=%2Fsearch%3Fq%3Da%26b%3Dc%23top"
+      "/auth/login?returnTo=%2Fsearch%3Fq%3Da%26b%3Dc%23top",
     );
   });
 
   it("encodes an attempt to smuggle another origin", () => {
     expect(loginUrl("//evil.example.com")).toBe(
-      "/auth/login?returnTo=%2F%2Fevil.example.com"
+      "/auth/login?returnTo=%2F%2Fevil.example.com",
     );
   });
 });
@@ -36,18 +36,23 @@ describe("signOutTarget", () => {
 
   it("sends the browser to authentik so its session ends too", async () => {
     const fetchImpl = vi.fn(async () =>
-      jsonResponse({ endSessionUrl: "https://authentik.example.com/end-session" })
+      jsonResponse({
+        endSessionUrl: "https://authentik.example.com/end-session",
+      }),
     );
-    await expect(signOutTarget(fetchImpl as unknown as typeof fetch)).resolves.toBe(
-      "https://authentik.example.com/end-session"
-    );
+    await expect(
+      signOutTarget(fetchImpl as unknown as typeof fetch),
+    ).resolves.toBe("https://authentik.example.com/end-session");
   });
 
   it("posts, and preflights, rather than issuing a bare GET", async () => {
     const fetchImpl = vi.fn(async () => jsonResponse({ endSessionUrl: null }));
     await signOutTarget(fetchImpl as unknown as typeof fetch);
 
-    const [url, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
+    const [url, init] = fetchImpl.mock.calls[0] as unknown as [
+      string,
+      RequestInit,
+    ];
     expect(url).toBe("/auth/logout");
     expect(init.method).toBe("POST");
     expect(init.credentials).toBe("same-origin");
@@ -56,14 +61,18 @@ describe("signOutTarget", () => {
 
   it("falls back to the site root when there was no session to end", async () => {
     const fetchImpl = vi.fn(async () => jsonResponse({ endSessionUrl: null }));
-    await expect(signOutTarget(fetchImpl as unknown as typeof fetch)).resolves.toBe("/");
+    await expect(
+      signOutTarget(fetchImpl as unknown as typeof fetch),
+    ).resolves.toBe("/");
   });
 
   it("still goes somewhere when the request fails outright", async () => {
     const fetchImpl = vi.fn(async () => {
       throw new Error("offline");
     });
-    await expect(signOutTarget(fetchImpl as unknown as typeof fetch)).resolves.toBe("/");
+    await expect(
+      signOutTarget(fetchImpl as unknown as typeof fetch),
+    ).resolves.toBe("/");
   });
 
   it("still goes somewhere when the response is not JSON", async () => {
@@ -73,8 +82,10 @@ describe("signOutTarget", () => {
           json: async () => {
             throw new Error("not json");
           },
-        }) as unknown as Response
+        }) as unknown as Response,
     );
-    await expect(signOutTarget(fetchImpl as unknown as typeof fetch)).resolves.toBe("/");
+    await expect(
+      signOutTarget(fetchImpl as unknown as typeof fetch),
+    ).resolves.toBe("/");
   });
 });

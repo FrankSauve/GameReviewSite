@@ -28,7 +28,10 @@ describe("rate limiting", () => {
   });
 
   const send = (query: string) =>
-    request(app).post(GRAPHQL_PATH).set("content-type", "application/json").send({ query });
+    request(app)
+      .post(GRAPHQL_PATH)
+      .set("content-type", "application/json")
+      .send({ query });
 
   it("returns 429 once the general limit is exceeded", async () => {
     const codes: number[] = [];

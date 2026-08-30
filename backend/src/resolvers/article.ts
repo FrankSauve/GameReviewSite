@@ -65,11 +65,19 @@ export const articleResolvers = {
       return context.budget.charge(articles).map(serializeArticle);
     },
 
-    articlesCount: async (_parent: unknown, _args: unknown, context: Context) => {
+    articlesCount: async (
+      _parent: unknown,
+      _args: unknown,
+      context: Context,
+    ) => {
       return prisma.article.count({ where: visibleTo(context.user?.id) });
     },
 
-    article: async (_parent: unknown, { id }: { id: string }, context: Context) => {
+    article: async (
+      _parent: unknown,
+      { id }: { id: string },
+      context: Context,
+    ) => {
       const article = await prisma.article.findFirst({
         where: { AND: [byIdOrSlug(id), visibleTo(context.user?.id)] },
       });
@@ -81,7 +89,7 @@ export const articleResolvers = {
     createArticle: async (
       _parent: unknown,
       { input }: { input: CreateArticleInput },
-      context: Context
+      context: Context,
     ) => {
       const authUser = requireAuth(context);
       const title = validateString(input.title, "title", ARTICLE_TITLE_MAX);
@@ -90,7 +98,11 @@ export const articleResolvers = {
         data: {
           slug: await slugFor(title),
           title,
-          content: validateString(input.content, "content", ARTICLE_CONTENT_MAX),
+          content: validateString(
+            input.content,
+            "content",
+            ARTICLE_CONTENT_MAX,
+          ),
           // Published unless the author asked for a draft.
           publishedAt: input.published === false ? null : new Date(),
           authorId: authUser.id,
@@ -102,12 +114,14 @@ export const articleResolvers = {
     updateArticle: async (
       _parent: unknown,
       { id, input }: { id: string; input: UpdateArticleInput },
-      context: Context
+      context: Context,
     ) => {
       const authUser = requireAuth(context);
       const existing = await requireAuthorship(id, authUser.id);
 
-      const data: Partial<Pick<Article, "title" | "slug" | "content" | "publishedAt">> = {};
+      const data: Partial<
+        Pick<Article, "title" | "slug" | "content" | "publishedAt">
+      > = {};
       if (input.title !== undefined) {
         data.title = validateString(input.title, "title", ARTICLE_TITLE_MAX);
         // The URL follows the title. A text is its title in a way a game or a
@@ -117,22 +131,30 @@ export const articleResolvers = {
           data.slug = await slugFor(data.title, existing.id);
       }
       if (input.content !== undefined)
-        data.content = validateString(input.content, "content", ARTICLE_CONTENT_MAX);
+        data.content = validateString(
+          input.content,
+          "content",
+          ARTICLE_CONTENT_MAX,
+        );
       if (input.published !== undefined && input.published !== null) {
         // Re-publishing does not move the date: a typo fixed a year later
         // should not send the article back to the top of the index.
-        if (input.published) data.publishedAt = existing.publishedAt ?? new Date();
+        if (input.published)
+          data.publishedAt = existing.publishedAt ?? new Date();
         else data.publishedAt = null;
       }
 
-      const article = await prisma.article.update({ where: { id: existing.id }, data });
+      const article = await prisma.article.update({
+        where: { id: existing.id },
+        data,
+      });
       return serializeArticle(article);
     },
 
     deleteArticle: async (
       _parent: unknown,
       { id }: { id: string },
-      context: Context
+      context: Context,
     ) => {
       const authUser = requireAuth(context);
       const existing = await requireAuthorship(id, authUser.id);
@@ -163,16 +185,23 @@ async function slugFor(title: string, exclude?: string): Promise<string> {
     slugify(title, "text"),
     async (candidate) =>
       (await prisma.article.count({
-        where: exclude ? { slug: candidate, NOT: { id: exclude } } : { slug: candidate },
-      })) > 0
+        where: exclude
+          ? { slug: candidate, NOT: { id: exclude } }
+          : { slug: candidate },
+      })) > 0,
   );
 }
 
 /** Accepts a slug as well as a UUID, so the edit form can use whatever the URL gave it. */
-async function requireAuthorship(key: string, userId: string): Promise<Article> {
+async function requireAuthorship(
+  key: string,
+  userId: string,
+): Promise<Article> {
   const article = await prisma.article.findFirst({ where: byIdOrSlug(key) });
   if (!article)
-    throw new GraphQLError("Text not found.", { extensions: { code: "NOT_FOUND" } });
+    throw new GraphQLError("Text not found.", {
+      extensions: { code: "NOT_FOUND" },
+    });
   if (article.authorId !== userId)
     throw new GraphQLError("You can only modify your own articles.", {
       extensions: { code: "FORBIDDEN" },

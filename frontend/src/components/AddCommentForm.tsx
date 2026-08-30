@@ -9,7 +9,11 @@ interface AddCommentFormProps {
   onCancel: () => void;
 }
 
-export function AddCommentForm({ reviewId, gameId, onCancel }: AddCommentFormProps) {
+export function AddCommentForm({
+  reviewId,
+  gameId,
+  onCancel,
+}: AddCommentFormProps) {
   const [content, setContent] = useState("");
 
   const [createComment, { loading, error }] = useMutation(CREATE_COMMENT, {
@@ -52,7 +56,11 @@ export function AddCommentForm({ reviewId, gameId, onCancel }: AddCommentFormPro
         >
           {loading ? "Posting…" : "Post"}
         </button>
-        <button type="button" onClick={onCancel} className="btn-secondary text-sm py-1.5">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="btn-secondary text-sm py-1.5"
+        >
           Cancel
         </button>
       </div>

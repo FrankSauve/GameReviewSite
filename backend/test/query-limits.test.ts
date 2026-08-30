@@ -1,6 +1,11 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Express } from "express";
-import { authedQuery, publicQuery, resetDatabase, startApp } from "./helpers.js";
+import {
+  authedQuery,
+  publicQuery,
+  resetDatabase,
+  startApp,
+} from "./helpers.js";
 
 /**
  * The schema is cyclic (Review → user → reviews → comments → review → …), so
@@ -29,7 +34,7 @@ describe("query abuse limits", () => {
   it("accepts the depth the frontend actually uses", async () => {
     const res = await publicQuery(
       app,
-      "{ recentReviews { id content user { username } game { title } comments { content user { username } } } }"
+      "{ recentReviews { id content user { username } game { title } comments { content user { username } } } }",
     );
     expect(res.errors).toBeUndefined();
   });
@@ -53,7 +58,7 @@ describe("query abuse limits", () => {
   it("does not charge scalar lists against the row budget", async () => {
     const res = await publicQuery(
       app,
-      "{ games { id title genres platforms coverUrl releaseYear } }"
+      "{ games { id title genres platforms coverUrl releaseYear } }",
     );
     expect(res.errors).toBeUndefined();
   });
@@ -61,7 +66,7 @@ describe("query abuse limits", () => {
   it("rejects a query with an excessive number of aliases", async () => {
     const aliases = Array.from(
       { length: 40 },
-      (_, i) => `a${i}: recentReviewsCount`
+      (_, i) => `a${i}: recentReviewsCount`,
     ).join(" ");
     const res = await publicQuery(app, `{ ${aliases} }`);
     expect(res.errors?.[0]?.message).toMatch(/alias/i);

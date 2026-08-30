@@ -87,7 +87,10 @@ export function createMaxRowsRule(maxRows: number = DEFAULT_ROW_BUDGET) {
             return;
           }
 
-          const width = widthOf(node, boundsFor(parentType.name, node.name.value));
+          const width = widthOf(
+            node,
+            boundsFor(parentType.name, node.name.value),
+          );
           const rows = parent * width;
           total += rows;
           stack.push(rows);
@@ -98,8 +101,8 @@ export function createMaxRowsRule(maxRows: number = DEFAULT_ROW_BUDGET) {
               new GraphQLError(
                 `This query could return up to ${total} records, above the limit of ` +
                   `${maxRows}. Narrow it with the limit and offset arguments.`,
-                { nodes: [node], extensions: { code: "QUERY_TOO_LARGE" } }
-              )
+                { nodes: [node], extensions: { code: "QUERY_TOO_LARGE" } },
+              ),
             );
           }
         },

@@ -35,10 +35,9 @@ export function ArticleEditorPage() {
   const [published, setPublished] = useState(true);
   const [previewing, setPreviewing] = useState(false);
 
-  const { data, loading: loadingExisting } = useQuery<{ article: Article | null }>(
-    GET_ARTICLE,
-    { variables: { id }, skip: !editing }
-  );
+  const { data, loading: loadingExisting } = useQuery<{
+    article: Article | null;
+  }>(GET_ARTICLE, { variables: { id }, skip: !editing });
   const existing = data?.article;
 
   // Fills the form once the article arrives. Keyed on the id so switching between
@@ -54,19 +53,21 @@ export function ArticleEditorPage() {
     navigate(article ? articlePath(article) : "/articles");
   };
 
-  const [createArticle, { loading: creating, error: createError }] = useMutation<{
-    createArticle: Article;
-  }>(CREATE_ARTICLE, {
-    refetchQueries: ["GetArticles"],
-    onCompleted: (result) => done(result.createArticle),
-  });
+  const [createArticle, { loading: creating, error: createError }] =
+    useMutation<{
+      createArticle: Article;
+    }>(CREATE_ARTICLE, {
+      refetchQueries: ["GetArticles"],
+      onCompleted: (result) => done(result.createArticle),
+    });
 
-  const [updateArticle, { loading: updating, error: updateError }] = useMutation<{
-    updateArticle: Article;
-  }>(UPDATE_ARTICLE, {
-    refetchQueries: ["GetArticles"],
-    onCompleted: (result) => done(result.updateArticle),
-  });
+  const [updateArticle, { loading: updating, error: updateError }] =
+    useMutation<{
+      updateArticle: Article;
+    }>(UPDATE_ARTICLE, {
+      refetchQueries: ["GetArticles"],
+      onCompleted: (result) => done(result.updateArticle),
+    });
 
   if (!user) {
     return (
@@ -90,7 +91,10 @@ export function ArticleEditorPage() {
     return (
       <div className="card p-12 text-center space-y-3 max-w-3xl mx-auto">
         <p className="text-gray-400 font-medium">This article is not here</p>
-        <Link to="/articles" className="text-sm text-violet-400 hover:text-violet-300">
+        <Link
+          to="/articles"
+          className="text-sm text-violet-400 hover:text-violet-300"
+        >
           Back to the articles
         </Link>
       </div>
@@ -99,11 +103,21 @@ export function ArticleEditorPage() {
 
   // The server refuses the mutation anyway; without this the form still fills
   // in with somebody else's article and every save fails.
-  if (editing && existing && existing.author && existing.author.id !== user.id) {
+  if (
+    editing &&
+    existing &&
+    existing.author &&
+    existing.author.id !== user.id
+  ) {
     return (
       <div className="card p-12 text-center space-y-3 max-w-3xl mx-auto">
-        <p className="text-gray-400 font-medium">This article is not yours to edit</p>
-        <Link to={articlePath(existing)} className="text-sm text-violet-400 hover:text-violet-300">
+        <p className="text-gray-400 font-medium">
+          This article is not yours to edit
+        </p>
+        <Link
+          to={articlePath(existing)}
+          className="text-sm text-violet-400 hover:text-violet-300"
+        >
           Read it instead
         </Link>
       </div>
@@ -133,7 +147,10 @@ export function ArticleEditorPage() {
       </h1>
 
       <div>
-        <label htmlFor={titleId} className="block text-base font-medium text-gray-400 mb-1.5">
+        <label
+          htmlFor={titleId}
+          className="block text-base font-medium text-gray-400 mb-1.5"
+        >
           Title
         </label>
         <input
@@ -149,7 +166,10 @@ export function ArticleEditorPage() {
 
       <div>
         <div className="flex items-baseline justify-between mb-1.5">
-          <label htmlFor={bodyId} className="block text-base font-medium text-gray-400">
+          <label
+            htmlFor={bodyId}
+            className="block text-base font-medium text-gray-400"
+          >
             Body
           </label>
           <button
@@ -163,7 +183,9 @@ export function ArticleEditorPage() {
         </div>
 
         {previewing ? (
-          <div className={`input-field ${BODY_HEIGHT} text-gray-300 leading-relaxed overflow-y-auto`}>
+          <div
+            className={`input-field ${BODY_HEIGHT} text-gray-300 leading-relaxed overflow-y-auto`}
+          >
             <Markdown>{content}</Markdown>
           </div>
         ) : (
@@ -206,7 +228,11 @@ export function ArticleEditorPage() {
       )}
 
       <div className="flex items-center gap-3">
-        <button type="submit" disabled={saving || !canSubmit} className="btn-primary">
+        <button
+          type="submit"
+          disabled={saving || !canSubmit}
+          className="btn-primary"
+        >
           {saving ? "Saving…" : editing ? "Save changes" : "Publish"}
         </button>
         <Link

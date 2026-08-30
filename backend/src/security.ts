@@ -106,7 +106,9 @@ function documents(req: Request): string[] {
 }
 
 function isRawgOperation(req: Request): boolean {
-  return documents(req).some((doc) => RAWG_FIELDS.some((field) => doc.includes(field)));
+  return documents(req).some((doc) =>
+    RAWG_FIELDS.some((field) => doc.includes(field)),
+  );
 }
 
 function envInt(name: string, fallback: number): number {

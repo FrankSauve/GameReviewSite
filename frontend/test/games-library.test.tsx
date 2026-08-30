@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { MockedProvider, type MockedResponse } from "@apollo/client/testing";
 
@@ -76,14 +82,21 @@ const usersMock = {
 function renderAt(path: string, extra: MockedResponse[] = []) {
   return render(
     <MockedProvider
-      mocks={[pageMock(0), pageMock(1), pageMock(2), facetsMock, usersMock, ...extra]}
+      mocks={[
+        pageMock(0),
+        pageMock(1),
+        pageMock(2),
+        facetsMock,
+        usersMock,
+        ...extra,
+      ]}
     >
       <MemoryRouter initialEntries={[path]}>
         <Routes>
           <Route path="/games" element={<GameLibraryPage />} />
         </Routes>
       </MemoryRouter>
-    </MockedProvider>
+    </MockedProvider>,
   );
 }
 
@@ -123,7 +136,6 @@ describe("the games library page", () => {
     }
   });
 
-
   it("carries the sort in the query into the request", async () => {
     renderAt("/games?sort=TITLE", [listMock({ sort: "TITLE" }, 101)]);
     await waitFor(() => expect(screen.getByText("Game 101")).toBeTruthy());
@@ -137,8 +149,13 @@ describe("the games library page", () => {
   it("sends each filter the URL carries", async () => {
     renderAt("/games?genre=RPG&platform=PC&reviewedBy=alice&reviewed=1", [
       listMock(
-        { genre: "RPG", platform: "PC", reviewedBy: "alice", reviewedOnly: true },
-        201
+        {
+          genre: "RPG",
+          platform: "PC",
+          reviewedBy: "alice",
+          reviewedOnly: true,
+        },
+        201,
       ),
     ]);
     await waitFor(() => expect(screen.getByText("Game 201")).toBeTruthy());
@@ -150,7 +167,11 @@ describe("the games library page", () => {
     const genre = screen.getByLabelText("Genre") as HTMLSelectElement;
     expect([...genre.options].map((o) => o.value)).toEqual(["", "FPS", "RPG"]);
     const platform = screen.getByLabelText("Platform") as HTMLSelectElement;
-    expect([...platform.options].map((o) => o.value)).toEqual(["", "PC", "Switch"]);
+    expect([...platform.options].map((o) => o.value)).toEqual([
+      "",
+      "PC",
+      "Switch",
+    ]);
   });
 
   /**
@@ -160,7 +181,9 @@ describe("the games library page", () => {
   it("returns to page one when a filter changes", async () => {
     renderAt("/games?page=3", [listMock({ genre: "RPG" }, 301)]);
     await waitFor(() => expect(screen.getByText("Game 49")).toBeTruthy());
-    fireEvent.change(screen.getByLabelText("Genre"), { target: { value: "RPG" } });
+    fireEvent.change(screen.getByLabelText("Genre"), {
+      target: { value: "RPG" },
+    });
     await waitFor(() => expect(screen.getByText("Game 301")).toBeTruthy());
   });
 });

@@ -77,7 +77,7 @@ function validateYearPlayed(year: number): number {
   const max = new Date().getFullYear() + 1;
   if (!Number.isInteger(num) || num < YEAR_PLAYED_MIN || num > max)
     throw badInput(
-      `yearPlayed must be a whole year between ${YEAR_PLAYED_MIN} and ${max}.`
+      `yearPlayed must be a whole year between ${YEAR_PLAYED_MIN} and ${max}.`,
     );
   return num;
 }
@@ -91,7 +91,7 @@ function validateHoursPlayed(hours: number): number {
   const num = Number(hours);
   if (!Number.isFinite(num) || num <= 0 || num > HOURS_PLAYED_MAX)
     throw badInput(
-      `hoursPlayed must be greater than 0 and at most ${HOURS_PLAYED_MAX}.`
+      `hoursPlayed must be greater than 0 and at most ${HOURS_PLAYED_MAX}.`,
     );
   return Math.round(num * 10) / 10;
 }
@@ -135,7 +135,11 @@ export const reviewResolvers = {
       return review ? serializeDates(review) : null;
     },
 
-    recentReviews: async (_parent: unknown, args: PageArgs, { budget }: Context) => {
+    recentReviews: async (
+      _parent: unknown,
+      args: PageArgs,
+      { budget }: Context,
+    ) => {
       const { take, skip } = clampWindow(args, LIST_BOUNDS.recentReviews);
       const reviews = await prisma.review.findMany({
         orderBy: { createdAt: "desc" },
@@ -152,7 +156,7 @@ export const reviewResolvers = {
     reviewsByGame: async (
       _parent: unknown,
       { gameId, ...args }: { gameId: string } & PageArgs,
-      { budget }: Context
+      { budget }: Context,
     ) => {
       const { take, skip } = clampWindow(args, LIST_BOUNDS.reviews);
       const reviews = await prisma.review.findMany({
@@ -167,7 +171,7 @@ export const reviewResolvers = {
     reviewsByUser: async (
       _parent: unknown,
       { userId, ...args }: { userId: string } & PageArgs,
-      { budget }: Context
+      { budget }: Context,
     ) => {
       const { take, skip } = clampWindow(args, LIST_BOUNDS.reviews);
       const reviews = await prisma.review.findMany({
@@ -199,7 +203,7 @@ export const reviewResolvers = {
         order = "RECENT",
         ...args
       }: { userId: string; order?: ReviewOrder } & PageArgs,
-      { budget }: Context
+      { budget }: Context,
     ) => {
       const { take, skip } = clampWindow(args, LIST_BOUNDS.reviewSummaries);
       const reviews = await prisma.review.findMany({
@@ -216,26 +220,29 @@ export const reviewResolvers = {
     createReview: async (
       _parent: unknown,
       { input }: { input: CreateReviewInput },
-      context: Context
+      context: Context,
     ) => {
       const authUser = requireAuth(context);
 
-      const game = await prisma.game.findUnique({ where: { id: input.gameId } });
+      const game = await prisma.game.findUnique({
+        where: { id: input.gameId },
+      });
       if (!game)
-        throw new GraphQLError("Game not found.", { extensions: { code: "NOT_FOUND" } });
+        throw new GraphQLError("Game not found.", {
+          extensions: { code: "NOT_FOUND" },
+        });
 
       const existing = await prisma.review.findFirst({
         where: { userId: authUser.id, gameId: input.gameId },
       });
-      if (existing)
-        throw badInput("You have already reviewed this game.");
+      if (existing) throw badInput("You have already reviewed this game.");
 
       const review = await prisma.review.create({
         data: {
           slug: await uniqueSlug(
             reviewSlugBase(game.slug, authUser.slug),
             async (candidate) =>
-              (await prisma.review.count({ where: { slug: candidate } })) > 0
+              (await prisma.review.count({ where: { slug: candidate } })) > 0,
           ),
           userId: authUser.id,
           gameId: input.gameId,
@@ -251,28 +258,36 @@ export const reviewResolvers = {
     updateReview: async (
       _parent: unknown,
       { id, input }: { id: string; input: UpdateReviewInput },
-      context: Context
+      context: Context,
     ) => {
       const authUser = requireAuth(context);
       const existing = await requireOwnership(id, authUser.id);
       const data: Partial<
         Pick<Review, "rating" | "content" | "yearPlayed" | "hoursPlayed">
       > = {};
-      if (input.rating !== undefined) data.rating = validateRating(input.rating);
+      if (input.rating !== undefined)
+        data.rating = validateRating(input.rating);
       if (input.content !== undefined)
-        data.content = validateString(input.content, "content", REVIEW_CONTENT_MAX);
+        data.content = validateString(
+          input.content,
+          "content",
+          REVIEW_CONTENT_MAX,
+        );
       if (input.yearPlayed !== undefined)
         data.yearPlayed = validateYearPlayed(input.yearPlayed);
       if (input.hoursPlayed !== undefined)
         data.hoursPlayed = validateHoursPlayed(input.hoursPlayed);
-      const review = await prisma.review.update({ where: { id: existing.id }, data });
+      const review = await prisma.review.update({
+        where: { id: existing.id },
+        data,
+      });
       return serializeDates(review);
     },
 
     deleteReview: async (
       _parent: unknown,
       { id }: { id: string },
-      context: Context
+      context: Context,
     ) => {
       const authUser = requireAuth(context);
       await requireOwnership(id, authUser.id);
@@ -294,8 +309,11 @@ export const reviewResolvers = {
       return game ? serializeDates(game) : null;
     },
 
-    commentCount: async (parent: Review, _args: unknown, { loaders }: Context) =>
-      (await loaders.commentsByReviewId.load(parent.id)).length,
+    commentCount: async (
+      parent: Review,
+      _args: unknown,
+      { loaders }: Context,
+    ) => (await loaders.commentsByReviewId.load(parent.id)).length,
   },
 
   Review: {
@@ -317,23 +335,36 @@ export const reviewResolvers = {
       return game ? serializeDates(game) : null;
     },
 
-    comments: async (parent: Review, args: PageArgs, { loaders, budget }: Context) => {
+    comments: async (
+      parent: Review,
+      args: PageArgs,
+      { loaders, budget }: Context,
+    ) => {
       const comments = await loaders.commentsByReviewId.load(parent.id);
       const page = applyWindow(comments, clampWindow(args, LIST_BOUNDS.nested));
       return budget.charge(page).map(serializeDates);
     },
 
-    commentCount: async (parent: Review, _args: unknown, { loaders }: Context) => {
+    commentCount: async (
+      parent: Review,
+      _args: unknown,
+      { loaders }: Context,
+    ) => {
       const comments = await loaders.commentsByReviewId.load(parent.id);
       return comments.length;
     },
   },
 };
 
-async function requireOwnership(reviewId: string, userId: string): Promise<Review> {
+async function requireOwnership(
+  reviewId: string,
+  userId: string,
+): Promise<Review> {
   const review = await prisma.review.findUnique({ where: { id: reviewId } });
   if (!review)
-    throw new GraphQLError("Review not found.", { extensions: { code: "NOT_FOUND" } });
+    throw new GraphQLError("Review not found.", {
+      extensions: { code: "NOT_FOUND" },
+    });
   if (review.userId !== userId)
     throw new GraphQLError("You can only modify your own reviews.", {
       extensions: { code: "FORBIDDEN" },

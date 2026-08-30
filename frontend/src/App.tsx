@@ -27,7 +27,10 @@ function App() {
                 <Route path="/games/:id" element={<GameDetailPage />} />
                 {/* By year is the default view: a profile reads as a playing
                     history rather than a posting log. */}
-                <Route path="/users/:id" element={<UserProfilePage grouping="year" />} />
+                <Route
+                  path="/users/:id"
+                  element={<UserProfilePage grouping="year" />}
+                />
                 <Route
                   path="/users/:id/by-score"
                   element={<UserProfilePage grouping="score" />}
@@ -51,7 +54,10 @@ function App() {
                 <Route path="/articles" element={<ArticlesPage />} />
                 <Route path="/articles/new" element={<ArticleEditorPage />} />
                 <Route path="/articles/:id" element={<ArticleDetailPage />} />
-                <Route path="/articles/:id/edit" element={<ArticleEditorPage />} />
+                <Route
+                  path="/articles/:id/edit"
+                  element={<ArticleEditorPage />}
+                />
                 {/* Login and registration are handled by authentik, not by
                     this app, so /login and /register no longer exist. */}
                 <Route path="/login" element={<Navigate to="/" replace />} />

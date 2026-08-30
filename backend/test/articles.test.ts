@@ -44,15 +44,17 @@ const RETITLE = `
 
 async function seedArticle(
   username: string,
-  fields: { title: string; slug?: string; publishedAt?: Date | null }
+  fields: { title: string; slug?: string; publishedAt?: Date | null },
 ): Promise<string> {
   const user = await prisma.user.findUniqueOrThrow({ where: { username } });
   const article = await prisma.article.create({
     data: {
       title: fields.title,
-      slug: fields.slug ?? fields.title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+      slug:
+        fields.slug ?? fields.title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
       content: "Body.",
-      publishedAt: fields.publishedAt === undefined ? new Date() : fields.publishedAt,
+      publishedAt:
+        fields.publishedAt === undefined ? new Date() : fields.publishedAt,
       authorId: user.id,
     },
   });
@@ -72,18 +74,33 @@ describe("articles", () => {
   beforeEach(resetDatabase);
 
   it("refuses to write one anonymously", async () => {
-    const res = await publicQuery(app, CREATE, {}, {
-      input: { title: "Our manifesto", content: "We believe things." },
-    });
+    const res = await publicQuery(
+      app,
+      CREATE,
+      {},
+      {
+        input: { title: "Our manifesto", content: "We believe things." },
+      },
+    );
     expect(errorCodes(res)).toContain("UNAUTHENTICATED");
   });
 
   it("writes one, published, with a readable slug", async () => {
     const res = await authedQuery<{
-      createArticle: { slug: string; publishedAt: string | null; author: { username: string } };
-    }>(app, CREATE, ALICE, {}, {
-      input: { title: "Our Manifesto", content: "We believe **things**." },
-    });
+      createArticle: {
+        slug: string;
+        publishedAt: string | null;
+        author: { username: string };
+      };
+    }>(
+      app,
+      CREATE,
+      ALICE,
+      {},
+      {
+        input: { title: "Our Manifesto", content: "We believe **things**." },
+      },
+    );
 
     expect(res.errors).toBeUndefined();
     expect(res.data?.createArticle.slug).toBe("our-manifesto");
@@ -94,11 +111,21 @@ describe("articles", () => {
   });
 
   it("disambiguates a slug that is already taken", async () => {
-    await authedQuery(app, CREATE, ALICE, {}, {
-      input: { title: "Notes", content: "One." },
-    });
+    await authedQuery(
+      app,
+      CREATE,
+      ALICE,
+      {},
+      {
+        input: { title: "Notes", content: "One." },
+      },
+    );
     const res = await authedQuery<{ createArticle: { slug: string } }>(
-      app, CREATE, BOB, {}, { input: { title: "Notes", content: "Two." } }
+      app,
+      CREATE,
+      BOB,
+      {},
+      { input: { title: "Notes", content: "Two." } },
     );
     expect(res.data?.createArticle.slug).toBe("notes-2");
   });
@@ -108,9 +135,10 @@ describe("articles", () => {
     await seedArticle("alice", { title: "Published" });
     await seedArticle("alice", { title: "Draft", publishedAt: null });
 
-    const anon = await publicQuery<{ articles: { title: string }[]; articlesCount: number }>(
-      app, LIST
-    );
+    const anon = await publicQuery<{
+      articles: { title: string }[];
+      articlesCount: number;
+    }>(app, LIST);
 
     expect(anon.data?.articles.map((a) => a.title)).toEqual(["Published"]);
     // The count is the subtler half of the same leak: a total that disagrees
@@ -124,20 +152,33 @@ describe("articles", () => {
     await seedArticle("alice", { title: "Alice draft", publishedAt: null });
     await seedArticle("bob", { title: "Bob draft", publishedAt: null });
 
-    const res = await authedQuery<{ articles: { title: string }[] }>(app, LIST, ALICE);
+    const res = await authedQuery<{ articles: { title: string }[] }>(
+      app,
+      LIST,
+      ALICE,
+    );
 
     expect(res.data?.articles.map((a) => a.title)).toEqual(["Alice draft"]);
   });
 
   it("fetches one by slug and by id", async () => {
     await provisionUser(ALICE);
-    const id = await seedArticle("alice", { title: "Our Manifesto", slug: "our-manifesto" });
+    const id = await seedArticle("alice", {
+      title: "Our Manifesto",
+      slug: "our-manifesto",
+    });
 
     const bySlug = await publicQuery<{ article: { id: string } | null }>(
-      app, ONE, {}, { id: "our-manifesto" }
+      app,
+      ONE,
+      {},
+      { id: "our-manifesto" },
     );
     const byId = await publicQuery<{ article: { slug: string } | null }>(
-      app, ONE, {}, { id }
+      app,
+      ONE,
+      {},
+      { id },
     );
 
     expect(bySlug.data?.article?.id).toBe(id);
@@ -146,10 +187,25 @@ describe("articles", () => {
 
   it("does not serve somebody else's draft by its slug", async () => {
     await provisionUser(ALICE);
-    await seedArticle("alice", { title: "Secret", slug: "secret", publishedAt: null });
+    await seedArticle("alice", {
+      title: "Secret",
+      slug: "secret",
+      publishedAt: null,
+    });
 
-    const anon = await publicQuery<{ article: unknown }>(app, ONE, {}, { id: "secret" });
-    const bob = await authedQuery<{ article: unknown }>(app, ONE, BOB, {}, { id: "secret" });
+    const anon = await publicQuery<{ article: unknown }>(
+      app,
+      ONE,
+      {},
+      { id: "secret" },
+    );
+    const bob = await authedQuery<{ article: unknown }>(
+      app,
+      ONE,
+      BOB,
+      {},
+      { id: "secret" },
+    );
 
     expect(anon.data?.article).toBeNull();
     expect(bob.data?.article).toBeNull();
@@ -178,12 +234,24 @@ describe("articles", () => {
     await provisionUser(ALICE);
     const id = await seedArticle("alice", { title: "Ours" });
 
-    const update = await authedQuery(app, `
+    const update = await authedQuery(
+      app,
+      `
       mutation ($id: ID!) { updateArticle(id: $id, input: { title: "Mine" }) { title } }
-    `, BOB, {}, { id });
-    const remove = await authedQuery(app, `
+    `,
+      BOB,
+      {},
+      { id },
+    );
+    const remove = await authedQuery(
+      app,
+      `
       mutation ($id: ID!) { deleteArticle(id: $id) }
-    `, BOB, {}, { id });
+    `,
+      BOB,
+      {},
+      { id },
+    );
 
     expect(errorCodes(update)).toContain("FORBIDDEN");
     expect(errorCodes(remove)).toContain("FORBIDDEN");
@@ -193,38 +261,68 @@ describe("articles", () => {
   it("publishes a draft without moving an already-published date", async () => {
     await provisionUser(ALICE);
     const published = new Date("2026-01-01T00:00:00.000Z");
-    const id = await seedArticle("alice", { title: "Ours", publishedAt: published });
+    const id = await seedArticle("alice", {
+      title: "Ours",
+      publishedAt: published,
+    });
 
-    await authedQuery(app, `
+    await authedQuery(
+      app,
+      `
       mutation ($id: ID!) { updateArticle(id: $id, input: { published: true }) { id } }
-    `, ALICE, {}, { id });
+    `,
+      ALICE,
+      {},
+      { id },
+    );
 
     // A typo fixed a year later should not send an article back to the top of the
     // index.
-    expect((await prisma.article.findUniqueOrThrow({ where: { id } })).publishedAt)
-      .toEqual(published);
+    expect(
+      (await prisma.article.findUniqueOrThrow({ where: { id } })).publishedAt,
+    ).toEqual(published);
   });
 
   it("unpublishes back to a draft", async () => {
     await provisionUser(ALICE);
     const id = await seedArticle("alice", { title: "Ours" });
 
-    await authedQuery(app, `
+    await authedQuery(
+      app,
+      `
       mutation ($id: ID!) { updateArticle(id: $id, input: { published: false }) { id } }
-    `, ALICE, {}, { id });
+    `,
+      ALICE,
+      {},
+      { id },
+    );
 
-    expect((await prisma.article.findUniqueOrThrow({ where: { id } })).publishedAt).toBeNull();
+    expect(
+      (await prisma.article.findUniqueOrThrow({ where: { id } })).publishedAt,
+    ).toBeNull();
     const anon = await publicQuery<{ articlesCount: number }>(app, LIST);
     expect(anon.data?.articlesCount).toBe(0);
   });
 
   it("refuses an empty title and an over-long body", async () => {
-    const empty = await authedQuery(app, CREATE, ALICE, {}, {
-      input: { title: "   ", content: "Body." },
-    });
-    const huge = await authedQuery(app, CREATE, ALICE, {}, {
-      input: { title: "Long", content: "x".repeat(50001) },
-    });
+    const empty = await authedQuery(
+      app,
+      CREATE,
+      ALICE,
+      {},
+      {
+        input: { title: "   ", content: "Body." },
+      },
+    );
+    const huge = await authedQuery(
+      app,
+      CREATE,
+      ALICE,
+      {},
+      {
+        input: { title: "Long", content: "x".repeat(50001) },
+      },
+    );
 
     expect(empty.errors?.[0]?.message).toContain("title must not be empty");
     expect(huge.errors?.[0]?.message).toContain("at most 50000 characters");
@@ -232,9 +330,15 @@ describe("articles", () => {
 
   it("clamps the page size a caller asks for", async () => {
     await provisionUser(ALICE);
-    for (let n = 0; n < 3; n++) await seedArticle("alice", { title: `Text ${n}` });
+    for (let n = 0; n < 3; n++)
+      await seedArticle("alice", { title: `Text ${n}` });
 
-    const res = await publicQuery<{ articles: unknown[] }>(app, LIST, {}, { limit: 500 });
+    const res = await publicQuery<{ articles: unknown[] }>(
+      app,
+      LIST,
+      {},
+      { limit: 500 },
+    );
 
     expect(res.data?.articles).toHaveLength(3);
   });
@@ -247,7 +351,9 @@ describe("articles", () => {
    */
   it("pages over articles sharing a timestamp without losing or repeating one", async () => {
     await provisionUser(ALICE);
-    const alice = await prisma.user.findUniqueOrThrow({ where: { username: "alice" } });
+    const alice = await prisma.user.findUniqueOrThrow({
+      where: { username: "alice" },
+    });
     const stamp = new Date("2026-01-01T00:00:00.000Z");
     await prisma.article.createMany({
       data: Array.from({ length: 500 }, (_, n) => ({
@@ -266,7 +372,7 @@ describe("articles", () => {
         app,
         LIST,
         {},
-        { limit: 50, offset }
+        { limit: 50, offset },
       );
       for (const article of res.data?.articles ?? []) seen.push(article.slug);
     }
@@ -276,15 +382,21 @@ describe("articles", () => {
 
   it("re-slugs an article that is renamed, and leaves one that is not", async () => {
     await provisionUser(ALICE);
-    const id = await seedArticle("alice", { title: "First Draft", slug: "first-draft" });
-    await seedArticle("alice", { title: "Second Thoughts", slug: "second-thoughts" });
+    const id = await seedArticle("alice", {
+      title: "First Draft",
+      slug: "first-draft",
+    });
+    await seedArticle("alice", {
+      title: "Second Thoughts",
+      slug: "second-thoughts",
+    });
 
     const renamed = await authedQuery<{ updateArticle: { slug: string } }>(
       app,
       RETITLE,
       ALICE,
       {},
-      { id, title: "Our Manifesto" }
+      { id, title: "Our Manifesto" },
     );
     expect(renamed.data?.updateArticle.slug).toBe("our-manifesto");
 
@@ -295,7 +407,7 @@ describe("articles", () => {
       RETITLE,
       ALICE,
       {},
-      { id, title: "Our Manifesto" }
+      { id, title: "Our Manifesto" },
     );
     expect(again.data?.updateArticle.slug).toBe("our-manifesto");
 
@@ -305,7 +417,7 @@ describe("articles", () => {
       RETITLE,
       ALICE,
       {},
-      { id, title: "Second Thoughts" }
+      { id, title: "Second Thoughts" },
     );
     expect(collided.data?.updateArticle.slug).toBe("second-thoughts-2");
   });
@@ -322,7 +434,7 @@ describe("articles", () => {
       }`,
       ALICE,
       {},
-      { id, input: { title: null } }
+      { id, input: { title: null } },
     );
 
     expect(res.errors?.[0]?.message).toBe("title must not be empty.");

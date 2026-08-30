@@ -91,7 +91,11 @@ describe("MarkdownEditor", () => {
   describe("write and preview", () => {
     it("starts on the write tab", () => {
       render(<Harness initial="hello" />);
-      expect(screen.getByRole("tab", { name: "Write" }).getAttribute("aria-selected")).toBe("true");
+      expect(
+        screen
+          .getByRole("tab", { name: "Write" })
+          .getAttribute("aria-selected"),
+      ).toBe("true");
       expect(textarea()).toBeTruthy();
     });
 
@@ -102,7 +106,9 @@ describe("MarkdownEditor", () => {
       expect(screen.getByText("bold").tagName).toBe("STRONG");
       // Rendered through the same component the published review uses, so the
       // spoiler is a real spoiler in the preview too.
-      expect(screen.getByRole("button", { name: "Reveal spoiler" })).toBeTruthy();
+      expect(
+        screen.getByRole("button", { name: "Reveal spoiler" }),
+      ).toBeTruthy();
     });
 
     it("goes back to the text on the write tab", () => {
@@ -114,7 +120,10 @@ describe("MarkdownEditor", () => {
 
     it("cannot preview an empty review", () => {
       render(<Harness />);
-      expect(screen.getByRole("tab", { name: "Preview" })).toHaveProperty("disabled", true);
+      expect(screen.getByRole("tab", { name: "Preview" })).toHaveProperty(
+        "disabled",
+        true,
+      );
     });
 
     it("hides the toolbar while previewing, there being no selection to act on", () => {

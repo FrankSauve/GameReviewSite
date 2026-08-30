@@ -31,10 +31,12 @@ export function ArticlesPage() {
   const requested = parseInt(params.get("page") ?? "1", 10);
   const page = Number.isFinite(requested) && requested > 1 ? requested - 1 : 0;
 
-  const { data, loading } = useQuery<{ articles: Article[]; articlesCount: number }>(
-    GET_ARTICLES,
-    { variables: { limit: PAGE_SIZE, offset: page * PAGE_SIZE } }
-  );
+  const { data, loading } = useQuery<{
+    articles: Article[];
+    articlesCount: number;
+  }>(GET_ARTICLES, {
+    variables: { limit: PAGE_SIZE, offset: page * PAGE_SIZE },
+  });
 
   const articles = data?.articles ?? [];
   const total = data?.articlesCount ?? 0;
@@ -83,7 +85,10 @@ export function ArticlesPage() {
         <>
           <ul className="space-y-3">
             {articles.map((article) => (
-              <li key={article.id} className="card p-5 hover:border-violet-800 transition-colors">
+              <li
+                key={article.id}
+                className="card p-5 hover:border-violet-800 transition-colors"
+              >
                 <Link to={articlePath(article)} className="block space-y-1">
                   <div className="flex items-baseline gap-2">
                     <h2 className="font-bold text-gray-100">{article.title}</h2>
@@ -94,7 +99,8 @@ export function ArticlesPage() {
                     )}
                   </div>
                   <p className="text-xs text-gray-600">
-                    {article.author?.username ?? "unknown"} · {dateLine(article)}
+                    {article.author?.username ?? "unknown"} ·{" "}
+                    {dateLine(article)}
                   </p>
                 </Link>
               </li>
@@ -108,7 +114,6 @@ export function ArticlesPage() {
           />
         </>
       )}
-
     </div>
   );
 }

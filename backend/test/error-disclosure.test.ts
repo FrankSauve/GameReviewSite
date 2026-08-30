@@ -32,7 +32,8 @@ async function appFor(nodeEnv: string): Promise<{
   process.env["OIDC_ISSUER"] = "http://127.0.0.1:1/application/o/gamereviews/";
   process.env["OIDC_CLIENT_ID"] = "gamereviews";
   process.env["OIDC_CLIENT_SECRET"] = "shhh";
-  process.env["OIDC_REDIRECT_URI"] = "https://gamereviews.example.com/auth/callback";
+  process.env["OIDC_REDIRECT_URI"] =
+    "https://gamereviews.example.com/auth/callback";
   const { createApp } = await import("../src/app.js");
   const handle = await createApp();
   return {
@@ -51,7 +52,9 @@ describe("error message disclosure", () => {
 
   it("withholds an internal failure's message in production", async () => {
     // Silence the deliberate server-side log this test provokes.
-    const logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const logged = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
     const { app, stop } = await appFor("production");
 
     const res = await publicQuery(app, INTERNAL_FAILURE);
@@ -80,14 +83,14 @@ describe("error message disclosure", () => {
     // A validation failure: the message is the interface.
     const badField = await publicQuery(app, "{ recentReviews { nope } }");
     expect(badField.errors?.[0]?.extensions?.code).toBe(
-      "GRAPHQL_VALIDATION_FAILED"
+      "GRAPHQL_VALIDATION_FAILED",
     );
     expect(badField.errors?.[0]?.message).not.toBe("Internal server error.");
 
     // An authorization failure likewise.
     const anonWrite = await publicQuery(
       app,
-      'mutation { createGame(input: { title: "x" }) { id } }'
+      'mutation { createGame(input: { title: "x" }) { id } }',
     );
     expect(anonWrite.errors?.[0]?.extensions?.code).toBe("UNAUTHENTICATED");
     expect(anonWrite.errors?.[0]?.message).toMatch(/signed in/i);
@@ -108,7 +111,7 @@ describe("error message disclosure", () => {
     const res = await authedQuery(
       app,
       'mutation { createGame(input: { title: "   " }) { id } }',
-      ALICE
+      ALICE,
     );
 
     expect(res.errors?.[0]?.extensions?.code).toBe("BAD_USER_INPUT");

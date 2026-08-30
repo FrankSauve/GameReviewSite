@@ -22,17 +22,19 @@ export function Navbar() {
         {/* Logo */}
         <Link
           to="/"
-          onClick={e => { if (location.pathname === "/") { e.preventDefault(); void apollo.refetchQueries({ include: "active" }); } }}
+          onClick={(e) => {
+            if (location.pathname === "/") {
+              e.preventDefault();
+              void apollo.refetchQueries({ include: "active" });
+            }
+          }}
           className="flex items-center gap-2 font-extrabold text-lg text-gray-100 hover:text-violet-300 transition-colors shrink-0"
         >
           <span className="hidden sm:block">GameReviews</span>
         </Link>
 
         {/* Nav links */}
-        <Link
-          to="/games"
-          className={navLink(location.pathname === "/games")}
-        >
+        <Link to="/games" className={navLink(location.pathname === "/games")}>
           Games
         </Link>
         <Link

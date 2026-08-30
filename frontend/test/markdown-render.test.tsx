@@ -23,7 +23,9 @@ afterEach(cleanup);
  */
 describe("Markdown formatting", () => {
   it("renders paragraphs separately", () => {
-    const { container } = render(<Markdown>{"First para.\n\nSecond para."}</Markdown>);
+    const { container } = render(
+      <Markdown>{"First para.\n\nSecond para."}</Markdown>,
+    );
     const paras = container.querySelectorAll("p");
     expect(paras).toHaveLength(2);
     expect(paras[0].textContent).toBe("First para.");
@@ -31,13 +33,17 @@ describe("Markdown formatting", () => {
   });
 
   it("renders bold and italic", () => {
-    const { container } = render(<Markdown>{"**bold** and *italic*"}</Markdown>);
+    const { container } = render(
+      <Markdown>{"**bold** and *italic*"}</Markdown>,
+    );
     expect(container.querySelector("strong")?.textContent).toBe("bold");
     expect(container.querySelector("em")?.textContent).toBe("italic");
   });
 
   it("renders lists", () => {
-    const { container } = render(<Markdown>{"- one\n- two\n- three"}</Markdown>);
+    const { container } = render(
+      <Markdown>{"- one\n- two\n- three"}</Markdown>,
+    );
     expect(container.querySelectorAll("li")).toHaveLength(3);
   });
 
@@ -68,7 +74,7 @@ describe("Markdown formatting", () => {
 describe("Markdown is not an HTML injection point", () => {
   it("does not execute or parse a script tag", () => {
     const { container } = render(
-      <Markdown>{'<script>window.pwned = 1</script>'}</Markdown>
+      <Markdown>{"<script>window.pwned = 1</script>"}</Markdown>,
     );
     expect(container.querySelector("script")).toBeNull();
     expect((window as unknown as { pwned?: number }).pwned).toBeUndefined();
@@ -77,7 +83,7 @@ describe("Markdown is not an HTML injection point", () => {
 
   it("does not create an element from an onerror payload", () => {
     const { container } = render(
-      <Markdown>{'<img src=x onerror="window.pwned = 1">'}</Markdown>
+      <Markdown>{'<img src=x onerror="window.pwned = 1">'}</Markdown>,
     );
     expect(container.querySelector("img")).toBeNull();
     expect((window as unknown as { pwned?: number }).pwned).toBeUndefined();
@@ -85,7 +91,7 @@ describe("Markdown is not an HTML injection point", () => {
 
   it("does not parse inline event handlers on allowed tags", () => {
     const { container } = render(
-      <Markdown>{'<b onmouseover="window.pwned = 1">hover</b>'}</Markdown>
+      <Markdown>{'<b onmouseover="window.pwned = 1">hover</b>'}</Markdown>,
     );
     expect(container.querySelector("b")).toBeNull();
     expect(container.textContent).toContain("hover");
@@ -122,7 +128,9 @@ describe("Markdown element allow-list", () => {
       <Markdown>{"### Verdict\n\n#### Detail\n\n###### Aside"}</Markdown>,
     );
     expect(container.querySelector("h5")?.textContent).toBe("Verdict");
-    const sixes = [...container.querySelectorAll("h6")].map((h) => h.textContent);
+    const sixes = [...container.querySelectorAll("h6")].map(
+      (h) => h.textContent,
+    );
     expect(sixes).toEqual(["Detail", "Aside"]);
   });
 
@@ -134,7 +142,7 @@ describe("Markdown element allow-list", () => {
    */
   it("renders an image as its alt text and never as an img element", () => {
     const { container } = render(
-      <Markdown>{"![a screenshot](https://example.com/s.png)"}</Markdown>
+      <Markdown>{"![a screenshot](https://example.com/s.png)"}</Markdown>,
     );
     expect(container.querySelector("img")).toBeNull();
     expect(container.textContent).toContain("a screenshot");
@@ -142,7 +150,7 @@ describe("Markdown element allow-list", () => {
 
   it("still says something for an image with no alt text", () => {
     const { container } = render(
-      <Markdown>{"![](https://example.com/s.png)"}</Markdown>
+      <Markdown>{"![](https://example.com/s.png)"}</Markdown>,
     );
     expect(container.querySelector("img")).toBeNull();
     expect(container.textContent).toContain("[image]");

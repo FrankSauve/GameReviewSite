@@ -13,7 +13,7 @@ export const RATING_STEP = 0.5;
 /** Every score the picker offers, low to high. */
 export const RATING_VALUES: number[] = Array.from(
   { length: (RATING_MAX - RATING_MIN) / RATING_STEP + 1 },
-  (_, i) => RATING_MIN + i * RATING_STEP
+  (_, i) => RATING_MIN + i * RATING_STEP,
 );
 
 /**

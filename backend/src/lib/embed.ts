@@ -36,7 +36,10 @@ export function escapeHtml(value: string): string {
  * which is the authoritative copy of this rule (#66). Spoilers are redacted rather
  * than unwrapped: an unfurl has no click-to-reveal to hide behind.
  */
-export function embedDescription(markdown: string, limit = DESCRIPTION_MAX): string {
+export function embedDescription(
+  markdown: string,
+  limit = DESCRIPTION_MAX,
+): string {
   // Code is set aside before the spoiler pass so that a `||` typed inside it
   // cannot pair with a real marker, as it cannot in the renderer.
   const code: string[] = [];
@@ -67,7 +70,9 @@ export function embedDescription(markdown: string, limit = DESCRIPTION_MAX): str
   if (text.length <= limit) return text;
   const cut = text.slice(0, limit);
   const lastSpace = cut.lastIndexOf(" ");
-  return (lastSpace > limit * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
+  return (
+    (lastSpace > limit * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…"
+  );
 }
 
 /** `Elden Ring — 9.5/10`. The score belongs in the title because that is the

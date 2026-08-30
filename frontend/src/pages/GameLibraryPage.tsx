@@ -46,7 +46,13 @@ const selectClass =
   "bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-300 px-2 py-1.5 " +
   "focus:outline-none focus:border-violet-700 transition-colors";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="flex items-center gap-1.5 text-xs text-gray-500">
       {label}
@@ -78,7 +84,14 @@ export function GameLibraryPage() {
 
   const { data, loading } = useQuery<{ games: Game[]; gamesCount: number }>(
     GET_GAMES,
-    { variables: { limit: PAGE_SIZE, offset: page * PAGE_SIZE, sort, ...filters } }
+    {
+      variables: {
+        limit: PAGE_SIZE,
+        offset: page * PAGE_SIZE,
+        sort,
+        ...filters,
+      },
+    },
   );
   const { data: facetData } = useQuery<{
     gameFacets: { genres: string[]; platforms: string[] };

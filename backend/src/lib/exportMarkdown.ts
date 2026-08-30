@@ -28,7 +28,10 @@ export interface ExportableReview {
 }
 
 export function formatReview(review: ExportableReview): string {
-  const lines = [`# ${review.gameTitle}`, `**Score:** ${formatScore(review.rating)}`];
+  const lines = [
+    `# ${review.gameTitle}`,
+    `**Score:** ${formatScore(review.rating)}`,
+  ];
   if (review.hoursPlayed != null) {
     lines.push(`**Playtime:** ${formatHoursPlayed(review.hoursPlayed)} hrs`);
   }
@@ -62,7 +65,7 @@ export function exportDirectory(usernameSlug: string): string {
 export function reviewEntryName(
   directory: string,
   gameTitle: string,
-  taken: Set<string>
+  taken: Set<string>,
 ): string {
   const base = slugify(gameTitle, "review");
   let name = `${directory}/${base}.md`;

@@ -17,11 +17,14 @@ export function ProfileBio({ bio, isOwnProfile }: ProfileBioProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
 
-  const [updateProfile, { loading, error, reset }] = useMutation(UPDATE_PROFILE, {
-    onCompleted: () => setEditing(false),
-    // Reported below, so the promise must not also reject unhandled.
-    onError: () => undefined,
-  });
+  const [updateProfile, { loading, error, reset }] = useMutation(
+    UPDATE_PROFILE,
+    {
+      onCompleted: () => setEditing(false),
+      // Reported below, so the promise must not also reject unhandled.
+      onError: () => undefined,
+    },
+  );
 
   const startEditing = () => {
     setDraft(bio ?? "");

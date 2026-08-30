@@ -42,10 +42,13 @@ function base64url(input: Buffer | string): string {
   return Buffer.from(input).toString("base64url");
 }
 
-function signJwt(payload: Record<string, unknown>, privateKey: KeyObject): string {
+function signJwt(
+  payload: Record<string, unknown>,
+  privateKey: KeyObject,
+): string {
   const header = { alg: "RS256", typ: "JWT", kid: KID };
   const signingInput = `${base64url(JSON.stringify(header))}.${base64url(
-    JSON.stringify(payload)
+    JSON.stringify(payload),
   )}`;
   const signer = createSign("RSA-SHA256");
   signer.update(signingInput);
@@ -53,9 +56,11 @@ function signJwt(payload: Record<string, unknown>, privateKey: KeyObject): strin
 }
 
 export async function startStubProvider(
-  redirectUri: string
+  redirectUri: string,
 ): Promise<StubProvider> {
-  const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
+  const { privateKey, publicKey } = generateKeyPairSync("rsa", {
+    modulusLength: 2048,
+  });
   const jwk = publicKey.export({ format: "jwk" });
 
   const clientId = "gamereviews-test-client";
@@ -94,14 +99,18 @@ export async function startStubProvider(
           scopes_supported: ["openid", "profile", "email"],
           token_endpoint_auth_methods_supported: ["client_secret_basic"],
           code_challenge_methods_supported: ["S256"],
-        })
+        }),
       );
       return;
     }
 
     if (url.pathname === "/jwks") {
       res.writeHead(200, { "content-type": "application/json" });
-      res.end(JSON.stringify({ keys: [{ ...jwk, kid: KID, alg: "RS256", use: "sig" }] }));
+      res.end(
+        JSON.stringify({
+          keys: [{ ...jwk, kid: KID, alg: "RS256", use: "sig" }],
+        }),
+      );
       return;
     }
 
@@ -143,7 +152,7 @@ export async function startStubProvider(
             ...(claims.email ? { email: claims.email } : {}),
             ...(claims.name ? { name: claims.name } : {}),
           },
-          privateKey
+          privateKey,
         );
 
         res.writeHead(200, { "content-type": "application/json" });
@@ -153,7 +162,7 @@ export async function startStubProvider(
             token_type: "Bearer",
             expires_in: 300,
             id_token: idToken,
-          })
+          }),
         );
       });
       return;

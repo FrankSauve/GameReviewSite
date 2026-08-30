@@ -37,16 +37,34 @@ import { Spoiler } from "./Spoiler";
  * `img` is listed but renders no `<img>` — see the `img` component below.
  */
 const ALLOWED = [
-  "p", "br", "hr",
+  "p",
+  "br",
+  "hr",
   // Only ever produced by remarkSpoiler; nothing else in this renderer emits one.
   "span",
-  "strong", "em", "del",
-  "ul", "ol", "li",
+  "strong",
+  "em",
+  "del",
+  "ul",
+  "ol",
+  "li",
   "blockquote",
-  "code", "pre",
-  "a", "img",
-  "h1", "h2", "h3", "h4", "h5", "h6",
-  "table", "thead", "tbody", "tr", "th", "td",
+  "code",
+  "pre",
+  "a",
+  "img",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "table",
+  "thead",
+  "tbody",
+  "tr",
+  "th",
+  "td",
 ];
 
 /**
@@ -54,7 +72,9 @@ const ALLOWED = [
  * The cast is the price of a custom node type: `handlers` is keyed on mdast's
  * known node types, and `spoiler` is by definition not one.
  */
-type RemarkRehypeOptions = ComponentProps<typeof ReactMarkdown>["remarkRehypeOptions"];
+type RemarkRehypeOptions = ComponentProps<
+  typeof ReactMarkdown
+>["remarkRehypeOptions"];
 
 const remarkRehypeOptions = {
   handlers: {
@@ -89,12 +109,18 @@ const components: Components = {
     <strong className="font-semibold text-gray-100">{children}</strong>
   ),
   em: ({ children }) => <em className="italic">{children}</em>,
-  del: ({ children }) => <del className="line-through text-gray-500">{children}</del>,
+  del: ({ children }) => (
+    <del className="line-through text-gray-500">{children}</del>
+  ),
   ul: ({ children }) => (
-    <ul className="list-disc list-outside pl-5 mb-3 space-y-1 last:mb-0">{children}</ul>
+    <ul className="list-disc list-outside pl-5 mb-3 space-y-1 last:mb-0">
+      {children}
+    </ul>
   ),
   ol: ({ children }) => (
-    <ol className="list-decimal list-outside pl-5 mb-3 space-y-1 last:mb-0">{children}</ol>
+    <ol className="list-decimal list-outside pl-5 mb-3 space-y-1 last:mb-0">
+      {children}
+    </ol>
   ),
   li: ({ children }) => <li className="leading-relaxed">{children}</li>,
   blockquote: ({ children }) => (

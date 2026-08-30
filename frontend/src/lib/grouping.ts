@@ -42,7 +42,11 @@ function totalHours(items: ReviewSummary[]): number | null {
   return recorded.length ? recorded.reduce((sum, h) => sum + h, 0) : null;
 }
 
-function toGroup(key: string, label: string, items: ReviewSummary[]): ReviewGroup {
+function toGroup(
+  key: string,
+  label: string,
+  items: ReviewSummary[],
+): ReviewGroup {
   return {
     key,
     label,
@@ -81,7 +85,8 @@ export function groupByYear(reviews: ReviewSummary[]): ReviewGroup[] {
     .sort(([a], [b]) => b - a)
     .map(([year, items]) => toGroup(String(year), String(year), items));
 
-  if (unknown.length) groups.push(toGroup(UNKNOWN_KEY, "Year unknown", unknown));
+  if (unknown.length)
+    groups.push(toGroup(UNKNOWN_KEY, "Year unknown", unknown));
   return groups;
 }
 
@@ -103,14 +108,16 @@ export function groupByScore(reviews: ReviewSummary[]): ReviewGroup[] {
 
   return [...byScore.entries()]
     .sort(([a], [b]) => b - a)
-    .map(([score, items]) => toGroup(String(score), formatRating(score), items));
+    .map(([score, items]) =>
+      toGroup(String(score), formatRating(score), items),
+    );
 }
 
 export type Grouping = "year" | "score" | "recent";
 
 export function groupReviews(
   reviews: ReviewSummary[],
-  grouping: Grouping
+  grouping: Grouping,
 ): ReviewGroup[] {
   if (grouping === "year") return groupByYear(reviews);
   if (grouping === "score") return groupByScore(reviews);
@@ -119,7 +126,10 @@ export function groupReviews(
 }
 
 /** The server ordering each grouping needs. */
-export const ORDER_FOR: Record<Grouping, "RECENT" | "RATING_DESC" | "YEAR_DESC"> = {
+export const ORDER_FOR: Record<
+  Grouping,
+  "RECENT" | "RATING_DESC" | "YEAR_DESC"
+> = {
   recent: "RECENT",
   year: "YEAR_DESC",
   score: "RATING_DESC",

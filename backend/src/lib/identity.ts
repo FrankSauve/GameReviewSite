@@ -63,7 +63,8 @@ function conflictsOn(err: unknown, field: string): boolean {
 async function newUserSlug(username: string): Promise<string> {
   return uniqueSlug(
     slugify(username, "user"),
-    async (candidate) => (await prisma.user.count({ where: { slug: candidate } })) > 0
+    async (candidate) =>
+      (await prisma.user.count({ where: { slug: candidate } })) > 0,
   );
 }
 
@@ -82,7 +83,8 @@ export async function provisionUser(identity: Identity): Promise<User> {
 
   if (existing) {
     const drifted =
-      existing.username !== identity.username || existing.email !== identity.email;
+      existing.username !== identity.username ||
+      existing.email !== identity.email;
     if (!drifted) return existing;
 
     try {
@@ -101,7 +103,9 @@ export async function provisionUser(identity: Identity): Promise<User> {
   // Adopt a pre-authentik row with the same email, so accounts that existed
   // before the migration keep their reviews.
   if (identity.email) {
-    const byEmail = await prisma.user.findUnique({ where: { email: identity.email } });
+    const byEmail = await prisma.user.findUnique({
+      where: { email: identity.email },
+    });
     if (byEmail && byEmail.authentikUid === null) {
       return prisma.user.update({
         where: { id: byEmail.id },
@@ -133,7 +137,8 @@ export async function provisionUser(identity: Identity): Promise<User> {
       // uid, say). Retrying would just fail identically.
       if (!usernameClash && !emailClash && !slugClash) throw err;
 
-      if (usernameClash) username = `${identity.username}-${identity.uid.slice(0, 6)}`;
+      if (usernameClash)
+        username = `${identity.username}-${identity.uid.slice(0, 6)}`;
       if (emailClash) email = null;
     }
   }

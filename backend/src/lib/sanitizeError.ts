@@ -24,7 +24,7 @@ const GENERIC_MESSAGE = "Internal server error.";
  * debuggable, and the tests assert against it.
  */
 export function sanitizeError(
-  formatted: GraphQLFormattedError
+  formatted: GraphQLFormattedError,
 ): GraphQLFormattedError {
   const code = formatted.extensions?.["code"];
   const codeString = typeof code === "string" ? code : "INTERNAL_SERVER_ERROR";

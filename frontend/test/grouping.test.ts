@@ -11,7 +11,7 @@ let seq = 0;
 function review(
   rating: number,
   yearPlayed: number | null,
-  hoursPlayed: number | null = 10
+  hoursPlayed: number | null = 10,
 ): ReviewSummary {
   seq += 1;
   return {
@@ -36,7 +36,11 @@ describe("groupByYear", () => {
   });
 
   it("collects several reviews under one year", () => {
-    const groups = groupByYear([review(8, 2020), review(6, 2020), review(9, 2021)]);
+    const groups = groupByYear([
+      review(8, 2020),
+      review(6, 2020),
+      review(9, 2021),
+    ]);
     expect(groups.map((g) => [g.label, g.items.length])).toEqual([
       ["2021", 1],
       ["2020", 2],
@@ -54,8 +58,16 @@ describe("groupByYear", () => {
 
   /** The imported-backlog case: an unknown year must not be filed under this one. */
   it("puts reviews with no year in a trailing group", () => {
-    const groups = groupByYear([review(8, null), review(9, 2024), review(7, 2019)]);
-    expect(groups.map((g) => g.label)).toEqual(["2024", "2019", "Year unknown"]);
+    const groups = groupByYear([
+      review(8, null),
+      review(9, 2024),
+      review(7, 2019),
+    ]);
+    expect(groups.map((g) => g.label)).toEqual([
+      "2024",
+      "2019",
+      "Year unknown",
+    ]);
   });
 
   it("has no unknown group when every review has a year", () => {
@@ -139,8 +151,14 @@ describe("groupReviews", () => {
 
   it("dispatches to the year and score groupings", () => {
     const rows = [review(8, 2015), review(10, 2024)];
-    expect(groupReviews(rows, "year").map((g) => g.label)).toEqual(["2024", "2015"]);
-    expect(groupReviews(rows, "score").map((g) => g.label)).toEqual(["10", "8"]);
+    expect(groupReviews(rows, "year").map((g) => g.label)).toEqual([
+      "2024",
+      "2015",
+    ]);
+    expect(groupReviews(rows, "score").map((g) => g.label)).toEqual([
+      "10",
+      "8",
+    ]);
   });
 });
 

@@ -32,7 +32,10 @@ async function seedReview(options: {
     data: {
       title: options.title,
       slug: slugify(options.title, "game"),
-      coverUrl: options.coverUrl === undefined ? "https://media.rawg.io/cover.jpg" : options.coverUrl,
+      coverUrl:
+        options.coverUrl === undefined
+          ? "https://media.rawg.io/cover.jpg"
+          : options.coverUrl,
     },
   });
   const review = await prisma.review.create({
@@ -52,7 +55,7 @@ async function seedReview(options: {
 /** The `content` of a `<meta>` identified by either attribute name. */
 function meta(html: string, key: string): string | undefined {
   const pattern = new RegExp(
-    `<meta (?:property|name)="${key}" content="([^"]*)">`
+    `<meta (?:property|name)="${key}" content="([^"]*)">`,
   );
   return pattern.exec(html)?.[1];
 }
@@ -91,18 +94,26 @@ describe("review link previews", () => {
   it("points the canonical URL at the slug even when asked for by UUID", async () => {
     const { slug, id } = await seedReview({ title: "Hades" });
 
-    const res = await request(app).get(`/reviews/${id}`).set("Host", "reviews.example.com");
+    const res = await request(app)
+      .get(`/reviews/${id}`)
+      .set("Host", "reviews.example.com");
 
     expect(res.status).toBe(200);
-    expect(meta(res.text, "og:url")).toBe(`http://reviews.example.com/reviews/${slug}`);
+    expect(meta(res.text, "og:url")).toBe(
+      `http://reviews.example.com/reviews/${slug}`,
+    );
   });
 
   it("prefers PUBLIC_ORIGIN over the Host header when it is set", async () => {
     const { slug } = await seedReview({ title: "Hades" });
     process.env["PUBLIC_ORIGIN"] = "https://reviews.example.com/";
     try {
-      const res = await request(app).get(`/reviews/${slug}`).set("Host", "attacker.example");
-      expect(meta(res.text, "og:url")).toBe(`https://reviews.example.com/reviews/${slug}`);
+      const res = await request(app)
+        .get(`/reviews/${slug}`)
+        .set("Host", "attacker.example");
+      expect(meta(res.text, "og:url")).toBe(
+        `https://reviews.example.com/reviews/${slug}`,
+      );
     } finally {
       delete process.env["PUBLIC_ORIGIN"];
     }
@@ -162,7 +173,7 @@ describe("embedDescription", () => {
     // The one place a spoiler is read by someone who did not ask for it: an
     // unfurl has no click-to-reveal to hide behind.
     expect(embedDescription("Then ||the dog dies|| and it ends.")).toBe(
-      "Then [spoiler] and it ends."
+      "Then [spoiler] and it ends.",
     );
   });
 
@@ -170,24 +181,26 @@ describe("embedDescription", () => {
     // The three cases #53 fixed in the frontend copy of this rule. Each puts a
     // stray `||` before a real spoiler; pairing left to right across it prints
     // the hidden text instead of redacting it.
-    expect(embedDescription("The check is `a || b`. Then ||the dog dies|| ends it.")).toBe(
-      "The check is a || b. Then [spoiler] ends it."
-    );
+    expect(
+      embedDescription("The check is `a || b`. Then ||the dog dies|| ends it."),
+    ).toBe("The check is a || b. Then [spoiler] ends it.");
     expect(embedDescription("```\nx || y\n```\nAnd ||he was dead||.")).toBe(
-      "x || y And [spoiler]."
+      "x || y And [spoiler].",
     );
   });
 
   it("does not pair a spoiler marker across a blank line", () => {
     expect(
-      embedDescription("A row: || not a spoiler\n\nThen ||she is the killer|| at the end.")
+      embedDescription(
+        "A row: || not a spoiler\n\nThen ||she is the killer|| at the end.",
+      ),
     ).toBe("A row: || not a spoiler Then [spoiler] at the end.");
   });
 
   it("strips markdown down to one line", () => {
-    expect(embedDescription("# Title\n\n**Bold** and [a link](https://x.test).")).toBe(
-      "Title Bold and a link."
-    );
+    expect(
+      embedDescription("# Title\n\n**Bold** and [a link](https://x.test)."),
+    ).toBe("Title Bold and a link.");
   });
 
   it("truncates on a word boundary", () => {
@@ -204,6 +217,8 @@ describe("embedDescription", () => {
 
 describe("escapeHtml", () => {
   it("escapes every character that could end an attribute or open a tag", () => {
-    expect(escapeHtml(`<a href="x">&'`)).toBe("&lt;a href=&quot;x&quot;&gt;&amp;&#39;");
+    expect(escapeHtml(`<a href="x">&'`)).toBe(
+      "&lt;a href=&quot;x&quot;&gt;&amp;&#39;",
+    );
   });
 });

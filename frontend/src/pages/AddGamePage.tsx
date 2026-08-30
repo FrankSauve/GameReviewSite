@@ -6,14 +6,31 @@ import type { Game } from "../types";
 import { gamePath } from "../lib/links";
 
 const GENRES = [
-  "Action", "Action RPG", "Adventure", "Fighting", "Horror",
-  "Platformer", "Puzzle", "Racing", "RPG", "Shooter",
-  "Simulation", "Sports", "Strategy", "Survival",
+  "Action",
+  "Action RPG",
+  "Adventure",
+  "Fighting",
+  "Horror",
+  "Platformer",
+  "Puzzle",
+  "Racing",
+  "RPG",
+  "Shooter",
+  "Simulation",
+  "Sports",
+  "Strategy",
+  "Survival",
 ];
 
 const PLATFORMS = [
-  "PC", "PlayStation 5", "PlayStation 4", "Xbox Series X|S",
-  "Xbox One", "Nintendo Switch", "Mobile", "Multi-platform",
+  "PC",
+  "PlayStation 5",
+  "PlayStation 4",
+  "Xbox Series X|S",
+  "Xbox One",
+  "Nintendo Switch",
+  "Mobile",
+  "Multi-platform",
 ];
 
 export function AddGamePage() {
@@ -26,9 +43,14 @@ export function AddGamePage() {
   const [genres, setGenres] = useState<string[]>([]);
   const [platforms, setPlatforms] = useState<string[]>([]);
 
-  const set = (field: string) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => setForm((f) => ({ ...f, [field]: e.target.value }));
+  const set =
+    (field: string) =>
+    (
+      e: React.ChangeEvent<
+        HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+      >,
+    ) =>
+      setForm((f) => ({ ...f, [field]: e.target.value }));
 
   const [createGame, { loading, error }] = useMutation<{ createGame: Game }>(
     CREATE_GAME,
@@ -37,7 +59,7 @@ export function AddGamePage() {
       // now, and the object form would only match a call with none of them.
       refetchQueries: ["GetGames"],
       onCompleted: (data) => navigate(gamePath(data.createGame)),
-    }
+    },
   );
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -49,7 +71,9 @@ export function AddGamePage() {
           genres,
           platforms,
           description: form.description.trim() || undefined,
-          releaseYear: form.releaseYear ? parseInt(form.releaseYear, 10) : undefined,
+          releaseYear: form.releaseYear
+            ? parseInt(form.releaseYear, 10)
+            : undefined,
         },
       },
     });
@@ -150,8 +174,18 @@ export function AddGamePage() {
 
 function BackIcon() {
   return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 19l-7-7 7-7"
+      />
     </svg>
   );
 }
@@ -184,7 +218,9 @@ function ChipSelect({
   return (
     <div>
       <div className="flex items-baseline justify-between mb-1.5">
-        <label className="block text-sm font-medium text-gray-400">{label}</label>
+        <label className="block text-sm font-medium text-gray-400">
+          {label}
+        </label>
         <span className="text-xs text-gray-600">
           {selected.length}/{MAX_LABELS}
         </span>

@@ -3,13 +3,13 @@
 GameReviews is a confidential OAuth2 client: authorization code flow with PKCE,
 exchanged server-side, turned into a session cookie of its own.
 
-| Path | Served by |
-| ---- | --------- |
-| `/` | frontend — the SPA, readable by anyone |
-| `/graphql` | backend — the whole API; each field decides whether it needs a user |
-| `/auth/login` | backend — starts the flow |
-| `/auth/callback` | backend — receives the code, issues the session |
-| `/auth/logout` | backend — drops the session, then ends authentik's |
+| Path             | Served by                                                           |
+| ---------------- | ------------------------------------------------------------------- |
+| `/`              | frontend — the SPA, readable by anyone                              |
+| `/graphql`       | backend — the whole API; each field decides whether it needs a user |
+| `/auth/login`    | backend — starts the flow                                           |
+| `/auth/callback` | backend — receives the code, issues the session                     |
+| `/auth/logout`   | backend — drops the session, then ends authentik's                  |
 
 ## Prerequisites
 
@@ -22,16 +22,16 @@ exchanged server-side, turned into a session cookie of its own.
 
 **Applications → Providers → Create → OAuth2/OpenID Provider**.
 
-| Field | Value |
-| ----- | ----- |
-| Name | `gamereviews-oidc` |
+| Field              | Value                                        |
+| ------------------ | -------------------------------------------- |
+| Name               | `gamereviews-oidc`                           |
 | Authorization flow | your usual explicit or implicit consent flow |
-| Client type | **Confidential** |
-| Redirect URIs | `https://reviews.example.com/auth/callback` |
+| Client type        | **Confidential**                             |
+| Redirect URIs      | `https://reviews.example.com/auth/callback`  |
 
 Leave the scopes at their defaults. `offline_access` is not needed.
 
-Copy the **Client ID** and **Client secret** from *Protocol settings* — they
+Copy the **Client ID** and **Client secret** from _Protocol settings_ — they
 become `OIDC_CLIENT_ID` and `OIDC_CLIENT_SECRET` in step 4.
 
 Optional: to land back on the site after sign-out, add
@@ -42,10 +42,10 @@ Optional: to land back on the site after sign-out, add
 
 **Applications → Applications → Create**:
 
-| Field | Value |
-| ----- | ----- |
-| Name | `GameReviews` |
-| Slug | `reviews` |
+| Field    | Value              |
+| -------- | ------------------ |
+| Name     | `GameReviews`      |
+| Slug     | `reviews`          |
 | Provider | `gamereviews-oidc` |
 
 The slug appears in the issuer URL needed in step 4.
@@ -58,15 +58,15 @@ as `gamereviews-users`. An unbound user cannot write; they can still read.
 If your authentication flow does not already validate a second factor, add an
 **Authenticator Validation** stage (**Flows and Stages → Stages → Create**):
 
-| Field | Value |
-| ----- | ----- |
-| Device classes | `TOTP`, and `WebAuthn` if you use passkeys or a security key |
-| Not configured action | **Configure** |
-| Configuration stages | your TOTP setup stage (and WebAuthn setup stage) |
-| Last validation threshold | `0` to prompt every login, or e.g. `hours=12` |
+| Field                     | Value                                                        |
+| ------------------------- | ------------------------------------------------------------ |
+| Device classes            | `TOTP`, and `WebAuthn` if you use passkeys or a security key |
+| Not configured action     | **Configure**                                                |
+| Configuration stages      | your TOTP setup stage (and WebAuthn setup stage)             |
+| Last validation threshold | `0` to prompt every login, or e.g. `hours=12`                |
 
-Set **Not configured action** to *Configure*, not *Skip* (which silently allows
-single-factor logins) or *Deny* (which locks out anyone not already enrolled).
+Set **Not configured action** to _Configure_, not _Skip_ (which silently allows
+single-factor logins) or _Deny_ (which locks out anyone not already enrolled).
 
 Bind the stage to your authentication flow (**Flows → your flow → Stage
 Bindings**) after the Password stage and before the User Login stage. This applies
@@ -114,7 +114,7 @@ Two things before you change that file:
   you do not run geoip2, nginx will not load the config at all — delete both `if`
   lines. They also make an otherwise public site readable only from your
   whitelisted countries and your LAN.
-- `location /auth/` must get no proxy-level authentication. Those routes *are* the
+- `location /auth/` must get no proxy-level authentication. Those routes _are_ the
   authentication; `auth_request` in front of them, or of `/graphql`, is a redirect
   loop.
 
@@ -133,18 +133,18 @@ applications, and drop `GAMEREVIEWS_AUTH_PROXY_SECRET` from your `.env`. Leave
 
 ## Troubleshooting
 
-| Symptom | Cause |
-| ------- | ----- |
-| Backend exits at startup complaining about OIDC | One of the four `OIDC_*` values is missing. |
-| `/auth/login` returns 503 | Same, outside production, where it is not fatal. |
-| `/auth/login` returns 502 | Discovery failed — the backend cannot reach `OIDC_ISSUER`, or the slug is wrong. Check with the `curl` in step 4. |
-| authentik says the redirect URI is invalid | `OIDC_REDIRECT_URI` and the provider's entry disagree. |
-| Sign-in ends on a 400 "could not be completed" | Usually a stale tab: the 10-minute transaction cookie expired, or the back button replayed a spent code. Start again from the site; the backend log has the reason. |
-| Signed in, but the navbar still shows **Sign in** | The session cookie is not coming back. The site must be HTTPS (the cookie is `Secure`), and `/graphql` and `/auth/*` must be on the SPA's hostname. |
-| Everything returns 403 | The SPA and API are on different origins. |
-| Signing out leaves you on an authentik error page | `OIDC_POST_LOGOUT_REDIRECT_URI` is not registered as a Redirect URI. |
-| Everyone gets rate limited at once | `TRUST_PROXY_HOPS` does not match the real number of proxies. |
-| A second account appeared as `yourname-a1b2c3` | An unrelated local row already held that username. |
+| Symptom                                           | Cause                                                                                                                                                               |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Backend exits at startup complaining about OIDC   | One of the four `OIDC_*` values is missing.                                                                                                                         |
+| `/auth/login` returns 503                         | Same, outside production, where it is not fatal.                                                                                                                    |
+| `/auth/login` returns 502                         | Discovery failed — the backend cannot reach `OIDC_ISSUER`, or the slug is wrong. Check with the `curl` in step 4.                                                   |
+| authentik says the redirect URI is invalid        | `OIDC_REDIRECT_URI` and the provider's entry disagree.                                                                                                              |
+| Sign-in ends on a 400 "could not be completed"    | Usually a stale tab: the 10-minute transaction cookie expired, or the back button replayed a spent code. Start again from the site; the backend log has the reason. |
+| Signed in, but the navbar still shows **Sign in** | The session cookie is not coming back. The site must be HTTPS (the cookie is `Secure`), and `/graphql` and `/auth/*` must be on the SPA's hostname.                 |
+| Everything returns 403                            | The SPA and API are on different origins.                                                                                                                           |
+| Signing out leaves you on an authentik error page | `OIDC_POST_LOGOUT_REDIRECT_URI` is not registered as a Redirect URI.                                                                                                |
+| Everyone gets rate limited at once                | `TRUST_PROXY_HOPS` does not match the real number of proxies.                                                                                                       |
+| A second account appeared as `yourname-a1b2c3`    | An unrelated local row already held that username.                                                                                                                  |
 
 ## Two lags worth knowing
 

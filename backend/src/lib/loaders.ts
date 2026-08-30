@@ -31,7 +31,11 @@ export interface ReviewStats {
 const NO_STATS: ReviewStats = { count: 0, average: null };
 
 /** Groups rows by a foreign key, truncating each group to the nested ceiling. */
-function groupBy<T>(rows: T[], key: (row: T) => string, ids: readonly string[]): T[][] {
+function groupBy<T>(
+  rows: T[],
+  key: (row: T) => string,
+  ids: readonly string[],
+): T[][] {
   const buckets = new Map<string, T[]>();
   for (const row of rows) {
     const id = key(row);
@@ -48,7 +52,7 @@ function groupBy<T>(rows: T[], key: (row: T) => string, ids: readonly string[]):
 /** Re-orders a findMany result to line up with the keys DataLoader asked for. */
 function alignById<T extends { id: string }>(
   rows: T[],
-  ids: readonly string[]
+  ids: readonly string[],
 ): (T | null)[] {
   const byId = new Map(rows.map((row) => [row.id, row]));
   return ids.map((id) => byId.get(id) ?? null);
@@ -57,12 +61,16 @@ function alignById<T extends { id: string }>(
 export function createLoaders(): Loaders {
   return {
     userById: new DataLoader(async (ids) => {
-      const users = await prisma.user.findMany({ where: { id: { in: [...ids] } } });
+      const users = await prisma.user.findMany({
+        where: { id: { in: [...ids] } },
+      });
       return alignById(users, ids);
     }),
 
     gameById: new DataLoader(async (ids) => {
-      const games = await prisma.game.findMany({ where: { id: { in: [...ids] } } });
+      const games = await prisma.game.findMany({
+        where: { id: { in: [...ids] } },
+      });
       return alignById(games, ids);
     }),
 
@@ -105,8 +113,11 @@ export function createLoaders(): Loaders {
       const byId = new Map(
         grouped.map((g) => [
           g.userId,
-          { count: g._count._all, average: g._avg.rating } satisfies ReviewStats,
-        ])
+          {
+            count: g._count._all,
+            average: g._avg.rating,
+          } satisfies ReviewStats,
+        ]),
       );
       return userIds.map((id) => byId.get(id) ?? NO_STATS);
     }),
@@ -121,8 +132,11 @@ export function createLoaders(): Loaders {
       const byId = new Map(
         grouped.map((g) => [
           g.gameId,
-          { count: g._count._all, average: g._avg.rating } satisfies ReviewStats,
-        ])
+          {
+            count: g._count._all,
+            average: g._avg.rating,
+          } satisfies ReviewStats,
+        ]),
       );
       return gameIds.map((id) => byId.get(id) ?? NO_STATS);
     }),

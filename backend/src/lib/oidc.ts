@@ -65,7 +65,7 @@ export function assertOidcConfig(): void {
       "OIDC is not configured. Set OIDC_ISSUER, OIDC_CLIENT_ID, " +
         "OIDC_CLIENT_SECRET and OIDC_REDIRECT_URI. Without them nobody can " +
         "sign in, because this app is the OAuth2 client — there is no proxy " +
-        "to authenticate on its behalf."
+        "to authenticate on its behalf.",
     );
   }
 }
@@ -84,13 +84,19 @@ export async function getConfiguration(): Promise<oidc.Configuration> {
 
   if (!configPromise) {
     configPromise = oidc
-      .discovery(new URL(settings.issuer), settings.clientId, settings.clientSecret, undefined, {
-        // openid-client 6 refuses plain HTTP by default, which is the right
-        // default and the reason this is conditional rather than absent: the
-        // test suite runs against a stub provider on http://127.0.0.1, and
-        // production must never be allowed to.
-        ...(isProduction() ? {} : { execute: [oidc.allowInsecureRequests] }),
-      })
+      .discovery(
+        new URL(settings.issuer),
+        settings.clientId,
+        settings.clientSecret,
+        undefined,
+        {
+          // openid-client 6 refuses plain HTTP by default, which is the right
+          // default and the reason this is conditional rather than absent: the
+          // test suite runs against a stub provider on http://127.0.0.1, and
+          // production must never be allowed to.
+          ...(isProduction() ? {} : { execute: [oidc.allowInsecureRequests] }),
+        },
+      )
       .catch((err: unknown) => {
         configPromise = null;
         throw err;

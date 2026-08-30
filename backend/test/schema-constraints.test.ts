@@ -30,7 +30,10 @@ describe("database constraints match schema.prisma", () => {
       WHERE table_schema = 'public'
     `;
     const actual = new Map(
-      rows.map((r) => [`${r.table_name}.${r.column_name}`, r.is_nullable === "YES"])
+      rows.map((r) => [
+        `${r.table_name}.${r.column_name}`,
+        r.is_nullable === "YES",
+      ]),
     );
 
     const mismatches: string[] = [];
@@ -50,7 +53,7 @@ describe("database constraints match schema.prisma", () => {
         if (isNullable === field.isRequired) {
           mismatches.push(
             `${key} is ${isNullable ? "nullable" : "NOT NULL"} but schema.prisma ` +
-              `declares it ${field.isRequired ? "required" : "optional"}`
+              `declares it ${field.isRequired ? "required" : "optional"}`,
           );
         }
       }

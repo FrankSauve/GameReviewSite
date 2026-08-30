@@ -22,12 +22,12 @@ reviews, and comment on other people's. Sign-in is delegated to your own
 
 ## Stack
 
-| Layer | Choice |
-| ----- | ------ |
-| Frontend | React, Vite, Tailwind CSS |
-| API | Apollo Server 5 on Express 5, GraphQL |
-| Database | PostgreSQL via Prisma |
-| Auth | authentik over OIDC |
+| Layer      | Choice                                        |
+| ---------- | --------------------------------------------- |
+| Frontend   | React, Vite, Tailwind CSS                     |
+| API        | Apollo Server 5 on Express 5, GraphQL         |
+| Database   | PostgreSQL via Prisma                         |
+| Auth       | authentik over OIDC                           |
 | Deployment | Docker Compose, images from GHCR, behind SWAG |
 
 ## Quick start
@@ -39,9 +39,9 @@ cp .env.example .env      # set RAWG_API_KEY
 docker compose up --build
 ```
 
-| Service | URL |
-| ------- | --- |
-| Frontend | <http://localhost:3000> |
+| Service     | URL                             |
+| ----------- | ------------------------------- |
+| Frontend    | <http://localhost:3000>         |
 | GraphQL API | <http://localhost:4000/graphql> |
 
 There is no identity provider in front of the local stack, so `AUTH_DEV_IDENTITY`
@@ -53,19 +53,19 @@ anonymous visitor. It is ignored whenever `NODE_ENV=production`.
 
 ## Configuration
 
-| Variable | Required | Purpose |
-| -------- | -------- | ------- |
-| `RAWG_API_KEY` | yes | game search |
-| `AUTH_DEV_IDENTITY` | local only | fakes a signed-in user, ignored in production |
-| `OIDC_ISSUER` | production | per-application issuer URL from authentik |
-| `OIDC_CLIENT_ID` | production | |
-| `OIDC_CLIENT_SECRET` | production | |
-| `OIDC_REDIRECT_URI` | production | must match the provider exactly |
-| `OIDC_POST_LOGOUT_REDIRECT_URI` | no | where authentik sends you after sign-out |
-| `SESSION_TTL_HOURS` | no | session lifetime, default 720 |
-| `CORS_ORIGINS` | no | allowed browser origins, empty in production |
-| `TRUST_PROXY_HOPS` | no | proxies in front of the backend, must be exact |
-| `AUTH_RATE_LIMIT_MAX` | no | sign-in attempts per minute per IP, default 20 |
+| Variable                        | Required   | Purpose                                        |
+| ------------------------------- | ---------- | ---------------------------------------------- |
+| `RAWG_API_KEY`                  | yes        | game search                                    |
+| `AUTH_DEV_IDENTITY`             | local only | fakes a signed-in user, ignored in production  |
+| `OIDC_ISSUER`                   | production | per-application issuer URL from authentik      |
+| `OIDC_CLIENT_ID`                | production |                                                |
+| `OIDC_CLIENT_SECRET`            | production |                                                |
+| `OIDC_REDIRECT_URI`             | production | must match the provider exactly                |
+| `OIDC_POST_LOGOUT_REDIRECT_URI` | no         | where authentik sends you after sign-out       |
+| `SESSION_TTL_HOURS`             | no         | session lifetime, default 720                  |
+| `CORS_ORIGINS`                  | no         | allowed browser origins, empty in production   |
+| `TRUST_PROXY_HOPS`              | no         | proxies in front of the backend, must be exact |
+| `AUTH_RATE_LIMIT_MAX`           | no         | sign-in attempts per minute per IP, default 20 |
 
 All values are documented inline in [`.env.example`](.env.example).
 

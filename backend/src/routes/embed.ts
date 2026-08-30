@@ -60,7 +60,9 @@ export function createEmbedRouter(): Router {
       });
 
       if (!review) {
-        res.status(404).send(renderMissingEmbed(`${origin}/reviews/${encodePath(key)}`));
+        res
+          .status(404)
+          .send(renderMissingEmbed(`${origin}/reviews/${encodePath(key)}`));
         return;
       }
 
@@ -72,13 +74,15 @@ export function createEmbedRouter(): Router {
           // the readable URL, the same way the SPA rewrites the address bar.
           url: `${origin}/reviews/${review.slug}`,
           imageUrl: review.game.coverUrl,
-        })
+        }),
       );
     } catch (err: unknown) {
       console.error("Embed render failed:", err);
       // A cached 500 would outlive the fault.
       res.setHeader("Cache-Control", "no-store");
-      res.status(503).send(renderUnavailableEmbed(`${origin}/reviews/${encodePath(key)}`));
+      res
+        .status(503)
+        .send(renderUnavailableEmbed(`${origin}/reviews/${encodePath(key)}`));
     }
   };
 

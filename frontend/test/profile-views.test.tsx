@@ -26,7 +26,7 @@ const summary = (
   id: string,
   rating: number,
   yearPlayed: number | null,
-  title: string
+  title: string,
 ) => ({
   __typename: "ReviewSummary",
   id,
@@ -97,7 +97,10 @@ function renderAt(path: string) {
     >
       <MemoryRouter initialEntries={[path]}>
         <Routes>
-          <Route path="/users/:id" element={<UserProfilePage grouping="year" />} />
+          <Route
+            path="/users/:id"
+            element={<UserProfilePage grouping="year" />}
+          />
           <Route
             path="/users/:id/by-year"
             element={<UserProfilePage grouping="year" />}
@@ -112,7 +115,7 @@ function renderAt(path: string) {
           />
         </Routes>
       </MemoryRouter>
-    </MockedProvider>
+    </MockedProvider>,
   );
 }
 
@@ -132,8 +135,14 @@ async function eventually(assert: () => void): Promise<void> {
 /** Group headings, in the order they appear. */
 async function headings(): Promise<string[]> {
   await waitFor(() => expect(screen.getByText("simon")).toBeTruthy());
-  await waitFor(() => expect(screen.queryAllByRole("heading", { level: 3 }).length).toBeGreaterThan(0));
-  return screen.queryAllByRole("heading", { level: 3 }).map((h) => h.textContent ?? "");
+  await waitFor(() =>
+    expect(
+      screen.queryAllByRole("heading", { level: 3 }).length,
+    ).toBeGreaterThan(0),
+  );
+  return screen
+    .queryAllByRole("heading", { level: 3 })
+    .map((h) => h.textContent ?? "");
 }
 
 describe("profile grouped views", () => {
@@ -170,22 +179,24 @@ describe("profile grouped views", () => {
   it("marks the current view in the tab strip", async () => {
     renderAt(`/users/${USER_ID}/by-score`);
     await eventually(() => {
-      expect(screen.getByRole("link", { current: "page" }).textContent).toBe("By score");
+      expect(screen.getByRole("link", { current: "page" }).textContent).toBe(
+        "By score",
+      );
     });
   });
 
   it("links each tab at its own route", async () => {
     renderAt(`/users/${USER_ID}`);
     await eventually(() => {
-      expect(screen.getByRole("link", { name: "By score" }).getAttribute("href")).toBe(
-        `/users/${USER_SLUG}/by-score`
-      );
-      expect(screen.getByRole("link", { name: "Recent" }).getAttribute("href")).toBe(
-        `/users/${USER_SLUG}/recent`
-      );
-      expect(screen.getByRole("link", { name: "By year" }).getAttribute("href")).toBe(
-        `/users/${USER_SLUG}`
-      );
+      expect(
+        screen.getByRole("link", { name: "By score" }).getAttribute("href"),
+      ).toBe(`/users/${USER_SLUG}/by-score`);
+      expect(
+        screen.getByRole("link", { name: "Recent" }).getAttribute("href"),
+      ).toBe(`/users/${USER_SLUG}/recent`);
+      expect(
+        screen.getByRole("link", { name: "By year" }).getAttribute("href"),
+      ).toBe(`/users/${USER_SLUG}`);
     });
   });
 
@@ -199,11 +210,13 @@ describe("profile grouped views", () => {
     await waitFor(() => expect(screen.getByText(USER_SLUG)).toBeTruthy());
     await waitFor(() =>
       expect(
-        screen.getByRole("link", { current: "page" }).getAttribute("href")
-      ).toBe(`/users/${USER_SLUG}/by-score`)
+        screen.getByRole("link", { current: "page" }).getAttribute("href"),
+      ).toBe(`/users/${USER_SLUG}/by-score`),
     );
     // Still the by-score view, not bounced back to the default.
-    expect(screen.getByRole("link", { current: "page" }).textContent).toBe("By score");
+    expect(screen.getByRole("link", { current: "page" }).textContent).toBe(
+      "By score",
+    );
   });
 
   it("renders no body text, because the query does not fetch one", async () => {
@@ -211,7 +224,7 @@ describe("profile grouped views", () => {
     await headings();
     // Each row links to the review rather than showing an excerpt of it.
     expect(
-      screen.getByText("Best Game").closest("a")?.getAttribute("href")
+      screen.getByText("Best Game").closest("a")?.getAttribute("href"),
     ).toBe(`/reviews/${USER_SLUG}/best-game`);
   });
 });

@@ -15,7 +15,7 @@ import { badInput } from "./badInput.js";
 export function validateString(
   value: string | null | undefined,
   field: string,
-  maxLength: number
+  maxLength: number,
 ): string {
   const trimmed = value?.trim() ?? "";
   if (!trimmed) throw badInput(`${field} must not be empty.`);

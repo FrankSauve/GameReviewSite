@@ -62,8 +62,14 @@ function intOr(value: number | null | undefined, fallback: number): number {
 }
 
 /** Turns caller-supplied paging arguments into a window that cannot exceed `max`. */
-export function clampWindow(args: PageArgs | undefined, bounds: Bounds): ListWindow {
-  const take = Math.min(Math.max(1, intOr(args?.limit, bounds.def)), bounds.max);
+export function clampWindow(
+  args: PageArgs | undefined,
+  bounds: Bounds,
+): ListWindow {
+  const take = Math.min(
+    Math.max(1, intOr(args?.limit, bounds.def)),
+    bounds.max,
+  );
   const skip = Math.max(0, intOr(args?.offset, 0));
   return { take, skip };
 }

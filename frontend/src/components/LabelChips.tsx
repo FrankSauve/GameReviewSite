@@ -26,10 +26,7 @@ export function LabelChips({
         </span>
       ))}
       {hidden > 0 && (
-        <span
-          className={overflowClassName}
-          title={labels.join(", ")}
-        >
+        <span className={overflowClassName} title={labels.join(", ")}>
           +{hidden}
         </span>
       )}

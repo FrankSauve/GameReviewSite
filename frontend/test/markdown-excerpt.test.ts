@@ -27,7 +27,7 @@ describe("toPlainText", () => {
   describe("spoilers", () => {
     it("redacts the hidden text rather than revealing it", () => {
       expect(toPlainText("The killer is ||the butler||.")).toBe(
-        "The killer is [spoiler]."
+        "The killer is [spoiler].",
       );
     });
 
@@ -38,7 +38,9 @@ describe("toPlainText", () => {
     });
 
     it("redacts each of several spoilers", () => {
-      expect(toPlainText("||one|| then ||two||")).toBe("[spoiler] then [spoiler]");
+      expect(toPlainText("||one|| then ||two||")).toBe(
+        "[spoiler] then [spoiler]",
+      );
     });
 
     it("does not redact across two separate spoilers", () => {
@@ -61,12 +63,16 @@ describe("toPlainText", () => {
     });
 
     it("does not pair a marker inside a fenced block with a real one", () => {
-      const out = toPlainText("```\nx || y\n```\n\nEnding: ||the butler did it||");
+      const out = toPlainText(
+        "```\nx || y\n```\n\nEnding: ||the butler did it||",
+      );
       expect(out).toBe("x || y Ending: [spoiler]");
     });
 
     it("does not pair markers across a blank line", () => {
-      const out = toPlainText("Stats: 3 || 4.\n\nThe ending: ||the butler did it||");
+      const out = toPlainText(
+        "Stats: 3 || 4.\n\nThe ending: ||the butler did it||",
+      );
       expect(out).toBe("Stats: 3 || 4. The ending: [spoiler]");
     });
 
@@ -76,7 +82,9 @@ describe("toPlainText", () => {
   });
 
   it("keeps link text and drops the target", () => {
-    expect(toPlainText("see [the wiki](https://example.com/x)")).toBe("see the wiki");
+    expect(toPlainText("see [the wiki](https://example.com/x)")).toBe(
+      "see the wiki",
+    );
   });
 
   it("keeps image alt text and drops the target", () => {
@@ -85,7 +93,7 @@ describe("toPlainText", () => {
 
   it("strips heading, quote and bullet markers", () => {
     expect(toPlainText("## Verdict\n\n> quoted\n\n- one\n- two")).toBe(
-      "Verdict quoted one two"
+      "Verdict quoted one two",
     );
   });
 
@@ -103,11 +111,15 @@ describe("toPlainText", () => {
   });
 
   it("collapses all whitespace to single spaces", () => {
-    expect(toPlainText("one\n\n\ntwo   three\tfour")).toBe("one two three four");
+    expect(toPlainText("one\n\n\ntwo   three\tfour")).toBe(
+      "one two three four",
+    );
   });
 
   it("leaves plain prose untouched", () => {
-    expect(toPlainText("Just an ordinary sentence.")).toBe("Just an ordinary sentence.");
+    expect(toPlainText("Just an ordinary sentence.")).toBe(
+      "Just an ordinary sentence.",
+    );
   });
 });
 

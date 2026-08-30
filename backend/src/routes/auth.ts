@@ -70,7 +70,9 @@ export function safeReturnTo(raw: unknown): string {
  */
 function callbackUrl(req: Request): URL {
   const settings = oidcConfig();
-  const url = new URL(settings?.redirectUri ?? "http://localhost/auth/callback");
+  const url = new URL(
+    settings?.redirectUri ?? "http://localhost/auth/callback",
+  );
 
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(req.query)) {
@@ -126,7 +128,9 @@ function failCallback(res: Response, reason: string, err?: unknown): void {
   res
     .status(400)
     .type("text/plain")
-    .send("Sign-in could not be completed. Please return to the site and try again.");
+    .send(
+      "Sign-in could not be completed. Please return to the site and try again.",
+    );
 }
 
 export function createAuthRouter(secureCookies: boolean): Router {
@@ -139,7 +143,8 @@ export function createAuthRouter(secureCookies: boolean): Router {
     }
 
     try {
-      const { url, state, nonce, codeVerifier } = await createAuthorizationRequest();
+      const { url, state, nonce, codeVerifier } =
+        await createAuthorizationRequest();
       const transaction: Transaction = {
         state,
         nonce,
@@ -147,12 +152,19 @@ export function createAuthRouter(secureCookies: boolean): Router {
         returnTo: safeReturnTo(req.query["returnTo"]),
       };
 
-      res.cookie(TX_COOKIE, JSON.stringify(transaction), txCookieOptions(secureCookies));
+      res.cookie(
+        TX_COOKIE,
+        JSON.stringify(transaction),
+        txCookieOptions(secureCookies),
+      );
       res.redirect(url);
     } catch (err) {
       // Almost always discovery failing because authentik is unreachable.
       console.error("Could not start sign-in:", err);
-      res.status(502).type("text/plain").send("Sign-in is temporarily unavailable.");
+      res
+        .status(502)
+        .type("text/plain")
+        .send("Sign-in is temporarily unavailable.");
     }
   });
 
@@ -163,7 +175,10 @@ export function createAuthRouter(secureCookies: boolean): Router {
     }
 
     const transaction = readTransaction(req);
-    res.clearCookie(TX_COOKIE, { ...txCookieOptions(secureCookies), maxAge: undefined });
+    res.clearCookie(TX_COOKIE, {
+      ...txCookieOptions(secureCookies),
+      maxAge: undefined,
+    });
 
     if (!transaction) {
       failCallback(res, "no usable transaction cookie");
@@ -173,7 +188,10 @@ export function createAuthRouter(secureCookies: boolean): Router {
     // Checked here as well as inside the library so a mismatch is rejected
     // before the code is presented for exchange.
     const returnedState = req.query["state"];
-    if (typeof returnedState !== "string" || !tokensMatch(returnedState, transaction.state)) {
+    if (
+      typeof returnedState !== "string" ||
+      !tokensMatch(returnedState, transaction.state)
+    ) {
       failCallback(res, "state mismatch");
       return;
     }

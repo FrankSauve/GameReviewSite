@@ -40,7 +40,7 @@ describe("review playtime", () => {
     authedQuery(
       app,
       `mutation { createReview(input: { gameId: "${gameId}", rating: 8, content: "c", ${fields} }) { id yearPlayed hoursPlayed } }`,
-      ALICE
+      ALICE,
     );
 
   const thisYear = new Date().getFullYear();
@@ -59,7 +59,7 @@ describe("review playtime", () => {
       const res = await authedQuery(
         app,
         `mutation { createReview(input: { gameId: "${gameId}", rating: 8, content: "c", hoursPlayed: 12 }) { id } }`,
-        ALICE
+        ALICE,
       );
       expect(res.errors?.[0]?.message).toContain("yearPlayed");
       expect(await prisma.review.count()).toBe(0);
@@ -69,7 +69,7 @@ describe("review playtime", () => {
       const res = await authedQuery(
         app,
         `mutation { createReview(input: { gameId: "${gameId}", rating: 8, content: "c", yearPlayed: 2014 }) { id } }`,
-        ALICE
+        ALICE,
       );
       expect(res.errors?.[0]?.message).toContain("hoursPlayed");
       expect(await prisma.review.count()).toBe(0);
@@ -93,7 +93,9 @@ describe("review playtime", () => {
     });
 
     it("refuses a year before the floor", async () => {
-      const res = await create(`yearPlayed: ${YEAR_PLAYED_MIN - 1}, hoursPlayed: 30`);
+      const res = await create(
+        `yearPlayed: ${YEAR_PLAYED_MIN - 1}, hoursPlayed: 30`,
+      );
       expect(res.errors?.[0]?.message).toContain("whole year between");
     });
 
@@ -107,12 +109,16 @@ describe("review playtime", () => {
   describe("hoursPlayed bounds", () => {
     it("accepts a fractional hour count", async () => {
       const res = await create("yearPlayed: 2020, hoursPlayed: 1.25");
-      expect((res.data?.createReview as { hoursPlayed: number }).hoursPlayed).toBe(1.3);
+      expect(
+        (res.data?.createReview as { hoursPlayed: number }).hoursPlayed,
+      ).toBe(1.3);
     });
 
     it("keeps one decimal as given", async () => {
       const res = await create("yearPlayed: 2020, hoursPlayed: 12.5");
-      expect((res.data?.createReview as { hoursPlayed: number }).hoursPlayed).toBe(12.5);
+      expect(
+        (res.data?.createReview as { hoursPlayed: number }).hoursPlayed,
+      ).toBe(12.5);
     });
 
     it("refuses zero, which would mean unplayed", async () => {
@@ -127,7 +133,7 @@ describe("review playtime", () => {
 
     it("refuses an implausible count", async () => {
       const res = await create(
-        `yearPlayed: 2020, hoursPlayed: ${HOURS_PLAYED_MAX + 1}`
+        `yearPlayed: 2020, hoursPlayed: ${HOURS_PLAYED_MAX + 1}`,
       );
       expect(res.errors?.[0]?.message).toContain(`at most ${HOURS_PLAYED_MAX}`);
     });
@@ -144,7 +150,7 @@ describe("review playtime", () => {
       const res = await authedQuery(
         app,
         `mutation { updateReview(id: "${id}", input: { yearPlayed: 2013 }) { yearPlayed hoursPlayed rating } }`,
-        ALICE
+        ALICE,
       );
       expect(res.data?.updateReview).toMatchObject({
         yearPlayed: 2013,
@@ -158,7 +164,7 @@ describe("review playtime", () => {
       const res = await authedQuery(
         app,
         `mutation { updateReview(id: "${id}", input: { hoursPlayed: 62.5 }) { hoursPlayed } }`,
-        ALICE
+        ALICE,
       );
       expect(res.data?.updateReview).toMatchObject({ hoursPlayed: 62.5 });
     });
@@ -168,7 +174,7 @@ describe("review playtime", () => {
       const res = await authedQuery(
         app,
         `mutation { updateReview(id: "${id}", input: { yearPlayed: 1800 }) { yearPlayed } }`,
-        ALICE
+        ALICE,
       );
       expect(res.errors?.[0]?.message).toContain("whole year between");
     });
@@ -178,7 +184,7 @@ describe("review playtime", () => {
       const res = await authedQuery(
         app,
         `mutation { updateReview(id: "${id}", input: { yearPlayed: 2013 }) { yearPlayed } }`,
-        BOB
+        BOB,
       );
       expect(res.errors?.[0]?.extensions?.code).toBe("FORBIDDEN");
     });
@@ -206,15 +212,22 @@ describe("review playtime", () => {
 
       const res = await authedQuery(
         app,
-        `{ review(id: "${review.id}") { yearPlayed hoursPlayed } }`
+        `{ review(id: "${review.id}") { yearPlayed hoursPlayed } }`,
       );
       expect(res.errors).toBeUndefined();
-      expect(res.data?.review).toMatchObject({ yearPlayed: null, hoursPlayed: null });
+      expect(res.data?.review).toMatchObject({
+        yearPlayed: null,
+        hoursPlayed: null,
+      });
     });
 
     it("can be corrected by its author afterwards", async () => {
       const user = await prisma.user.create({
-        data: { authentikUid: ALICE.uid, username: ALICE.username, slug: ALICE.username },
+        data: {
+          authentikUid: ALICE.uid,
+          username: ALICE.username,
+          slug: ALICE.username,
+        },
       });
       const review = await prisma.review.create({
         data: {
@@ -229,7 +242,7 @@ describe("review playtime", () => {
       const res = await authedQuery(
         app,
         `mutation { updateReview(id: "${review.id}", input: { yearPlayed: 2015, hoursPlayed: 8 }) { yearPlayed hoursPlayed } }`,
-        ALICE
+        ALICE,
       );
       expect(res.data?.updateReview).toMatchObject({
         yearPlayed: 2015,
