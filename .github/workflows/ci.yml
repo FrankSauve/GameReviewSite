@@ -40,28 +40,30 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: backend/package-lock.json
+          cache-dependency-path: package-lock.json
 
       # npm ci, not npm install: fails if the lockfile and package.json have
       # drifted, so a dependency bot cannot green a build it did not lock.
-      - run: npm ci
-        working-directory: backend
+      #
+      # At the root, and for the backend's slice only: one lockfile covers every
+      # workspace now, and --workspace keeps the SPA's tree out of this job.
+      - run: |
+          npm ci --workspace @gamereviews/shared \
+                 --workspace game-review-site \
+                 --include-workspace-root
 
-      - run: ./node_modules/.bin/prisma generate
-        working-directory: backend
+      # Consumed as built JS with its own .d.ts, so it compiles before anything
+      # that imports it.
+      - run: npm run build:shared
+
+      - run: npm run db:generate --workspace game-review-site
 
       # Applies the committed migrations, which also proves they are valid SQL.
-      - run: npm run db:migrate
-        working-directory: backend
+      - run: npm run db:migrate --workspace game-review-site
 
       # Guards against a migration that no longer matches schema.prisma.
       - name: Check for schema drift
-        working-directory: backend
-        run: |
-          ./node_modules/.bin/prisma migrate diff \
-            --from-url "$DATABASE_URL" \
-            --to-schema-datamodel prisma/schema.prisma \
-            --exit-code
+        run: npm run db:drift --workspace game-review-site
 
       - run: npm run typecheck
         working-directory: backend
@@ -72,8 +74,9 @@ jobs:
       - run: npm run build
         working-directory: backend
 
+      # One lockfile now, so this audits every workspace at once rather than
+      # per package.
       - name: Audit production dependencies
-        working-directory: backend
         run: npm audit --omit=dev --audit-level=high
 
   frontend:
@@ -86,10 +89,14 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: frontend/package-lock.json
+          cache-dependency-path: package-lock.json
 
-      - run: npm ci
-        working-directory: frontend
+      - run: |
+          npm ci --workspace @gamereviews/shared \
+                 --workspace game-review-site-frontend \
+                 --include-workspace-root
+
+      - run: npm run build:shared
 
       - run: npm run typecheck
         working-directory: frontend
@@ -101,7 +108,6 @@ jobs:
         working-directory: frontend
 
       - name: Audit production dependencies
-        working-directory: frontend
         run: npm audit --omit=dev --audit-level=high
 
   images:
@@ -115,7 +121,8 @@ jobs:
       - name: Build backend image
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
-          context: ./backend
+          context: .
+          file: backend/Dockerfile
           push: false
           load: true
           tags: gamereviews-backend:ci
@@ -125,7 +132,8 @@ jobs:
       - name: Build frontend image
         uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
         with:
-          context: ./frontend
+          context: .
+          file: frontend/Dockerfile
           push: false
           load: true
           tags: gamereviews-frontend:ci

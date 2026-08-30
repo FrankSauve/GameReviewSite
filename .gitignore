@@ -13,6 +13,7 @@ frontend/node_modules/
 # Build output
 backend/dist/
 frontend/dist/
+shared/dist/
 *.tsbuildinfo
 
 # Prisma generated client

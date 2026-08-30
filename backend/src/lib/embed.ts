@@ -5,6 +5,8 @@
  * Pure, so the tags can be tested without a database or a socket.
  */
 
+import { excerpt } from "@gamereviews/shared";
+
 import { formatScore } from "./exportMarkdown.js";
 
 /** Roughly two lines in a Discord embed before it is truncated for us. */
@@ -32,42 +34,12 @@ export function escapeHtml(value: string): string {
 /**
  * A review body reduced to one line of plain text for `og:description`.
  *
- * Must stay in step with `toPlainText`/`excerpt` in frontend/src/lib/markdown.ts,
- * which is the authoritative copy of this rule (#66). Spoilers are redacted rather
- * than unwrapped: an unfurl has no click-to-reveal to hide behind.
+ * The rule itself is @gamereviews/shared's, because the frontend renders card
+ * excerpts from it too and a spoiler that leaks in one leaks in both. Only the
+ * default length is this side's: an unfurl gets about two lines.
  */
 export function embedDescription(markdown: string, limit = DESCRIPTION_MAX): string {
-  // Code is set aside before the spoiler pass so that a `||` typed inside it
-  // cannot pair with a real marker, as it cannot in the renderer.
-  const code: string[] = [];
-  const stash = (body: string) => `\u0000${code.push(body) - 1}\u0000`;
-
-  const text = markdown
-    .replace(/```[^\n]*\n?([\s\S]*?)```/g, (_m, body: string) => stash(body))
-    .replace(/`([^`]+)`/g, (_m, body: string) => stash(body))
-    // Confined to a single block, because the renderer never pairs markers
-    // across a blank line either.
-    .replace(/\|\|(?:(?!\n[ \t]*\n)[\s\S])+?\|\|/g, "[spoiler]")
-    .replace(/\u0000(\d+)\u0000/g, (_m, i: string) => code[Number(i)] ?? "")
-    .replace(/!\[([^\]]*)\]\([^)]*\)/g, "$1")
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
-    .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/__([^_]+)__/g, "$1")
-    .replace(/\*([^*]+)\*/g, "$1")
-    .replace(/_([^_]+)_/g, "$1")
-    .replace(/~~([^~]+)~~/g, "$1")
-    .replace(/^\s{0,3}#{1,6}\s+/gm, "")
-    .replace(/^\s{0,3}>\s?/gm, "")
-    .replace(/^\s{0,3}[-*+]\s+/gm, "")
-    .replace(/^\s{0,3}\d+[.)]\s+/gm, "")
-    .replace(/^\s{0,3}([-*_])\s*(?:\1\s*){2,}$/gm, "")
-    .replace(/\s+/g, " ")
-    .trim();
-
-  if (text.length <= limit) return text;
-  const cut = text.slice(0, limit);
-  const lastSpace = cut.lastIndexOf(" ");
-  return (lastSpace > limit * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
+  return excerpt(markdown, limit);
 }
 
 /** `Elden Ring — 9.5/10 by alice`. The score belongs in the title because that
