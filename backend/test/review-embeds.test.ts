@@ -80,7 +80,7 @@ describe("review link previews", () => {
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toContain("text/html");
-    expect(meta(res.text, "og:title")).toBe("Elden Ring — 9.5/10 by alice");
+    expect(meta(res.text, "og:title")).toBe("Elden Ring — 9.5/10");
     expect(meta(res.text, "og:description")).toBe("Best of its kind.");
     expect(meta(res.text, "og:type")).toBe("article");
     expect(meta(res.text, "og:site_name")).toBe("GameReviews");
