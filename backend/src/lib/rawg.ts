@@ -15,7 +15,7 @@ function getApiKey(): string {
   const key = process.env["RAWG_API_KEY"];
   if (!key || key === "your-rawg-api-key-here") {
     throw new Error(
-      "RAWG_API_KEY is not configured. Get a free key at https://rawg.io/apidocs and add it to backend/.env"
+      "RAWG_API_KEY is not configured. Get a free key at https://rawg.io/apidocs and add it to backend/.env",
     );
   }
   return key;

@@ -25,14 +25,17 @@ export function GameSearchBar() {
 
   const [search, { data, loading: searching }] = useLazyQuery<SearchResult>(
     SEARCH_GAMES_EXTERNAL,
-    { fetchPolicy: "network-only" }
+    { fetchPolicy: "network-only" },
   );
 
-  const [importGame, { loading: importing }] = useMutation<ImportResult>(IMPORT_GAME, {
-    // By name, not by document: GET_GAMES takes paging and filter variables
-    // now, and the object form would only match a call with none of them.
-    refetchQueries: ["GetGames"],
-  });
+  const [importGame, { loading: importing }] = useMutation<ImportResult>(
+    IMPORT_GAME,
+    {
+      // By name, not by document: GET_GAMES takes paging and filter variables
+      // now, and the object form would only match a call with none of them.
+      refetchQueries: ["GetGames"],
+    },
+  );
 
   // Debounced search
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,7 +52,10 @@ export function GameSearchBar() {
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -60,7 +66,10 @@ export function GameSearchBar() {
   // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { setOpen(false); inputRef.current?.blur(); }
+      if (e.key === "Escape") {
+        setOpen(false);
+        inputRef.current?.blur();
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
@@ -87,9 +96,9 @@ export function GameSearchBar() {
         },
       });
       const imported = result.data?.importGame;
-      if (imported) navigate(gamePath(imported));
+      if (imported) void navigate(gamePath(imported));
     },
-    [user, importGame, navigate]
+    [user, importGame, navigate],
   );
 
   const results = data?.searchGamesExternal ?? [];
@@ -162,7 +171,9 @@ export function GameSearchBar() {
                       </p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         {game.releaseYear && (
-                          <span className="text-xs text-gray-500">{game.releaseYear}</span>
+                          <span className="text-xs text-gray-500">
+                            {game.releaseYear}
+                          </span>
                         )}
                         {game.genres?.[0] && (
                           <span className="text-xs bg-violet-900/50 text-violet-400 px-1.5 py-0.5 rounded-full">
@@ -175,8 +186,8 @@ export function GameSearchBar() {
                               game.metacritic >= 75
                                 ? "bg-emerald-900/50 text-emerald-400"
                                 : game.metacritic >= 50
-                                ? "bg-amber-900/50 text-amber-400"
-                                : "bg-red-900/50 text-red-400"
+                                  ? "bg-amber-900/50 text-amber-400"
+                                  : "bg-red-900/50 text-red-400"
                             }`}
                           >
                             {game.metacritic}
@@ -221,16 +232,36 @@ function SearchIcon() {
       stroke="currentColor"
       viewBox="0 0 24 24"
     >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      />
     </svg>
   );
 }
 
 function Spinner() {
   return (
-    <svg className="w-4 h-4 animate-spin text-gray-500" fill="none" viewBox="0 0 24 24">
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+    <svg
+      className="w-4 h-4 animate-spin text-gray-500"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      />
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8v8H4z"
+      />
     </svg>
   );
 }

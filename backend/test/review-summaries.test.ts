@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Express } from "express";
-import { ALICE, authedQuery, publicQuery, resetDatabase, startApp } from "./helpers.js";
+import {
+  ALICE,
+  authedQuery,
+  publicQuery,
+  resetDatabase,
+  startApp,
+} from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
 import { LIST_BOUNDS } from "../src/lib/pagination.js";
 import { REVIEW_CONTENT_MAX } from "../src/resolvers/review.js";
@@ -29,7 +35,11 @@ describe("reviewSummariesByUser", () => {
   /** Reviews described as [rating, yearPlayed | null], newest written last. */
   const seed = async (rows: [number, number | null][]) => {
     const user = await prisma.user.create({
-      data: { authentikUid: ALICE.uid, username: ALICE.username, slug: ALICE.username },
+      data: {
+        authentikUid: ALICE.uid,
+        username: ALICE.username,
+        slug: ALICE.username,
+      },
     });
     userId = user.id;
     // Indexed, not keyed on the row's values: the fixtures deliberately repeat a
@@ -58,7 +68,7 @@ describe("reviewSummariesByUser", () => {
   const query = (args: string, fields = "id rating yearPlayed") =>
     publicQuery<{ reviewSummariesByUser: Record<string, unknown>[] }>(
       app,
-      `{ reviewSummariesByUser(userId: "${userId}", ${args}) { ${fields} } }`
+      `{ reviewSummariesByUser(userId: "${userId}", ${args}) { ${fields} } }`,
     );
 
   it("is readable without an account, like the reviews themselves", async () => {
@@ -112,7 +122,9 @@ describe("reviewSummariesByUser", () => {
       ]);
       const res = await query("order: YEAR_DESC");
       expect(res.data?.reviewSummariesByUser.map((r) => r.yearPlayed)).toEqual([
-        2022, 2015, null,
+        2022,
+        2015,
+        null,
       ]);
     });
 
@@ -123,11 +135,10 @@ describe("reviewSummariesByUser", () => {
       ]);
       const res = await publicQuery<{
         reviewSummariesByUser: { rating: number }[];
-      }>(
-        app,
-        `{ reviewSummariesByUser(userId: "${userId}") { id rating } }`
-      );
-      expect(res.data?.reviewSummariesByUser.map((r) => r.rating)).toEqual([10, 6]);
+      }>(app, `{ reviewSummariesByUser(userId: "${userId}") { id rating } }`);
+      expect(res.data?.reviewSummariesByUser.map((r) => r.rating)).toEqual([
+        10, 6,
+      ]);
     });
 
     /** Ties must not reshuffle between requests. */
@@ -140,7 +151,7 @@ describe("reviewSummariesByUser", () => {
       const first = await query("order: RATING_DESC");
       const second = await query("order: RATING_DESC");
       expect(first.data?.reviewSummariesByUser.map((r) => r.id)).toEqual(
-        second.data?.reviewSummariesByUser.map((r) => r.id)
+        second.data?.reviewSummariesByUser.map((r) => r.id),
       );
     });
   });
@@ -157,15 +168,19 @@ describe("reviewSummariesByUser", () => {
       await seed(Array.from({ length: 120 }, (_, i) => [8, 2010 + (i % 15)]));
       const nested = await publicQuery<{ user: { reviews: unknown[] } }>(
         app,
-        `{ user(id: "${userId}") { reviews { id } } }`
+        `{ user(id: "${userId}") { reviews { id } } }`,
       );
       expect(nested.data?.user.reviews).toHaveLength(LIST_BOUNDS.nested.def);
-      expect(LIST_BOUNDS.reviewSummaries.def).toBeGreaterThan(LIST_BOUNDS.nested.def);
+      expect(LIST_BOUNDS.reviewSummaries.def).toBeGreaterThan(
+        LIST_BOUNDS.nested.def,
+      );
     });
 
     it("clamps a caller asking past the ceiling", async () => {
       await seed(Array.from({ length: 20 }, () => [8, 2020]));
-      const res = await query(`order: RECENT, limit: ${LIST_BOUNDS.reviewSummaries.max + 500}`);
+      const res = await query(
+        `order: RECENT, limit: ${LIST_BOUNDS.reviewSummaries.max + 500}`,
+      );
       expect(res.errors).toBeUndefined();
       expect(res.data?.reviewSummariesByUser).toHaveLength(20);
     });
@@ -177,7 +192,9 @@ describe("reviewSummariesByUser", () => {
         [8, 2022],
       ]);
       const res = await query("order: RATING_DESC, limit: 2, offset: 1");
-      expect(res.data?.reviewSummariesByUser.map((r) => r.rating)).toEqual([9, 8]);
+      expect(res.data?.reviewSummariesByUser.map((r) => r.rating)).toEqual([
+        9, 8,
+      ]);
     });
   });
 
@@ -188,11 +205,13 @@ describe("reviewSummariesByUser", () => {
      */
     it("stays small at the ceiling where full reviews would not", async () => {
       await seed(Array.from({ length: 100 }, (_, i) => [8, 2010 + (i % 10)]));
-      await prisma.review.updateMany({ data: { content: "x".repeat(REVIEW_CONTENT_MAX) } });
+      await prisma.review.updateMany({
+        data: { content: "x".repeat(REVIEW_CONTENT_MAX) },
+      });
 
       const summaries = await query(
         "order: YEAR_DESC",
-        "id rating yearPlayed hoursPlayed commentCount game { id title }"
+        "id rating yearPlayed hoursPlayed commentCount game { id title }",
       );
       const bytes = Buffer.byteLength(JSON.stringify(summaries.data));
       expect(summaries.errors).toBeUndefined();
@@ -202,7 +221,10 @@ describe("reviewSummariesByUser", () => {
 
     it("resolves game and commentCount without a query per row", async () => {
       await seed(Array.from({ length: 50 }, () => [8, 2020]));
-      const res = await query("order: RECENT", "id commentCount game { id title }");
+      const res = await query(
+        "order: RECENT",
+        "id commentCount game { id title }",
+      );
       expect(res.errors).toBeUndefined();
       expect(res.data?.reviewSummariesByUser).toHaveLength(50);
       expect(res.data?.reviewSummariesByUser[0]?.game).toMatchObject({
@@ -217,7 +239,7 @@ describe("reviewSummariesByUser", () => {
     });
     const res = await authedQuery<{ reviewSummariesByUser: unknown[] }>(
       app,
-      `{ reviewSummariesByUser(userId: "${user.id}") { id } }`
+      `{ reviewSummariesByUser(userId: "${user.id}") { id } }`,
     );
     expect(res.data?.reviewSummariesByUser).toEqual([]);
   });

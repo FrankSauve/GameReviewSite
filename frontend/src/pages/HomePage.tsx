@@ -20,7 +20,11 @@ function timeAgo(iso: string): string {
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.floor(hrs / 24);
   if (days < 30) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return new Date(iso).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 function titleGradient(title: string): string {
@@ -32,7 +36,8 @@ function titleGradient(title: string): string {
     "from-amber-900 to-orange-900",
     "from-fuchsia-900 to-purple-900",
   ];
-  const idx = [...title].reduce((a, c) => a + c.charCodeAt(0), 0) % gradients.length;
+  const idx =
+    [...title].reduce((a, c) => a + c.charCodeAt(0), 0) % gradients.length;
   return gradients[idx] ?? gradients[0];
 }
 
@@ -48,7 +53,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
 
   const [createComment, { loading: submitting }] = useMutation(CREATE_COMMENT, {
     onCompleted(data) {
-      setLocalComments(prev => [...prev, data.createComment]);
+      setLocalComments((prev) => [...prev, data.createComment]);
       setNewComment("");
     },
   });
@@ -57,7 +62,9 @@ function ReviewFeedCard({ review }: { review: Review }) {
     e.preventDefault();
     const trimmed = newComment.trim();
     if (!trimmed || submitting) return;
-    createComment({ variables: { input: { reviewId: review.id, content: trimmed } } });
+    void createComment({
+      variables: { input: { reviewId: review.id, content: trimmed } },
+    });
   };
 
   const summary = excerpt(review.content, 220);
@@ -66,7 +73,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
     <article className="card overflow-hidden flex flex-col hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
       {/* Main clickable row */}
       <button
-        onClick={() => navigate(reviewPath(review))}
+        onClick={() => void navigate(reviewPath(review))}
         className="flex gap-0 text-left group w-full"
       >
         {/* Cover art */}
@@ -79,7 +86,9 @@ function ReviewFeedCard({ review }: { review: Review }) {
               loading="lazy"
             />
           ) : (
-            <div className={`w-full h-full bg-gradient-to-b ${titleGradient(game?.title ?? "")} flex items-center justify-center`}>
+            <div
+              className={`w-full h-full bg-gradient-to-b ${titleGradient(game?.title ?? "")} flex items-center justify-center`}
+            >
               <span className="text-3xl opacity-30">🎮</span>
             </div>
           )}
@@ -91,7 +100,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
           <div className="flex flex-wrap items-center gap-2">
             <Link
               to={gamePath(game)}
-              onClick={e => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
               className="font-bold text-gray-100 hover:text-violet-300 transition-colors truncate"
             >
               {game?.title ?? "Unknown Game"}
@@ -103,7 +112,9 @@ function ReviewFeedCard({ review }: { review: Review }) {
 
           {/* Score out of 10 */}
           <div className="flex items-baseline gap-1">
-            <span className={`text-2xl font-extrabold ${ratingColor(review.rating)}`}>
+            <span
+              className={`text-2xl font-extrabold ${ratingColor(review.rating)}`}
+            >
               {formatRating(review.rating)}
             </span>
             <span className="text-sm text-gray-600">/ 10</span>
@@ -121,7 +132,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
             </span>
             <Link
               to={userPath(review.user)}
-              onClick={e => e.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
               className="text-sm font-medium text-violet-400 hover:text-violet-300 transition-colors"
             >
               {review.user?.username ?? "Anonymous"}
@@ -138,15 +149,36 @@ function ReviewFeedCard({ review }: { review: Review }) {
       <div className="px-4 pb-3 border-t border-gray-800/60">
         {/* Toggle button */}
         <button
-          onClick={() => setShowComments(v => !v)}
+          onClick={() => setShowComments((v) => !v)}
           className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-200 transition-colors pt-2.5"
         >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+          <svg
+            className="w-3.5 h-3.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+            />
           </svg>
-          {localComments.length} {localComments.length === 1 ? "comment" : "comments"}
-          <svg className={`w-3 h-3 transition-transform ${showComments ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          {localComments.length}{" "}
+          {localComments.length === 1 ? "comment" : "comments"}
+          <svg
+            className={`w-3 h-3 transition-transform ${showComments ? "rotate-180" : ""}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 9l-7 7-7-7"
+            />
           </svg>
         </button>
 
@@ -155,15 +187,21 @@ function ReviewFeedCard({ review }: { review: Review }) {
             {/* Existing comments */}
             {localComments.length > 0 && (
               <div className="space-y-2 pl-3 border-l-2 border-gray-800">
-                {localComments.map(comment => (
+                {localComments.map((comment) => (
                   <div key={comment.id} className="flex gap-2">
                     <span className="w-5 h-5 rounded-full bg-gradient-to-br from-emerald-700 to-teal-800 flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5">
                       {(comment.user?.username ?? "?").charAt(0).toUpperCase()}
                     </span>
                     <div className="min-w-0">
-                      <span className="text-xs font-semibold text-gray-300">{comment.user?.username ?? "Unknown"}</span>
-                      <span className="text-xs text-gray-600 ml-2">{timeAgo(comment.createdAt)}</span>
-                      <p className="text-xs text-gray-400 mt-0.5">{comment.content}</p>
+                      <span className="text-xs font-semibold text-gray-300">
+                        {comment.user?.username ?? "Unknown"}
+                      </span>
+                      <span className="text-xs text-gray-600 ml-2">
+                        {timeAgo(comment.createdAt)}
+                      </span>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        {comment.content}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -172,14 +210,17 @@ function ReviewFeedCard({ review }: { review: Review }) {
 
             {/* Add comment form (logged-in users only) */}
             {user ? (
-              <form onSubmit={handleSubmitComment} className="flex items-center gap-2 pt-1">
+              <form
+                onSubmit={handleSubmitComment}
+                className="flex items-center gap-2 pt-1"
+              >
                 <span className="w-6 h-6 rounded-full bg-violet-700 flex items-center justify-center text-xs font-bold text-white shrink-0">
                   {user.username.charAt(0).toUpperCase()}
                 </span>
                 <input
                   type="text"
                   value={newComment}
-                  onChange={e => setNewComment(e.target.value)}
+                  onChange={(e) => setNewComment(e.target.value)}
                   placeholder="Add a comment…"
                   maxLength={500}
                   disabled={submitting}
@@ -195,7 +236,13 @@ function ReviewFeedCard({ review }: { review: Review }) {
               </form>
             ) : (
               <p className="text-xs text-gray-600 pt-1 pl-1">
-                <button onClick={() => signIn()} className="text-violet-400 hover:text-violet-300 transition-colors">Sign in</button> to leave a comment.
+                <button
+                  onClick={() => signIn()}
+                  className="text-violet-400 hover:text-violet-300 transition-colors"
+                >
+                  Sign in
+                </button>{" "}
+                to leave a comment.
               </p>
             )}
           </div>
@@ -232,10 +279,13 @@ const PAGE_SIZE = 10;
 export function HomePage() {
   const [page, setPage] = useState(0);
 
-  const { data: reviewsData, loading: reviewsLoading } = useQuery<{ recentReviews: Review[]; recentReviewsCount: number }>(
-    GET_RECENT_REVIEWS,
-    { variables: { limit: PAGE_SIZE, offset: page * PAGE_SIZE }, fetchPolicy: "network-only" }
-  );
+  const { data: reviewsData, loading: reviewsLoading } = useQuery<{
+    recentReviews: Review[];
+    recentReviewsCount: number;
+  }>(GET_RECENT_REVIEWS, {
+    variables: { limit: PAGE_SIZE, offset: page * PAGE_SIZE },
+    fetchPolicy: "network-only",
+  });
 
   const reviews = reviewsData?.recentReviews ?? [];
   const totalReviews = reviewsData?.recentReviewsCount ?? 0;
@@ -243,7 +293,6 @@ export function HomePage() {
 
   return (
     <div className="space-y-10">
-
       {/* ── Recent Reviews ───────────────────────────────────────────── */}
       <section>
         <div className="flex items-center justify-between mb-4">
@@ -263,7 +312,8 @@ export function HomePage() {
             <p className="text-4xl">✍️</p>
             <p className="text-gray-400 font-medium">No reviews yet</p>
             <p className="text-sm text-gray-600">
-              Search for a game in the navbar, then be the first to leave a review.
+              Search for a game in the navbar, then be the first to leave a
+              review.
             </p>
           </div>
         )}
@@ -285,7 +335,6 @@ export function HomePage() {
           </>
         )}
       </section>
-
     </div>
   );
 }

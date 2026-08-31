@@ -37,7 +37,7 @@ export function reviewSlugBase(gameSlug: string, userSlug: string): string {
 
 export async function uniqueSlug(
   base: string,
-  taken: (candidate: string) => Promise<boolean>
+  taken: (candidate: string) => Promise<boolean>,
 ): Promise<string> {
   if (!(await taken(base))) return base;
   for (let n = 2; n <= MAX_SUFFIX_ATTEMPTS; n++) {

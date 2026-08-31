@@ -22,7 +22,9 @@ export const userResolvers = {
   Query: {
     me: async (_parent: unknown, _args: unknown, context: Context) => {
       if (!context.user) return null;
-      const user = await prisma.user.findUnique({ where: { id: context.user.id } });
+      const user = await prisma.user.findUnique({
+        where: { id: context.user.id },
+      });
       return user ? serializeDates(user) : null;
     },
 
@@ -54,7 +56,7 @@ export const userResolvers = {
     updateProfile: async (
       _parent: unknown,
       { input }: { input: UpdateProfileInput },
-      context: Context
+      context: Context,
     ) => {
       const authUser = requireAuth(context);
 
@@ -69,7 +71,10 @@ export const userResolvers = {
         data.bio = trimmed || null;
       }
 
-      const user = await prisma.user.update({ where: { id: authUser.id }, data });
+      const user = await prisma.user.update({
+        where: { id: authUser.id },
+        data,
+      });
       return serializeDates(user);
     },
 
@@ -88,7 +93,11 @@ export const userResolvers = {
     email: (parent: User, _args: unknown, context: Context) =>
       context.user?.id === parent.id ? parent.email : null,
 
-    reviews: async (parent: User, args: PageArgs, { loaders, budget }: Context) => {
+    reviews: async (
+      parent: User,
+      args: PageArgs,
+      { loaders, budget }: Context,
+    ) => {
       const reviews = await loaders.reviewsByUserId.load(parent.id);
       const page = applyWindow(reviews, clampWindow(args, LIST_BOUNDS.nested));
       return budget.charge(page).map(serializeDates);

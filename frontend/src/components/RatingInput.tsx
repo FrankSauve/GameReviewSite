@@ -19,7 +19,11 @@ interface RatingInputProps {
  * unrepresentable rather than merely validated, and the keyboard handling comes
  * for free.
  */
-export function RatingInput({ value, onChange, size = "md" }: RatingInputProps) {
+export function RatingInput({
+  value,
+  onChange,
+  size = "md",
+}: RatingInputProps) {
   const id = useId();
   const readout = size === "md" ? "text-4xl" : "text-2xl";
 
@@ -45,7 +49,9 @@ export function RatingInput({ value, onChange, size = "md" }: RatingInputProps) 
       </div>
 
       <div className="flex items-baseline gap-1 shrink-0 w-20 justify-end">
-        <span className={`${readout} font-extrabold tabular-nums ${ratingColor(value)}`}>
+        <span
+          className={`${readout} font-extrabold tabular-nums ${ratingColor(value)}`}
+        >
           {formatRating(value)}
         </span>
         <span className="text-sm text-gray-600">/ {RATING_MAX}</span>

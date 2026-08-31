@@ -39,13 +39,15 @@ describe("rating scale", () => {
     authedQuery(
       app,
       `mutation { createReview(input: { gameId: "${gameId}", rating: ${rating}, content: "c", ${PLAYTIME_INPUT} }) { id rating } }`,
-      ALICE
+      ALICE,
     );
 
   it.each(["1", "1.5", "5", "9.5", "10"])("accepts %s", async (rating) => {
     const res = await create(rating);
     expect(res.errors).toBeUndefined();
-    expect((res.data?.createReview as { rating: number }).rating).toBe(Number(rating));
+    expect((res.data?.createReview as { rating: number }).rating).toBe(
+      Number(rating),
+    );
   });
 
   it.each(["9.4", "9.1", "8.25"])("refuses %s", async (rating) => {
@@ -60,7 +62,7 @@ describe("rating scale", () => {
       const res = await create(rating);
       expect(res.errors?.[0]?.message).toContain("between 1 and 10");
       expect(await prisma.review.count()).toBe(0);
-    }
+    },
   );
 
   it("stores a half point unchanged rather than rounding it", async () => {
@@ -76,14 +78,14 @@ describe("rating scale", () => {
     const bad = await authedQuery(
       app,
       `mutation { updateReview(id: "${id}", input: { rating: 8.3 }) { id rating } }`,
-      ALICE
+      ALICE,
     );
     expect(bad.errors?.[0]?.message).toContain("whole or half point");
 
     const good = await authedQuery(
       app,
       `mutation { updateReview(id: "${id}", input: { rating: 8.5 }) { id rating } }`,
-      ALICE
+      ALICE,
     );
     expect((good.data?.updateReview as { rating: number }).rating).toBe(8.5);
   });

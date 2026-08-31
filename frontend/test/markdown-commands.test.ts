@@ -12,18 +12,25 @@ function parse(spec: string): Selection {
   const end = spec.indexOf("]");
   if (start !== -1 && end !== -1) {
     return {
-      text: spec.slice(0, start) + spec.slice(start + 1, end) + spec.slice(end + 1),
+      text:
+        spec.slice(0, start) + spec.slice(start + 1, end) + spec.slice(end + 1),
       start,
       end: end - 1,
     };
   }
   const caret = spec.indexOf("|");
-  return { text: spec.slice(0, caret) + spec.slice(caret + 1), start: caret, end: caret };
+  return {
+    text: spec.slice(0, caret) + spec.slice(caret + 1),
+    start: caret,
+    end: caret,
+  };
 }
 
 function show({ text, start, end }: Selection): string {
   if (start === end) return text.slice(0, start) + "|" + text.slice(start);
-  return text.slice(0, start) + "[" + text.slice(start, end) + "]" + text.slice(end);
+  return (
+    text.slice(0, start) + "[" + text.slice(start, end) + "]" + text.slice(end)
+  );
 }
 
 const run = (name: Parameters<typeof applyCommand>[0], spec: string) =>
@@ -128,7 +135,9 @@ describe("applyCommand", () => {
 
   describe("links", () => {
     it("keeps the selection as the label and selects the URL", () => {
-      expect(run("link", "see [the wiki] now")).toBe("see [the wiki]([url]) now");
+      expect(run("link", "see [the wiki] now")).toBe(
+        "see [the wiki]([url]) now",
+      );
     });
 
     it("inserts a whole link when nothing is selected", () => {

@@ -58,5 +58,7 @@ export function excerpt(markdown: string, limit = 180): string {
   if (text.length <= limit) return text;
   const cut = text.slice(0, limit);
   const lastSpace = cut.lastIndexOf(" ");
-  return (lastSpace > limit * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…";
+  return (
+    (lastSpace > limit * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…"
+  );
 }

@@ -26,12 +26,12 @@ interface ReviewPayload {
 async function addGameAs(
   app: Express,
   identity: typeof ALICE,
-  title: string
+  title: string,
 ): Promise<GamePayload> {
   const res = await authedQuery<{ createGame: GamePayload }>(
     app,
     `mutation { createGame(input: { title: "${title}" }) { id slug title } }`,
-    identity
+    identity,
   );
   expect(res.errors).toBeUndefined();
   return res.data!.createGame;
@@ -40,7 +40,7 @@ async function addGameAs(
 async function reviewAs(
   app: Express,
   identity: typeof ALICE,
-  gameId: string
+  gameId: string,
 ): Promise<ReviewPayload> {
   const res = await authedQuery<{ createReview: ReviewPayload }>(
     app,
@@ -49,7 +49,7 @@ async function reviewAs(
          gameId: "${gameId}", rating: 8, content: "Good", ${PLAYTIME_INPUT}
        }) { id slug }
      }`,
-    identity
+    identity,
   );
   expect(res.errors).toBeUndefined();
   return res.data!.createReview;
@@ -71,7 +71,7 @@ describe("slugify", () => {
 
   it("collapses punctuation into single dashes", () => {
     expect(slugify("Marvel's Spider-Man: Miles Morales")).toBe(
-      "marvel-s-spider-man-miles-morales"
+      "marvel-s-spider-man-miles-morales",
     );
   });
 
@@ -119,7 +119,7 @@ describe("readable URLs", () => {
       const game = await addGameAs(app, ALICE, "Elden Ring");
       const res = await publicQuery<{ game: GamePayload | null }>(
         app,
-        `{ game(id: "elden-ring") { id title } }`
+        `{ game(id: "elden-ring") { id title } }`,
       );
       expect(res.data?.game?.id).toBe(game.id);
     });
@@ -129,7 +129,7 @@ describe("readable URLs", () => {
       const game = await addGameAs(app, ALICE, "Elden Ring");
       const res = await publicQuery<{ game: GamePayload | null }>(
         app,
-        `{ game(id: "${game.id}") { slug } }`
+        `{ game(id: "${game.id}") { slug } }`,
       );
       expect(res.data?.game?.slug).toBe("elden-ring");
     });
@@ -137,7 +137,7 @@ describe("readable URLs", () => {
     it("returns null for a slug that belongs to nothing", async () => {
       const res = await publicQuery<{ game: GamePayload | null }>(
         app,
-        `{ game(id: "no-such-game") { id } }`
+        `{ game(id: "no-such-game") { id } }`,
       );
       expect(res.errors).toBeUndefined();
       expect(res.data?.game).toBeNull();
@@ -159,7 +159,7 @@ describe("readable URLs", () => {
       const res = await authedQuery<{ updateGame: GamePayload }>(
         app,
         `mutation { updateGame(id: "${game.id}", input: { title: "Elden Ring" }) { slug title } }`,
-        ALICE
+        ALICE,
       );
       expect(res.data?.updateGame.title).toBe("Elden Ring");
       expect(res.data?.updateGame.slug).toBe("elden-rng");
@@ -176,7 +176,7 @@ describe("readable URLs", () => {
       const alice = await provisionUser(ALICE);
       const res = await publicQuery<{ user: { id: string } | null }>(
         app,
-        `{ user(id: "alice") { id } }`
+        `{ user(id: "alice") { id } }`,
       );
       expect(res.data?.user?.id).toBe(alice.id);
     });
@@ -185,7 +185,7 @@ describe("readable URLs", () => {
       const alice = await provisionUser(ALICE);
       const res = await publicQuery<{ user: { username: string } | null }>(
         app,
-        `{ user(id: "${alice.id}") { username } }`
+        `{ user(id: "${alice.id}") { username } }`,
       );
       expect(res.data?.user?.username).toBe(ALICE.username);
     });
@@ -196,7 +196,10 @@ describe("readable URLs", () => {
      */
     it("keeps the slug when authentik renames the account", async () => {
       const before = await provisionUser(ALICE);
-      const after = await provisionUser({ ...ALICE, username: "alice-renamed" });
+      const after = await provisionUser({
+        ...ALICE,
+        username: "alice-renamed",
+      });
 
       expect(after.id).toBe(before.id);
       expect(after.username).toBe("alice-renamed");
@@ -221,7 +224,7 @@ describe("readable URLs", () => {
 
       const res = await publicQuery<{ user: { id: string } | null }>(
         app,
-        `{ user(id: "alice") { id } }`
+        `{ user(id: "alice") { id } }`,
       );
       expect(res.data?.user?.id).toBe(alice.id);
     });
@@ -237,7 +240,7 @@ describe("readable URLs", () => {
 
       const res = await publicQuery<{ reviewSummariesByUser: ReviewPayload[] }>(
         app,
-        `{ reviewSummariesByUser(userId: "alice") { slug } }`
+        `{ reviewSummariesByUser(userId: "alice") { slug } }`,
       );
       expect(res.errors).toBeUndefined();
       expect(res.data?.reviewSummariesByUser).toHaveLength(1);
@@ -257,7 +260,7 @@ describe("readable URLs", () => {
       const review = await reviewAs(app, ALICE, game.id);
       const res = await publicQuery<{ review: ReviewPayload | null }>(
         app,
-        `{ review(id: "alice/elden-ring") { id } }`
+        `{ review(id: "alice/elden-ring") { id } }`,
       );
       expect(res.data?.review?.id).toBe(review.id);
     });
@@ -267,7 +270,7 @@ describe("readable URLs", () => {
       const review = await reviewAs(app, ALICE, game.id);
       const res = await publicQuery<{ review: ReviewPayload | null }>(
         app,
-        `{ review(id: "${review.id}") { slug } }`
+        `{ review(id: "${review.id}") { slug } }`,
       );
       expect(res.data?.review?.slug).toBe("alice/elden-ring");
     });
@@ -285,7 +288,7 @@ describe("readable URLs", () => {
       await reviewAs(app, ALICE, game.id);
       const res = await publicQuery<{ reviewsByGame: ReviewPayload[] }>(
         app,
-        `{ reviewsByGame(gameId: "elden-ring") { slug } }`
+        `{ reviewsByGame(gameId: "elden-ring") { slug } }`,
       );
       expect(res.errors).toBeUndefined();
       expect(res.data?.reviewsByGame).toHaveLength(1);

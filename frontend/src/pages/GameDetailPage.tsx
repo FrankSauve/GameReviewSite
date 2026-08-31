@@ -40,7 +40,9 @@ export function GameDetailPage() {
     );
 
   const reviews = game.reviews ?? [];
-  const hasReviewed = user ? reviews.some((r) => r.user?.id === user.id) : false;
+  const hasReviewed = user
+    ? reviews.some((r) => r.user?.id === user.id)
+    : false;
 
   return (
     <div className="space-y-8 max-w-3xl mx-auto">
@@ -73,7 +75,9 @@ export function GameDetailPage() {
 
         <div className="p-6 space-y-4">
           {!game.coverUrl && (
-            <h1 className="text-3xl font-extrabold text-gray-100">{game.title}</h1>
+            <h1 className="text-3xl font-extrabold text-gray-100">
+              {game.title}
+            </h1>
           )}
 
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -87,13 +91,17 @@ export function GameDetailPage() {
                 className="text-xs font-medium bg-gray-800 text-gray-300 px-2.5 py-1 rounded-full border border-gray-700"
               />
               {game.releaseYear && (
-                <span className="text-sm text-gray-500">{game.releaseYear}</span>
+                <span className="text-sm text-gray-500">
+                  {game.releaseYear}
+                </span>
               )}
             </div>
 
             {game.averageRating != null && (
               <div className="card px-5 py-4 text-center shrink-0">
-                <p className={`text-4xl font-extrabold ${ratingColor(game.averageRating)}`}>
+                <p
+                  className={`text-4xl font-extrabold ${ratingColor(game.averageRating)}`}
+                >
                   {formatRating(game.averageRating)}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">out of 10</p>
@@ -115,7 +123,9 @@ export function GameDetailPage() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-gray-100">
             Reviews{" "}
-            <span className="text-gray-600 font-normal text-base">({reviews.length})</span>
+            <span className="text-gray-600 font-normal text-base">
+              ({reviews.length})
+            </span>
           </h2>
 
           {user && !hasReviewed && !showReviewForm && (
@@ -159,7 +169,9 @@ export function GameDetailPage() {
         {user && hasReviewed && !showReviewForm && (
           <div className="card p-4 mb-4 flex items-center gap-3 border-dashed border-gray-700">
             <span className="text-lg">✅</span>
-            <p className="text-sm text-gray-500">You've already reviewed this game.</p>
+            <p className="text-sm text-gray-500">
+              You've already reviewed this game.
+            </p>
           </div>
         )}
 
@@ -186,9 +198,10 @@ function GameDescription({ description }: { description: string }) {
   const [expanded, setExpanded] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const isLong = description.length > DESCRIPTION_LIMIT;
-  const displayed = isLong && !expanded
-    ? description.slice(0, DESCRIPTION_LIMIT).trimEnd() + "…"
-    : description;
+  const displayed =
+    isLong && !expanded
+      ? description.slice(0, DESCRIPTION_LIMIT).trimEnd() + "…"
+      : description;
 
   return (
     <div className="border-t border-gray-800 pt-4 space-y-2">
@@ -234,16 +247,36 @@ function DetailSkeleton() {
 
 function BackIcon() {
   return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 19l-7-7 7-7"
+      />
     </svg>
   );
 }
 
 function PenIcon() {
   return (
-    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+      />
     </svg>
   );
 }

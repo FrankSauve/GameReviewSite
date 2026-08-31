@@ -22,7 +22,8 @@ const DEFAULT_TTL_HOURS = 720;
 
 export function sessionTtlMs(): number {
   const parsed = parseInt(process.env["SESSION_TTL_HOURS"] ?? "", 10);
-  const hours = Number.isNaN(parsed) || parsed <= 0 ? DEFAULT_TTL_HOURS : parsed;
+  const hours =
+    Number.isNaN(parsed) || parsed <= 0 ? DEFAULT_TTL_HOURS : parsed;
   return hours * 60 * 60 * 1000;
 }
 
@@ -44,7 +45,7 @@ export interface IssuedSession {
  *  leave an orphan row behind. */
 export async function createSession(
   userId: string,
-  idToken: string
+  idToken: string,
 ): Promise<IssuedSession> {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + sessionTtlMs());
@@ -62,7 +63,9 @@ export interface ResolvedSession {
 }
 
 /** Fails closed on a missing, unknown or expired session. The trust boundary. */
-export async function readSession(req: Request): Promise<ResolvedSession | null> {
+export async function readSession(
+  req: Request,
+): Promise<ResolvedSession | null> {
   const token = req.cookies?.[SESSION_COOKIE];
   if (typeof token !== "string" || token.length === 0) return null;
 

@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { MockedProvider } from "@apollo/client/testing";
 
@@ -25,8 +31,19 @@ import { CREATE_ARTICLE } from "../src/graphql/mutations";
  * to find out.
  */
 
-const ME = { __typename: "User", id: "u1", slug: "simon", username: "simon", email: null };
-const OTHER = { __typename: "User", id: "u2", username: "someone-else", email: null };
+const ME = {
+  __typename: "User",
+  id: "u1",
+  slug: "simon",
+  username: "simon",
+  email: null,
+};
+const OTHER = {
+  __typename: "User",
+  id: "u2",
+  username: "someone-else",
+  email: null,
+};
 
 function meMock(user: typeof ME | null) {
   return { request: { query: GET_ME }, result: { data: { me: user } } };
@@ -69,7 +86,7 @@ function renderPage(
   mocks: readonly unknown[],
   path: string,
   routePath: string,
-  element: React.ReactElement
+  element: React.ReactElement,
 ) {
   return render(
     <MockedProvider mocks={mocks as never}>
@@ -80,24 +97,30 @@ function renderPage(
           </Routes>
         </MemoryRouter>
       </AuthProvider>
-    </MockedProvider>
+    </MockedProvider>,
   );
 }
 
 describe("the articles index", () => {
   it("lists what the server returned", async () => {
     renderPage(
-      [meMock(null), indexMock([article(), article({ id: "a2", slug: "notes", title: "Notes" })])],
+      [
+        meMock(null),
+        indexMock([
+          article(),
+          article({ id: "a2", slug: "notes", title: "Notes" }),
+        ]),
+      ],
       "/articles",
       "/articles",
-      <ArticlesPage />
+      <ArticlesPage />,
     );
 
     await waitFor(() => expect(screen.getByText("Our Manifesto")).toBeTruthy());
     expect(screen.getByText("Notes")).toBeTruthy();
-    expect(screen.getByRole("link", { name: /Our Manifesto/ }).getAttribute("href")).toBe(
-      "/articles/our-manifesto"
-    );
+    expect(
+      screen.getByRole("link", { name: /Our Manifesto/ }).getAttribute("href"),
+    ).toBe("/articles/our-manifesto");
   });
 
   it("marks a draft as one", async () => {
@@ -105,28 +128,47 @@ describe("the articles index", () => {
       [meMock(ME), indexMock([article({ publishedAt: null })])],
       "/articles",
       "/articles",
-      <ArticlesPage />
+      <ArticlesPage />,
     );
 
     await waitFor(() => expect(screen.getByText("Draft")).toBeTruthy());
   });
 
   it("offers writing only to someone signed in", async () => {
-    renderPage([meMock(null), indexMock([article()])], "/articles", "/articles", <ArticlesPage />);
+    renderPage(
+      [meMock(null), indexMock([article()])],
+      "/articles",
+      "/articles",
+      <ArticlesPage />,
+    );
     await waitFor(() => expect(screen.getByText("Our Manifesto")).toBeTruthy());
     expect(screen.queryByRole("link", { name: "Write an article" })).toBeNull();
 
     cleanup();
 
-    renderPage([meMock(ME), indexMock([article()])], "/articles", "/articles", <ArticlesPage />);
+    renderPage(
+      [meMock(ME), indexMock([article()])],
+      "/articles",
+      "/articles",
+      <ArticlesPage />,
+    );
     await waitFor(() =>
-      expect(screen.getByRole("link", { name: "Write an article" })).toBeTruthy()
+      expect(
+        screen.getByRole("link", { name: "Write an article" }),
+      ).toBeTruthy(),
     );
   });
 
   it("says so when nothing has been written", async () => {
-    renderPage([meMock(null), indexMock([])], "/articles", "/articles", <ArticlesPage />);
-    await waitFor(() => expect(screen.getByText("Nothing written yet")).toBeTruthy());
+    renderPage(
+      [meMock(null), indexMock([])],
+      "/articles",
+      "/articles",
+      <ArticlesPage />,
+    );
+    await waitFor(() =>
+      expect(screen.getByText("Nothing written yet")).toBeTruthy(),
+    );
   });
 });
 
@@ -136,7 +178,7 @@ describe("one article", () => {
       [meMock(null), detailMock()],
       "/articles/our-manifesto",
       "/articles/:id",
-      <ArticleDetailPage />
+      <ArticleDetailPage />,
     );
 
     await waitFor(() => expect(screen.getByText("Our Manifesto")).toBeTruthy());
@@ -149,10 +191,12 @@ describe("one article", () => {
       [meMock(ME), detailMock()],
       "/articles/our-manifesto",
       "/articles/:id",
-      <ArticleDetailPage />
+      <ArticleDetailPage />,
     );
 
-    await waitFor(() => expect(screen.getByRole("link", { name: "Edit" })).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByRole("link", { name: "Edit" })).toBeTruthy(),
+    );
     expect(screen.getByRole("button", { name: "Delete" })).toBeTruthy();
   });
 
@@ -161,7 +205,7 @@ describe("one article", () => {
       [meMock(ME), detailMock({ author: OTHER })],
       "/articles/our-manifesto",
       "/articles/:id",
-      <ArticleDetailPage />
+      <ArticleDetailPage />,
     );
 
     await waitFor(() => expect(screen.getByText("Our Manifesto")).toBeTruthy());
@@ -180,18 +224,27 @@ describe("one article", () => {
       ],
       "/articles/gone",
       "/articles/:id",
-      <ArticleDetailPage />
+      <ArticleDetailPage />,
     );
 
-    await waitFor(() => expect(screen.getByText("This article is not here")).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByText("This article is not here")).toBeTruthy(),
+    );
   });
 });
 
 describe("writing an article", () => {
   it("asks an anonymous visitor to sign in rather than showing the form", async () => {
-    renderPage([meMock(null)], "/articles/new", "/articles/new", <ArticleEditorPage />);
+    renderPage(
+      [meMock(null)],
+      "/articles/new",
+      "/articles/new",
+      <ArticleEditorPage />,
+    );
 
-    await waitFor(() => expect(screen.getByText("to write an article.")).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByText("to write an article.")).toBeTruthy(),
+    );
     expect(screen.queryByLabelText("Title")).toBeNull();
   });
 
@@ -200,11 +253,13 @@ describe("writing an article", () => {
       [meMock(ME), detailMock({ author: OTHER })],
       "/articles/our-manifesto/edit",
       "/articles/:id/edit",
-      <ArticleEditorPage />
+      <ArticleEditorPage />,
     );
 
     await waitFor(() =>
-      expect(screen.getByText("This article is not yours to edit")).toBeTruthy()
+      expect(
+        screen.getByText("This article is not yours to edit"),
+      ).toBeTruthy(),
     );
     expect(screen.queryByLabelText("Title")).toBeNull();
   });
@@ -214,7 +269,11 @@ describe("writing an article", () => {
       request: {
         query: CREATE_ARTICLE,
         variables: {
-          input: { title: "Our Manifesto", content: "We believe things.", published: true },
+          input: {
+            title: "Our Manifesto",
+            content: "We believe things.",
+            published: true,
+          },
         },
       },
       result: {
@@ -244,7 +303,7 @@ describe("writing an article", () => {
             </Routes>
           </MemoryRouter>
         </AuthProvider>
-      </MockedProvider>
+      </MockedProvider>,
     );
 
     await waitFor(() => expect(screen.getByLabelText("Title")).toBeTruthy());
@@ -259,11 +318,18 @@ describe("writing an article", () => {
     // The mocked mutation only matches if the variables are exactly those above,
     // so arriving at the detail route is the assertion that the right input was
     // sent as well as that the form works.
-    await waitFor(() => expect(screen.getByText("saved and shown")).toBeTruthy());
+    await waitFor(() =>
+      expect(screen.getByText("saved and shown")).toBeTruthy(),
+    );
   });
 
   it("previews the markdown before it is saved", async () => {
-    renderPage([meMock(ME)], "/articles/new", "/articles/new", <ArticleEditorPage />);
+    renderPage(
+      [meMock(ME)],
+      "/articles/new",
+      "/articles/new",
+      <ArticleEditorPage />,
+    );
 
     await waitFor(() => expect(screen.getByLabelText("Body")).toBeTruthy());
     fireEvent.change(screen.getByLabelText("Body"), {

@@ -29,7 +29,9 @@ interface BuildContextArgs {
  * one, or an expired one is anonymous — an ordinary state, because reviews are
  * public.
  */
-export async function buildContext({ req }: BuildContextArgs): Promise<Context> {
+export async function buildContext({
+  req,
+}: BuildContextArgs): Promise<Context> {
   const loaders = createLoaders();
   const budget = new RowBudget();
 
@@ -38,7 +40,12 @@ export async function buildContext({ req }: BuildContextArgs): Promise<Context> 
   if (dev) {
     const user = await provisionUser(dev);
     return {
-      user: { id: user.id, slug: user.slug, username: user.username, email: user.email },
+      user: {
+        id: user.id,
+        slug: user.slug,
+        username: user.username,
+        email: user.email,
+      },
       loaders,
       budget,
     };

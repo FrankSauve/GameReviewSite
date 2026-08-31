@@ -35,7 +35,9 @@ async function seed(users: number, gamesEach: number, commentsEach: number) {
     });
   }
   for (let g = 0; g < gamesEach; g++) {
-    await prisma.game.create({ data: { title: `Game ${g}`, slug: `game-${g}` } });
+    await prisma.game.create({
+      data: { title: `Game ${g}`, slug: `game-${g}` },
+    });
   }
   const allUsers = await prisma.user.findMany();
   const allGames = await prisma.game.findMany();
@@ -52,7 +54,11 @@ async function seed(users: number, gamesEach: number, commentsEach: number) {
       });
       for (let c = 0; c < commentsEach; c++) {
         await prisma.comment.create({
-          data: { userId: user.id, reviewId: review.id, content: "c".repeat(100) },
+          data: {
+            userId: user.id,
+            reviewId: review.id,
+            content: "c".repeat(100),
+          },
         });
       }
     }
@@ -96,7 +102,7 @@ describe("response size bounds", () => {
     await seed(4, 3, 0);
     const res = await publicQuery<{ reviews: { id: string }[] }>(
       app,
-      "{ reviews(limit: 99999) { id } }"
+      "{ reviews(limit: 99999) { id } }",
     );
     expect(res.errors).toBeUndefined();
     // 12 rows exist; the point is that limit:99999 was not passed to the database.
@@ -107,7 +113,7 @@ describe("response size bounds", () => {
     await seed(6, 10, 0);
     const res = await publicQuery<{ reviews: { id: string }[] }>(
       app,
-      "{ reviews { id } }"
+      "{ reviews { id } }",
     );
     expect(await prisma.review.count()).toBe(60);
     expect(res.data?.reviews).toHaveLength(50);
@@ -126,7 +132,7 @@ describe("response size bounds", () => {
     await seed(1, 1, 60);
     const res = await publicQuery<{ reviews: { commentCount: number }[] }>(
       app,
-      "{ reviews { commentCount } }"
+      "{ reviews { commentCount } }",
     );
     expect(res.data?.reviews[0]?.commentCount).toBe(60);
   });
@@ -140,7 +146,7 @@ describe("response size bounds", () => {
     await seed(12, 1, 0);
     const res = await publicQuery<{ users: { id: string }[] }>(
       app,
-      "{ users(limit: 99999) { id username } }"
+      "{ users(limit: 99999) { id username } }",
     );
     expect(res.errors).toBeUndefined();
     expect(res.data?.users.length).toBeLessThanOrEqual(200);
@@ -150,7 +156,7 @@ describe("response size bounds", () => {
     await seed(1, 6, 0);
     const res = await publicQuery<{ games: { id: string }[] }>(
       app,
-      "{ games(limit: 99999) { id title } }"
+      "{ games(limit: 99999) { id title } }",
     );
     expect(res.errors).toBeUndefined();
     expect(res.data?.games.length).toBeLessThanOrEqual(200);
@@ -160,7 +166,7 @@ describe("response size bounds", () => {
     await seed(2, 3, 0);
     const res = await publicQuery<{ reviews: { id: string }[] }>(
       app,
-      "{ reviews(limit: -5, offset: -100) { id } }"
+      "{ reviews(limit: -5, offset: -100) { id } }",
     );
     expect(res.errors).toBeUndefined();
     expect(res.data?.reviews.length).toBeGreaterThan(0);

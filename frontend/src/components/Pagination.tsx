@@ -11,7 +11,9 @@ interface PaginationProps {
 /** Page numbers to show, with `null` standing in for an elided run. */
 export function pageItems(page: number, totalPages: number): (number | null)[] {
   const shown = new Set<number>([0, totalPages - 1, page - 1, page, page + 1]);
-  const pages = [...shown].filter((p) => p >= 0 && p < totalPages).sort((a, b) => a - b);
+  const pages = [...shown]
+    .filter((p) => p >= 0 && p < totalPages)
+    .sort((a, b) => a - b);
 
   const items: (number | null)[] = [];
   let previous: number | null = null;
@@ -26,7 +28,12 @@ export function pageItems(page: number, totalPages: number): (number | null)[] {
   return items;
 }
 
-export function Pagination({ page, totalPages, onChange, label }: PaginationProps) {
+export function Pagination({
+  page,
+  totalPages,
+  onChange,
+  label,
+}: PaginationProps) {
   if (totalPages <= 1) return null;
 
   return (
@@ -45,7 +52,10 @@ export function Pagination({ page, totalPages, onChange, label }: PaginationProp
       <div className="flex items-center gap-1">
         {pageItems(page, totalPages).map((item, i) =>
           item === null ? (
-            <span key={`gap-${i}`} className="px-1 text-sm text-gray-600 select-none">
+            <span
+              key={`gap-${i}`}
+              className="px-1 text-sm text-gray-600 select-none"
+            >
               …
             </span>
           ) : (
@@ -61,7 +71,7 @@ export function Pagination({ page, totalPages, onChange, label }: PaginationProp
             >
               {item + 1}
             </button>
-          )
+          ),
         )}
       </div>
 

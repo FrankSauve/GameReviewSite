@@ -22,7 +22,13 @@ import { UserProfilePage } from "../src/pages/UserProfilePage";
  * plausible-looking file rather than an error.
  */
 
-const ME = { __typename: "User", id: "u1", slug: "simon", username: "simon", email: null };
+const ME = {
+  __typename: "User",
+  id: "u1",
+  slug: "simon",
+  username: "simon",
+  email: null,
+};
 
 /**
  * Routed by slug rather than UUID, because the page canonicalises a UUID URL
@@ -66,7 +72,7 @@ function renderProfile(username: string, reviewCount = 3) {
           </Routes>
         </MemoryRouter>
       </AuthProvider>
-    </MockedProvider>
+    </MockedProvider>,
   );
 }
 

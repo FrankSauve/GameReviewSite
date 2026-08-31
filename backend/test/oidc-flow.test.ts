@@ -22,7 +22,8 @@ const REDIRECT_URI = "http://127.0.0.1:4000/auth/callback";
 
 /** Pulls one cookie's value out of a Set-Cookie response header. */
 function cookieValue(res: request.Response, name: string): string | null {
-  const jar = (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
+  const jar =
+    (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
   for (const entry of jar) {
     const [pair] = entry.split(";");
     if (!pair) continue;
@@ -33,7 +34,8 @@ function cookieValue(res: request.Response, name: string): string | null {
 }
 
 function cookieAttributes(res: request.Response, name: string): string {
-  const jar = (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
+  const jar =
+    (res.headers["set-cookie"] as unknown as string[] | undefined) ?? [];
   return jar.find((entry) => entry.startsWith(`${name}=`)) ?? "";
 }
 
@@ -84,7 +86,9 @@ describe("the authorization code flow, end to end", () => {
    * transaction cookie.
    */
   async function signIn(returnTo = "/games/42") {
-    const login = await request(app).get(`/auth/login?returnTo=${encodeURIComponent(returnTo)}`);
+    const login = await request(app).get(
+      `/auth/login?returnTo=${encodeURIComponent(returnTo)}`,
+    );
     expect(login.status).toBe(302);
 
     const txCookie = cookieValue(login, "gr_oidc_tx");
@@ -185,7 +189,9 @@ describe("the authorization code flow, end to end", () => {
     await signIn();
 
     expect(await prisma.user.count()).toBe(1);
-    expect((await prisma.user.findFirstOrThrow()).username).toBe("simon-renamed");
+    expect((await prisma.user.findFirstOrThrow()).username).toBe(
+      "simon-renamed",
+    );
   });
 
   it("falls back to the email local part when there is no username claim", async () => {
@@ -225,7 +231,9 @@ describe("the authorization code flow, end to end", () => {
       .set("Cookie", `${SESSION_COOKIE}=${session}`);
 
     expect(logout.status).toBe(200);
-    expect(logout.body.endSessionUrl).toContain(`${provider.issuer}/end-session`);
+    expect(logout.body.endSessionUrl).toContain(
+      `${provider.issuer}/end-session`,
+    );
     // The id_token_hint is why the session stores the token at all.
     expect(logout.body.endSessionUrl).toContain("id_token_hint=");
     expect(await prisma.session.count()).toBe(0);

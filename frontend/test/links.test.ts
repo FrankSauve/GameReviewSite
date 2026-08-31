@@ -8,7 +8,9 @@ import { gamePath, reviewPath, userPath } from "../src/lib/links";
 describe("link helpers", () => {
   describe("gamePath", () => {
     it("uses the slug when there is one", () => {
-      expect(gamePath({ id: "uuid-1", slug: "elden-ring" })).toBe("/games/elden-ring");
+      expect(gamePath({ id: "uuid-1", slug: "elden-ring" })).toBe(
+        "/games/elden-ring",
+      );
     });
 
     it("falls back to the id, which the API also accepts", () => {
@@ -25,7 +27,7 @@ describe("link helpers", () => {
   describe("reviewPath", () => {
     it("uses the slug when there is one", () => {
       expect(reviewPath({ id: "uuid-2", slug: "alice/elden-ring" })).toBe(
-        "/reviews/alice/elden-ring"
+        "/reviews/alice/elden-ring",
       );
     });
 
@@ -45,12 +47,14 @@ describe("link helpers", () => {
 
     it("appends a profile view tab", () => {
       expect(userPath({ id: "uuid-3", slug: "alice" }, "by-score")).toBe(
-        "/users/alice/by-score"
+        "/users/alice/by-score",
       );
     });
 
     it("leaves the path bare for the default tab", () => {
-      expect(userPath({ id: "uuid-3", slug: "alice" }, "")).toBe("/users/alice");
+      expect(userPath({ id: "uuid-3", slug: "alice" }, "")).toBe(
+        "/users/alice",
+      );
     });
 
     /**

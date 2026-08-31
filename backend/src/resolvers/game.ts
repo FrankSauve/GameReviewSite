@@ -66,7 +66,9 @@ function validateLabels(values: string[], field: string): string[] {
     const trimmed = value.trim();
     if (!trimmed) continue;
     if (trimmed.length > LABEL_MAX_LENGTH)
-      throw badInput(`Each ${field} must be at most ${LABEL_MAX_LENGTH} characters.`);
+      throw badInput(
+        `Each ${field} must be at most ${LABEL_MAX_LENGTH} characters.`,
+      );
 
     const key = trimmed.toLowerCase();
     if (seen.has(key)) continue;
@@ -101,15 +103,15 @@ function validateCoverUrl(value: string): string {
   } catch {
     throw badInput("coverUrl must be an absolute URL.");
   }
-  if (parsed.protocol !== "https:")
-    throw badInput("coverUrl must use https.");
+  if (parsed.protocol !== "https:") throw badInput("coverUrl must use https.");
   return parsed.toString();
 }
 
 async function newGameSlug(title: string): Promise<string> {
   return uniqueSlug(
     slugify(title, "game"),
-    async (candidate) => (await prisma.game.count({ where: { slug: candidate } })) > 0
+    async (candidate) =>
+      (await prisma.game.count({ where: { slug: candidate } })) > 0,
   );
 }
 
@@ -126,10 +128,17 @@ interface GamesArgs extends PageArgs, GameFilter {
 }
 
 function gameSort(value?: string | null): GameSort {
-  return GAME_SORTS.includes(value as GameSort) ? (value as GameSort) : "NEWEST";
+  return GAME_SORTS.includes(value as GameSort)
+    ? (value as GameSort)
+    : "NEWEST";
 }
 
-function gameFilter({ reviewedOnly, genre, platform, reviewedBy }: GamesArgs): GameFilter {
+function gameFilter({
+  reviewedOnly,
+  genre,
+  platform,
+  reviewedBy,
+}: GamesArgs): GameFilter {
   return { reviewedOnly, genre, platform, reviewedBy };
 }
 
@@ -138,7 +147,7 @@ export const gameResolvers = {
     games: async (_parent: unknown, args: GamesArgs, { budget }: Context) => {
       const { take, skip } = clampWindow(args, LIST_BOUNDS.games);
       const ordered = await prisma.$queryRaw<{ id: string }[]>(
-        catalogueIds(gameFilter(args), gameSort(args.sort), take, skip)
+        catalogueIds(gameFilter(args), gameSort(args.sort), take, skip),
       );
       const ids = ordered.map((row) => row.id);
       const rows = await prisma.game.findMany({ where: { id: { in: ids } } });
@@ -153,7 +162,7 @@ export const gameResolvers = {
 
     gamesCount: async (_parent: unknown, args: GamesArgs) => {
       const rows = await prisma.$queryRaw<{ count: number }[]>(
-        catalogueCount(gameFilter(args))
+        catalogueCount(gameFilter(args)),
       );
       return rows[0]?.count ?? 0;
     },
@@ -299,7 +308,11 @@ export const gameResolvers = {
   },
 
   Game: {
-    reviews: async (parent: Game, args: PageArgs, { loaders, budget }: Context) => {
+    reviews: async (
+      parent: Game,
+      args: PageArgs,
+      { loaders, budget }: Context,
+    ) => {
       const reviews = await loaders.reviewsByGameId.load(parent.id);
       const page = applyWindow(reviews, clampWindow(args, LIST_BOUNDS.nested));
       return budget.charge(page).map(serializeDates);

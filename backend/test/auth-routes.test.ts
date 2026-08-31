@@ -1,4 +1,12 @@
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+} from "vitest";
 import request from "supertest";
 import type { Express } from "express";
 
@@ -30,7 +38,8 @@ function configureUnreachableProvider(): void {
   process.env["OIDC_ISSUER"] = "http://127.0.0.1:1/application/o/gamereviews/";
   process.env["OIDC_CLIENT_ID"] = "gamereviews";
   process.env["OIDC_CLIENT_SECRET"] = "shhh";
-  process.env["OIDC_REDIRECT_URI"] = "https://gamereviews.example.com/auth/callback";
+  process.env["OIDC_REDIRECT_URI"] =
+    "https://gamereviews.example.com/auth/callback";
   resetClientCache();
 }
 
@@ -125,8 +134,11 @@ describe("auth routes", () => {
 
   it("clears the session cookie on logout", async () => {
     const res = await request(app).post("/auth/logout");
-    const setCookie = res.headers["set-cookie"] as unknown as string[] | undefined;
-    expect(setCookie?.some((c) => c.startsWith(`${SESSION_COOKIE}=`))).toBe(true);
+    const setCookie = res.headers["set-cookie"] as unknown as
+      string[] | undefined;
+    expect(setCookie?.some((c) => c.startsWith(`${SESSION_COOKIE}=`))).toBe(
+      true,
+    );
   });
 
   it("does not accept a logout over GET", async () => {

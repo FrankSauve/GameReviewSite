@@ -1,7 +1,13 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Express } from "express";
 import { MAX_LABELS } from "../src/resolvers/game.js";
-import { ALICE, authedQuery, publicQuery, resetDatabase, startApp } from "./helpers.js";
+import {
+  ALICE,
+  authedQuery,
+  publicQuery,
+  resetDatabase,
+  startApp,
+} from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
 
 interface GamePayload {
@@ -68,7 +74,7 @@ describe("genres and platforms", () => {
             genres: ["Action", "Adventure", "Indie"],
             platforms: TERRARIA_PLATFORMS,
           },
-        }
+        },
       );
 
       expect(res.errors).toBeUndefined();
@@ -86,12 +92,16 @@ describe("genres and platforms", () => {
         ALICE,
         {},
         {
-          input: { rawgId: "1", title: "Terraria", platforms: TERRARIA_PLATFORMS },
-        }
+          input: {
+            rawgId: "1",
+            title: "Terraria",
+            platforms: TERRARIA_PLATFORMS,
+          },
+        },
       );
 
       expect(res.data?.importGame.platforms).toEqual(
-        TERRARIA_PLATFORMS.slice(0, MAX_LABELS)
+        TERRARIA_PLATFORMS.slice(0, MAX_LABELS),
       );
     });
   });
@@ -103,9 +113,13 @@ describe("genres and platforms", () => {
         CREATE,
         ALICE,
         {},
-        { input: { title: "Hades", genres: ["Action", "Roguelike", "Indie"] } }
+        { input: { title: "Hades", genres: ["Action", "Roguelike", "Indie"] } },
       );
-      expect(res.data?.createGame.genres).toEqual(["Action", "Roguelike", "Indie"]);
+      expect(res.data?.createGame.genres).toEqual([
+        "Action",
+        "Roguelike",
+        "Indie",
+      ]);
     });
 
     it("preserves the order it was given", async () => {
@@ -114,7 +128,7 @@ describe("genres and platforms", () => {
         CREATE,
         ALICE,
         {},
-        { input: { title: "Ordered", platforms: ["Z", "A", "M"] } }
+        { input: { title: "Ordered", platforms: ["Z", "A", "M"] } },
       );
       expect(res.data?.createGame.platforms).toEqual(["Z", "A", "M"]);
     });
@@ -125,7 +139,7 @@ describe("genres and platforms", () => {
         CREATE,
         ALICE,
         {},
-        { input: { title: "Bare" } }
+        { input: { title: "Bare" } },
       );
       expect(res.data?.createGame.genres).toEqual([]);
       expect(res.data?.createGame.platforms).toEqual([]);
@@ -137,13 +151,13 @@ describe("genres and platforms", () => {
         CREATE,
         ALICE,
         {},
-        { input: { title: "Hades", platforms: ["PC", "Switch"] } }
+        { input: { title: "Hades", platforms: ["PC", "Switch"] } },
       );
       const res = await publicQuery<{ games: GamePayload[] }>(
         app,
         // Bounded: the static row guard refuses an unbounded `games` query,
         // which is unrelated to what this test is about.
-        `{ games(limit: 5) { title platforms } }`
+        `{ games(limit: 5) { title platforms } }`,
       );
       expect(res.errors).toBeUndefined();
       expect(res.data?.games).toHaveLength(1);
@@ -158,7 +172,7 @@ describe("genres and platforms", () => {
         CREATE,
         ALICE,
         {},
-        { input: { title: "Blanks", genres: ["Action", "", "   ", "Indie"] } }
+        { input: { title: "Blanks", genres: ["Action", "", "   ", "Indie"] } },
       );
       expect(res.data?.createGame.genres).toEqual(["Action", "Indie"]);
     });
@@ -169,7 +183,7 @@ describe("genres and platforms", () => {
         CREATE,
         ALICE,
         {},
-        { input: { title: "Padded", genres: ["  Action  "] } }
+        { input: { title: "Padded", genres: ["  Action  "] } },
       );
       expect(res.data?.createGame.genres).toEqual(["Action"]);
     });
@@ -181,7 +195,7 @@ describe("genres and platforms", () => {
         CREATE,
         ALICE,
         {},
-        { input: { title: "Dupes", platforms: ["macOS", "MacOS", "MACOS"] } }
+        { input: { title: "Dupes", platforms: ["macOS", "MacOS", "MACOS"] } },
       );
       expect(res.data?.createGame.platforms).toEqual(["macOS"]);
     });
@@ -197,7 +211,7 @@ describe("genres and platforms", () => {
             title: "Messy",
             platforms: ["A", "", "A", "B", "  ", "C", "D", "E", "F"],
           },
-        }
+        },
       );
       expect(res.data?.createGame.platforms).toEqual(["A", "B", "C", "D", "E"]);
     });
@@ -209,7 +223,7 @@ describe("genres and platforms", () => {
         CREATE,
         ALICE,
         {},
-        { input: { title: "Long", genres: ["x".repeat(101)] } }
+        { input: { title: "Long", genres: ["x".repeat(101)] } },
       );
       expect(res.errors?.[0]?.message).toMatch(/at most/);
     });
@@ -222,7 +236,7 @@ describe("genres and platforms", () => {
         CREATE,
         ALICE,
         {},
-        { input: { title: "Editable", platforms: ["PC", "Switch"] } }
+        { input: { title: "Editable", platforms: ["PC", "Switch"] } },
       );
       const id = created.data!.createGame.id;
 
@@ -233,7 +247,7 @@ describe("genres and platforms", () => {
          }`,
         ALICE,
         {},
-        { id, input: { platforms: ["Linux"] } }
+        { id, input: { platforms: ["Linux"] } },
       );
       expect(res.data?.updateGame.platforms).toEqual(["Linux"]);
     });
@@ -244,7 +258,7 @@ describe("genres and platforms", () => {
         CREATE,
         ALICE,
         {},
-        { input: { title: "Untouched", platforms: ["PC"] } }
+        { input: { title: "Untouched", platforms: ["PC"] } },
       );
       const id = created.data!.createGame.id;
 
@@ -255,7 +269,7 @@ describe("genres and platforms", () => {
          }`,
         ALICE,
         {},
-        { id, input: { title: "Renamed" } }
+        { id, input: { title: "Renamed" } },
       );
       expect(res.data?.updateGame.platforms).toEqual(["PC"]);
     });
@@ -278,7 +292,7 @@ describe("the label columns", () => {
       prisma.$executeRawUnsafe(`
         INSERT INTO "Game" (id, slug, title, genres, "createdAt", "updatedAt")
         VALUES (gen_random_uuid(), 'null-labels', 'Null Labels', NULL, now(), now())
-      `)
+      `),
     ).rejects.toThrow();
   });
 

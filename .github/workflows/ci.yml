@@ -11,6 +11,39 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    name: Format and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - run: npm ci
+
+      - run: npm run format:check
+
+      # Type-aware lint rules need both projects' dependencies and the
+      # generated Prisma client; without them every Prisma and Node type
+      # resolves to `any` and the rules fire on the gaps.
+      - run: npm ci
+        working-directory: backend
+
+      - run: ./node_modules/.bin/prisma generate
+        working-directory: backend
+
+      - run: npm ci
+        working-directory: frontend
+
+      - run: npm run lint
+
   backend:
     name: Backend (typecheck, tests)
     runs-on: ubuntu-latest

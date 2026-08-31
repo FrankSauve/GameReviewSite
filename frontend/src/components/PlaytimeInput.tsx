@@ -18,7 +18,8 @@ export function PlaytimeInput({
 }: PlaytimeInputProps) {
   const yearId = useId();
   const hoursId = useId();
-  const label = size === "md" ? "text-base text-gray-400" : "text-sm text-gray-400";
+  const label =
+    size === "md" ? "text-base text-gray-400" : "text-sm text-gray-400";
 
   return (
     <div className="flex gap-3">
@@ -42,7 +43,10 @@ export function PlaytimeInput({
       </div>
 
       <div className="flex-1">
-        <label htmlFor={hoursId} className={`block font-medium mb-1.5 ${label}`}>
+        <label
+          htmlFor={hoursId}
+          className={`block font-medium mb-1.5 ${label}`}
+        >
           Hours played
         </label>
         <input

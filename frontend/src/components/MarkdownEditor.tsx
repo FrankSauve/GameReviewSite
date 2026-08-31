@@ -17,7 +17,12 @@ interface Tool {
 
 const TOOLS: Tool[] = [
   { name: "bold", label: "B", title: "Bold", className: "font-bold" },
-  { name: "italic", label: "I", title: "Italic", className: "italic font-serif" },
+  {
+    name: "italic",
+    label: "I",
+    title: "Italic",
+    className: "italic font-serif",
+  },
   {
     name: "strikethrough",
     label: "S",
@@ -56,14 +61,15 @@ export function MarkdownEditor({
   // The full-size editor is tall at every width — a review runs long, and a
   // narrow window is no reason to write it through a slot. Short fields (a bio)
   // keep the height their `rows` asked for.
-  const bodyHeight = rows >= 6 ? "min-h-[18rem] md:min-h-[26rem]" : "min-h-[6.5rem]";
+  const bodyHeight =
+    rows >= 6 ? "min-h-[18rem] md:min-h-[26rem]" : "min-h-[6.5rem]";
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Applied in an effect rather than straight after `onChange`: the textarea
   // still holds the old text at that point.
-  const [pendingSelection, setPendingSelection] = useState<[number, number] | null>(
-    null
-  );
+  const [pendingSelection, setPendingSelection] = useState<
+    [number, number] | null
+  >(null);
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -90,9 +96,7 @@ export function MarkdownEditor({
 
   const tab = (active: boolean) =>
     `px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-      active
-        ? "bg-gray-800 text-gray-200"
-        : "text-gray-500 hover:text-gray-300"
+      active ? "bg-gray-800 text-gray-200" : "text-gray-500 hover:text-gray-300"
     }`;
 
   return (
@@ -144,7 +148,9 @@ export function MarkdownEditor({
       </div>
 
       {previewing ? (
-        <div className={`input-field ${bodyHeight} text-base text-gray-300 leading-relaxed overflow-y-auto`}>
+        <div
+          className={`input-field ${bodyHeight} text-base text-gray-300 leading-relaxed overflow-y-auto`}
+        >
           <Markdown>{value}</Markdown>
         </div>
       ) : (

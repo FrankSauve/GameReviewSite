@@ -49,7 +49,7 @@ describe("session trust boundary", () => {
     const res = await authedQuery<{ me: { username: string; email: string } }>(
       app,
       "{ me { username email } }",
-      ALICE
+      ALICE,
     );
     expect(res.data?.me).toMatchObject({
       username: "alice",
@@ -118,11 +118,14 @@ describe("session trust boundary", () => {
   it("refuses a mutation from a caller with no session", async () => {
     const res = await publicQuery(
       app,
-      'mutation { createGame(input: { title: "Smuggled" }) { id } }'
+      'mutation { createGame(input: { title: "Smuggled" }) { id } }',
     );
     expect(errorCodes(res)).toContain("UNAUTHENTICATED");
 
-    const games = await publicQuery<{ games: unknown[] }>(app, "{ games { id } }");
+    const games = await publicQuery<{ games: unknown[] }>(
+      app,
+      "{ games { id } }",
+    );
     expect(games.data?.games).toEqual([]);
   });
 

@@ -49,7 +49,8 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
   }
 
   const hours = Number(hoursPlayed);
-  const hoursValid = hoursPlayed.trim() !== "" && Number.isFinite(hours) && hours > 0;
+  const hoursValid =
+    hoursPlayed.trim() !== "" && Number.isFinite(hours) && hours > 0;
   const canSubmit = content.trim() !== "" && hoursValid;
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -85,7 +86,10 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
       />
 
       <div>
-        <label htmlFor={bodyId} className="block text-base font-medium text-gray-400 mb-1.5">
+        <label
+          htmlFor={bodyId}
+          className="block text-base font-medium text-gray-400 mb-1.5"
+        >
           Your Review
         </label>
         <MarkdownEditor

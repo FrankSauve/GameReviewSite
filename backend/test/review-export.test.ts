@@ -35,7 +35,7 @@ const EXPORT_PATH = "/export/reviews.zip";
 async function readArchive(body: Buffer): Promise<Map<string, string>> {
   const zip = await new Promise<ZipFile>((resolve, reject) => {
     fromBuffer(body, { lazyEntries: true }, (err, file) =>
-      err ? reject(err) : resolve(file!)
+      err ? reject(err) : resolve(file!),
     );
   });
   const entries = new Map<string, string>();
@@ -61,7 +61,10 @@ async function readArchive(body: Buffer): Promise<Map<string, string>> {
 
 /** Supertest only buffers text bodies unless told the response is binary. */
 function getExport(app: Express, cookie: string) {
-  return request(app).get(EXPORT_PATH).set("Cookie", cookie).responseType("arraybuffer");
+  return request(app)
+    .get(EXPORT_PATH)
+    .set("Cookie", cookie)
+    .responseType("arraybuffer");
 }
 
 async function bodyOf(pending: ReturnType<typeof getExport>): Promise<Buffer> {
@@ -82,7 +85,10 @@ interface SeedReview {
   createdAt?: Date;
 }
 
-async function seedReview(identity: Identity, review: SeedReview): Promise<void> {
+async function seedReview(
+  identity: Identity,
+  review: SeedReview,
+): Promise<void> {
   const user = await prisma.user.findUniqueOrThrow({
     where: { username: identity.username },
   });
@@ -134,7 +140,7 @@ describe("exporting reviews as a zip of markdown files", () => {
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toContain("application/zip");
     expect(res.headers["content-disposition"]).toBe(
-      'attachment; filename="reviews-alice.zip"'
+      'attachment; filename="reviews-alice.zip"',
     );
     // A shared cache holding one account's reviews would serve them to another.
     expect(res.headers["cache-control"]).toContain("no-store");
@@ -169,7 +175,7 @@ describe("exporting reviews as a zip of markdown files", () => {
     const entries = await readArchive(await bodyOf(getExport(app, cookie)));
     expect(entries.get("reviews-alice/elden-ring.md")).toBe(
       "# Elden Ring\n**Score:** 9.5\n**Playtime:** 120 hrs\n" +
-        "**Year played:** 2024\n\nBest of its kind.\n"
+        "**Year played:** 2024\n\nBest of its kind.\n",
     );
   });
 
@@ -279,10 +285,10 @@ describe("exporting reviews as a zip of markdown files", () => {
     const two = await request(app).get(EXPORT_PATH).set("Cookie", secondCookie);
 
     expect(one.headers["content-disposition"]).toBe(
-      'attachment; filename="reviews-simon-t.zip"'
+      'attachment; filename="reviews-simon-t.zip"',
     );
     expect(two.headers["content-disposition"]).not.toBe(
-      one.headers["content-disposition"]
+      one.headers["content-disposition"],
     );
   });
 
@@ -310,14 +316,16 @@ describe("exporting reviews as a zip of markdown files", () => {
     const cookie = await sessionFor(ALICE);
     const res = await getExport(app, cookie);
     expect(res.status).toBe(200);
-    expect(await readArchive(await bodyOf(getExport(app, cookie)))).toEqual(new Map());
+    expect(await readArchive(await bodyOf(getExport(app, cookie)))).toEqual(
+      new Map(),
+    );
   });
 });
 
 describe("reviewEntryName", () => {
   it("names a review after its game, under the archive's folder", () => {
     expect(reviewEntryName("reviews-alice", "Elden Ring", new Set())).toBe(
-      "reviews-alice/elden-ring.md"
+      "reviews-alice/elden-ring.md",
     );
   });
 
@@ -338,19 +346,23 @@ describe("formatReview", () => {
   };
 
   it("writes a whole score without a trailing zero", () => {
-    expect(formatReview({ ...base, hoursPlayed: 40 })).toContain("**Score:** 8\n");
+    expect(formatReview({ ...base, hoursPlayed: 40 })).toContain(
+      "**Score:** 8\n",
+    );
   });
 
   it("keeps the half point on a half score", () => {
     expect(formatReview({ ...base, rating: 7.5, hoursPlayed: 40 })).toContain(
-      "**Score:** 7.5\n"
+      "**Score:** 7.5\n",
     );
   });
 
   it("does not print 40.0 hours", () => {
-    expect(formatReview({ ...base, hoursPlayed: 40 })).toContain("**Playtime:** 40 hrs");
+    expect(formatReview({ ...base, hoursPlayed: 40 })).toContain(
+      "**Playtime:** 40 hrs",
+    );
     expect(formatReview({ ...base, hoursPlayed: 40.5 })).toContain(
-      "**Playtime:** 40.5 hrs"
+      "**Playtime:** 40.5 hrs",
     );
   });
 

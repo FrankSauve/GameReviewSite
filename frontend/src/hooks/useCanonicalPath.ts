@@ -11,6 +11,6 @@ export function useCanonicalPath(canonical: string | null): void {
 
   useEffect(() => {
     if (!canonical || canonical === pathname) return;
-    navigate(`${canonical}${search}${hash}`, { replace: true });
+    void navigate(`${canonical}${search}${hash}`, { replace: true });
   }, [canonical, pathname, search, hash, navigate]);
 }

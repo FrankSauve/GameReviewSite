@@ -28,13 +28,17 @@ async function idOf(username: string): Promise<string> {
   return user.id;
 }
 
-async function setBio(app: Express, identity: typeof ALICE, bio: string | null) {
+async function setBio(
+  app: Express,
+  identity: typeof ALICE,
+  bio: string | null,
+) {
   return authedQuery<{ updateProfile: UserPayload }>(
     app,
     UPDATE,
     identity,
     {},
-    { input: { bio } }
+    { input: { bio } },
   );
 }
 
@@ -60,7 +64,7 @@ describe("profile bio", () => {
     await setBio(app, ALICE, "I score on a curve.");
     const res = await publicQuery<{ user: UserPayload | null }>(
       app,
-      `{ user(id: "${await idOf(ALICE.username)}") { bio } }`
+      `{ user(id: "${await idOf(ALICE.username)}") { bio } }`,
     );
     expect(res.data?.user?.bio).toBe("I score on a curve.");
   });
@@ -72,7 +76,7 @@ describe("profile bio", () => {
 
     const res = await publicQuery<{ user: UserPayload | null }>(
       app,
-      `{ user(id: "${aliceId}") { bio } }`
+      `{ user(id: "${aliceId}") { bio } }`,
     );
     expect(res.data?.user?.bio).toBeNull();
   });
@@ -100,7 +104,12 @@ describe("profile bio", () => {
 
   describe("who may write one", () => {
     it("refuses an anonymous caller", async () => {
-      const res = await publicQuery(app, UPDATE, {}, { input: { bio: "hello" } });
+      const res = await publicQuery(
+        app,
+        UPDATE,
+        {},
+        { input: { bio: "hello" } },
+      );
       expect(errorCodes(res)).toContain("UNAUTHENTICATED");
     });
 
@@ -114,7 +123,7 @@ describe("profile bio", () => {
 
       const res = await publicQuery<{ user: UserPayload | null }>(
         app,
-        `{ user(id: "${await idOf(ALICE.username)}") { bio } }`
+        `{ user(id: "${await idOf(ALICE.username)}") { bio } }`,
       );
       expect(res.data?.user?.bio).toBe("alice's bio");
     });
@@ -151,7 +160,8 @@ describe("profile bio", () => {
    * trying to be clever about it.
    */
   it("stores markdown verbatim", async () => {
-    const markdown = "**bold**, a [link](https://example.com) and ||a spoiler||";
+    const markdown =
+      "**bold**, a [link](https://example.com) and ||a spoiler||";
     const res = await setBio(app, ALICE, markdown);
     expect(res.data?.updateProfile.bio).toBe(markdown);
   });

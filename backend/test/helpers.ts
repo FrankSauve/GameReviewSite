@@ -19,9 +19,16 @@ export const ALICE: Identity = {
   username: "alice",
   email: "alice@example.com",
 };
-export const BOB: Identity = { uid: "ak-bob", username: "bob", email: "bob@example.com" };
+export const BOB: Identity = {
+  uid: "ak-bob",
+  username: "bob",
+  email: "bob@example.com",
+};
 
-export async function startApp(): Promise<{ app: Express; stop: () => Promise<void> }> {
+export async function startApp(): Promise<{
+  app: Express;
+  stop: () => Promise<void>;
+}> {
   return createApp();
 }
 
@@ -33,7 +40,7 @@ export async function startApp(): Promise<{ app: Express; stop: () => Promise<vo
  */
 export async function resetDatabase(): Promise<void> {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "Session", "Comment", "Review", "Game", "User" CASCADE'
+    'TRUNCATE TABLE "Session", "Comment", "Review", "Game", "User" CASCADE',
   );
 }
 
@@ -46,7 +53,10 @@ export async function resetDatabase(): Promise<void> {
  */
 export async function sessionFor(identity: Identity): Promise<string> {
   const user = await provisionUser(identity);
-  const { token } = await createSession(user.id, `id-token-for-${identity.uid}`);
+  const { token } = await createSession(
+    user.id,
+    `id-token-for-${identity.uid}`,
+  );
   return `${SESSION_COOKIE}=${token}`;
 }
 
@@ -54,9 +64,11 @@ function post(
   app: Express,
   query: string,
   headers: Record<string, string>,
-  variables?: Record<string, unknown>
+  variables?: Record<string, unknown>,
 ) {
-  const req = request(app).post(GRAPHQL_PATH).set("content-type", "application/json");
+  const req = request(app)
+    .post(GRAPHQL_PATH)
+    .set("content-type", "application/json");
   for (const [name, value] of Object.entries(headers)) req.set(name, value);
   return req.send(variables ? { query, variables } : { query });
 }
@@ -66,10 +78,14 @@ export async function publicQuery<T = Record<string, unknown>>(
   app: Express,
   query: string,
   extraHeaders: Record<string, string> = {},
-  variables?: Record<string, unknown>
+  variables?: Record<string, unknown>,
 ): Promise<GraphQLResponse<T>> {
   const res = await post(app, query, extraHeaders, variables);
-  return { status: res.status, data: res.body.data ?? null, errors: res.body.errors };
+  return {
+    status: res.status,
+    data: res.body.data ?? null,
+    errors: res.body.errors,
+  };
 }
 
 /** Calls the API as the given user, or anonymously if omitted. */
@@ -78,14 +94,18 @@ export async function authedQuery<T = Record<string, unknown>>(
   query: string,
   identity?: Identity,
   extraHeaders: Record<string, string> = {},
-  variables?: Record<string, unknown>
+  variables?: Record<string, unknown>,
 ): Promise<GraphQLResponse<T>> {
   const headers = {
     ...(identity ? { Cookie: await sessionFor(identity) } : {}),
     ...extraHeaders,
   };
   const res = await post(app, query, headers, variables);
-  return { status: res.status, data: res.body.data ?? null, errors: res.body.errors };
+  return {
+    status: res.status,
+    data: res.body.data ?? null,
+    errors: res.body.errors,
+  };
 }
 
 export function errorCodes(res: GraphQLResponse): string[] {
@@ -94,7 +114,9 @@ export function errorCodes(res: GraphQLResponse): string[] {
 
 /** Creates a game owned by nobody, for tests that need something to review. */
 export async function seedGame(title = "Test Game"): Promise<string> {
-  const game = await prisma.game.create({ data: { title, slug: slugify(title) } });
+  const game = await prisma.game.create({
+    data: { title, slug: slugify(title) },
+  });
   return game.id;
 }
 

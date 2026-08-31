@@ -33,7 +33,7 @@ describe("authorization", () => {
     it("rejects anonymous createGame", async () => {
       const res = await authedQuery(
         app,
-        'mutation { createGame(input: { title: "Anon" }) { id } }'
+        'mutation { createGame(input: { title: "Anon" }) { id } }',
       );
       expect(errorCodes(res)).toContain("UNAUTHENTICATED");
     });
@@ -42,7 +42,7 @@ describe("authorization", () => {
       const gameId = await seedGame();
       const res = await authedQuery(
         app,
-        `mutation { updateGame(id: "${gameId}", input: { title: "Hijacked" }) { id } }`
+        `mutation { updateGame(id: "${gameId}", input: { title: "Hijacked" }) { id } }`,
       );
       expect(errorCodes(res)).toContain("UNAUTHENTICATED");
     });
@@ -51,7 +51,7 @@ describe("authorization", () => {
       const res = await authedQuery<{ createGame: { title: string } }>(
         app,
         'mutation { createGame(input: { title: "Legit" }) { id title } }',
-        ALICE
+        ALICE,
       );
       expect(res.data?.createGame.title).toBe("Legit");
     });
@@ -66,7 +66,7 @@ describe("authorization", () => {
     const res = await authedQuery(
       app,
       'mutation { deleteGame(id: "whatever") }',
-      ALICE
+      ALICE,
     );
     expect(errorCodes(res)).toContain("GRAPHQL_VALIDATION_FAILED");
   });
@@ -77,14 +77,14 @@ describe("authorization", () => {
       const created = await authedQuery<{ createReview: { id: string } }>(
         app,
         `mutation { createReview(input: { gameId: "${gameId}", rating: 8, content: "Alice's take", ${PLAYTIME_INPUT} }) { id } }`,
-        ALICE
+        ALICE,
       );
       const reviewId = created.data!.createReview.id;
 
       const res = await authedQuery(
         app,
         `mutation { updateReview(id: "${reviewId}", input: { content: "Defaced" }) { id } }`,
-        BOB
+        BOB,
       );
       expect(errorCodes(res)).toContain("FORBIDDEN");
     });
@@ -94,14 +94,14 @@ describe("authorization", () => {
       const created = await authedQuery<{ createReview: { id: string } }>(
         app,
         `mutation { createReview(input: { gameId: "${gameId}", rating: 7, content: "Mine", ${PLAYTIME_INPUT} }) { id } }`,
-        ALICE
+        ALICE,
       );
       const reviewId = created.data!.createReview.id;
 
       const res = await authedQuery(
         app,
         `mutation { deleteReview(id: "${reviewId}") }`,
-        BOB
+        BOB,
       );
       expect(errorCodes(res)).toContain("FORBIDDEN");
     });
@@ -111,20 +111,20 @@ describe("authorization", () => {
       const review = await authedQuery<{ createReview: { id: string } }>(
         app,
         `mutation { createReview(input: { gameId: "${gameId}", rating: 6, content: "R", ${PLAYTIME_INPUT} }) { id } }`,
-        ALICE
+        ALICE,
       );
       const reviewId = review.data!.createReview.id;
       const comment = await authedQuery<{ createComment: { id: string } }>(
         app,
         `mutation { createComment(input: { reviewId: "${reviewId}", content: "Alice comment" }) { id } }`,
-        ALICE
+        ALICE,
       );
       const commentId = comment.data!.createComment.id;
 
       const res = await authedQuery(
         app,
         `mutation { deleteComment(id: "${commentId}") }`,
-        BOB
+        BOB,
       );
       expect(errorCodes(res)).toContain("FORBIDDEN");
     });
@@ -134,12 +134,12 @@ describe("authorization", () => {
       const created = await authedQuery<{ createReview: { id: string } }>(
         app,
         `mutation { createReview(input: { gameId: "${gameId}", rating: 9, content: "Mine", ${PLAYTIME_INPUT} }) { id } }`,
-        ALICE
+        ALICE,
       );
       const res = await authedQuery<{ deleteReview: boolean }>(
         app,
         `mutation { deleteReview(id: "${created.data!.createReview.id}") }`,
-        ALICE
+        ALICE,
       );
       expect(res.data?.deleteReview).toBe(true);
     });
@@ -150,7 +150,7 @@ describe("authorization", () => {
     await authedQuery(
       app,
       `mutation { createReview(input: { gameId: "${gameId}", rating: 10, content: "Visible to all", ${PLAYTIME_INPUT} }) { id } }`,
-      ALICE
+      ALICE,
     );
 
     const res = await publicQuery<{

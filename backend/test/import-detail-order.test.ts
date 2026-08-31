@@ -1,4 +1,13 @@
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import type { Express } from "express";
 import { prisma } from "../src/lib/prisma.js";
 import { ALICE, authedQuery, resetDatabase, startApp } from "./helpers.js";
@@ -72,13 +81,9 @@ describe("importGame detail fetch", () => {
   const detailCalls = () => rawg.calls.filter((c) => c.includes("/games/1"));
 
   it("fetches the detail once for a game it has never seen", async () => {
-    const res = await authedQuery<{ importGame: { description: string | null } }>(
-      app,
-      IMPORT,
-      ALICE,
-      {},
-      { input },
-    );
+    const res = await authedQuery<{
+      importGame: { description: string | null };
+    }>(app, IMPORT, ALICE, {}, { input });
     expect(res.errors).toBeUndefined();
     expect(res.data?.importGame.description).toBe("A game.");
     expect(detailCalls()).toHaveLength(1);
@@ -97,16 +102,17 @@ describe("importGame detail fetch", () => {
   /** A row stored without one still gets its description backfilled. */
   it("still fetches when the stored game has no description", async () => {
     await prisma.game.create({
-      data: { rawgId: "1", title: "Elden Ring", slug: "elden-ring", description: null },
+      data: {
+        rawgId: "1",
+        title: "Elden Ring",
+        slug: "elden-ring",
+        description: null,
+      },
     });
 
-    const res = await authedQuery<{ importGame: { description: string | null } }>(
-      app,
-      IMPORT,
-      ALICE,
-      {},
-      { input },
-    );
+    const res = await authedQuery<{
+      importGame: { description: string | null };
+    }>(app, IMPORT, ALICE, {}, { input });
     expect(res.errors).toBeUndefined();
     expect(res.data?.importGame.description).toBe("A game.");
     expect(detailCalls()).toHaveLength(1);

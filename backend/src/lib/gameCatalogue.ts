@@ -34,7 +34,7 @@ function whereFragment(filter: GameFilter): Prisma.Sql {
 
   if (filter.reviewedOnly) {
     clauses.push(
-      Prisma.sql`EXISTS (SELECT 1 FROM "Review" rf WHERE rf."gameId" = g.id)`
+      Prisma.sql`EXISTS (SELECT 1 FROM "Review" rf WHERE rf."gameId" = g.id)`,
     );
   }
   if (filter.genre) {
@@ -82,7 +82,7 @@ export function catalogueIds(
   filter: GameFilter,
   sort: GameSort,
   take: number,
-  skip: number
+  skip: number,
 ): Prisma.Sql {
   return Prisma.sql`
     SELECT g.id FROM "Game" g
@@ -103,8 +103,7 @@ export function catalogueCount(filter: GameFilter): Prisma.Sql {
 
 /** Distinct labels across the catalogue, for the filter menus. */
 export function labelValues(column: "genres" | "platforms"): Prisma.Sql {
-  const col =
-    column === "genres" ? Prisma.sql`genres` : Prisma.sql`platforms`;
+  const col = column === "genres" ? Prisma.sql`genres` : Prisma.sql`platforms`;
   return Prisma.sql`
     SELECT DISTINCT unnest(${col}) AS value FROM "Game" ORDER BY value ASC
   `;

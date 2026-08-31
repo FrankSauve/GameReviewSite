@@ -1,6 +1,12 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Express } from "express";
-import { ALICE, authedQuery, resetDatabase, seedGame, startApp } from "./helpers.js";
+import {
+  ALICE,
+  authedQuery,
+  resetDatabase,
+  seedGame,
+  startApp,
+} from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
 import { REVIEW_CONTENT_MAX } from "../src/resolvers/review.js";
 
@@ -35,7 +41,15 @@ describe("review body", () => {
       "mutation ($input: CreateReviewInput!) { createReview(input: $input) { id content } }",
       ALICE,
       {},
-      { input: { gameId, rating: 8, content, yearPlayed: 2024, hoursPlayed: 12 } }
+      {
+        input: {
+          gameId,
+          rating: 8,
+          content,
+          yearPlayed: 2024,
+          hoursPlayed: 12,
+        },
+      },
     );
 
   it("accepts a body at the limit", async () => {
@@ -95,7 +109,7 @@ describe("review body", () => {
   it("trims the ends without collapsing the middle", async () => {
     const res = await create("\n\n  first\n\nsecond  \n\n");
     expect((res.data?.createReview as { content: string }).content).toBe(
-      "first\n\nsecond"
+      "first\n\nsecond",
     );
   });
 });
@@ -147,16 +161,18 @@ describe("review body text budget", () => {
     await seedMaximalReviews(30);
     const res = await authedQuery(
       app,
-      "{ reviews(limit: 30) { id content user { id reviews(limit: 30) { id content } } } }"
+      "{ reviews(limit: 30) { id content user { id reviews(limit: 30) { id content } } } }",
     );
-    expect(res.errors?.map((e) => e.extensions?.code)).toContain("QUERY_TOO_LARGE");
+    expect(res.errors?.map((e) => e.extensions?.code)).toContain(
+      "QUERY_TOO_LARGE",
+    );
   });
 
   it("names review text rather than records, so the cause is findable", async () => {
     await seedMaximalReviews(30);
     const res = await authedQuery(
       app,
-      "{ reviews(limit: 30) { id content user { id reviews(limit: 30) { id content } } } }"
+      "{ reviews(limit: 30) { id content user { id reviews(limit: 30) { id content } } } }",
     );
     expect(res.errors?.[0]?.message).toContain("characters of review text");
   });
@@ -166,7 +182,7 @@ describe("review body text budget", () => {
     await seedMaximalReviews(30);
     const res = await authedQuery(
       app,
-      "{ reviews(limit: 30) { id rating user { id reviews(limit: 30) { id rating } } } }"
+      "{ reviews(limit: 30) { id rating user { id reviews(limit: 30) { id rating } } } }",
     );
     expect(res.errors).toBeUndefined();
   });

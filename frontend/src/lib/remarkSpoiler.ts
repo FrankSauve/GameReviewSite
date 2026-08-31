@@ -77,7 +77,7 @@ function wrap(tokens: Token[]): MdastNode[] {
     out.push(
       inner.length > 0
         ? { type: "spoiler", children: inner }
-        : { type: "text", value: MARKER + MARKER }
+        : { type: "text", value: MARKER + MARKER },
     );
     i = close;
   }

@@ -19,7 +19,7 @@ const GENERIC_MESSAGE = "Internal server error.";
 
 /** Strips an error down in production only; locally the real message stands. */
 export function sanitizeError(
-  formatted: GraphQLFormattedError
+  formatted: GraphQLFormattedError,
 ): GraphQLFormattedError {
   const code = formatted.extensions?.["code"];
   const codeString = typeof code === "string" ? code : "INTERNAL_SERVER_ERROR";

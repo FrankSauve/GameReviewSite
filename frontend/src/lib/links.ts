@@ -3,8 +3,6 @@ interface Slugged {
   slug?: string | null;
 }
 
-
-
 /** `/games/elden-ring`, or the home page when there is no game to link to. */
 export function gamePath(game?: Slugged | null): string {
   return game ? `/games/${game.slug ?? game.id}` : "/";

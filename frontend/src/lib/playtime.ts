@@ -34,7 +34,7 @@ export function formatHours(hours: number): string {
  */
 export function formatPlaytime(
   yearPlayed?: number | null,
-  hoursPlayed?: number | null
+  hoursPlayed?: number | null,
 ): string | null {
   const parts: string[] = [];
   if (yearPlayed != null) parts.push(String(yearPlayed));

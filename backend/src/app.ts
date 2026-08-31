@@ -80,7 +80,10 @@ export async function createApp(): Promise<AppHandle> {
     formatError: (formattedError, originalError) => {
       const sanitized = sanitizeError(formattedError);
       if (sanitized.message !== formattedError.message) {
-        console.error("GraphQL internal error:", originalError ?? formattedError);
+        console.error(
+          "GraphQL internal error:",
+          originalError ?? formattedError,
+        );
       }
       return sanitized;
     },
@@ -121,7 +124,7 @@ export async function createApp(): Promise<AppHandle> {
     limiters.rawg,
     expressMiddleware(server, {
       context: async ({ req }) => buildContext({ req }),
-    })
+    }),
   );
 
   app.get("/health", (_req: Request, res: Response) => {

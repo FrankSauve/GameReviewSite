@@ -22,7 +22,7 @@ export const commentResolvers = {
     comments: async (
       _parent: unknown,
       { reviewId, ...args }: { reviewId: string } & PageArgs,
-      { budget }: Context
+      { budget }: Context,
     ) => {
       const { take, skip } = clampWindow(args, LIST_BOUNDS.nested);
       const comments = await prisma.comment.findMany({
@@ -44,19 +44,27 @@ export const commentResolvers = {
     createComment: async (
       _parent: unknown,
       { input }: { input: CreateCommentInput },
-      context: Context
+      context: Context,
     ) => {
       const authUser = requireAuth(context);
 
-      const review = await prisma.review.findUnique({ where: { id: input.reviewId } });
+      const review = await prisma.review.findUnique({
+        where: { id: input.reviewId },
+      });
       if (!review)
-        throw new GraphQLError("Review not found.", { extensions: { code: "NOT_FOUND" } });
+        throw new GraphQLError("Review not found.", {
+          extensions: { code: "NOT_FOUND" },
+        });
 
       const comment = await prisma.comment.create({
         data: {
           userId: authUser.id,
           reviewId: input.reviewId,
-          content: validateString(input.content, "content", COMMENT_CONTENT_MAX),
+          content: validateString(
+            input.content,
+            "content",
+            COMMENT_CONTENT_MAX,
+          ),
         },
       });
       return serializeDates(comment);
@@ -65,13 +73,19 @@ export const commentResolvers = {
     updateComment: async (
       _parent: unknown,
       { id, input }: { id: string; input: UpdateCommentInput },
-      context: Context
+      context: Context,
     ) => {
       const authUser = requireAuth(context);
       await requireOwnership(id, authUser.id);
       const comment = await prisma.comment.update({
         where: { id },
-        data: { content: validateString(input.content, "content", COMMENT_CONTENT_MAX) },
+        data: {
+          content: validateString(
+            input.content,
+            "content",
+            COMMENT_CONTENT_MAX,
+          ),
+        },
       });
       return serializeDates(comment);
     },
@@ -79,7 +93,7 @@ export const commentResolvers = {
     deleteComment: async (
       _parent: unknown,
       { id }: { id: string },
-      context: Context
+      context: Context,
     ) => {
       const authUser = requireAuth(context);
       await requireOwnership(id, authUser.id);
@@ -95,16 +109,23 @@ export const commentResolvers = {
     },
 
     review: async (parent: Comment) => {
-      const review = await prisma.review.findUnique({ where: { id: parent.reviewId } });
+      const review = await prisma.review.findUnique({
+        where: { id: parent.reviewId },
+      });
       return review ? serializeDates(review) : null;
     },
   },
 };
 
-async function requireOwnership(commentId: string, userId: string): Promise<Comment> {
+async function requireOwnership(
+  commentId: string,
+  userId: string,
+): Promise<Comment> {
   const comment = await prisma.comment.findUnique({ where: { id: commentId } });
   if (!comment)
-    throw new GraphQLError("Comment not found.", { extensions: { code: "NOT_FOUND" } });
+    throw new GraphQLError("Comment not found.", {
+      extensions: { code: "NOT_FOUND" },
+    });
   if (comment.userId !== userId)
     throw new GraphQLError("You can only modify your own comments.", {
       extensions: { code: "FORBIDDEN" },

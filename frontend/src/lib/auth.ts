@@ -19,7 +19,9 @@ export function loginUrl(returnTo: string): string {
  * end-session endpoint, so its session ends too rather than only ours, or `/`
  * when there was nothing to end.
  */
-export async function signOutTarget(fetchImpl: typeof fetch = fetch): Promise<string> {
+export async function signOutTarget(
+  fetchImpl: typeof fetch = fetch,
+): Promise<string> {
   try {
     const res = await fetchImpl(LOGOUT_PATH, {
       method: "POST",
@@ -39,7 +41,7 @@ export async function signOutTarget(fetchImpl: typeof fetch = fetch): Promise<st
 
 /** Sends the browser through authentik's login flow, including 2FA. */
 export function startSignIn(
-  returnTo: string = `${window.location.pathname}${window.location.search}`
+  returnTo: string = `${window.location.pathname}${window.location.search}`,
 ): void {
   window.location.assign(loginUrl(returnTo));
 }

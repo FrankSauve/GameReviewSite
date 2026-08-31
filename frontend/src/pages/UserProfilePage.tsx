@@ -38,7 +38,8 @@ function avatarGradient(username: string): string {
     "from-amber-600 to-orange-700",
     "from-fuchsia-600 to-purple-700",
   ];
-  const idx = [...username].reduce((a, c) => a + c.charCodeAt(0), 0) % gradients.length;
+  const idx =
+    [...username].reduce((a, c) => a + c.charCodeAt(0), 0) % gradients.length;
   return gradients[idx] ?? gradients[0];
 }
 
@@ -60,10 +61,13 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
   const { id } = useParams<{ id: string }>();
   const { user: me } = useAuth();
 
-  const { data, loading, error } = useQuery<ProfileData>(GET_USER_REVIEW_SUMMARIES, {
-    variables: { id, order: ORDER_FOR[grouping] },
-    skip: !id,
-  });
+  const { data, loading, error } = useQuery<ProfileData>(
+    GET_USER_REVIEW_SUMMARIES,
+    {
+      variables: { id, order: ORDER_FOR[grouping] },
+      skip: !id,
+    },
+  );
 
   const tabPath = TABS.find((t) => t.grouping === grouping)?.path ?? "";
   useCanonicalPath(data?.user ? userPath(data.user, tabPath) : null);
@@ -90,7 +94,10 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
       <div className="card p-12 text-center space-y-3">
         <p className="text-4xl">👤</p>
         <p className="text-gray-300 font-medium">User not found</p>
-        <Link to="/" className="text-violet-400 hover:text-violet-300 text-sm transition-colors">
+        <Link
+          to="/"
+          className="text-violet-400 hover:text-violet-300 text-sm transition-colors"
+        >
           Back to home
         </Link>
       </div>
@@ -118,7 +125,9 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
         </div>
         <div className="flex-1 text-center sm:text-left space-y-1">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-            <h1 className="text-xl font-bold text-gray-100">{profile.username}</h1>
+            <h1 className="text-xl font-bold text-gray-100">
+              {profile.username}
+            </h1>
             {isOwnProfile && (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-violet-900/60 text-violet-300 border border-violet-800">
                 You
@@ -147,14 +156,18 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
 
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 pt-2">
             <div className="text-center">
-              <p className="text-lg font-bold text-gray-100">{profile.reviewCount}</p>
+              <p className="text-lg font-bold text-gray-100">
+                {profile.reviewCount}
+              </p>
               <p className="text-xs text-gray-500">
                 {profile.reviewCount === 1 ? "review" : "reviews"}
               </p>
             </div>
             {profile.averageRating != null && (
               <div className="text-center">
-                <p className={`text-lg font-bold ${ratingColor(profile.averageRating)}`}>
+                <p
+                  className={`text-lg font-bold ${ratingColor(profile.averageRating)}`}
+                >
                   {formatRating(Math.round(profile.averageRating * 10) / 10)}
                 </p>
                 <p className="text-xs text-gray-500">avg score</p>
@@ -198,11 +211,16 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
         <div className="card p-10 text-center space-y-2">
           <p className="text-3xl">✍️</p>
           <p className="text-gray-400">
-            {isOwnProfile ? "You haven't written any reviews yet." : "No reviews yet."}
+            {isOwnProfile
+              ? "You haven't written any reviews yet."
+              : "No reviews yet."}
           </p>
         </div>
       ) : (
-        <GroupedReviewList groups={groups} showGroupAverage={grouping === "year"} />
+        <GroupedReviewList
+          groups={groups}
+          showGroupAverage={grouping === "year"}
+        />
       )}
     </div>
   );

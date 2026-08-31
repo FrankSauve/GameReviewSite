@@ -72,7 +72,10 @@ export function GameCard({ game }: GameCardProps) {
             >
               {game.platforms[0]}
               {game.platforms.length > 1 && (
-                <span className="text-gray-500"> +{game.platforms.length - 1}</span>
+                <span className="text-gray-500">
+                  {" "}
+                  +{game.platforms.length - 1}
+                </span>
               )}
             </span>
           )}
@@ -94,7 +97,9 @@ export function GameCard({ game }: GameCardProps) {
                 </span>
               ))}
               {game.releaseYear && (
-                <span className="text-xs text-gray-500">{game.releaseYear}</span>
+                <span className="text-xs text-gray-500">
+                  {game.releaseYear}
+                </span>
               )}
             </div>
           </div>
@@ -102,13 +107,17 @@ export function GameCard({ game }: GameCardProps) {
           <div className="flex items-center justify-between pt-1 border-t border-gray-800">
             {game.averageRating != null ? (
               <div className="flex items-baseline gap-1">
-                <span className={`text-sm font-extrabold ${ratingColor(game.averageRating)}`}>
+                <span
+                  className={`text-sm font-extrabold ${ratingColor(game.averageRating)}`}
+                >
                   {formatRating(game.averageRating)}
                 </span>
                 <span className="text-xs text-gray-600">/ 10</span>
               </div>
             ) : (
-              <span className="text-xs text-gray-600 italic">No reviews yet</span>
+              <span className="text-xs text-gray-600 italic">
+                No reviews yet
+              </span>
             )}
             <span className="text-xs text-gray-500">
               {reviewCount} {reviewCount === 1 ? "review" : "reviews"}

@@ -33,7 +33,7 @@ export function collapseDuplicateErrors(): ApolloServerPlugin {
                     collapsed === 1 ? "" : "s"
                   } affected the same way)`,
                 }
-              : error
+              : error,
           );
         },
       };

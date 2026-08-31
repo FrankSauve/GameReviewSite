@@ -54,7 +54,7 @@ class ArchiveWriter {
 
   constructor(
     private readonly res: Response,
-    gone: AbortSignal
+    gone: AbortSignal,
   ) {
     this.zip.outputStream.on("data", (chunk: Buffer) => {
       this.pending -= chunk.length;
@@ -118,7 +118,10 @@ export function createExportRouter(): Router {
   router.get("/reviews.zip", async (req: Request, res: Response) => {
     const session = await readSession(req);
     if (!session) {
-      res.status(401).type("text/plain").send("Sign in to export your reviews.\n");
+      res
+        .status(401)
+        .type("text/plain")
+        .send("Sign in to export your reviews.\n");
       return;
     }
 
@@ -191,7 +194,7 @@ export function createExportRouter(): Router {
               yearPlayed: review.yearPlayed,
               content: review.content,
             }),
-            review.createdAt
+            review.createdAt,
           );
         }
 
@@ -202,11 +205,14 @@ export function createExportRouter(): Router {
         const last = batch[batch.length - 1]!;
         cursor = { createdAt: last.createdAt, id: last.id };
       }
-      await archive!.finish(departed.signal);
+      await archive.finish(departed.signal);
     } catch (err: unknown) {
       console.error("Export failed:", err);
       if (!res.headersSent) {
-        res.status(500).type("text/plain").send("Could not build the export.\n");
+        res
+          .status(500)
+          .type("text/plain")
+          .send("Could not build the export.\n");
         return;
       }
       // Past the status line the only honest signal left is an incomplete
