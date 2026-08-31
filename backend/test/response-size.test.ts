@@ -181,7 +181,7 @@ describe("response size bounds", () => {
     const queries = [
       "{ games { id title genres coverUrl releaseYear averageRating reviewCount } }",
       "{ users { id username createdAt reviewCount averageRating } }",
-      "{ recentReviews(limit: 10, offset: 0) { id rating content createdAt user { id username } game { id title genres coverUrl releaseYear } comments { id content createdAt user { id username } } } recentReviewsCount }",
+      "{ recentReviews(limit: 10, offset: 0) { id rating content createdAt user { id username } game { id title genres coverUrl releaseYear } reactions { emoji count reacted } comments { id content createdAt user { id username } } } recentReviewsCount }",
       `{ game(id: "${game?.id}") { id title description averageRating reviews { id rating content user { id username } comments { id content user { id username } } } } }`,
       `{ user(id: "${user?.id}") { id username createdAt reviews { id rating content game { id title } comments { id } } } }`,
       `{ review(id: "${review?.id}") { id rating content user { id username } game { id title } comments { id content user { id username } } } }`,

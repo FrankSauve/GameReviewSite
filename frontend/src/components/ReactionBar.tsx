@@ -5,12 +5,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useDismiss } from "../hooks/useDismiss";
 import { DEFAULT_REACTIONS } from "../lib/emoji";
 import { EmojiPicker } from "./EmojiPicker";
-
-export interface ReactionSummary {
-  emoji: string;
-  count: number;
-  reacted: boolean;
-}
+import type { ReactionSummary } from "../types";
 
 interface ReactionBarProps {
   reactions: ReactionSummary[] | null | undefined;
@@ -23,15 +18,8 @@ interface ToggleResult {
   toggleReaction: ReactionSummary[];
 }
 
-/** The default row is always shown, so an unreacted review still offers one. */
-function chipsFor(reactions: readonly ReactionSummary[]): ReactionSummary[] {
-  const byEmoji = new Map(reactions.map((r) => [r.emoji, r]));
-  const defaults = DEFAULT_REACTIONS.map(
-    (emoji) => byEmoji.get(emoji) ?? { emoji, count: 0, reacted: false },
-  );
-  const extra = reactions.filter((r) => !DEFAULT_REACTIONS.includes(r.emoji));
-  return [...defaults, ...extra];
-}
+/** Nothing, the six defaults, or every emoji — one open menu at a time. */
+type Menu = "none" | "quick" | "all";
 
 export function ReactionBar({
   reactions,
@@ -39,20 +27,20 @@ export function ReactionBar({
   commentId,
 }: ReactionBarProps) {
   const { user, signIn } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [menu, setMenu] = useState<Menu>("none");
   // The mutation returns the parent's whole new summary, so nothing refetches.
   const [current, setCurrent] = useState<ReactionSummary[] | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [toggle] = useMutation<ToggleResult>(TOGGLE_REACTION);
 
-  const dismiss = useCallback(() => setOpen(false), []);
+  const dismiss = useCallback(() => setMenu("none"), []);
   useDismiss(containerRef, dismiss);
 
-  const chips = chipsFor(current ?? reactions ?? []);
+  const chips = current ?? reactions ?? [];
 
   const react = (emoji: string) => {
-    setOpen(false);
+    setMenu("none");
     if (!user) {
       signIn();
       return;
@@ -89,23 +77,64 @@ export function ReactionBar({
           }`}
         >
           <span>{chip.emoji}</span>
-          {chip.count > 0 && (
-            <span className="text-xs tabular-nums">{chip.count}</span>
-          )}
+          <span className="text-xs tabular-nums">{chip.count}</span>
         </button>
       ))}
 
       <button
         type="button"
-        onClick={() => setOpen((wasOpen) => !wasOpen)}
+        onClick={() => setMenu((open) => (open === "none" ? "quick" : "none"))}
         aria-label="Add a reaction"
-        aria-expanded={open}
-        className="rounded-full border border-gray-700 bg-gray-800/60 text-gray-400 hover:text-gray-200 hover:border-gray-600 px-2 py-0.5 text-sm transition-colors"
+        aria-expanded={menu !== "none"}
+        className="flex items-center rounded-full border border-gray-700 bg-gray-800/60 text-gray-400 hover:text-gray-200 hover:border-gray-600 px-2 py-1 transition-colors"
       >
-        +
+        <AddReactionIcon />
       </button>
 
-      {open && <EmojiPicker onSelect={react} />}
+      {menu === "quick" && (
+        <div className="absolute z-20 top-full mt-2 left-0 card p-1 flex items-center gap-0.5 shadow-xl">
+          {DEFAULT_REACTIONS.map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              onClick={() => react(emoji)}
+              aria-label={`React with ${emoji}`}
+              className="text-lg leading-none p-1 rounded hover:bg-gray-800 transition-colors"
+            >
+              {emoji}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setMenu("all")}
+            aria-label="More emoji"
+            className="text-sm leading-none px-2 py-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
+          >
+            +
+          </button>
+        </div>
+      )}
+
+      {menu === "all" && <EmojiPicker onSelect={react} />}
     </div>
+  );
+}
+
+function AddReactionIcon() {
+  return (
+    <svg
+      className="w-4 h-4"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M9 10h.01M15 10h.01M9.5 15a3.5 3.5 0 005 0M18 3v4m2-2h-4M20.5 11a8.5 8.5 0 11-7.5-7.46"
+      />
+    </svg>
   );
 }

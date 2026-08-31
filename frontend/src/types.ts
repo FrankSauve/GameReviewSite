@@ -12,6 +12,13 @@ export interface Comment {
   user?: User | null;
 }
 
+/** One emoji on a review or a comment, as the API summarises it. */
+export interface ReactionSummary {
+  emoji: string;
+  count: number;
+  reacted: boolean;
+}
+
 export interface GameSnippet {
   id: string;
   slug?: string | null;
@@ -34,6 +41,7 @@ export interface Review {
   user?: User | null;
   game?: GameSnippet | null;
   comments?: Comment[];
+  reactions?: ReactionSummary[] | null;
 }
 
 export interface Game {

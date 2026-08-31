@@ -96,9 +96,16 @@ export const GET_GAME = gql`
   }
 `;
 
+/**
+ * The feed's page size, and a literal in the document rather than a variable:
+ * lib/maxRows.ts prices a variable limit at the field's maximum, and 50 reviews
+ * times their comments and reactions is over the row budget.
+ */
+export const RECENT_REVIEWS_PAGE_SIZE = 10;
+
 export const GET_RECENT_REVIEWS = gql`
-  query GetRecentReviews($limit: Int, $offset: Int) {
-    recentReviews(limit: $limit, offset: $offset) {
+  query GetRecentReviews($offset: Int) {
+    recentReviews(limit: ${RECENT_REVIEWS_PAGE_SIZE}, offset: $offset) {
       id
       slug
       rating
@@ -118,6 +125,11 @@ export const GET_RECENT_REVIEWS = gql`
         genres
         coverUrl
         releaseYear
+      }
+      reactions {
+        emoji
+        count
+        reacted
       }
       comments {
         id
