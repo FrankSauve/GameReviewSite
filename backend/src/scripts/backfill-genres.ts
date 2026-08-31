@@ -3,11 +3,15 @@
  * when `genre` was a single column: they carry at most one genre. Dry-run unless
  * --write is passed; never run it against production.
  *
+ * Lives under src/ so `tsc` emits it to dist/scripts/ and the runtime image
+ * can run it; the container has no npm and no tsx.
+ *
  * Usage: npm run backfill:genres -- [--write] [--delay=<ms>]
+ *        node dist/scripts/backfill-genres.js [--write] [--delay=<ms>]
  */
-import { prisma } from "../src/lib/prisma.js";
-import { mergeLabels } from "../src/lib/labels.js";
-import { getRawgGame, RawgHttpError } from "../src/lib/rawg.js";
+import { prisma } from "../lib/prisma.js";
+import { mergeLabels } from "../lib/labels.js";
+import { getRawgGame, RawgHttpError } from "../lib/rawg.js";
 
 const DEFAULT_DELAY_MS = 1_000;
 /** RAWG's free tier answers a 429 with no Retry-After, so back off by a fixed step. */
