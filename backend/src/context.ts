@@ -32,37 +32,36 @@ interface BuildContextArgs {
 export async function buildContext({
   req,
 }: BuildContextArgs): Promise<Context> {
-  const loaders = createLoaders();
-  const budget = new RowBudget();
+  const user = await resolveUser(req);
+  return {
+    user,
+    // After the user, never before: `reacted` is per-viewer. See lib/loaders.ts.
+    loaders: createLoaders(user?.id ?? null),
+    budget: new RowBudget(),
+  };
+}
 
+async function resolveUser(req: Request): Promise<AuthUser | null> {
   // Local development only, and never in production. See devIdentity.
   const dev = devIdentity();
   if (dev) {
     const user = await provisionUser(dev);
     return {
-      user: {
-        id: user.id,
-        slug: user.slug,
-        username: user.username,
-        email: user.email,
-      },
-      loaders,
-      budget,
+      id: user.id,
+      slug: user.slug,
+      username: user.username,
+      email: user.email,
     };
   }
 
   const session = await readSession(req);
-  if (!session) return { user: null, loaders, budget };
+  if (!session) return null;
 
   return {
-    user: {
-      id: session.user.id,
-      slug: session.user.slug,
-      username: session.user.username,
-      email: session.user.email,
-    },
-    loaders,
-    budget,
+    id: session.user.id,
+    slug: session.user.slug,
+    username: session.user.username,
+    email: session.user.email,
   };
 }
 

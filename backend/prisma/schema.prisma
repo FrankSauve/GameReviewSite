@@ -30,6 +30,7 @@ model User {
   addedGames Game[]   @relation("GameCreator")
   sessions  Session[]
   articles  Article[]
+  reactions Reaction[]
 }
 
 /// A signed-in browser.
@@ -87,6 +88,7 @@ model Review {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   game      Game      @relation(fields: [gameId], references: [id], onDelete: Cascade)
   comments  Comment[]
+  reactions Reaction[]
 
   @@index([userId, yearPlayed])
 }
@@ -121,4 +123,28 @@ model Comment {
   reviewId  String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reactions Reaction[]
+}
+
+/// One emoji one person put on one review or one comment.
+model Reaction {
+  id        String   @id @default(uuid())
+  /// A single fully-qualified emoji, never free text. See lib/emoji.ts.
+  emoji     String
+  createdAt DateTime @default(now())
+  userId    String
+  /// Exactly one of these is set. Prisma cannot express that, so the migration
+  /// adds `CHECK (num_nonnulls("reviewId", "commentId") = 1)` by hand.
+  reviewId  String?
+  commentId String?
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review    Review?  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  /// Postgres treats NULLs as distinct, so neither unique constrains the rows
+  /// whose column is null; the pair covers both parents given the CHECK above.
+  @@unique([userId, reviewId, emoji])
+  @@unique([userId, commentId, emoji])
+  @@index([reviewId])
+  @@index([commentId])
 }

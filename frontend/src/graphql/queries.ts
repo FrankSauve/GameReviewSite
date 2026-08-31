@@ -158,6 +158,11 @@ export const GET_REVIEW = gql`
         releaseYear
         genres
       }
+      reactions {
+        emoji
+        count
+        reacted
+      }
       comments {
         id
         content
@@ -166,6 +171,11 @@ export const GET_REVIEW = gql`
           id
           slug
           username
+        }
+        reactions {
+          emoji
+          count
+          reacted
         }
       }
     }

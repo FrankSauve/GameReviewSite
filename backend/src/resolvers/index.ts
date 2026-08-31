@@ -3,6 +3,7 @@ import { gameResolvers } from "./game.js";
 import { reviewResolvers } from "./review.js";
 import { commentResolvers } from "./comment.js";
 import { articleResolvers } from "./article.js";
+import { reactionResolvers } from "./reaction.js";
 
 export const resolvers = {
   Query: {
@@ -18,6 +19,7 @@ export const resolvers = {
     ...reviewResolvers.Mutation,
     ...commentResolvers.Mutation,
     ...articleResolvers.Mutation,
+    ...reactionResolvers.Mutation,
   },
   User: userResolvers.User,
   Game: gameResolvers.Game,

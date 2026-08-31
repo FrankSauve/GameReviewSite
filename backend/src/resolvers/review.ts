@@ -329,6 +329,12 @@ export const reviewResolvers = {
       const comments = await loaders.commentsByReviewId.load(parent.id);
       return comments.length;
     },
+
+    reactions: async (
+      parent: Review,
+      _args: unknown,
+      { loaders, budget }: Context,
+    ) => budget.charge(await loaders.reactionsByReviewId.load(parent.id)),
   },
 };
 
