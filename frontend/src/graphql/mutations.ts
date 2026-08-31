@@ -40,6 +40,8 @@ export const CREATE_REVIEW = gql`
       user {
         id
         username
+        slug
+        avatarColor
       }
       comments {
         id
@@ -57,6 +59,8 @@ export const CREATE_COMMENT = gql`
       user {
         id
         username
+        slug
+        avatarColor
       }
     }
   }
@@ -67,6 +71,7 @@ export const UPDATE_PROFILE = gql`
     updateProfile(input: $input) {
       id
       bio
+      avatarColor
     }
   }
 `;
@@ -77,6 +82,7 @@ export const GET_ME = gql`
       id
       slug
       username
+      avatarColor
       email
     }
   }

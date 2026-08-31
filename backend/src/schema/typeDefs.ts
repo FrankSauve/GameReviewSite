@@ -8,6 +8,8 @@ export const typeDefs = `#graphql
     email: String
     # A self-written introduction, in Markdown. Public, like the reviews.
     bio: String
+    # A palette key, not a colour value. Null means the slug-derived fallback.
+    avatarColor: String
     createdAt: String
     updatedAt: String
     # Bounded list. Prefer reviewCount/averageRating when you only need totals.
@@ -218,6 +220,7 @@ export const typeDefs = `#graphql
   # An omitted field is left alone; an explicit empty one clears it.
   input UpdateProfileInput {
     bio: String
+    avatarColor: String
   }
 
   input CreateCommentInput {

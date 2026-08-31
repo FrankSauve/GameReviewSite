@@ -80,6 +80,7 @@ export const GET_GAME = gql`
           id
           slug
           username
+          avatarColor
         }
         comments {
           id
@@ -89,6 +90,7 @@ export const GET_GAME = gql`
             id
             slug
             username
+            avatarColor
           }
         }
       }
@@ -117,6 +119,7 @@ export const GET_RECENT_REVIEWS = gql`
         id
         slug
         username
+        avatarColor
       }
       game {
         id
@@ -139,6 +142,7 @@ export const GET_RECENT_REVIEWS = gql`
           id
           slug
           username
+          avatarColor
         }
       }
     }
@@ -161,6 +165,7 @@ export const GET_REVIEW = gql`
         id
         slug
         username
+        avatarColor
       }
       game {
         id
@@ -183,6 +188,7 @@ export const GET_REVIEW = gql`
           id
           slug
           username
+          avatarColor
         }
         reactions {
           emoji
@@ -200,6 +206,7 @@ export const GET_USERS = gql`
       id
       slug
       username
+      avatarColor
       reviewCount
       averageRating
     }
@@ -217,6 +224,7 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
       id
       slug
       username
+      avatarColor
       bio
       reviewCount
       averageRating
