@@ -71,6 +71,7 @@ export function createEmbedRouter(): Router {
           slug: true,
           rating: true,
           content: true,
+          user: { select: { username: true } },
           game: { select: { title: true, coverUrl: true } },
         },
       });
@@ -89,7 +90,11 @@ export function createEmbedRouter(): Router {
 
       res.send(
         renderEmbed(REVIEW_EMBED, {
-          title: embedTitle(review.game.title, review.rating),
+          title: embedTitle(
+            review.game.title,
+            review.rating,
+            review.user.username,
+          ),
           description: embedDescription(review.content),
           // The slug, not the key that was asked for: a UUID link unfurls with
           // the readable URL, the same way the SPA rewrites the address bar.

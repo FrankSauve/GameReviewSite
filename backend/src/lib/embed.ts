@@ -73,10 +73,14 @@ export function embedDescription(
   );
 }
 
-/** `Elden Ring — 9.5/10`. The score belongs in the title because that is the
- *  line every client renders, however little room it gives the rest. */
-export function embedTitle(gameTitle: string, rating: number): string {
-  return `${gameTitle} — ${formatScore(rating)}/10`;
+/** `Elden Ring — 9.5/10 by alice`. The score belongs in the title because that
+ *  is the line every client renders, however little room it gives the rest. */
+export function embedTitle(
+  gameTitle: string,
+  rating: number,
+  username: string,
+): string {
+  return `${gameTitle} — ${formatScore(rating)}/10 by ${username}`;
 }
 
 /** `alice — 42 reviews`, for the same reason the score is in the review title. */
