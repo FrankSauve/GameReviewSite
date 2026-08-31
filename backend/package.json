@@ -15,8 +15,7 @@
     "db:migrate": "prisma migrate deploy",
     "db:migrate:new": "prisma migrate dev",
     "db:baseline": "prisma migrate resolve --applied 0_init",
-    "db:studio": "prisma studio",
-    "backfill:genres": "tsx src/scripts/backfill-genres.ts"
+    "db:studio": "prisma studio"
   },
   "dependencies": {
     "@apollo/server": "^5.4.0",
