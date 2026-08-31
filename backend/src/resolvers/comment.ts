@@ -114,6 +114,12 @@ export const commentResolvers = {
       });
       return review ? serializeDates(review) : null;
     },
+
+    reactions: async (
+      parent: Comment,
+      _args: unknown,
+      { loaders, budget }: Context,
+    ) => budget.charge(await loaders.reactionsByCommentId.load(parent.id)),
   },
 };
 

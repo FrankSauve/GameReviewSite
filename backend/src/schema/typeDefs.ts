@@ -111,6 +111,7 @@ export const typeDefs = `#graphql
     # Bounded list. Prefer commentCount when you only need the total.
     comments(limit: Int, offset: Int): [Comment!]
     commentCount: Int!
+    reactions: [ReactionSummary!]!
   }
 
   # A manifesto, an essay, anything that is not a review. Reached at /articles in
@@ -139,6 +140,16 @@ export const typeDefs = `#graphql
     updatedAt: String
     user: User
     review: Review
+    reactions: [ReactionSummary!]!
+  }
+
+  # One emoji on one review or comment, with how many people put it there.
+  # Never the rows: a reaction is only ever read as a count.
+  type ReactionSummary {
+    emoji: String!
+    count: Int!
+    # Whether the caller is one of them. Always false for an anonymous visitor.
+    reacted: Boolean!
   }
 
   # ── Inputs ───────────────────────────────────────────────────────────────────
@@ -218,6 +229,13 @@ export const typeDefs = `#graphql
     content: String!
   }
 
+  # Exactly one of the two ids, mirroring the CHECK on the table.
+  input ToggleReactionInput {
+    reviewId: ID
+    commentId: ID
+    emoji: String!
+  }
+
   # ── Queries ──────────────────────────────────────────────────────────────────
 
   # Every list field takes a bounded window. Omitting the arguments does not mean
@@ -294,6 +312,10 @@ export const typeDefs = `#graphql
     createArticle(input: CreateArticleInput!): Article!
     updateArticle(id: ID!, input: UpdateArticleInput!): Article!
     deleteArticle(id: ID!): Boolean!
+
+    # Adds the caller's reaction, or removes it if it is already there. Returns
+    # the parent's whole summary, so the caller needs no refetch.
+    toggleReaction(input: ToggleReactionInput!): [ReactionSummary!]!
 
     createComment(input: CreateCommentInput!): Comment!
     updateComment(id: ID!, input: UpdateCommentInput!): Comment!

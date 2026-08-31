@@ -46,6 +46,13 @@ export const LIST_BOUNDS = {
   articles: { def: 20, max: 50 },
 } as const satisfies Record<string, Bounds>;
 
+/**
+ * `Review.reactions` and `Comment.reactions`. One entry per distinct emoji, not
+ * per row, so this is far below the nested bounds — and it takes no arguments,
+ * so `def` and `max` are the same number. lib/loaders.ts truncates to it.
+ */
+export const REACTION_BOUNDS: Bounds = { def: 24, max: 24 };
+
 function intOr(value: number | null | undefined, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value)
     ? Math.trunc(value)

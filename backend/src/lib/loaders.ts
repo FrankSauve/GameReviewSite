@@ -1,7 +1,7 @@
 import DataLoader from "dataloader";
 import type { Comment, Game, Review, User } from "@prisma/client";
 import { prisma } from "./prisma.js";
-import { LIST_BOUNDS } from "./pagination.js";
+import { LIST_BOUNDS, REACTION_BOUNDS } from "./pagination.js";
 
 /**
  * Per-request batching for the relation fields. Built per request, never per
@@ -18,6 +18,16 @@ export interface Loaders {
   /** Aggregates, so a count or an average never loads the rows it summarises. */
   reviewStatsByUserId: DataLoader<string, ReviewStats>;
   reviewStatsByGameId: DataLoader<string, ReviewStats>;
+  /** Counts per emoji, never the rows. Truncated to REACTION_BOUNDS.max. */
+  reactionsByReviewId: DataLoader<string, ReactionSummary[]>;
+  reactionsByCommentId: DataLoader<string, ReactionSummary[]>;
+}
+
+/** One emoji on one parent: how many put it there, and whether the viewer did. */
+export interface ReactionSummary {
+  emoji: string;
+  count: number;
+  reacted: boolean;
 }
 
 export interface ReviewStats {
@@ -55,7 +65,65 @@ function alignById<T extends { id: string }>(
   return ids.map((id) => byId.get(id) ?? null);
 }
 
-export function createLoaders(): Loaders {
+interface ReactionGroup {
+  parentId: string | null;
+  emoji: string;
+  count: number;
+}
+
+/**
+ * Buckets the aggregate rows by parent, most-reacted first, and marks the ones
+ * the viewer put there. Truncated so the static row rule in lib/maxRows.ts
+ * stays honest: a parent can carry more distinct emoji than the bound allows.
+ */
+function summarise(
+  ids: readonly string[],
+  groups: ReactionGroup[],
+  mine: Set<string>,
+  parent: "reviewId" | "commentId",
+): ReactionSummary[][] {
+  const buckets = new Map<string, ReactionSummary[]>();
+  for (const group of groups) {
+    if (group.parentId === null) continue;
+    const bucket = buckets.get(group.parentId) ?? [];
+    bucket.push({
+      emoji: group.emoji,
+      count: group.count,
+      reacted: mine.has(`${parent}:${group.parentId}:${group.emoji}`),
+    });
+    buckets.set(group.parentId, bucket);
+  }
+  for (const bucket of buckets.values()) {
+    bucket.sort((a, b) => b.count - a.count || a.emoji.localeCompare(b.emoji));
+    bucket.splice(REACTION_BOUNDS.max);
+  }
+  return ids.map((id) => buckets.get(id) ?? []);
+}
+
+/** The viewer's own rows, keyed so `summarise` can look one up per group. */
+async function ownReactions(
+  parent: "reviewId" | "commentId",
+  ids: readonly string[],
+  viewerId: string | null,
+): Promise<Set<string>> {
+  if (!viewerId) return new Set();
+  const rows = await prisma.reaction.findMany({
+    where:
+      parent === "reviewId"
+        ? { userId: viewerId, reviewId: { in: [...ids] } }
+        : { userId: viewerId, commentId: { in: [...ids] } },
+    select: { reviewId: true, commentId: true, emoji: true },
+  });
+  return new Set(
+    rows.map((row) => `${parent}:${row[parent] ?? ""}:${row.emoji}`),
+  );
+}
+
+/**
+ * `viewerId` is baked in because `reacted` is viewer-dependent: a loader shared
+ * between requests would report one visitor's reactions to the next.
+ */
+export function createLoaders(viewerId: string | null): Loaders {
   return {
     userById: new DataLoader(async (ids) => {
       const users = await prisma.user.findMany({
@@ -136,6 +204,36 @@ export function createLoaders(): Loaders {
         ]),
       );
       return gameIds.map((id) => byId.get(id) ?? NO_STATS);
+    }),
+
+    reactionsByReviewId: new DataLoader(async (reviewIds) => {
+      const grouped = await prisma.reaction.groupBy({
+        by: ["reviewId", "emoji"],
+        where: { reviewId: { in: [...reviewIds] } },
+        _count: { _all: true },
+      });
+      const groups = grouped.map((g) => ({
+        parentId: g.reviewId,
+        emoji: g.emoji,
+        count: g._count._all,
+      }));
+      const mine = await ownReactions("reviewId", reviewIds, viewerId);
+      return summarise(reviewIds, groups, mine, "reviewId");
+    }),
+
+    reactionsByCommentId: new DataLoader(async (commentIds) => {
+      const grouped = await prisma.reaction.groupBy({
+        by: ["commentId", "emoji"],
+        where: { commentId: { in: [...commentIds] } },
+        _count: { _all: true },
+      });
+      const groups = grouped.map((g) => ({
+        parentId: g.commentId,
+        emoji: g.emoji,
+        count: g._count._all,
+      }));
+      const mine = await ownReactions("commentId", commentIds, viewerId);
+      return summarise(commentIds, groups, mine, "commentId");
     }),
   };
 }

@@ -4,7 +4,7 @@ import {
   type FieldNode,
   type ValidationContext,
 } from "graphql";
-import { LIST_BOUNDS, type Bounds } from "./pagination.js";
+import { LIST_BOUNDS, REACTION_BOUNDS, type Bounds } from "./pagination.js";
 import { DEFAULT_ROW_BUDGET } from "./budget.js";
 
 /**
@@ -34,6 +34,10 @@ const EXPLICIT_BOUNDS: Record<string, Bounds> = {
   "Query.articles": LIST_BOUNDS.articles,
   // RAWG caps its own page size, and the result never touches our database.
   "Query.searchGamesExternal": { def: 12, max: 12 },
+  // Without these the nested bounds price them at 50 each, and the review page
+  // asks for `review { comments { reactions } }` — 2500 rows, and refused.
+  "Review.reactions": REACTION_BOUNDS,
+  "Comment.reactions": REACTION_BOUNDS,
 };
 
 function boundsFor(parentType: string, fieldName: string): Bounds {

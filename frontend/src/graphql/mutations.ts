@@ -136,3 +136,13 @@ export const DELETE_ARTICLE = gql`
     deleteArticle(id: $id)
   }
 `;
+
+export const TOGGLE_REACTION = gql`
+  mutation ToggleReaction($input: ToggleReactionInput!) {
+    toggleReaction(input: $input) {
+      emoji
+      count
+      reacted
+    }
+  }
+`;

@@ -15,6 +15,7 @@ import { RatingInput } from "../components/RatingInput";
 import { PlaytimeInput } from "../components/PlaytimeInput";
 import { PlatformSelect } from "../components/PlatformSelect";
 import { Markdown } from "../components/Markdown";
+import { ReactionBar, type ReactionSummary } from "../components/ReactionBar";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { gamePath, reviewPath, userPath } from "../lib/links";
 import { useCanonicalPath } from "../hooks/useCanonicalPath";
@@ -29,6 +30,7 @@ interface ReviewComment {
   content: string;
   createdAt: string;
   user?: CommentUser | null;
+  reactions?: ReactionSummary[] | null;
 }
 interface ReviewGame {
   id: string;
@@ -50,6 +52,7 @@ interface ReviewDetail {
   user?: CommentUser | null;
   game?: ReviewGame | null;
   comments?: ReviewComment[];
+  reactions?: ReactionSummary[] | null;
 }
 
 function timeAgo(iso: string): string {
@@ -379,8 +382,11 @@ export function ReviewDetailPage() {
               </div>
             </div>
           ) : (
-            <div className="text-gray-200 leading-relaxed">
-              <Markdown>{review.content}</Markdown>
+            <div className="space-y-4">
+              <div className="text-gray-200 leading-relaxed">
+                <Markdown>{review.content}</Markdown>
+              </div>
+              <ReactionBar reviewId={review.id} reactions={review.reactions} />
             </div>
           )}
 
@@ -450,6 +456,12 @@ export function ReviewDetailPage() {
                     <p className="text-sm text-gray-300 mt-1">
                       {comment.content}
                     </p>
+                    <div className="mt-2">
+                      <ReactionBar
+                        commentId={comment.id}
+                        reactions={comment.reactions}
+                      />
+                    </div>
                   </div>
                 </div>
               ))}

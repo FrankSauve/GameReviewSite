@@ -107,7 +107,9 @@ export function GameSearchBar() {
 
       {/* Dropdown */}
       {showDropdown && (
-        <div className="absolute top-full mt-2 left-0 right-0 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl shadow-black/60 z-50 overflow-hidden">
+        // The header is sticky at top-0 with a fixed h-16, so max-sm can pin the
+        // panel under it with static insets instead of measuring the input.
+        <div className="absolute top-full mt-2 left-0 right-0 max-sm:fixed max-sm:top-16 max-sm:left-2 max-sm:right-2 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl shadow-black/60 z-50 overflow-hidden">
           {searching && results.length === 0 && (
             <div className="flex items-center justify-center gap-2 py-6 text-sm text-gray-500">
               <Spinner /> Searching RAWG…

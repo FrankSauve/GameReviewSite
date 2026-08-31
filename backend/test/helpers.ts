@@ -40,7 +40,7 @@ export async function startApp(): Promise<{
  */
 export async function resetDatabase(): Promise<void> {
   await prisma.$executeRawUnsafe(
-    'TRUNCATE TABLE "Session", "Comment", "Review", "Game", "User" CASCADE',
+    'TRUNCATE TABLE "Reaction", "Session", "Comment", "Review", "Game", "User" CASCADE',
   );
 }
 
