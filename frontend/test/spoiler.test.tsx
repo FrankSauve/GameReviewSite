@@ -68,6 +68,7 @@ describe("spoilers", () => {
   it("reveals each spoiler independently", () => {
     renderMarkdown("||one|| and ||two||");
     const [first, second] = screen.getAllByRole("button");
+    if (!first || !second) throw new Error("expected two spoiler buttons");
     fireEvent.click(first);
     expect(first.getAttribute("aria-expanded")).toBe("true");
     expect(second.getAttribute("aria-expanded")).toBe("false");

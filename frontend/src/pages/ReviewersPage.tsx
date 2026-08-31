@@ -14,7 +14,7 @@ interface ReviewerUser {
 }
 
 function avatarGradient(username: string): string {
-  const gradients = [
+  const gradients: [string, ...string[]] = [
     "from-violet-600 to-indigo-700",
     "from-rose-600 to-pink-700",
     "from-emerald-600 to-teal-700",
@@ -24,7 +24,7 @@ function avatarGradient(username: string): string {
   ];
   const idx =
     [...username].reduce((a, c) => a + c.charCodeAt(0), 0) % gradients.length;
-  return gradients[idx];
+  return gradients[idx] ?? gradients[0];
 }
 
 export function ReviewersPage() {
@@ -87,7 +87,7 @@ export function ReviewersPage() {
                   <div
                     className={`w-11 h-11 rounded-full bg-gradient-to-br ${avatarGradient(u.username)} flex items-center justify-center text-base font-black text-white shrink-0`}
                   >
-                    {u.username[0].toUpperCase()}
+                    {u.username.charAt(0).toUpperCase()}
                   </div>
 
                   {/* Info */}

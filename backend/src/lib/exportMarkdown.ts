@@ -1,15 +1,4 @@
-/**
- * Reviews as markdown, in the format the issue specifies:
- *
- *     # Game Title
- *     **Score:** 8.5
- *     **Playtime:** 42 hrs
- *     **Year played:** 2024
- *
- *     <body>
- *
- * One review per file, delivered as a zip.
- */
+/** Reviews as markdown, one per file, delivered as a zip. */
 
 import { slugify } from "./slug.js";
 

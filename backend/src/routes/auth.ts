@@ -17,15 +17,9 @@ import {
 } from "../lib/session.js";
 
 /**
- * The three endpoints that make this app an OAuth2 client.
- *
- *   GET  /auth/login     start the authorization code flow
- *   GET  /auth/callback  finish it, and issue a session
- *   POST /auth/logout    drop the session, and tell the caller where to go to
- *                        end the authentik session too
- *
- * These must not sit behind any proxy-level authentication — they *are* the
- * authentication. See deploy/swag/gamereviews.subdomain.conf.
+ * The endpoints that make this app an OAuth2 client. These must not sit behind
+ * any proxy-level authentication — they *are* the authentication. See
+ * deploy/swag/gamereviews.subdomain.conf.
  */
 
 /** Carries state, nonce and the PKCE verifier across the redirect to authentik. */
@@ -40,14 +34,9 @@ interface Transaction {
 }
 
 /**
- * Rejects anything that is not a path on this site.
- *
- * `returnTo` comes from the query string and ends up in a Location header, so
- * without this it is an open redirect (CWE-601) — a phishing link could send
- * someone through a genuine authentik login and then bounce them to an
- * attacker's page, which is exactly the kind of redirect users are trained to
- * trust. Protocol-relative URLs are the case that catches people out: `//evil`
- * is a valid absolute URL to a browser, not a path.
+ * Rejects anything that is not a path on this site. `returnTo` reaches a
+ * Location header, so without this it is an open redirect (CWE-601).
+ * Protocol-relative URLs are the trap: `//evil` is absolute to a browser.
  */
 export function safeReturnTo(raw: unknown): string {
   if (typeof raw !== "string") return "/";
@@ -61,12 +50,9 @@ export function safeReturnTo(raw: unknown): string {
 }
 
 /**
- * Rebuilds the callback URL that openid-client needs to process the response.
- *
- * Built on the configured redirect URI rather than on the inbound Host header,
- * for two reasons: it is the value the provider validated the authorization
- * request against and the one it expects echoed back at the token endpoint, and
- * deriving it from a request header would let a caller influence it.
+ * Rebuilds the callback URL openid-client needs. Built on the configured
+ * redirect URI, never the inbound Host header: that is the value the provider
+ * validated, and a header would let a caller influence it.
  */
 function callbackUrl(req: Request): URL {
   const settings = oidcConfig();
@@ -118,10 +104,8 @@ function readTransaction(req: Request): Transaction | null {
 }
 
 /**
- * A failed callback is nearly always a stale tab: the transaction cookie
- * expired, or the user pressed back and replayed a spent code. Answer plainly
- * rather than redirecting, because redirecting to /auth/login from here is how
- * you build an infinite loop.
+ * Answers plainly rather than redirecting: redirecting to /auth/login from here
+ * is how you build an infinite loop.
  */
 function failCallback(res: Response, reason: string, err?: unknown): void {
   console.error(`OIDC callback rejected: ${reason}`, err ?? "");
@@ -220,9 +204,8 @@ export function createAuthRouter(secureCookies: boolean): Router {
 
   /**
    * POST, not GET, so a third-party page cannot sign someone out with an image
-   * tag. Answers with the URL to visit rather than redirecting, because the SPA
-   * calls this with fetch() and would otherwise follow the redirect itself and
-   * end authentik's session in a background request.
+   * tag. Answers with a URL rather than redirecting, because fetch() would
+   * follow the redirect in the background.
    */
   router.post("/logout", async (req: Request, res: Response) => {
     const idToken = await destroySession(req);

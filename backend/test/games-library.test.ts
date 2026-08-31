@@ -224,7 +224,7 @@ describe("the games listing", () => {
             data: {
               rating,
               content: "Played it.",
-              hoursPlayed: hours[i],
+              hoursPlayed: hours[i] ?? null,
               slug: `${game.slug}-${i}`,
               gameId: game.id,
               userId: bob.id,
@@ -308,7 +308,7 @@ describe("the games listing", () => {
         {},
         { sort: "DROP TABLE" },
       );
-      expect(res.errors?.[0].message).toMatch(/GameSort/);
+      expect(res.errors?.[0]?.message).toMatch(/GameSort/);
     });
   });
 

@@ -28,35 +28,15 @@ interface UpdateReviewInput {
   hoursPlayed?: number;
 }
 
-/**
- * Reviews are Markdown, and a decade of backlog includes long ones, so the body
- * limit is generous. Comments and game fields are unaffected — they pass their
- * own limits to `validateString` in lib/validate.ts.
- *
- * This does widen the worst-case response, and it is worth being precise about how
- * much. The guards in lib/budget.ts and lib/maxRows.ts count rows, not bytes: the
- * budget is 3000 rows, so the ceiling on a single response goes from roughly
- * 3000 x 5000 to 3000 x 20000. Reaching it needs that many long reviews to
- * genuinely exist, so it is a ceiling rather than an amplification — a small query
- * still cannot conjure a large response out of a nearly empty database.
- *
- * The lists that grew fastest are the ones that do not need a body at all: cards
- * show a 180- to 220-character excerpt and fetch the whole thing to do it. A
- * byte-aware budget, or a server-side excerpt field, is the fix. Neither belongs
- * in the commit that turns Markdown on.
- */
+/** Generous because a decade of backlog includes long reviews. */
 export const REVIEW_CONTENT_MAX = 20000;
 
 /**
  * Scores are whole or half points on a 1–10 scale: 9.5 is a score, 9.4 is a typo.
  *
- * Off-step values are refused rather than snapped. The column is a `Float` and
- * the previous version of this function quietly rounded to one decimal, so a
- * caller sending 9.4 got a stored 9.4 and a caller sending 9.44 got 9.4 without
- * being told either — and once a backlog import starts feeding scores from an old
- * spreadsheet, silently altering them is the failure mode that is hardest to
- * notice. `x * 2` is exact for halves in binary floating point, so this needs no
- * epsilon.
+ * Off-step values are refused, never snapped — silently altering an imported
+ * score is the failure hardest to notice. `x * 2` is exact for halves in binary
+ * floating point, so this needs no epsilon.
  */
 export const RATING_MIN = 1;
 export const RATING_MAX = 10;
@@ -97,15 +77,9 @@ function validateHoursPlayed(hours: number): number {
 }
 
 /**
- * Orderings `reviewSummariesByUser` accepts.
- *
- * Each falls back to a second key so the result is deterministic: two reviews with
- * the same score, or played the same year, would otherwise come back in whatever
- * order Postgres chose that day, and a list that reshuffles between pages is worse
- * than one ordered slightly arbitrarily.
- *
- * `nulls: "last"` matters on yearPlayed. Postgres puts nulls first under DESC, so
- * without it a review with no recorded year would outrank this year's.
+ * Orderings `reviewSummariesByUser` accepts. Each falls back to a second key so
+ * paging cannot reshuffle equal rows, and `nulls: "last"` keeps undated reviews
+ * below this year's — Postgres puts nulls first under DESC.
  */
 type ReviewOrder = "RECENT" | "RATING_DESC" | "YEAR_DESC";
 
@@ -184,17 +158,9 @@ export const reviewResolvers = {
     },
 
     /**
-     * A user's reviews without their bodies.
-     *
-     * Grouping happens in the browser. A `[ReviewGroup]` of `[Review]` would price
-     * badly against the static row rule — group width times review width — for no
-     * benefit, since the buckets are presentation and the whole payload is a few
-     * tens of kilobytes.
-     *
-     * `yearPlayed` is nullable, and Postgres sorts nulls first on a DESC ordering,
-     * which would put the reviews with no recorded year above the most recent ones.
-     * `nulls: "last"` keeps the "Unknown" bucket at the bottom where the view wants
-     * it.
+     * A user's reviews without their bodies. Grouping happens in the browser:
+     * the buckets are presentation, and a nested group shape prices badly
+     * against the static row rule for no benefit.
      */
     reviewSummariesByUser: async (
       _parent: unknown,
@@ -297,11 +263,9 @@ export const reviewResolvers = {
   },
 
   /**
-   * Reuses the same loaders as `Review`, so a page of 200 summaries is two batched
-   * queries for the games and the comment counts rather than 400 individual ones.
-   *
-   * Not spread from `reviewResolvers.Review`: that object carries a `content`
-   * resolver, and `ReviewSummary` has no such field for it to resolve.
+   * Reuses `Review`'s loaders, so 200 summaries are two batched queries.
+   * Deliberately not spread from it: that object has a `content` resolver and
+   * `ReviewSummary` has no such field.
    */
   ReviewSummary: {
     game: async (parent: Review, _args: unknown, { loaders }: Context) => {

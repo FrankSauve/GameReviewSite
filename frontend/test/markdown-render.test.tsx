@@ -28,8 +28,8 @@ describe("Markdown formatting", () => {
     );
     const paras = container.querySelectorAll("p");
     expect(paras).toHaveLength(2);
-    expect(paras[0].textContent).toBe("First para.");
-    expect(paras[1].textContent).toBe("Second para.");
+    expect(paras[0]?.textContent).toBe("First para.");
+    expect(paras[1]?.textContent).toBe("Second para.");
   });
 
   it("renders bold and italic", () => {

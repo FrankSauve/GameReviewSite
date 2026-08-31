@@ -46,6 +46,6 @@ export async function getRawgGame(rawgId: number): Promise<RawgGame> {
 
 export function releaseYear(released?: string | null): number | null {
   if (!released) return null;
-  const y = parseInt(released.split("-")[0], 10);
+  const y = parseInt(released.split("-")[0] ?? "", 10);
   return isNaN(y) ? null : y;
 }

@@ -1,9 +1,4 @@
-/**
- * The text edits behind the editor toolbar.
- *
- * Pure functions over `{ text, start, end }` rather than reaching into a
- * textarea, because the interesting behaviour is where the selection ends up.
- */
+/** The text edits behind the editor toolbar. */
 
 export interface Selection {
   text: string;
@@ -74,12 +69,9 @@ function runLength(
 }
 
 /**
- * Can a layer come off a run of markers this long?
- *
- * Every marker here is one character repeated, so the run is what says which
- * layers are present. A one-character marker comes off an odd run only: `*` next
- * to `**word**` is bold, and taking one from each side would demote it rather
- * than remove an italic. Three is `***word***`, which does have one to remove.
+ * Can a layer come off a run of markers this long? A one-character marker comes
+ * off an odd run only: `*` next to `**word**` is bold, and taking one from each
+ * side would demote it rather than remove an italic.
  */
 function canUnwrap(run: number, marker: string): boolean {
   if (run < marker.length) return false;
@@ -89,7 +81,7 @@ function canUnwrap(run: number, marker: string): boolean {
 /** Is this selection already wrapped in this marker, markers included? */
 function isWrapped(selected: string, marker: string): boolean {
   if (selected.length < marker.length * 2) return false;
-  const char = marker[0];
+  const char = marker[0] ?? "";
   const lead = runLength(selected, 0, 1, char);
   const trail = runLength(selected, selected.length - 1, -1, char);
   // All markers and no body: one run, counted twice.
@@ -99,7 +91,7 @@ function isWrapped(selected: string, marker: string): boolean {
 
 /** Do this command's markers sit immediately outside the selection? */
 function isSurrounded(before: string, after: string, marker: string): boolean {
-  const char = marker[0];
+  const char = marker[0] ?? "";
   return (
     canUnwrap(runLength(before, before.length - 1, -1, char), marker) &&
     canUnwrap(runLength(after, 0, 1, char), marker)
@@ -143,11 +135,9 @@ function wrap(
 }
 
 /**
- * Adds or removes a line prefix across every line the selection touches.
- *
- * Removes only when all of them already have it, so a partly quoted block
- * becomes fully quoted rather than half of it being unquoted. Blank lines are
- * left alone in both directions: they are separators, not list items.
+ * Adds or removes a line prefix across the selection. Removes only when every
+ * line already has it, so a partly quoted block becomes fully quoted. Blank
+ * lines are separators, not list items, and are left alone.
  */
 function prefixLines(selection: Selection, prefix: string): Selection {
   const { text, start, end } = selection;
@@ -166,7 +156,8 @@ function prefixLines(selection: Selection, prefix: string): Selection {
     line === "" ? line : removing ? line.slice(prefix.length) : prefix + line;
 
   const updated = lines.map(change).join("\n");
-  const shift = change(lines[0]).length - lines[0].length;
+  const first = lines[0] ?? "";
+  const shift = change(first).length - first.length;
   const delta = updated.length - (blockEnd - blockStart);
 
   return {

@@ -1,9 +1,4 @@
-/**
- * Page controls, shared by the review feed and the games library. The numbers
- * are windowed — first, last, and the current page's neighbours.
- *
- * `page` is zero-based, matching the `offset = page * size` the queries do.
- */
+/** `page` is zero-based, matching the `offset = page * size` the queries do. */
 
 interface PaginationProps {
   page: number;
