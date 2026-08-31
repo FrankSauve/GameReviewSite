@@ -11,17 +11,14 @@ import { DEFAULT_ROW_BUDGET } from "./budget.js";
  * Rejects a query whose shape could return more rows than the budget allows,
  * before a single row is read.
  *
- * graphql-armor's cost limit does not cover this. It scores a query by counting
- * nodes and depth, which says nothing about how many rows each list field will
- * return — and the abuse here is entirely in the cardinality. `reviews` nested
- * inside `user` nested inside `reviews` is a small, shallow, cheap-looking query
- * that multiplies out to hundreds of thousands of rows.
+ * graphql-armor's cost limit does not cover this: it scores query shape, and
+ * the abuse is entirely in cardinality — `reviews` inside `user` inside
+ * `reviews` is shallow and cheap-looking and multiplies out to hundreds of
+ * thousands of rows.
  *
- * The runtime budget in lib/budget.ts still applies. This rule is the better of
- * the two when it fires (one clear error, no database work at all), but it reads
- * the query shape, so a caller who buries list fields in fragment spreads can
- * slip past it. The runtime budget cannot be dodged that way, and catches
- * whatever this misses.
+ * Reads the query shape, so fragment spreads can hide list fields from it. The
+ * runtime budget in lib/budget.ts cannot be dodged that way and catches the
+ * rest.
  */
 
 /** Bounds keyed by "ParentType.field", falling back to the nested bounds. */

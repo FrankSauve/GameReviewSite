@@ -14,21 +14,15 @@ import {
 } from "../lib/exportMarkdown.js";
 
 /**
- * Downloading your own reviews as a zip of markdown files, one per review.
+ * `GET /export/reviews.zip` — your own reviews, one markdown file each.
  *
- *   GET /export/reviews.zip
+ * Its own streaming endpoint rather than a GraphQL field, because the bounds in
+ * lib/budget.ts would refuse a backlog of any size and an export is that shape
+ * on purpose.
  *
- * Deliberately not a GraphQL field. Every list in the schema is bounded, and the
- * text budget in lib/budget.ts would refuse a backlog of any size — those guards
- * exist because a small query returning megabytes is the failure mode this API
- * has already been bitten by. An export is that shape on purpose, so it gets its
- * own endpoint that streams rather than an exemption carved into the ones that
- * stop it.
- *
- * It is a GET carrying the session cookie, which means another site can cause a
- * browser to fetch it. That is acceptable here and nowhere else in this app: it
- * changes nothing, and the response is opaque cross-origin, so the page that
- * triggered it cannot read a word of what came back.
+ * A GET carrying the session cookie, so another site can trigger it. Acceptable
+ * here and nowhere else: it changes nothing, and the response is opaque
+ * cross-origin.
  */
 
 /** Rows held in memory at once. Only one batch is resident: the loop waits for
@@ -36,12 +30,9 @@ import {
 const BATCH_SIZE = 50;
 
 /**
- * How much review text may sit in the zip's queue before the next batch waits.
- *
- * yazl buffers whatever it has been handed and is not yet able to write, so
- * without this the read loop runs to completion at memory speed and the whole
- * backlog is resident after all — the same failure as ignoring `write`'s return
- * value on a plain stream.
+ * How much review text may queue before the next batch waits. yazl buffers what
+ * it cannot yet write, so without this the read loop runs to completion at
+ * memory speed and the whole backlog is resident.
  */
 const QUEUE_HIGH_WATER = 1 << 20;
 
@@ -53,10 +44,8 @@ interface Cursor {
 
 /**
  * The zip being written to the response, with a queue the reader can wait on.
- *
- * `pending` is bytes handed to yazl minus bytes it has emitted, so it falls only
- * as the socket accepts output. It goes negative once the archive's own headers
- * are counted on the way out, which is fine: it is a watermark, not a ledger.
+ * `pending` goes negative once the archive's own headers are counted out — it
+ * is a watermark, not a ledger.
  */
 class ArchiveWriter {
   private readonly zip = new ZipFile();
@@ -216,7 +205,7 @@ export function createExportRouter(): Router {
         const last = batch[batch.length - 1]!;
         cursor = { createdAt: last.createdAt, id: last.id };
       }
-      await archive!.finish(departed.signal);
+      await archive.finish(departed.signal);
     } catch (err: unknown) {
       console.error("Export failed:", err);
       if (!res.headersSent) {

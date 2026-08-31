@@ -1,13 +1,7 @@
 /**
- * Clamped list windows.
- *
- * Every list field is bounded, including the nested ones. A review carries a
- * user, a user carries reviews, and a review carries comments, so an unbounded
- * list anywhere in that cycle lets a request whose own size is fixed ask for a
- * response whose size is not: a 249-byte query returned 2.6 MB before these
- * bounds existed. graphql-armor's cost limit does not catch it, because cost is
- * scored from the shape of the query and this abuse is entirely in the
- * cardinality of the result.
+ * Clamped list windows. Every list field is bounded, nested ones included: the
+ * schema is cyclic, so one unbounded list lets a fixed-size request ask for an
+ * unbounded response. See lib/maxRows.ts for why armor does not cover this.
  */
 
 export interface PageArgs {
@@ -39,12 +33,9 @@ export const LIST_BOUNDS = {
   games: { def: 100, max: 200 },
   nested: { def: 50, max: 100 },
   /**
-   * Higher than `reviews` on purpose: a review summary carries no `content`, which
-   * is the field the other bounds are small to contain. 500 rows of summary is
-   * roughly 50 kB, where 500 full reviews could be 10 MB.
-   *
-   * The default is 200 rather than the maximum so a profile with a decade of
-   * reviews loads in one request without a caller having to know to ask.
+   * Higher than `reviews` because a summary carries no `content`: 500 summaries
+   * is ~50 kB where 500 full reviews could be 10 MB. The default is 200 so a
+   * decade of reviews loads in one request.
    */
   reviewSummaries: { def: 200, max: 500 },
   /**

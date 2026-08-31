@@ -106,7 +106,7 @@ describe("groupByScore", () => {
   });
 
   it("labels a whole score without a trailing zero", () => {
-    expect(groupByScore([review(9, 2020)])[0].label).toBe("9");
+    expect(groupByScore([review(9, 2020)])[0]?.label).toBe("9");
   });
 
   it("returns nothing for no reviews", () => {
@@ -117,23 +117,23 @@ describe("groupByScore", () => {
 describe("group totals", () => {
   it("averages the scores within a year", () => {
     const groups = groupByYear([review(8, 2020), review(9, 2020)]);
-    expect(groups[0].average).toBe(8.5);
+    expect(groups[0]?.average).toBe(8.5);
   });
 
   it("sums the hours within a group", () => {
     const groups = groupByYear([review(8, 2020, 12), review(9, 2020, 30.5)]);
-    expect(groups[0].hours).toBe(42.5);
+    expect(groups[0]?.hours).toBe(42.5);
   });
 
   /** A group of reviews that predate hoursPlayed has no total to show. */
   it("reports no hours when none are recorded", () => {
     const groups = groupByYear([review(8, 2020, null), review(9, 2020, null)]);
-    expect(groups[0].hours).toBeNull();
+    expect(groups[0]?.hours).toBeNull();
   });
 
   it("sums only the recorded hours in a mixed group", () => {
     const groups = groupByYear([review(8, 2020, 12), review(9, 2020, null)]);
-    expect(groups[0].hours).toBe(12);
+    expect(groups[0]?.hours).toBe(12);
   });
 });
 
@@ -142,7 +142,7 @@ describe("groupReviews", () => {
     const rows = [review(6, 2011), review(10, 2024)];
     const groups = groupReviews(rows, "recent");
     expect(groups).toHaveLength(1);
-    expect(groups[0].items.map((i) => i.id)).toEqual(rows.map((r) => r.id));
+    expect(groups[0]?.items.map((i) => i.id)).toEqual(rows.map((r) => r.id));
   });
 
   it("returns nothing for the recent view with no reviews", () => {

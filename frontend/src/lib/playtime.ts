@@ -1,8 +1,6 @@
 /**
- * When a game was played, and for how long.
- *
- * Both bounds mirror `backend/src/resolvers/review.ts`, which is the side that
- * enforces them. These stop the form offering a value the API would refuse.
+ * Both bounds mirror backend/src/resolvers/review.ts, the side that enforces
+ * them; these only stop the form offering a value the API would refuse.
  */
 export const YEAR_PLAYED_MIN = 1970;
 export const HOURS_PLAYED_MAX = 10000;
@@ -31,11 +29,8 @@ export function formatHours(hours: number): string {
 }
 
 /**
- * How a review's playtime reads on a card: `2019 · 42h`.
- *
- * Either half can be missing — the review that predates these columns has no hours,
- * and an imported one may have neither — so this returns null rather than a string
- * with a stray separator in it.
+ * How a review's playtime reads on a card: `2019 · 42h`. Either half can be
+ * missing, so this returns null rather than a stray separator.
  */
 export function formatPlaytime(
   yearPlayed?: number | null,

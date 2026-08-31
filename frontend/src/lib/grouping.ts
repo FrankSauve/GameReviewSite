@@ -57,15 +57,9 @@ function toGroup(
 }
 
 /**
- * Groups by the year the game was played, newest year first.
- *
- * Only years that have reviews get a heading — a gap year renders as nothing
- * rather than an empty section, because a profile is a record of what someone
- * played and a run of empty headings says nothing.
- *
- * Reviews with no recorded year collect in a trailing "Unknown" group, which only
- * appears if such reviews exist. That is the imported-backlog case: a review whose
- * year genuinely is not known should not be silently filed under this year.
+ * Groups by the year the game was played, newest first. Reviews with no
+ * recorded year collect in a trailing "Unknown" group rather than being filed
+ * under this year — the imported-backlog case.
  */
 export function groupByYear(reviews: ReviewSummary[]): ReviewGroup[] {
   const byYear = new Map<number, ReviewSummary[]>();
@@ -90,13 +84,7 @@ export function groupByYear(reviews: ReviewSummary[]): ReviewGroup[] {
   return groups;
 }
 
-/**
- * Groups by score, 10 down to 1 in half points.
- *
- * Only scores that have been given get a heading. Rendering all nineteen would
- * make a profile mostly empty labels, and the gaps are themselves informative —
- * a reviewer with nothing below 7 reads that way at a glance.
- */
+/** Groups by score, 10 down to 1 in half points. Only scores given get a heading. */
 export function groupByScore(reviews: ReviewSummary[]): ReviewGroup[] {
   const byScore = new Map<number, ReviewSummary[]>();
 

@@ -8,33 +8,19 @@ import { Spoiler } from "./Spoiler";
 /**
  * Renders a review body as Markdown.
  *
- * Reviews are stored as the Markdown source and rendered on the way out, so the
- * text a person typed stays the durable artefact — which is the property that
- * matters for a backlog of reviews written over a decade in whatever editor was
- * to hand.
+ * No `rehype-raw`, deliberately: raw HTML is escaped and shown as text, so
+ * there is no injection to sanitise. Adding it later would need
+ * `rehype-sanitize` alongside.
  *
- * There is no `rehype-raw` here, deliberately. Without it, raw HTML in a review
- * is escaped and displayed as text rather than parsed, so there is no injection
- * to sanitise: `<script>` in a review is four words and a pair of angle brackets.
- * Adding `rehype-raw` later would reintroduce that surface and would need
- * `rehype-sanitize` alongside it.
- *
- * `remarkBreaks` is not cosmetic. A review pasted from a text file separates its
- * lines with single newlines, which strict Markdown collapses into one paragraph;
- * every imported review would arrive as a wall of text without it.
- *
- * `remarkSpoiler` adds `||hidden||` as a node of its own type rather than raw
- * HTML, so it survives the element allow-list without `rehype-raw`.
+ * `remarkBreaks` is required, not cosmetic — imported reviews separate lines
+ * with single newlines, which strict Markdown collapses into one paragraph.
+ * `remarkSpoiler` emits its own node type rather than raw HTML, so `||hidden||`
+ * survives the allow-list.
  */
 
 /**
- * The elements a review may produce.
- *
- * All six heading levels are parsed; each is demoted two ranks on the way out so
- * none outranks the page's own heading — see the heading components below.
- * Anything not listed is dropped, keeping its children.
- *
- * `img` is listed but renders no `<img>` — see the `img` component below.
+ * The elements a review may produce. `img` is listed but renders no `<img>` —
+ * see the `img` component below.
  */
 const ALLOWED = [
   "p",
@@ -90,11 +76,8 @@ const remarkRehypeOptions = {
 } as RemarkRehypeOptions;
 
 /**
- * A heading rendered at `tag` rather than at its Markdown rank.
- *
- * Every level is demoted two ranks and clamped at `h6`, so a review's `#` lands
- * at `h3` and can never outrank the page's own title. The size still tracks the
- * Markdown level, so `#####` and `######` differ on screen despite sharing a tag.
+ * Demoted two ranks and clamped at `h6`, so a review's `#` can never outrank
+ * the page's own title. Size still tracks the Markdown level.
  */
 function heading(tag: "h3" | "h4" | "h5" | "h6", className: string) {
   const Tag = tag;
@@ -159,18 +142,9 @@ const components: Components = {
     <td className="border border-gray-800 px-2 py-1">{children}</td>
   ),
   /**
-   * Renders the alt text, never an `<img>`.
-   *
-   * The CSP names `media.rawg.io` as the only remote image source (see
-   * `frontend/security-headers.conf`), so a real `<img>` pointing anywhere else
-   * would be blocked and show as a broken image. Simply excluding `img` from the
-   * allow-list was the first attempt and was worse: `unwrapDisallowed` keeps an
-   * element's children, and alt text is an attribute rather than a child, so the
-   * image and its description both vanished and left a silent gap where the author
-   * had written something.
-   *
-   * Widening `img-src` is a deliberate decision to take on its own; until then
-   * this says what was there.
+   * Renders the alt text, never an `<img>`: the CSP names `media.rawg.io` as
+   * the only remote image source (see frontend/security-headers.conf), so a
+   * real `<img>` elsewhere would show as broken.
    */
   img: ({ alt }) => (
     <span className="text-xs text-gray-500 italic">
@@ -184,10 +158,8 @@ const components: Components = {
     return isSpoiler ? <Spoiler>{children}</Spoiler> : <span>{children}</span>;
   },
   /**
-   * `noopener noreferrer` because these open in a new tab; `nofollow` because a
-   * review body is user-submitted text on a public page, which is exactly what
-   * link spam looks for. react-markdown's default `urlTransform` already drops
-   * `javascript:` and other unsafe schemes before this runs.
+   * `nofollow` because a review body is user-submitted text on a public page.
+   * react-markdown's `urlTransform` drops unsafe schemes before this runs.
    */
   a: ({ href, children }) => (
     <a

@@ -8,14 +8,6 @@ import { useAuth } from "../contexts/AuthContext";
 import { articlePath } from "../lib/links";
 import { Markdown } from "../components/Markdown";
 
-/**
- * Writing an article, and editing one: the two differ only in which mutation runs,
- * whether the fields start empty, and what the button says.
- *
- * The plain textarea is temporary — this form should adopt the MarkdownEditor
- * from #46 once that lands.
- */
-
 /** Kept in step with ARTICLE_CONTENT_MAX in backend/src/resolvers/article.ts. */
 const CONTENT_MAX = 50000;
 /** Write and Preview share it, so switching tabs does not resize the form. */

@@ -1,8 +1,6 @@
 /**
  * The HTML stub crawlers get for a review link. See routes/embed.ts for how a
  * crawler is routed here while a person still gets the SPA.
- *
- * Pure, so the tags can be tested without a database or a socket.
  */
 
 import { formatScore } from "./exportMarkdown.js";
@@ -33,8 +31,8 @@ export function escapeHtml(value: string): string {
  * A review body reduced to one line of plain text for `og:description`.
  *
  * Must stay in step with `toPlainText`/`excerpt` in frontend/src/lib/markdown.ts,
- * which is the authoritative copy of this rule (#66). Spoilers are redacted rather
- * than unwrapped: an unfurl has no click-to-reveal to hide behind.
+ * the authoritative copy. Spoilers are redacted, not unwrapped: an unfurl has no
+ * click-to-reveal to hide behind.
  */
 export function embedDescription(
   markdown: string,
