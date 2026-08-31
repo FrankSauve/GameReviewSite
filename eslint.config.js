@@ -22,11 +22,6 @@ export default tseslint.config(
 
   {
     rules: {
-      // Its verdict depends on how strict the tsconfig is, and #81 turns on
-      // noUncheckedIndexedAccess. It currently calls `batch[batch.length - 1]!`
-      // unnecessary; under that flag it is required. Revisit once #81 lands.
-      "@typescript-eslint/no-unnecessary-type-assertion": "off",
-
       // The `\u0000` sentinels in the markdown excerpt and the header-injection
       // guard in safeReturnTo are deliberate. The rule cannot tell those from a
       // control character typed in by accident.
@@ -106,6 +101,11 @@ export default tseslint.config(
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-unsafe-argument": "off",
+
+      // The rule disagrees with tsc about testing-library's `getByRole`, and
+      // calls the `as HTMLTextAreaElement` casts in profile-bio.test.tsx
+      // redundant when removing them fails the typecheck. tsc is the authority.
+      "@typescript-eslint/no-unnecessary-type-assertion": "off",
     },
   },
 

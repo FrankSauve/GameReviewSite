@@ -205,7 +205,7 @@ export function createExportRouter(): Router {
         const last = batch[batch.length - 1]!;
         cursor = { createdAt: last.createdAt, id: last.id };
       }
-      await archive!.finish(departed.signal);
+      await archive.finish(departed.signal);
     } catch (err: unknown) {
       console.error("Export failed:", err);
       if (!res.headersSent) {
