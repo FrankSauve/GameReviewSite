@@ -63,6 +63,30 @@ describe("query abuse limits", () => {
     expect(res.errors).toBeUndefined();
   });
 
+  /**
+   * The home feed asks for reactions and comments per review, so its page size
+   * is a literal in the document: a variable limit is priced at the field's
+   * maximum and the same shape is refused. See frontend/src/graphql/queries.ts.
+   */
+  it("accepts the feed's shape at its literal page size", async () => {
+    const selection = "{ id reactions { emoji } comments { id } }";
+    const literal = await publicQuery(
+      app,
+      `{ recentReviews(limit: 10) ${selection} }`,
+    );
+    expect(literal.errors).toBeUndefined();
+
+    const variable = await publicQuery(
+      app,
+      `query Feed($limit: Int) { recentReviews(limit: $limit) ${selection} }`,
+      {},
+      { limit: 10 },
+    );
+    expect(variable.errors?.[0]?.message).toMatch(
+      /could return up to \d+ records/,
+    );
+  });
+
   it("rejects a query with an excessive number of aliases", async () => {
     const aliases = Array.from(
       { length: 40 },

@@ -6,9 +6,9 @@ export interface Emoji {
 }
 
 /**
- * The row every review and comment shows before anyone has reacted. Each one is
- * fully qualified — ❤️ carries U+FE0F — because the server only accepts RGI
- * sequences. See backend/src/lib/emoji.ts.
+ * The row the add-reaction button opens on. Each one is fully qualified — ❤️
+ * carries U+FE0F — because the server only accepts RGI sequences. See
+ * backend/src/lib/emoji.ts.
  */
 export const DEFAULT_REACTIONS: readonly string[] = [
   "👍",

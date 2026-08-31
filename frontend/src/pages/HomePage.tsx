@@ -1,7 +1,10 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@apollo/client";
-import { GET_RECENT_REVIEWS } from "../graphql/queries";
+import {
+  GET_RECENT_REVIEWS,
+  RECENT_REVIEWS_PAGE_SIZE,
+} from "../graphql/queries";
 import { CREATE_COMMENT } from "../graphql/mutations";
 import { useAuth } from "../contexts/AuthContext";
 import type { Review } from "../types";
@@ -10,6 +13,7 @@ import { excerpt } from "../lib/markdown";
 import { formatPlaytime } from "../lib/playtime";
 import { gamePath, reviewPath, userPath } from "../lib/links";
 import { Pagination } from "../components/Pagination";
+import { ReactionBar } from "../components/ReactionBar";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -70,14 +74,17 @@ function ReviewFeedCard({ review }: { review: Review }) {
   const summary = excerpt(review.content, 220);
 
   return (
-    <article className="card overflow-hidden flex flex-col hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
+    // No overflow-hidden on the card: it would clip the reaction menu, which
+    // opens below a bar that sits on the bottom edge. The cover art rounds
+    // its own corners instead.
+    <article className="card flex flex-col hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
       {/* Main clickable row */}
       <button
         onClick={() => void navigate(reviewPath(review))}
         className="flex gap-0 text-left group w-full"
       >
         {/* Cover art */}
-        <div className="w-28 sm:w-36 shrink-0 relative overflow-hidden">
+        <div className="w-28 sm:w-36 shrink-0 relative overflow-hidden rounded-l-xl">
           {game?.coverUrl ? (
             <img
               src={game.coverUrl}
@@ -145,42 +152,46 @@ function ReviewFeedCard({ review }: { review: Review }) {
         </div>
       </button>
 
-      {/* Comments section */}
+      {/* Reactions and comments */}
       <div className="px-4 pb-3 border-t border-gray-800/60">
-        {/* Toggle button */}
-        <button
-          onClick={() => setShowComments((v) => !v)}
-          className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-200 transition-colors pt-2.5"
-        >
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pt-2.5">
+          {/* Toggle button */}
+          <button
+            onClick={() => setShowComments((v) => !v)}
+            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-200 transition-colors"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-            />
-          </svg>
-          {localComments.length}{" "}
-          {localComments.length === 1 ? "comment" : "comments"}
-          <svg
-            className={`w-3 h-3 transition-transform ${showComments ? "rotate-180" : ""}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </button>
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              />
+            </svg>
+            {localComments.length}{" "}
+            {localComments.length === 1 ? "comment" : "comments"}
+            <svg
+              className={`w-3 h-3 transition-transform ${showComments ? "rotate-180" : ""}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+
+          <ReactionBar reviewId={review.id} reactions={review.reactions} />
+        </div>
 
         {showComments && (
           <div className="mt-2 space-y-3">
@@ -274,8 +285,6 @@ function ReviewFeedSkeleton() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-const PAGE_SIZE = 10;
-
 export function HomePage() {
   const [page, setPage] = useState(0);
 
@@ -283,13 +292,13 @@ export function HomePage() {
     recentReviews: Review[];
     recentReviewsCount: number;
   }>(GET_RECENT_REVIEWS, {
-    variables: { limit: PAGE_SIZE, offset: page * PAGE_SIZE },
+    variables: { offset: page * RECENT_REVIEWS_PAGE_SIZE },
     fetchPolicy: "network-only",
   });
 
   const reviews = reviewsData?.recentReviews ?? [];
   const totalReviews = reviewsData?.recentReviewsCount ?? 0;
-  const totalPages = Math.ceil(totalReviews / PAGE_SIZE);
+  const totalPages = Math.ceil(totalReviews / RECENT_REVIEWS_PAGE_SIZE);
 
   return (
     <div className="space-y-10">

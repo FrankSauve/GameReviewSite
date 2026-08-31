@@ -9,10 +9,8 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { MockedProvider, type MockedResponse } from "@apollo/client/testing";
-import {
-  ReactionBar,
-  type ReactionSummary,
-} from "../src/components/ReactionBar";
+import { ReactionBar } from "../src/components/ReactionBar";
+import type { ReactionSummary } from "../src/types";
 import { AuthProvider } from "../src/contexts/AuthContext";
 import { GET_ME, TOGGLE_REACTION } from "../src/graphql/mutations";
 import { DEFAULT_REACTIONS, searchEmoji } from "../src/lib/emoji";
@@ -81,12 +79,13 @@ function renderBar(
 }
 
 describe("the reaction bar", () => {
-  it("offers the default row when nobody has reacted", () => {
+  it("shows no emoji at all until somebody reacts", () => {
     const { container } = renderBar([]);
+    expect(screen.getByRole("button", { name: "Add a reaction" })).toBeTruthy();
     for (const emoji of DEFAULT_REACTIONS) {
       expect(
-        screen.getByRole("button", { name: `React with ${emoji}` }),
-      ).toBeTruthy();
+        screen.queryByRole("button", { name: `React with ${emoji}` }),
+      ).toBeNull();
     }
     expect(container.textContent).not.toMatch(/\d/);
   });
@@ -158,11 +157,52 @@ describe("the reaction bar", () => {
   });
 });
 
-describe("the emoji picker", () => {
-  it("opens on the plus button and closes on Escape", async () => {
+describe("the quick reaction menu", () => {
+  it("opens the defaults on the add button and closes on Escape", async () => {
     renderBar([]);
-    expect(screen.queryByLabelText("Search emoji")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Add a reaction" }));
+    for (const emoji of DEFAULT_REACTIONS) {
+      expect(
+        screen.getByRole("button", { name: `React with ${emoji}` }),
+      ).toBeTruthy();
+    }
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() =>
+      expect(
+        screen.queryByRole("button", { name: "React with 👍" }),
+      ).toBeNull(),
+    );
+  });
+
+  it("reacts with a default and closes the menu", async () => {
+    renderBar(
+      [],
+      [meMock, toggleMock("👍", [{ emoji: "👍", count: 1, reacted: true }])],
+    );
+    await whenSignedIn();
+    fireEvent.click(screen.getByRole("button", { name: "Add a reaction" }));
+    fireEvent.click(screen.getByRole("button", { name: "React with 👍" }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: "React with 👍" }).textContent,
+      ).toBe("👍1"),
+    );
+    expect(screen.queryByRole("button", { name: "More emoji" })).toBeNull();
+  });
+});
+
+describe("the emoji picker", () => {
+  /** Two clicks now: the defaults first, then the plus that widens them. */
+  function openPicker() {
+    fireEvent.click(screen.getByRole("button", { name: "Add a reaction" }));
+    fireEvent.click(screen.getByRole("button", { name: "More emoji" }));
+  }
+
+  it("opens behind the quick menu's plus and closes on Escape", async () => {
+    renderBar([]);
+    fireEvent.click(screen.getByRole("button", { name: "Add a reaction" }));
+    expect(screen.queryByLabelText("Search emoji")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "More emoji" }));
     expect(screen.getByLabelText("Search emoji")).toBeTruthy();
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() =>
@@ -172,7 +212,7 @@ describe("the emoji picker", () => {
 
   it("filters to the emoji whose names match the search", () => {
     renderBar([]);
-    fireEvent.click(screen.getByRole("button", { name: "Add a reaction" }));
+    openPicker();
     fireEvent.change(screen.getByLabelText("Search emoji"), {
       target: { value: "birthday" },
     });
@@ -186,7 +226,7 @@ describe("the emoji picker", () => {
       [meMock, toggleMock("🎉", [{ emoji: "🎉", count: 1, reacted: true }])],
     );
     await whenSignedIn();
-    fireEvent.click(screen.getByRole("button", { name: "Add a reaction" }));
+    openPicker();
     fireEvent.change(screen.getByLabelText("Search emoji"), {
       target: { value: "party popper" },
     });
