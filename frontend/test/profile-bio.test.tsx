@@ -149,7 +149,7 @@ describe("ProfileBio", () => {
     it("gives the editor the bio limit rather than the review one", () => {
       renderBio({ bio: "x", isOwnProfile: true });
       fireEvent.click(screen.getByRole("button", { name: "Edit bio" }));
-      expect(screen.getByText("1/1000")).toBeTruthy();
+      expect(screen.getByText("1/3000")).toBeTruthy();
     });
   });
 });

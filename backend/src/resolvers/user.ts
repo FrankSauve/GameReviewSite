@@ -12,7 +12,7 @@ import { requireAuth, type Context } from "../context.js";
 import { byIdOrSlug } from "../lib/slug.js";
 
 /** Enforced here; the textarea's maxLength is only a hint to the browser. */
-export const BIO_MAX = 1000;
+export const BIO_MAX = 3000;
 
 interface UpdateProfileInput {
   bio?: string | null;

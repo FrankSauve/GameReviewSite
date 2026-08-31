@@ -11,16 +11,14 @@ import {
 } from "./helpers.js";
 
 const LIST = `query List($limit: Int, $offset: Int, $reviewedOnly: Boolean,
-                         $genre: String, $platform: String, $reviewedBy: ID,
-                         $sort: GameSort) {
+                         $genre: String, $reviewedBy: ID, $sort: GameSort) {
   games(limit: $limit, offset: $offset, reviewedOnly: $reviewedOnly,
-        genre: $genre, platform: $platform, reviewedBy: $reviewedBy,
-        sort: $sort) { title }
+        genre: $genre, reviewedBy: $reviewedBy, sort: $sort) { title }
   gamesCount(reviewedOnly: $reviewedOnly, genre: $genre,
-             platform: $platform, reviewedBy: $reviewedBy)
+             reviewedBy: $reviewedBy)
 }`;
 
-const FACETS = `query { gameFacets { genres platforms } }`;
+const FACETS = `query { gameFacets { genres } }`;
 
 interface ListPayload {
   games: { title: string }[];
@@ -28,7 +26,7 @@ interface ListPayload {
 }
 
 interface FacetPayload {
-  gameFacets: { genres: string[]; platforms: string[] };
+  gameFacets: { genres: string[] };
 }
 
 /** Games created at one instant, as a bulk import produces. */
@@ -127,11 +125,13 @@ describe("the games listing", () => {
      */
     it("serves a game whose labels were never set", async () => {
       await prisma.game.create({ data: { title: "Bare", slug: "bare" } });
-      const res = await publicQuery<{
-        games: { genres: string[]; platforms: string[] }[];
-      }>(app, `{ games { genres platforms } }`, {});
+      const res = await publicQuery<{ games: { genres: string[] }[] }>(
+        app,
+        `{ games { genres } }`,
+        {},
+      );
       expect(res.errors).toBeUndefined();
-      expect(res.data?.games[0]).toEqual({ genres: [], platforms: [] });
+      expect(res.data?.games[0]).toEqual({ genres: [] });
     });
 
     it("returns an empty page past the end rather than erroring", async () => {
@@ -203,20 +203,19 @@ describe("the games listing", () => {
         },
       });
       const seed = [
-        // title, year, genre, platform, ratings, hours
-        ["Zelda", 2017, "Action", "Switch", [10], [120]],
-        ["doom", 1994, "FPS", "PC", [8, 6], [5, 5]],
-        ["Myst", 1993, "Puzzle", "PC", [9], [null]],
-        ["Unplayed", null, "FPS", "PC", [], []],
+        // title, year, genre, ratings, hours
+        ["Zelda", 2017, "Action", [10], [120]],
+        ["doom", 1994, "FPS", [8, 6], [5, 5]],
+        ["Myst", 1993, "Puzzle", [9], [null]],
+        ["Unplayed", null, "FPS", [], []],
       ] as const;
-      for (const [title, year, genre, platform, ratings, hours] of seed) {
+      for (const [title, year, genre, ratings, hours] of seed) {
         const game = await prisma.game.create({
           data: {
             title,
             slug: slugify(title, "game"),
             releaseYear: year,
             genres: [genre],
-            platforms: [platform],
           },
         });
         for (const [i, rating] of ratings.entries()) {
@@ -337,7 +336,6 @@ describe("the games listing", () => {
           title: "Shooter",
           slug: "shooter",
           genres: ["FPS"],
-          platforms: ["PC"],
         },
       });
       const puzzler = await prisma.game.create({
@@ -345,7 +343,6 @@ describe("the games listing", () => {
           title: "Puzzler",
           slug: "puzzler",
           genres: ["Puzzle"],
-          platforms: ["Switch"],
         },
       });
       await prisma.game.create({
@@ -353,7 +350,6 @@ describe("the games listing", () => {
           title: "Untouched",
           slug: "untouched",
           genres: ["FPS"],
-          platforms: ["PC"],
         },
       });
       await prisma.review.create({
@@ -392,13 +388,6 @@ describe("the games listing", () => {
       });
     });
 
-    it("filters by platform", async () => {
-      expect(await titles({ platform: "Switch" })).toEqual({
-        titles: ["Puzzler"],
-        count: 1,
-      });
-    });
-
     it("filters by the user who reviewed, by slug or by id", async () => {
       expect(await titles({ reviewedBy: "alice" })).toEqual({
         titles: ["Shooter"],
@@ -428,10 +417,9 @@ describe("the games listing", () => {
       });
     });
 
-    it("lists the distinct labels in the catalogue for the menus", async () => {
+    it("lists the distinct genres in the catalogue for the menu", async () => {
       const res = await publicQuery<FacetPayload>(app, FACETS, {});
       expect(res.data?.gameFacets.genres).toEqual(["FPS", "Puzzle"]);
-      expect(res.data?.gameFacets.platforms).toEqual(["PC", "Switch"]);
     });
   });
 });

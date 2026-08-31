@@ -22,17 +22,6 @@ const GENRES = [
   "Survival",
 ];
 
-const PLATFORMS = [
-  "PC",
-  "PlayStation 5",
-  "PlayStation 4",
-  "Xbox Series X|S",
-  "Xbox One",
-  "Nintendo Switch",
-  "Mobile",
-  "Multi-platform",
-];
-
 export function AddGamePage() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
@@ -41,7 +30,6 @@ export function AddGamePage() {
     releaseYear: "",
   });
   const [genres, setGenres] = useState<string[]>([]);
-  const [platforms, setPlatforms] = useState<string[]>([]);
 
   const set =
     (field: string) =>
@@ -69,7 +57,6 @@ export function AddGamePage() {
         input: {
           title: form.title.trim(),
           genres,
-          platforms,
           description: form.description.trim() || undefined,
           releaseYear: form.releaseYear
             ? parseInt(form.releaseYear, 10)
@@ -114,12 +101,6 @@ export function AddGamePage() {
             options={GENRES}
             selected={genres}
             onChange={setGenres}
-          />
-          <ChipSelect
-            label="Platforms"
-            options={PLATFORMS}
-            selected={platforms}
-            onChange={setPlatforms}
           />
 
           {/* Release year */}
@@ -190,7 +171,7 @@ function BackIcon() {
   );
 }
 
-// Mirrors MAX_LABELS in backend/src/resolvers/game.ts, which enforces it.
+// Mirrors MAX_LABELS in backend/src/lib/labels.ts, which enforces it.
 // Change both together.
 const MAX_LABELS = 5;
 

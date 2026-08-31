@@ -61,4 +61,16 @@ describe("database constraints match schema.prisma", () => {
 
     expect(mismatches).toEqual([]);
   });
+
+  /**
+   * Dropped columns, which the pass above cannot see: it walks schema.prisma
+   * and so never asks about a column the datamodel no longer names.
+   */
+  it("has dropped the columns the schema no longer declares", async () => {
+    const rows = await prisma.$queryRaw<{ column_name: string }[]>`
+      SELECT column_name FROM information_schema.columns
+      WHERE table_schema = 'public' AND table_name = 'Game'
+    `;
+    expect(rows.map((r) => r.column_name)).not.toContain("platforms");
+  });
 });

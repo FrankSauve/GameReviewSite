@@ -28,6 +28,8 @@ export interface Review {
   content: string;
   yearPlayed?: number | null;
   hoursPlayed?: number | null;
+  /** One of lib/platforms.ts; null for a review that records none. */
+  platform?: string | null;
   createdAt: string;
   user?: User | null;
   game?: GameSnippet | null;
@@ -40,7 +42,6 @@ export interface Game {
   rawgId?: string | null;
   title: string;
   genres?: string[];
-  platforms?: string[];
   description?: string | null;
   coverUrl?: string | null;
   releaseYear?: number | null;
@@ -55,7 +56,6 @@ export interface ExternalGame {
   coverUrl?: string | null;
   releaseYear?: number | null;
   genres?: string[];
-  platforms?: string[];
   metacritic?: number | null;
 }
 

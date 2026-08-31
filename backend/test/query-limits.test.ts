@@ -51,14 +51,14 @@ describe("query abuse limits", () => {
 
   /**
    * A list of scalars is part of the row it hangs off, not a set of extra rows.
-   * Counting `Game.genres` and `Game.platforms` as nested collections charged a
-   * page of games fifty rows for each, which put the games listing the SPA sends
-   * on every page load over the budget and rejected it.
+   * Counting `Game.genres` as a nested collection charged a page of games fifty
+   * rows for it, which put the games listing the SPA sends on every page load
+   * over the budget and rejected it.
    */
   it("does not charge scalar lists against the row budget", async () => {
     const res = await publicQuery(
       app,
-      "{ games { id title genres platforms coverUrl releaseYear } }",
+      "{ games { id title genres coverUrl releaseYear } }",
     );
     expect(res.errors).toBeUndefined();
   });

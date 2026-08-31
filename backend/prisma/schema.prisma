@@ -57,10 +57,9 @@ model Game {
   rawgId      String?  @unique
   slug        String   @unique
   title       String
-  /// Scalar lists, not a join table: labels copied from RAWG for display, never
+  /// A scalar list, not a join table: labels copied from RAWG for display, never
   /// queried across or deduplicated between games.
   genres      String[] @default([])
-  platforms   String[] @default([])
   description String?
   coverUrl    String?
   releaseYear Int?
@@ -78,6 +77,9 @@ model Review {
   content   String
   yearPlayed  Int?
   hoursPlayed Float?
+  /// The one platform this reviewer played on, from lib/platforms.ts. Null for a
+  /// review whose game recorded no platform we can offer.
+  platform    String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   userId    String

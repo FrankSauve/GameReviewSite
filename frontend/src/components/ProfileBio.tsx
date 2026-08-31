@@ -5,7 +5,7 @@ import { Markdown } from "./Markdown";
 import { MarkdownEditor } from "./MarkdownEditor";
 
 /** Matches `BIO_MAX` in `backend/src/resolvers/user.ts`, which enforces it. */
-export const BIO_MAX = 1000;
+export const BIO_MAX = 3000;
 
 interface ProfileBioProps {
   bio?: string | null | undefined;

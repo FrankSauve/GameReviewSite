@@ -1,6 +1,6 @@
 /**
- * The HTML stub crawlers get for a review link. See routes/embed.ts for how a
- * crawler is routed here while a person still gets the SPA.
+ * The HTML stub crawlers get for a review or profile link. See routes/embed.ts
+ * for how a crawler is routed here while a person still gets the SPA.
  */
 
 import { formatScore } from "./exportMarkdown.js";
@@ -79,14 +79,49 @@ export function embedTitle(gameTitle: string, rating: number): string {
   return `${gameTitle} — ${formatScore(rating)}/10`;
 }
 
-export interface ReviewEmbed {
+/** `alice — 42 reviews`, for the same reason the score is in the review title. */
+export function embedProfileTitle(username: string, reviews: number): string {
+  return `${username} — ${reviews} ${reviews === 1 ? "review" : "reviews"}`;
+}
+
+/** An empty `og:description` reads as a broken embed, so a profile with no bio
+ *  gets a line rather than nothing. */
+export function embedProfileDescription(
+  username: string,
+  bio: string | null,
+): string {
+  return (
+    (bio ? embedDescription(bio) : "") ||
+    `${username} has not written a bio yet.`
+  );
+}
+
+/**
+ * What differs between the kinds of page that unfurl. `og:type` is the part
+ * clients act on; the noun only shows in the stubs and the fallback body.
+ */
+export interface EmbedKind {
+  ogType: "article" | "profile";
+  /** Lowercase; capitalised where a stub title needs it. */
+  noun: string;
+}
+
+export const REVIEW_EMBED: EmbedKind = { ogType: "article", noun: "review" };
+export const PROFILE_EMBED: EmbedKind = { ogType: "profile", noun: "profile" };
+
+function capitalise(word: string): string {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
+export interface Embed {
   title: string;
   description: string;
-  /** The canonical URL of the review on the site, absolute. */
+  /** The canonical URL of the page on the site, absolute. */
   url: string;
-  /** The game's cover, absolute and on RAWG's CDN. Absent for a game added by
-   *  hand, in which case no image tag is emitted at all — an `og:image` pointing
-   *  at nothing makes some clients drop the whole embed. */
+  /** Today only a game's cover, absolute and on RAWG's CDN. Absent for a game
+   *  added by hand and for every profile, in which case no image tag is emitted
+   *  at all — an `og:image` pointing at nothing makes some clients drop the
+   *  whole embed. */
   imageUrl?: string | null;
 }
 
@@ -96,9 +131,9 @@ function tag(attr: "property" | "name", key: string, value: string): string {
 
 /** The whole document. The body is only for a person whose user agent was
  *  mistaken for a bot; a crawler reads `<head>` and stops. */
-export function renderReviewEmbed(embed: ReviewEmbed): string {
+export function renderEmbed(kind: EmbedKind, embed: Embed): string {
   const lines = [
-    tag("property", "og:type", "article"),
+    tag("property", "og:type", kind.ogType),
     tag("property", "og:site_name", SITE_NAME),
     tag("property", "og:title", embed.title),
     tag("property", "og:description", embed.description),
@@ -130,7 +165,7 @@ ${lines.join("\n")}
   <body>
     <h1>${escapeHtml(embed.title)}</h1>
     <p>${escapeHtml(embed.description)}</p>
-    <p><a href="${escapeHtml(embed.url)}">Read the review on ${SITE_NAME}</a></p>
+    <p><a href="${escapeHtml(embed.url)}">View this ${kind.noun} on ${SITE_NAME}</a></p>
   </body>
 </html>
 `;
@@ -138,20 +173,20 @@ ${lines.join("\n")}
 
 /** Deleted, or a slug typed wrong. Still an embed, so a client says so rather
  *  than showing the raw URL as if the fetch had failed. */
-export function renderMissingEmbed(url: string): string {
-  return renderReviewEmbed({
-    title: `Review not found — ${SITE_NAME}`,
-    description: "This review does not exist, or it has been deleted.",
+export function renderMissingEmbed(kind: EmbedKind, url: string): string {
+  return renderEmbed(kind, {
+    title: `${capitalise(kind.noun)} not found — ${SITE_NAME}`,
+    description: `This ${kind.noun} does not exist, or it has been deleted.`,
     url,
   });
 }
 
 /** Distinct from the missing stub: a crawler that caches "gone" for "broken"
  *  is wrong for a long time. */
-export function renderUnavailableEmbed(url: string): string {
-  return renderReviewEmbed({
-    title: `Review unavailable — ${SITE_NAME}`,
-    description: "This review could not be loaded right now.",
+export function renderUnavailableEmbed(kind: EmbedKind, url: string): string {
+  return renderEmbed(kind, {
+    title: `${capitalise(kind.noun)} unavailable — ${SITE_NAME}`,
+    description: `This ${kind.noun} could not be loaded right now.`,
     url,
   });
 }

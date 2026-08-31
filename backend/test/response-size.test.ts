@@ -179,7 +179,7 @@ describe("response size bounds", () => {
     const review = await prisma.review.findFirst();
 
     const queries = [
-      "{ games { id title genres platforms coverUrl releaseYear averageRating reviewCount } }",
+      "{ games { id title genres coverUrl releaseYear averageRating reviewCount } }",
       "{ users { id username createdAt reviewCount averageRating } }",
       "{ recentReviews(limit: 10, offset: 0) { id rating content createdAt user { id username } game { id title genres coverUrl releaseYear } comments { id content createdAt user { id username } } } recentReviewsCount }",
       `{ game(id: "${game?.id}") { id title description averageRating reviews { id rating content user { id username } comments { id content user { id username } } } } }`,

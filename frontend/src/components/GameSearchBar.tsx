@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useLazyQuery, useMutation } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
 import { SEARCH_GAMES_EXTERNAL } from "../graphql/queries";
@@ -6,6 +6,7 @@ import { IMPORT_GAME } from "../graphql/mutations";
 import { useAuth } from "../contexts/AuthContext";
 import type { ExternalGame } from "../types";
 import { gamePath } from "../lib/links";
+import { useDismiss } from "../hooks/useDismiss";
 
 interface SearchResult {
   searchGamesExternal: ExternalGame[];
@@ -49,31 +50,11 @@ export function GameSearchBar() {
     }, 400);
   };
 
-  // Close on outside click
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+  const dismiss = useCallback(() => {
+    setOpen(false);
+    inputRef.current?.blur();
   }, []);
-
-  // Close on Escape
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        setOpen(false);
-        inputRef.current?.blur();
-      }
-    };
-    document.addEventListener("keydown", handler);
-    return () => document.removeEventListener("keydown", handler);
-  }, []);
+  useDismiss(containerRef, dismiss);
 
   const handleSelect = useCallback(
     async (game: ExternalGame) => {
@@ -90,7 +71,6 @@ export function GameSearchBar() {
             title: game.title,
             coverUrl: game.coverUrl ?? null,
             genres: game.genres ?? [],
-            platforms: game.platforms ?? [],
             releaseYear: game.releaseYear ?? null,
           },
         },
@@ -98,7 +78,7 @@ export function GameSearchBar() {
       const imported = result.data?.importGame;
       if (imported) void navigate(gamePath(imported));
     },
-    [user, importGame, navigate],
+    [user, signIn, importGame, navigate],
   );
 
   const results = data?.searchGamesExternal ?? [];
