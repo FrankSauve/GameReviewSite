@@ -43,9 +43,10 @@ Where one rule is deliberately implemented twice — the plain-text excerpt in
   `exactOptionalPropertyTypes`, and the rest). Both tsconfigs carry the same set.
 - **No `any`.** There is none in `src/`, and it should stay that way. `unknown`
   plus a narrowing check instead.
-- Non-null assertions are a last resort. There is one in the codebase
-  (`remarkSpoiler.ts`, an index bounded by its own loop). Prefer an API that
-  models the absence — `charAt(0)` over `[0]`, `?? fallback` over `!`.
+- Non-null assertions are a last resort. There are two in `src/`, both an index
+  the surrounding code has already bounded (`remarkSpoiler.ts`, `routes/export.ts`).
+  Prefer an API that models the absence — `charAt(0)` over `[0]`, `?? fallback`
+  over `!`.
 - Backend relative imports carry the `.js` extension (NodeNext). Frontend ones
   do not.
 
