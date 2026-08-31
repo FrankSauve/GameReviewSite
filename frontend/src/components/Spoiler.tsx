@@ -1,11 +1,9 @@
 import { useState, type KeyboardEvent, type ReactNode } from "react";
 
 /**
- * A click-to-reveal spoiler, as produced by `||…||`.
- *
- * A `span` with `role="button"` rather than a real `<button>`, because a spoiler
- * may contain a link and a `<button>` wrapping an `<a>` is invalid HTML. The
- * keyboard handling a button would have given for free is written out instead.
+ * A click-to-reveal spoiler. A `span` with `role="button"` rather than a real
+ * `<button>`, because a spoiler may contain a link and a `<button>` wrapping an
+ * `<a>` is invalid HTML — hence the hand-written keyboard handling.
  */
 export function Spoiler({ children }: { children: ReactNode }) {
   const [revealed, setRevealed] = useState(false);

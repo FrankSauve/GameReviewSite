@@ -244,7 +244,7 @@ describe("readable URLs", () => {
       );
       expect(res.errors).toBeUndefined();
       expect(res.data?.reviewSummariesByUser).toHaveLength(1);
-      expect(res.data?.reviewSummariesByUser[0].slug).toBe("alice/elden-ring");
+      expect(res.data?.reviewSummariesByUser[0]?.slug).toBe("alice/elden-ring");
     });
   });
 

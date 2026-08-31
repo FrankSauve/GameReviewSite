@@ -9,11 +9,9 @@ export const SLUG_MAX_LENGTH = 60;
 const MAX_SUFFIX_ATTEMPTS = 100;
 
 /**
- * Turns arbitrary text into a URL-safe slug.
- *
- * NFKD splits an accented character into base letter plus combining mark and
- * `\p{M}` drops the mark, so "Pokémon" becomes "pokemon" rather than "pok-mon".
- * Text that survives neither — a title in a non-Latin script — falls back.
+ * Turns arbitrary text into a URL-safe slug. NFKD plus `\p{M}` strips accents,
+ * so "Pokémon" becomes "pokemon" rather than "pok-mon"; a non-Latin title falls
+ * back.
  */
 export function slugify(input: string, fallback = "untitled"): string {
   const slug = input

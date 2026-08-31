@@ -4,11 +4,8 @@ import { isProduction } from "../security.js";
 import { slugify, uniqueSlug } from "./slug.js";
 
 /**
- * Who a request is from, as established by the OIDC login flow.
- *
- * `uid` is the `sub` claim of the ID token authentik issued. It is the only
- * field this app treats as a stable key; username and email are authentik's to
- * change and are refreshed from the claims at each login.
+ * Who a request is from. `uid` is the ID token's `sub` claim and the only field
+ * treated as a stable key — username and email are authentik's to change.
  */
 export interface Identity {
   uid: string;
@@ -21,11 +18,7 @@ export interface Identity {
  * `docker compose up` and no OIDC provider to redirect to.
  * Format: `uid:username:email`.
  *
- * Ignored outright in production — the shipped image sets NODE_ENV=production.
- *
- * Note this now applies to every request rather than only the authenticated
- * endpoint, because there is only one endpoint. Unset it to browse locally as
- * an anonymous visitor.
+ * Ignored outright in production. Unset it to browse as an anonymous visitor.
  */
 export function devIdentity(): Identity | null {
   if (isProduction()) return null;
@@ -71,10 +64,8 @@ async function newUserSlug(username: string): Promise<string> {
 /**
  * Maps an authentik identity onto a local row, creating it on first sight.
  *
- * authentik owns the username and email, so both are refreshed when they drift.
- * That refresh happens at login rather than on every request now that identity
- * comes from a session, so a rename in authentik lands the next time the person
- * signs in.
+ * authentik owns username and email, so both are refreshed when they drift —
+ * at login, so a rename lands the next time the person signs in.
  */
 export async function provisionUser(identity: Identity): Promise<User> {
   const existing = await prisma.user.findUnique({

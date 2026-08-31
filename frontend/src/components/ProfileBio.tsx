@@ -8,7 +8,7 @@ import { MarkdownEditor } from "./MarkdownEditor";
 export const BIO_MAX = 1000;
 
 interface ProfileBioProps {
-  bio?: string | null;
+  bio?: string | null | undefined;
   isOwnProfile: boolean;
 }
 

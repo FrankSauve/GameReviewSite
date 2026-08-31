@@ -192,15 +192,9 @@ export const GET_USERS = gql`
 `;
 
 /**
- * The profile page's whole review history, without the bodies.
- *
- * Replaced GET_USER_PROFILE, which nested `reviews` under `user` and so inherited
- * the nested bound of 50 — a fifty-review backlog truncated silently, and it paid
- * for every body to render a 180-character excerpt. This is bounded at 200 by
- * default precisely by not asking for `content`.
- *
- * The grouping happens in the browser; `order` only decides the axis the server
- * sorts along, so each group's contents come out in the right order too.
+ * The profile page's whole review history. Bounded at 200 rather than the
+ * nested 50 precisely by not asking for `content`. Grouping happens in the
+ * browser; `order` only picks the axis the server sorts along.
  */
 export const GET_USER_REVIEW_SUMMARIES = gql`
   query GetUserReviewSummaries($id: ID!, $order: ReviewOrder!) {
@@ -232,12 +226,7 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
   }
 `;
 
-/**
- * The articles index, plus the total the paging controls need.
- *
- * No `content`: the index shows an excerpt, and a page of twenty full
- * manifestos is the shape the server's text budget exists to refuse.
- */
+/** No `content`: twenty full manifestos is what the text budget exists to refuse. */
 export const GET_ARTICLES = gql`
   query GetArticles($limit: Int, $offset: Int) {
     articles(limit: $limit, offset: $offset) {

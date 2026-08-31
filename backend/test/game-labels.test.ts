@@ -161,7 +161,7 @@ describe("genres and platforms", () => {
       );
       expect(res.errors).toBeUndefined();
       expect(res.data?.games).toHaveLength(1);
-      expect(res.data?.games[0].platforms).toEqual(["PC", "Switch"]);
+      expect(res.data?.games[0]?.platforms).toEqual(["PC", "Switch"]);
     });
   });
 

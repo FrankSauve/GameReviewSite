@@ -4,8 +4,6 @@ import { REVIEW_CONTENT_MAX } from "../lib/markdown";
 import { applyCommand, type CommandName } from "../lib/markdownCommands";
 
 /**
- * The review body editor: a toolbar, a Write/Preview switch, and a counter.
- *
  * Preview renders through the same `Markdown` component the published review
  * uses, so what it shows and what gets posted cannot drift.
  */
