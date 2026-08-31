@@ -54,7 +54,6 @@ export function GameCard({ game }: GameCardProps) {
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 loading="lazy"
               />
-              {/* Overlay for platform badge */}
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-transparent to-transparent" />
             </>
           ) : (
@@ -63,21 +62,6 @@ export function GameCard({ game }: GameCardProps) {
             >
               <span className="text-4xl opacity-30">🎮</span>
             </div>
-          )}
-
-          {game.platforms && game.platforms.length > 0 && (
-            <span
-              className="absolute bottom-2 left-3 text-xs font-medium bg-black/60 text-gray-300 px-2 py-1 rounded-md backdrop-blur-sm"
-              title={game.platforms.join(", ")}
-            >
-              {game.platforms[0]}
-              {game.platforms.length > 1 && (
-                <span className="text-gray-500">
-                  {" "}
-                  +{game.platforms.length - 1}
-                </span>
-              )}
-            </span>
           )}
         </div>
 

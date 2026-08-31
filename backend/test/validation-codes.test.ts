@@ -133,6 +133,12 @@ describe("validation messages carry a code, so they survive production", () => {
           ),
           "hoursPlayed must be greater than 0 and at most 30000.",
         ],
+        [
+          review(
+            'rating: 8, content: "ok", yearPlayed: 2024, hoursPlayed: 10, platform: "Ouya"',
+          ),
+          "platform must be one of the platforms offered.",
+        ],
       ];
 
       for (const [query, expected] of cases) {

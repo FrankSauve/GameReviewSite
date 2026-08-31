@@ -18,7 +18,7 @@ import {
   GAME_SORTS,
   catalogueCount,
   catalogueIds,
-  labelValues,
+  genreValues,
   type GameFilter,
   type GameSort,
 } from "../lib/gameCatalogue.js";
@@ -26,7 +26,6 @@ import {
 interface CreateGameInput {
   title: string;
   genres?: string[];
-  platforms?: string[];
   description?: string;
   releaseYear?: number;
 }
@@ -34,7 +33,6 @@ interface CreateGameInput {
 interface UpdateGameInput {
   title?: string;
   genres?: string[];
-  platforms?: string[];
   description?: string;
   releaseYear?: number;
 }
@@ -44,7 +42,6 @@ interface ImportGameInput {
   title: string;
   coverUrl?: string;
   genres?: string[];
-  platforms?: string[];
   releaseYear?: number;
 }
 
@@ -104,10 +101,9 @@ function gameSort(value?: string | null): GameSort {
 function gameFilter({
   reviewedOnly,
   genre,
-  platform,
   reviewedBy,
 }: GamesArgs): GameFilter {
-  return { reviewedOnly, genre, platform, reviewedBy };
+  return { reviewedOnly, genre, reviewedBy };
 }
 
 export const gameResolvers = {
@@ -136,14 +132,8 @@ export const gameResolvers = {
     },
 
     gameFacets: async () => {
-      const [genres, platforms] = await Promise.all([
-        prisma.$queryRaw<{ value: string }[]>(labelValues("genres")),
-        prisma.$queryRaw<{ value: string }[]>(labelValues("platforms")),
-      ]);
-      return {
-        genres: genres.map((row) => row.value),
-        platforms: platforms.map((row) => row.value),
-      };
+      const genres = await prisma.$queryRaw<{ value: string }[]>(genreValues());
+      return { genres: genres.map((row) => row.value) };
     },
 
     game: async (_parent: unknown, { id }: { id: string }) => {
@@ -163,7 +153,6 @@ export const gameResolvers = {
         coverUrl: g.background_image ?? null,
         releaseYear: releaseYear(g.released),
         genres: (g.genres ?? []).map((genre) => genre.name),
-        platforms: (g.platforms ?? []).map((p) => p.platform.name),
         metacritic: g.metacritic ?? null,
       }));
     },
@@ -182,7 +171,6 @@ export const gameResolvers = {
       const title = validateString(input.title, "title", 200);
       const coverUrl = input.coverUrl ? validateCoverUrl(input.coverUrl) : null;
       const genres = validateLabels(input.genres ?? [], "genre");
-      const platforms = validateLabels(input.platforms ?? [], "platform");
       const releaseYear =
         input.releaseYear != null ? validateYear(input.releaseYear) : null;
 
@@ -213,7 +201,6 @@ export const gameResolvers = {
           title,
           coverUrl,
           genres,
-          platforms,
           releaseYear,
           description,
           createdById: authUser.id,
@@ -236,7 +223,6 @@ export const gameResolvers = {
           slug: await newGameSlug(title),
           title,
           genres: validateLabels(input.genres ?? [], "genre"),
-          platforms: validateLabels(input.platforms ?? [], "platform"),
           description: input.description
             ? validateString(input.description, "description", 2000)
             : null,
@@ -261,8 +247,6 @@ export const gameResolvers = {
         data.title = validateString(input.title, "title", 200);
       if (input.genres !== undefined)
         data.genres = validateLabels(input.genres, "genre");
-      if (input.platforms !== undefined)
-        data.platforms = validateLabels(input.platforms, "platform");
       if (input.description !== undefined)
         data.description = input.description
           ? validateString(input.description, "description", 2000)

@@ -86,10 +86,6 @@ export function GameDetailPage() {
                 labels={game.genres}
                 className="text-xs font-medium bg-violet-900/50 text-violet-300 px-2.5 py-1 rounded-full border border-violet-800"
               />
-              <LabelChips
-                labels={game.platforms}
-                className="text-xs font-medium bg-gray-800 text-gray-300 px-2.5 py-1 rounded-full border border-gray-700"
-              />
               {game.releaseYear && (
                 <span className="text-sm text-gray-500">
                   {game.releaseYear}

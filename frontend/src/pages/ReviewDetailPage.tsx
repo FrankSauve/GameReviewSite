@@ -13,6 +13,7 @@ import { formatRating, ratingColor } from "../lib/rating";
 import { currentYear, formatPlaytime, snapHours } from "../lib/playtime";
 import { RatingInput } from "../components/RatingInput";
 import { PlaytimeInput } from "../components/PlaytimeInput";
+import { PlatformSelect } from "../components/PlatformSelect";
 import { Markdown } from "../components/Markdown";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { gamePath, reviewPath, userPath } from "../lib/links";
@@ -36,7 +37,6 @@ interface ReviewGame {
   coverUrl?: string | null;
   releaseYear?: number | null;
   genres?: string[];
-  platforms?: string[];
 }
 interface ReviewDetail {
   id: string;
@@ -46,6 +46,7 @@ interface ReviewDetail {
   createdAt: string;
   yearPlayed?: number | null;
   hoursPlayed?: number | null;
+  platform?: string | null;
   user?: CommentUser | null;
   game?: ReviewGame | null;
   comments?: ReviewComment[];
@@ -118,6 +119,7 @@ export function ReviewDetailPage() {
   const [editContent, setEditContent] = useState("");
   const [editYear, setEditYear] = useState(currentYear());
   const [editHours, setEditHours] = useState("");
+  const [editPlatform, setEditPlatform] = useState("");
   const [newComment, setNewComment] = useState("");
 
   if (loading) {
@@ -161,6 +163,7 @@ export function ReviewDetailPage() {
     setEditContent(review.content);
     setEditYear(review.yearPlayed ?? currentYear());
     setEditHours(review.hoursPlayed != null ? String(review.hoursPlayed) : "");
+    setEditPlatform(review.platform ?? "");
     setEditing(true);
   };
 
@@ -180,6 +183,7 @@ export function ReviewDetailPage() {
           content: editContent.trim(),
           yearPlayed: editYear,
           hoursPlayed: snapHours(editHoursNum),
+          platform: editPlatform || null,
         },
       },
     });
@@ -282,6 +286,11 @@ export function ReviewDetailPage() {
                     <span className="text-gray-600"> · played {playtime}</span>
                   )}
                 </p>
+                {review.platform && (
+                  <span className="inline-block mt-1 text-xs font-medium bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full border border-gray-700">
+                    {review.platform}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -341,6 +350,11 @@ export function ReviewDetailPage() {
                 hours={editHours}
                 onYearChange={setEditYear}
                 onHoursChange={setEditHours}
+                size="sm"
+              />
+              <PlatformSelect
+                value={editPlatform}
+                onChange={setEditPlatform}
                 size="sm"
               />
               <MarkdownEditor

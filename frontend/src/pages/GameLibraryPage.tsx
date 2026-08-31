@@ -69,7 +69,6 @@ export function GameLibraryPage() {
   const page = Number.isFinite(requested) && requested > 1 ? requested - 1 : 0;
 
   const genre = params.get("genre") ?? "";
-  const platform = params.get("platform") ?? "";
   const reviewedBy = params.get("reviewedBy") ?? "";
   const reviewedOnly = params.get("reviewed") === "1";
   const sortParam = params.get("sort") ?? "";
@@ -77,7 +76,6 @@ export function GameLibraryPage() {
 
   const filters = {
     genre: genre || undefined,
-    platform: platform || undefined,
     reviewedBy: reviewedBy || undefined,
     reviewedOnly: reviewedOnly || undefined,
   };
@@ -94,14 +92,14 @@ export function GameLibraryPage() {
     },
   );
   const { data: facetData } = useQuery<{
-    gameFacets: { genres: string[]; platforms: string[] };
+    gameFacets: { genres: string[] };
   }>(GET_GAME_FACETS);
   const { data: usersData } = useQuery<{ users: User[] }>(GET_USERS);
 
   const games = data?.games ?? [];
   const total = data?.gamesCount ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
-  const filtered = Boolean(genre || platform || reviewedBy || reviewedOnly);
+  const filtered = Boolean(genre || reviewedBy || reviewedOnly);
 
   /**
    * Changing a control returns to page one. The page number describes a window
@@ -174,22 +172,6 @@ export function GameLibraryPage() {
           </select>
         </Field>
 
-        <Field label="Platform">
-          <select
-            aria-label="Platform"
-            value={platform}
-            onChange={(e) => update({ platform: e.target.value })}
-            className={selectClass}
-          >
-            <option value="">Any</option>
-            {(facetData?.gameFacets.platforms ?? []).map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </Field>
-
         <Field label="Reviewed by">
           <select
             aria-label="Reviewed by"
@@ -218,9 +200,7 @@ export function GameLibraryPage() {
 
         {filtered && (
           <button
-            onClick={() =>
-              update({ genre: "", platform: "", reviewedBy: "", reviewed: "" })
-            }
+            onClick={() => update({ genre: "", reviewedBy: "", reviewed: "" })}
             className="ml-auto text-xs text-violet-400 hover:text-violet-300 transition-colors"
           >
             Clear filters

@@ -14,41 +14,34 @@ interface GamePayload {
   id: string;
   title: string;
   genres: string[];
-  platforms: string[];
 }
 
 /**
- * Every platform RAWG lists for Terraria.
+ * Every genre RAWG lists for Terraria.
  *
- * This is the case the issue was filed for. Joined with ", " it is well past the
- * 100 characters the old single `platform` column allowed, so importing it
- * failed outright — the validation was right and the shape was wrong.
+ * Longer than the cap, and joined with ", " well past the 100 characters the
+ * old single `genre` column allowed — which is what made the game unaddable
+ * before the lists existed. The validation was right and the shape was wrong.
  */
-const TERRARIA_PLATFORMS = [
-  "PC",
-  "PlayStation 3",
-  "PlayStation 4",
-  "PS Vita",
-  "Xbox 360",
-  "Xbox One",
-  "Nintendo Switch",
-  "Wii U",
-  "Nintendo 3DS",
-  "iOS",
-  "Android",
-  "Linux",
-  "macOS",
+const TERRARIA_GENRES = [
+  "Action",
+  "Adventure",
+  "Indie",
+  "RPG",
+  "Platformer",
+  "Casual",
+  "Massively Multiplayer",
 ];
 
 const IMPORT = `mutation Import($input: ImportGameInput!) {
-  importGame(input: $input) { id title genres platforms }
+  importGame(input: $input) { id title genres }
 }`;
 
 const CREATE = `mutation Create($input: CreateGameInput!) {
-  createGame(input: $input) { id title genres platforms }
+  createGame(input: $input) { id title genres }
 }`;
 
-describe("genres and platforms", () => {
+describe("genres", () => {
   let app: Express;
   let stop: () => Promise<void>;
 
@@ -61,7 +54,7 @@ describe("genres and platforms", () => {
   beforeEach(resetDatabase);
 
   describe("the Terraria case", () => {
-    it("imports a game on a dozen platforms instead of refusing it", async () => {
+    it("imports a game with more genres than the cap instead of refusing it", async () => {
       const res = await authedQuery<{ importGame: GamePayload }>(
         app,
         IMPORT,
@@ -71,8 +64,7 @@ describe("genres and platforms", () => {
           input: {
             rawgId: "1",
             title: "Terraria",
-            genres: ["Action", "Adventure", "Indie"],
-            platforms: TERRARIA_PLATFORMS,
+            genres: TERRARIA_GENRES,
           },
         },
       );
@@ -82,10 +74,10 @@ describe("genres and platforms", () => {
     });
 
     /**
-     * Dropped rather than refused. Erroring on a game for being on too many
-     * platforms is exactly the failure this replaces.
+     * Dropped rather than refused. Erroring on a game for carrying too many
+     * labels is exactly the failure this replaces.
      */
-    it("keeps the first few platforms and discards the rest", async () => {
+    it("keeps the first few genres and discards the rest", async () => {
       const res = await authedQuery<{ importGame: GamePayload }>(
         app,
         IMPORT,
@@ -95,13 +87,13 @@ describe("genres and platforms", () => {
           input: {
             rawgId: "1",
             title: "Terraria",
-            platforms: TERRARIA_PLATFORMS,
+            genres: TERRARIA_GENRES,
           },
         },
       );
 
-      expect(res.data?.importGame.platforms).toEqual(
-        TERRARIA_PLATFORMS.slice(0, MAX_LABELS),
+      expect(res.data?.importGame.genres).toEqual(
+        TERRARIA_GENRES.slice(0, MAX_LABELS),
       );
     });
   });
@@ -128,12 +120,12 @@ describe("genres and platforms", () => {
         CREATE,
         ALICE,
         {},
-        { input: { title: "Ordered", platforms: ["Z", "A", "M"] } },
+        { input: { title: "Ordered", genres: ["Z", "A", "M"] } },
       );
-      expect(res.data?.createGame.platforms).toEqual(["Z", "A", "M"]);
+      expect(res.data?.createGame.genres).toEqual(["Z", "A", "M"]);
     });
 
-    it("defaults to empty lists rather than null", async () => {
+    it("defaults to an empty list rather than null", async () => {
       const res = await authedQuery<{ createGame: GamePayload }>(
         app,
         CREATE,
@@ -142,7 +134,6 @@ describe("genres and platforms", () => {
         { input: { title: "Bare" } },
       );
       expect(res.data?.createGame.genres).toEqual([]);
-      expect(res.data?.createGame.platforms).toEqual([]);
     });
 
     it("reads back on the public query", async () => {
@@ -151,17 +142,17 @@ describe("genres and platforms", () => {
         CREATE,
         ALICE,
         {},
-        { input: { title: "Hades", platforms: ["PC", "Switch"] } },
+        { input: { title: "Hades", genres: ["Action", "Roguelike"] } },
       );
       const res = await publicQuery<{ games: GamePayload[] }>(
         app,
         // Bounded: the static row guard refuses an unbounded `games` query,
         // which is unrelated to what this test is about.
-        `{ games(limit: 5) { title platforms } }`,
+        `{ games(limit: 5) { title genres } }`,
       );
       expect(res.errors).toBeUndefined();
       expect(res.data?.games).toHaveLength(1);
-      expect(res.data?.games[0]?.platforms).toEqual(["PC", "Switch"]);
+      expect(res.data?.games[0]?.genres).toEqual(["Action", "Roguelike"]);
     });
   });
 
@@ -188,16 +179,16 @@ describe("genres and platforms", () => {
       expect(res.data?.createGame.genres).toEqual(["Action"]);
     });
 
-    /** RAWG is inconsistent about "macOS" and "MacOS". */
+    /** RAWG writes "Indie", a hand-typed entry writes "indie". */
     it("removes case-insensitive duplicates, keeping the first spelling", async () => {
       const res = await authedQuery<{ createGame: GamePayload }>(
         app,
         CREATE,
         ALICE,
         {},
-        { input: { title: "Dupes", platforms: ["macOS", "MacOS", "MACOS"] } },
+        { input: { title: "Dupes", genres: ["Indie", "indie", "INDIE"] } },
       );
-      expect(res.data?.createGame.platforms).toEqual(["macOS"]);
+      expect(res.data?.createGame.genres).toEqual(["Indie"]);
     });
 
     it("counts the cap after cleaning, not before", async () => {
@@ -209,11 +200,11 @@ describe("genres and platforms", () => {
         {
           input: {
             title: "Messy",
-            platforms: ["A", "", "A", "B", "  ", "C", "D", "E", "F"],
+            genres: ["A", "", "A", "B", "  ", "C", "D", "E", "F"],
           },
         },
       );
-      expect(res.data?.createGame.platforms).toEqual(["A", "B", "C", "D", "E"]);
+      expect(res.data?.createGame.genres).toEqual(["A", "B", "C", "D", "E"]);
     });
 
     /** Many entries is a normal game; one enormous entry is a malformed request. */
@@ -236,20 +227,20 @@ describe("genres and platforms", () => {
         CREATE,
         ALICE,
         {},
-        { input: { title: "Editable", platforms: ["PC", "Switch"] } },
+        { input: { title: "Editable", genres: ["Action", "Puzzle"] } },
       );
       const id = created.data!.createGame.id;
 
       const res = await authedQuery<{ updateGame: GamePayload }>(
         app,
         `mutation Update($id: ID!, $input: UpdateGameInput!) {
-           updateGame(id: $id, input: $input) { platforms }
+           updateGame(id: $id, input: $input) { genres }
          }`,
         ALICE,
         {},
-        { id, input: { platforms: ["Linux"] } },
+        { id, input: { genres: ["Strategy"] } },
       );
-      expect(res.data?.updateGame.platforms).toEqual(["Linux"]);
+      expect(res.data?.updateGame.genres).toEqual(["Strategy"]);
     });
 
     it("leaves the lists alone when the input omits them", async () => {
@@ -258,33 +249,33 @@ describe("genres and platforms", () => {
         CREATE,
         ALICE,
         {},
-        { input: { title: "Untouched", platforms: ["PC"] } },
+        { input: { title: "Untouched", genres: ["Action"] } },
       );
       const id = created.data!.createGame.id;
 
       const res = await authedQuery<{ updateGame: GamePayload }>(
         app,
         `mutation Update($id: ID!, $input: UpdateGameInput!) {
-           updateGame(id: $id, input: $input) { title platforms }
+           updateGame(id: $id, input: $input) { title genres }
          }`,
         ALICE,
         {},
         { id, input: { title: "Renamed" } },
       );
-      expect(res.data?.updateGame.platforms).toEqual(["PC"]);
+      expect(res.data?.updateGame.genres).toEqual(["Action"]);
     });
   });
 });
 
 /**
- * The columns, not the resolvers.
+ * The column, not the resolvers.
  *
  * `String[]` in schema.prisma is non-nullable, but the column was created
  * nullable with no default and Prisma coerced the NULL to [] on read — so the
  * app could not see the divergence and every other reader could. These assert
  * the database itself, because that is where the disagreement lived.
  */
-describe("the label columns", () => {
+describe("the genres column", () => {
   beforeEach(resetDatabase);
 
   it("refuses a NULL, which the schema has always claimed it did", async () => {
@@ -302,13 +293,11 @@ describe("the label columns", () => {
       VALUES (gen_random_uuid(), 'omitted', 'Omitted', now(), now())
     `);
 
-    const [row] = await prisma.$queryRawUnsafe<
-      { genres_is_null: boolean; platforms_is_null: boolean }[]
-    >(`SELECT genres IS NULL AS genres_is_null, platforms IS NULL AS platforms_is_null
-       FROM "Game" WHERE slug = 'omitted'`);
+    const [row] = await prisma.$queryRawUnsafe<{ genres_is_null: boolean }[]>(
+      `SELECT genres IS NULL AS genres_is_null FROM "Game" WHERE slug = 'omitted'`,
+    );
 
     // Not just "Prisma reports []" — that was true before, and was the problem.
     expect(row?.genres_is_null).toBe(false);
-    expect(row?.platforms_is_null).toBe(false);
   });
 });

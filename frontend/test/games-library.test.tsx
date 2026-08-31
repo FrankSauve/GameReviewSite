@@ -25,7 +25,6 @@ const game = (n: number) => ({
   slug: `game-${n}`,
   title: `Game ${n}`,
   genres: ["RPG"],
-  platforms: ["PC"],
   coverUrl: null,
   releaseYear: 2020,
   averageRating: 8,
@@ -56,7 +55,7 @@ const facetsMock = {
   request: { query: GET_GAME_FACETS },
   result: {
     data: {
-      gameFacets: { genres: ["FPS", "RPG"], platforms: ["PC", "Switch"] },
+      gameFacets: { genres: ["FPS", "RPG"] },
     },
   },
 };
@@ -147,31 +146,24 @@ describe("the games library page", () => {
   });
 
   it("sends each filter the URL carries", async () => {
-    renderAt("/games?genre=RPG&platform=PC&reviewedBy=alice&reviewed=1", [
-      listMock(
-        {
-          genre: "RPG",
-          platform: "PC",
-          reviewedBy: "alice",
-          reviewedOnly: true,
-        },
-        201,
-      ),
+    renderAt("/games?genre=RPG&reviewedBy=alice&reviewed=1", [
+      listMock({ genre: "RPG", reviewedBy: "alice", reviewedOnly: true }, 201),
     ]);
     await waitFor(() => expect(screen.getByText("Game 201")).toBeTruthy());
   });
 
-  it("offers the catalogue's own labels in the filter menus", async () => {
+  it("offers the catalogue's own genres in the filter menu", async () => {
     renderAt("/games");
     await waitFor(() => expect(screen.getByText("Game 1")).toBeTruthy());
     const genre = screen.getByLabelText("Genre") as HTMLSelectElement;
     expect([...genre.options].map((o) => o.value)).toEqual(["", "FPS", "RPG"]);
-    const platform = screen.getByLabelText("Platform") as HTMLSelectElement;
-    expect([...platform.options].map((o) => o.value)).toEqual([
-      "",
-      "PC",
-      "Switch",
-    ]);
+  });
+
+  /** The catalogue no longer records platforms; a review does. */
+  it("offers no platform filter", async () => {
+    renderAt("/games");
+    await waitFor(() => expect(screen.getByText("Game 1")).toBeTruthy());
+    expect(screen.queryByLabelText("Platform")).toBeNull();
   });
 
   /**

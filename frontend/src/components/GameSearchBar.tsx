@@ -71,7 +71,6 @@ export function GameSearchBar() {
             title: game.title,
             coverUrl: game.coverUrl ?? null,
             genres: game.genres ?? [],
-            platforms: game.platforms ?? [],
             releaseYear: game.releaseYear ?? null,
           },
         },

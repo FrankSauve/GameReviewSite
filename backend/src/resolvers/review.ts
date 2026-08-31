@@ -12,6 +12,7 @@ import { requireAuth, type Context } from "../context.js";
 import { byIdOrSlug, reviewSlugBase, uniqueSlug } from "../lib/slug.js";
 import { validateString } from "../lib/validate.js";
 import { badInput } from "../lib/badInput.js";
+import { validatePlatform } from "../lib/platforms.js";
 
 interface CreateReviewInput {
   gameId: string;
@@ -19,6 +20,7 @@ interface CreateReviewInput {
   content: string;
   yearPlayed: number;
   hoursPlayed: number;
+  platform?: string | null;
 }
 
 interface UpdateReviewInput {
@@ -26,6 +28,7 @@ interface UpdateReviewInput {
   content?: string;
   yearPlayed?: number;
   hoursPlayed?: number;
+  platform?: string | null;
 }
 
 /** Generous because a decade of backlog includes long reviews. */
@@ -216,6 +219,7 @@ export const reviewResolvers = {
           content: validateString(input.content, "content", REVIEW_CONTENT_MAX),
           yearPlayed: validateYearPlayed(input.yearPlayed),
           hoursPlayed: validateHoursPlayed(input.hoursPlayed),
+          platform: input.platform ? validatePlatform(input.platform) : null,
         },
       });
       return serializeDates(review);
@@ -229,7 +233,10 @@ export const reviewResolvers = {
       const authUser = requireAuth(context);
       const existing = await requireOwnership(id, authUser.id);
       const data: Partial<
-        Pick<Review, "rating" | "content" | "yearPlayed" | "hoursPlayed">
+        Pick<
+          Review,
+          "rating" | "content" | "yearPlayed" | "hoursPlayed" | "platform"
+        >
       > = {};
       if (input.rating !== undefined)
         data.rating = validateRating(input.rating);
@@ -243,6 +250,11 @@ export const reviewResolvers = {
         data.yearPlayed = validateYearPlayed(input.yearPlayed);
       if (input.hoursPlayed !== undefined)
         data.hoursPlayed = validateHoursPlayed(input.hoursPlayed);
+      // An explicit null clears it; an empty string is the dropdown's "none".
+      if (input.platform !== undefined)
+        data.platform = input.platform
+          ? validatePlatform(input.platform)
+          : null;
       const review = await prisma.review.update({
         where: { id: existing.id },
         data,

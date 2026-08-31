@@ -8,7 +8,6 @@ export const IMPORT_GAME = gql`
       title
       coverUrl
       genres
-      platforms
       releaseYear
     }
   }
@@ -21,7 +20,6 @@ export const CREATE_GAME = gql`
       slug
       title
       genres
-      platforms
       description
       releaseYear
     }
@@ -37,6 +35,7 @@ export const CREATE_REVIEW = gql`
       content
       yearPlayed
       hoursPlayed
+      platform
       createdAt
       user {
         id
@@ -91,6 +90,7 @@ export const UPDATE_REVIEW = gql`
       content
       yearPlayed
       hoursPlayed
+      platform
     }
   }
 `;

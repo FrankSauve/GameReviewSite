@@ -24,7 +24,6 @@ export type GameSort =
 export interface GameFilter {
   reviewedOnly?: boolean | null | undefined;
   genre?: string | null | undefined;
-  platform?: string | null | undefined;
   /** A user id or slug; games that user has reviewed. */
   reviewedBy?: string | null | undefined;
 }
@@ -39,9 +38,6 @@ function whereFragment(filter: GameFilter): Prisma.Sql {
   }
   if (filter.genre) {
     clauses.push(Prisma.sql`${filter.genre} = ANY(g.genres)`);
-  }
-  if (filter.platform) {
-    clauses.push(Prisma.sql`${filter.platform} = ANY(g.platforms)`);
   }
   if (filter.reviewedBy) {
     clauses.push(Prisma.sql`EXISTS (
@@ -101,10 +97,9 @@ export function catalogueCount(filter: GameFilter): Prisma.Sql {
   `;
 }
 
-/** Distinct labels across the catalogue, for the filter menus. */
-export function labelValues(column: "genres" | "platforms"): Prisma.Sql {
-  const col = column === "genres" ? Prisma.sql`genres` : Prisma.sql`platforms`;
+/** Distinct genres across the catalogue, for the filter menu. */
+export function genreValues(): Prisma.Sql {
   return Prisma.sql`
-    SELECT DISTINCT unnest(${col}) AS value FROM "Game" ORDER BY value ASC
+    SELECT DISTINCT unnest(genres) AS value FROM "Game" ORDER BY value ASC
   `;
 }

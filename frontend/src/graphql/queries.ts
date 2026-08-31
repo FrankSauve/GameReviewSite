@@ -7,7 +7,6 @@ export const GET_GAMES = gql`
     $offset: Int
     $reviewedOnly: Boolean
     $genre: String
-    $platform: String
     $reviewedBy: ID
     $sort: GameSort
   ) {
@@ -16,7 +15,6 @@ export const GET_GAMES = gql`
       offset: $offset
       reviewedOnly: $reviewedOnly
       genre: $genre
-      platform: $platform
       reviewedBy: $reviewedBy
       sort: $sort
     ) {
@@ -24,7 +22,6 @@ export const GET_GAMES = gql`
       slug
       title
       genres
-      platforms
       coverUrl
       releaseYear
       averageRating
@@ -33,18 +30,16 @@ export const GET_GAMES = gql`
     gamesCount(
       reviewedOnly: $reviewedOnly
       genre: $genre
-      platform: $platform
       reviewedBy: $reviewedBy
     )
   }
 `;
 
-/** The distinct labels in the catalogue, for the library's filter menus. */
+/** The distinct genres in the catalogue, for the library's filter menu. */
 export const GET_GAME_FACETS = gql`
   query GetGameFacets {
     gameFacets {
       genres
-      platforms
     }
   }
 `;
@@ -57,7 +52,6 @@ export const SEARCH_GAMES_EXTERNAL = gql`
       coverUrl
       releaseYear
       genres
-      platforms
       metacritic
     }
   }
@@ -70,7 +64,6 @@ export const GET_GAME = gql`
       slug
       title
       genres
-      platforms
       description
       coverUrl
       releaseYear
@@ -150,6 +143,7 @@ export const GET_REVIEW = gql`
       content
       yearPlayed
       hoursPlayed
+      platform
       createdAt
       user {
         id
@@ -163,7 +157,6 @@ export const GET_REVIEW = gql`
         coverUrl
         releaseYear
         genres
-        platforms
       }
       comments {
         id

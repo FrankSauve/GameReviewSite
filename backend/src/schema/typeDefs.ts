@@ -23,7 +23,6 @@ export const typeDefs = `#graphql
     title: String!
     # Capped server-side.
     genres: [String!]!
-    platforms: [String!]!
     description: String
     coverUrl: String
     releaseYear: Int
@@ -45,10 +44,9 @@ export const typeDefs = `#graphql
     MOST_PLAYED
   }
 
-  # Scalar lists, so the row guard does not have to bound them.
+  # A scalar list, so the row guard does not have to bound it.
   type GameFacets {
     genres: [String!]!
-    platforms: [String!]!
   }
 
   # A game result from the RAWG external API (not yet in our database)
@@ -58,7 +56,6 @@ export const typeDefs = `#graphql
     coverUrl: String
     releaseYear: Int
     genres: [String!]
-    platforms: [String!]
     metacritic: Int
   }
 
@@ -75,6 +72,8 @@ export const typeDefs = `#graphql
     rating: Float!
     yearPlayed: Int
     hoursPlayed: Float
+    # The platform the reviewer played on. Null for a review that has none.
+    platform: String
     createdAt: String
     commentCount: Int!
     game: Game
@@ -102,6 +101,9 @@ export const typeDefs = `#graphql
     yearPlayed: Int
     # Hours spent with the game.
     hoursPlayed: Float
+    # The one platform the reviewer played on, from the fixed list in
+    # backend/src/lib/platforms.ts. Null for a review that has none.
+    platform: String
     createdAt: String
     updatedAt: String
     user: User
@@ -144,7 +146,6 @@ export const typeDefs = `#graphql
   input CreateGameInput {
     title: String!
     genres: [String!]
-    platforms: [String!]
     description: String
     releaseYear: Int
   }
@@ -152,7 +153,6 @@ export const typeDefs = `#graphql
   input UpdateGameInput {
     title: String
     genres: [String!]
-    platforms: [String!]
     description: String
     releaseYear: Int
   }
@@ -163,7 +163,6 @@ export const typeDefs = `#graphql
     coverUrl: String
     # Past the cap is dropped, not refused.
     genres: [String!]
-    platforms: [String!]
     releaseYear: Int
   }
 
@@ -178,13 +177,16 @@ export const typeDefs = `#graphql
     content: String!
     yearPlayed: Int!
     hoursPlayed: Float!
+    platform: String
   }
 
+  # An explicit null on platform clears it; omitting it leaves it alone.
   input UpdateReviewInput {
     rating: Float
     content: String
     yearPlayed: Int
     hoursPlayed: Float
+    platform: String
   }
 
   # authorId is taken from the session — not supplied by the client.
@@ -230,7 +232,6 @@ export const typeDefs = `#graphql
       offset: Int
       reviewedOnly: Boolean
       genre: String
-      platform: String
       # A user id or slug; games that user has reviewed.
       reviewedBy: ID
       sort: GameSort
@@ -239,10 +240,9 @@ export const typeDefs = `#graphql
     gamesCount(
       reviewedOnly: Boolean
       genre: String
-      platform: String
       reviewedBy: ID
     ): Int!
-    # Distinct labels across the catalogue, for the filter menus.
+    # Distinct genres across the catalogue, for the filter menu.
     gameFacets: GameFacets!
     game(id: ID!): Game
     searchGamesExternal(query: String!): [ExternalGame!]!

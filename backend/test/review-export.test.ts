@@ -81,6 +81,7 @@ interface SeedReview {
   rating?: number;
   hoursPlayed?: number | null;
   yearPlayed?: number | null;
+  platform?: string | null;
   content?: string;
   createdAt?: Date;
 }
@@ -104,6 +105,7 @@ async function seedReview(
       content: review.content ?? "It was good.",
       yearPlayed: review.yearPlayed === undefined ? 2024 : review.yearPlayed,
       hoursPlayed: review.hoursPlayed === undefined ? 12 : review.hoursPlayed,
+      platform: review.platform ?? null,
       slug: `${user.username}/${game.slug}`,
       gameId: game.id,
       userId: user.id,
@@ -207,6 +209,24 @@ describe("exporting reviews as a zip of markdown files", () => {
 
     const entries = await readArchive(await bodyOf(getExport(app, cookie)));
     expect([...entries.keys()]).toEqual(["reviews-alice/review.md"]);
+  });
+
+  it("names the platform the review was written against", async () => {
+    const cookie = await sessionFor(ALICE);
+    await seedReview(ALICE, { title: "Hades", platform: "Nintendo Switch" });
+
+    const entries = await readArchive(await bodyOf(getExport(app, cookie)));
+    expect(entries.get("reviews-alice/hades.md")).toContain(
+      "**Platform:** Nintendo Switch\n",
+    );
+  });
+
+  it("leaves the platform line out when the review records none", async () => {
+    const cookie = await sessionFor(ALICE);
+    await seedReview(ALICE, { title: "Hades" });
+
+    const entries = await readArchive(await bodyOf(getExport(app, cookie)));
+    expect(entries.get("reviews-alice/hades.md")).not.toContain("Platform");
   });
 
   it("leaves the playtime line out when there are no hours recorded", async () => {
@@ -355,6 +375,14 @@ describe("formatReview", () => {
     expect(formatReview({ ...base, rating: 7.5, hoursPlayed: 40 })).toContain(
       "**Score:** 7.5\n",
     );
+  });
+
+  /** Between the score and the playtime, so the metadata block reads in the
+   *  order the review page shows it. */
+  it("puts the platform under the score", () => {
+    expect(
+      formatReview({ ...base, hoursPlayed: 40, platform: "PC" }),
+    ).toContain("**Score:** 8\n**Platform:** PC\n**Playtime:** 40 hrs");
   });
 
   it("does not print 40.0 hours", () => {
