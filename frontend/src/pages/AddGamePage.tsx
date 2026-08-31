@@ -190,7 +190,7 @@ function BackIcon() {
   );
 }
 
-// Mirrors MAX_LABELS in backend/src/resolvers/game.ts, which enforces it.
+// Mirrors MAX_LABELS in backend/src/lib/labels.ts, which enforces it.
 // Change both together.
 const MAX_LABELS = 5;
 

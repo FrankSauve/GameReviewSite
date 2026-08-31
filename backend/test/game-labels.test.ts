@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Express } from "express";
-import { MAX_LABELS } from "../src/resolvers/game.js";
+import { MAX_LABELS } from "../src/lib/labels.js";
 import {
   ALICE,
   authedQuery,
