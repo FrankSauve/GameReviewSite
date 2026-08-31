@@ -1,13 +1,5 @@
 const RAWG_BASE = "https://api.rawg.io/api";
 
-/** Carries the status so a caller can tell "no such game" from "slow down". */
-export class RawgHttpError extends Error {
-  constructor(readonly status: number) {
-    super(`RAWG API returned ${status}`);
-    this.name = "RawgHttpError";
-  }
-}
-
 export interface RawgGame {
   id: number;
   name: string;
@@ -39,7 +31,7 @@ export async function searchRawg(query: string): Promise<RawgGame[]> {
     ordering: "-relevance",
   });
   const res = await fetch(`${RAWG_BASE}/games?${params.toString()}`);
-  if (!res.ok) throw new RawgHttpError(res.status);
+  if (!res.ok) throw new Error(`RAWG API returned ${res.status}`);
   const data = (await res.json()) as { results?: RawgGame[] };
   return data.results ?? [];
 }
@@ -48,7 +40,7 @@ export async function getRawgGame(rawgId: number): Promise<RawgGame> {
   const key = getApiKey();
   const params = new URLSearchParams({ key });
   const res = await fetch(`${RAWG_BASE}/games/${rawgId}?${params.toString()}`);
-  if (!res.ok) throw new RawgHttpError(res.status);
+  if (!res.ok) throw new Error(`RAWG API returned ${res.status}`);
   return (await res.json()) as RawgGame;
 }
 

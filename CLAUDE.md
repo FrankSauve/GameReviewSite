@@ -10,7 +10,6 @@ backend/src/lib/        pure, tested logic — no Express, no resolver plumbing
 backend/src/resolvers/  thin: validate, authorize, delegate to lib/
 backend/src/routes/     thin, same rule (auth, embed, export)
 backend/src/schema/     the GraphQL SDL
-backend/src/scripts/    one-off operational scripts, run by hand
 frontend/src/lib/       pure, tested logic — no React
 frontend/src/components/ reusable pieces
 frontend/src/pages/     one per route

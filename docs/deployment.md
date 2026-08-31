@@ -289,26 +289,6 @@ docker compose stop gamereviews-frontend gamereviews-backend gamereviews-db
 `docker compose down -v` deletes every volume in the project, this database
 included.
 
-### Backfilling genres
-
-Games imported before the `20260829041559_multi_platform_genre` migration carry
-at most one genre, because the schema had a single `genre` column at the time.
-The repair reads the missing tags from RAWG. It ships in the image, so it needs
-no checkout and no npm:
-
-```bash
-# Dry run: prints how many games are affected and what it would change.
-docker compose exec gamereviews-backend node dist/scripts/backfill-genres.js
-
-# Apply.
-docker compose exec gamereviews-backend node dist/scripts/backfill-genres.js --write
-```
-
-It reuses the container's `DATABASE_URL` and `RAWG_API_KEY`, goes one game at a
-time with a 1s pause (`--delay=<ms>` to change it), and backs off on a 429. A
-game is skipped unless RAWG returns strictly more genres than are stored, so a
-hand-curated list is never shrunk or reordered. Re-running it is safe.
-
 ## Postgres major upgrades
 
 `postgres:16-alpine` is pinned on purpose: the on-disk format changes between
