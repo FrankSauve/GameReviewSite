@@ -42,7 +42,7 @@ export function AvatarColorPicker({ user }: { user: AvatarUser }) {
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-2 left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 p-3 rounded-xl bg-gray-900 border border-gray-700 shadow-xl">
+        <div className="absolute z-20 mt-2 w-max left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 p-3 rounded-xl bg-gray-900 border border-gray-700 shadow-xl">
           <div className="grid grid-cols-6 gap-2">
             {AVATAR_COLOR_KEYS.map((key) => (
               <button
