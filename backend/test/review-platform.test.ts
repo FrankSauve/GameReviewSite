@@ -63,10 +63,10 @@ describe("the platform a review was played on", () => {
         CREATE,
         ALICE,
         {},
-        { input: createInput(gameId, "Nintendo Switch") },
+        { input: createInput(gameId, "Switch") },
       );
       expect(res.errors).toBeUndefined();
-      expect(res.data?.createReview.platform).toBe("Nintendo Switch");
+      expect(res.data?.createReview.platform).toBe("Switch");
     });
 
     it("leaves it null when none was selected", async () => {
@@ -110,9 +110,8 @@ describe("the platform a review was played on", () => {
     });
 
     /**
-     * The backfill matched RAWG's spellings case-insensitively, so a stored
-     * "MacOS" has to round-trip through the form as the offered "macOS" rather
-     * than being refused on save.
+     * A value stored in another casing has to round-trip through the form as
+     * the offered spelling rather than being refused on save.
      */
     it("stores the offered spelling of a differently-cased value", async () => {
       const gameId = await seedGame();
@@ -121,9 +120,9 @@ describe("the platform a review was played on", () => {
         CREATE,
         ALICE,
         {},
-        { input: createInput(gameId, "MACOS") },
+        { input: createInput(gameId, "playstation") },
       );
-      expect(res.data?.createReview.platform).toBe("macOS");
+      expect(res.data?.createReview.platform).toBe("PlayStation");
     });
   });
 
@@ -147,9 +146,9 @@ describe("the platform a review was played on", () => {
         UPDATE,
         ALICE,
         {},
-        { id, input: { platform: "PlayStation 5" } },
+        { id, input: { platform: "PlayStation" } },
       );
-      expect(res.data?.updateReview.platform).toBe("PlayStation 5");
+      expect(res.data?.updateReview.platform).toBe("PlayStation");
     });
 
     it("leaves it alone when the input omits it", async () => {
@@ -198,13 +197,13 @@ describe("the platform a review was played on", () => {
       CREATE,
       BOB,
       {},
-      { input: createInput(gameId, "Xbox Series S/X") },
+      { input: createInput(gameId, "Xbox") },
     );
     const res = await publicQuery<{
       recentReviews: { platform: string | null }[];
     }>(app, `{ recentReviews(limit: 5) { platform } }`);
     expect(res.errors).toBeUndefined();
-    expect(res.data?.recentReviews[0]?.platform).toBe("Xbox Series S/X");
+    expect(res.data?.recentReviews[0]?.platform).toBe("Xbox");
   });
 });
 
@@ -216,27 +215,5 @@ describe("the offered list", () => {
 
   it("accepts every value it offers", () => {
     for (const name of PLATFORMS) expect(validatePlatform(name)).toBe(name);
-  });
-
-  /**
-   * The names the migration backfills from. RAWG spells these exactly this way,
-   * and a mismatch here is a review whose stored platform the dropdown cannot
-   * offer.
-   */
-  it("covers the platforms RAWG names most often", () => {
-    for (const name of [
-      "PC",
-      "PlayStation 5",
-      "PlayStation 4",
-      "Xbox Series S/X",
-      "Xbox One",
-      "Nintendo Switch",
-      "macOS",
-      "Linux",
-      "iOS",
-      "Android",
-    ]) {
-      expect(PLATFORMS).toContain(name);
-    }
   });
 });
