@@ -12,6 +12,7 @@ import { PlaytimeInput } from "./PlaytimeInput";
 import { Markdown } from "./Markdown";
 import { MarkdownEditor } from "./MarkdownEditor";
 import { reviewPath, userPath } from "../lib/links";
+import { Avatar } from "./Avatar";
 
 interface ReviewCardProps {
   review: Review;
@@ -98,9 +99,7 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
         {/* Header */}
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center text-sm font-bold text-white shrink-0">
-              {(review.user?.username?.[0] ?? "?").toUpperCase()}
-            </div>
+            <Avatar user={review.user} size={9} />
             <div>
               <Link
                 to={userPath(review.user)}

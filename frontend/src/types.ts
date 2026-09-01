@@ -3,6 +3,8 @@ export interface User {
   slug?: string | null;
   username: string;
   email?: string;
+  /** A key from lib/avatarColor.ts; null until the account picks one. */
+  avatarColor?: string | null;
 }
 
 export interface Comment {
@@ -71,6 +73,7 @@ export interface CurrentUser {
   id: string;
   slug?: string | null;
   username: string;
+  avatarColor?: string | null;
 }
 
 /**

@@ -25,6 +25,7 @@ const review = {
     id: "u1",
     slug: "alice",
     username: "alice",
+    avatarColor: null,
   },
   game: {
     __typename: "Game",

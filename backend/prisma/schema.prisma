@@ -23,6 +23,9 @@ model User {
   email     String?   @unique
   /// A self-written introduction, in Markdown. Null rather than "" when absent.
   bio       String?
+  /// A key from lib/avatarColor.ts, not a colour value. Null until the account
+  /// picks one, which leaves it on the slug-derived fallback.
+  avatarColor String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   reviews   Review[]

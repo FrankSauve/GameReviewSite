@@ -12,6 +12,8 @@ import {
 } from "../lib/grouping";
 import { GroupedReviewList } from "../components/GroupedReviewList";
 import { ProfileBio } from "../components/ProfileBio";
+import { Avatar } from "../components/Avatar";
+import { AvatarColorPicker } from "../components/AvatarColorPicker";
 import { EXPORT_REVIEWS_PATH, userPath } from "../lib/links";
 import { useCanonicalPath } from "../hooks/useCanonicalPath";
 
@@ -19,6 +21,7 @@ interface ProfileUser {
   id: string;
   slug?: string | null;
   username: string;
+  avatarColor?: string | null;
   bio?: string | null;
   reviewCount: number;
   averageRating?: number | null;
@@ -27,20 +30,6 @@ interface ProfileUser {
 interface ProfileData {
   user: ProfileUser | null;
   reviewSummariesByUser: ReviewSummary[];
-}
-
-function avatarGradient(username: string): string {
-  const gradients: [string, ...string[]] = [
-    "from-violet-600 to-indigo-700",
-    "from-rose-600 to-pink-700",
-    "from-emerald-600 to-teal-700",
-    "from-blue-600 to-cyan-700",
-    "from-amber-600 to-orange-700",
-    "from-fuchsia-600 to-purple-700",
-  ];
-  const idx =
-    [...username].reduce((a, c) => a + c.charCodeAt(0), 0) % gradients.length;
-  return gradients[idx] ?? gradients[0];
 }
 
 const TABS: { grouping: Grouping; label: string; path: string }[] = [
@@ -118,11 +107,11 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
     <div className="space-y-6 max-w-3xl mx-auto">
       {/* ── Profile header ── */}
       <div className="card p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
-        <div
-          className={`w-16 h-16 rounded-full bg-gradient-to-br ${avatarGradient(profile.username)} flex items-center justify-center text-2xl font-black text-white shrink-0`}
-        >
-          {profile.username.charAt(0).toUpperCase()}
-        </div>
+        {isOwnProfile ? (
+          <AvatarColorPicker user={profile} />
+        ) : (
+          <Avatar user={profile} size={16} />
+        )}
         <div className="flex-1 text-center sm:text-left space-y-1">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
             <h1 className="text-xl font-bold text-gray-100">

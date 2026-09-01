@@ -19,7 +19,12 @@ function updateMock(bio: string, result = bio) {
     request: { query: UPDATE_PROFILE, variables: { input: { bio } } },
     result: {
       data: {
-        updateProfile: { __typename: "User", id: "u1", bio: result },
+        updateProfile: {
+          __typename: "User",
+          id: "u1",
+          bio: result,
+          avatarColor: null,
+        },
       },
     },
   };

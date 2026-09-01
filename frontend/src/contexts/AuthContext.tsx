@@ -8,6 +8,7 @@ export interface AuthUser {
   slug?: string | null;
   username: string;
   email?: string | null;
+  avatarColor?: string | null;
 }
 
 interface AuthContextValue {

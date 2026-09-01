@@ -14,6 +14,7 @@ import { formatPlaytime } from "../lib/playtime";
 import { gamePath, reviewPath, userPath } from "../lib/links";
 import { Pagination } from "../components/Pagination";
 import { ReactionBar } from "../components/ReactionBar";
+import { Avatar } from "../components/Avatar";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -134,9 +135,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
 
           {/* Footer: reviewer + time */}
           <div className="flex items-center gap-2 pt-1 border-t border-gray-800/60">
-            <span className="w-6 h-6 rounded-full bg-violet-700 flex items-center justify-center text-xs font-bold text-white shrink-0">
-              {(review.user?.username ?? "?").charAt(0).toUpperCase()}
-            </span>
+            <Avatar user={review.user} size={6} />
             <Link
               to={userPath(review.user)}
               onClick={(e) => e.stopPropagation()}
@@ -200,9 +199,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
               <div className="space-y-2 pl-3 border-l-2 border-gray-800">
                 {localComments.map((comment) => (
                   <div key={comment.id} className="flex gap-2">
-                    <span className="w-5 h-5 rounded-full bg-gradient-to-br from-emerald-700 to-teal-800 flex items-center justify-center text-xs font-bold text-white shrink-0 mt-0.5">
-                      {(comment.user?.username ?? "?").charAt(0).toUpperCase()}
-                    </span>
+                    <Avatar user={comment.user} size={5} className="mt-0.5" />
                     <div className="min-w-0">
                       <span className="text-xs font-semibold text-gray-300">
                         {comment.user?.username ?? "Unknown"}
@@ -225,9 +222,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
                 onSubmit={handleSubmitComment}
                 className="flex items-center gap-2 pt-1"
               >
-                <span className="w-6 h-6 rounded-full bg-violet-700 flex items-center justify-center text-xs font-bold text-white shrink-0">
-                  {user.username.charAt(0).toUpperCase()}
-                </span>
+                <Avatar user={user} size={6} />
                 <input
                   type="text"
                   value={newComment}

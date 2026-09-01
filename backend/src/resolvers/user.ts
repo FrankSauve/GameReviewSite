@@ -10,12 +10,14 @@ import {
 import { GraphQLError } from "graphql";
 import { requireAuth, type Context } from "../context.js";
 import { byIdOrSlug } from "../lib/slug.js";
+import { validateAvatarColor } from "../lib/avatarColor.js";
 
 /** Enforced here; the textarea's maxLength is only a hint to the browser. */
 export const BIO_MAX = 3000;
 
 interface UpdateProfileInput {
   bio?: string | null;
+  avatarColor?: string | null;
 }
 
 export const userResolvers = {
@@ -50,7 +52,7 @@ export const userResolvers = {
   },
 
   Mutation: {
-    // Edits the fields authentik does not own, which today is the bio alone.
+    // Edits the fields authentik does not own: the bio and the avatar colour.
     // Still no username or email: authentik is the source for both. No id
     // argument either — you may only ever edit your own profile.
     updateProfile: async (
@@ -60,7 +62,7 @@ export const userResolvers = {
     ) => {
       const authUser = requireAuth(context);
 
-      const data: { bio?: string | null } = {};
+      const data: { bio?: string | null; avatarColor?: string | null } = {};
       if (input.bio !== undefined) {
         const trimmed = (input.bio ?? "").trim();
         if (trimmed.length > BIO_MAX)
@@ -69,6 +71,9 @@ export const userResolvers = {
           });
         // Cleared and never written are the same state.
         data.bio = trimmed || null;
+      }
+      if (input.avatarColor !== undefined) {
+        data.avatarColor = validateAvatarColor(input.avatarColor);
       }
 
       const user = await prisma.user.update({

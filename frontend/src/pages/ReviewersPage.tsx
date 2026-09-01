@@ -4,27 +4,15 @@ import { GET_USERS } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
 import { formatRating, ratingColor } from "../lib/rating";
 import { userPath } from "../lib/links";
+import { Avatar } from "../components/Avatar";
 
 interface ReviewerUser {
   id: string;
   slug?: string | null;
   username: string;
+  avatarColor?: string | null;
   reviewCount: number;
   averageRating?: number | null;
-}
-
-function avatarGradient(username: string): string {
-  const gradients: [string, ...string[]] = [
-    "from-violet-600 to-indigo-700",
-    "from-rose-600 to-pink-700",
-    "from-emerald-600 to-teal-700",
-    "from-blue-600 to-cyan-700",
-    "from-amber-600 to-orange-700",
-    "from-fuchsia-600 to-purple-700",
-  ];
-  const idx =
-    [...username].reduce((a, c) => a + c.charCodeAt(0), 0) % gradients.length;
-  return gradients[idx] ?? gradients[0];
 }
 
 export function ReviewersPage() {
@@ -84,11 +72,7 @@ export function ReviewersPage() {
               <Link key={u.id} to={userPath(u)} className="group block">
                 <div className="card p-5 flex items-center gap-4 hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
                   {/* Avatar */}
-                  <div
-                    className={`w-11 h-11 rounded-full bg-gradient-to-br ${avatarGradient(u.username)} flex items-center justify-center text-base font-black text-white shrink-0`}
-                  >
-                    {u.username.charAt(0).toUpperCase()}
-                  </div>
+                  <Avatar user={u} size={11} />
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
