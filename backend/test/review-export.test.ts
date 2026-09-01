@@ -213,11 +213,11 @@ describe("exporting reviews as a zip of markdown files", () => {
 
   it("names the platform the review was written against", async () => {
     const cookie = await sessionFor(ALICE);
-    await seedReview(ALICE, { title: "Hades", platform: "Nintendo Switch" });
+    await seedReview(ALICE, { title: "Hades", platform: "Switch" });
 
     const entries = await readArchive(await bodyOf(getExport(app, cookie)));
     expect(entries.get("reviews-alice/hades.md")).toContain(
-      "**Platform:** Nintendo Switch\n",
+      "**Platform:** Switch\n",
     );
   });
 

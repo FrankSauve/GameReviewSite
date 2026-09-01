@@ -111,10 +111,10 @@ describe("choosing the platform a review was played on", () => {
   });
 
   it("sends the selected platform", async () => {
-    const onSuccess = await renderForm([meMock, createMock("Nintendo Switch")]);
+    const onSuccess = await renderForm([meMock, createMock("Switch")]);
     fillBody();
     fireEvent.change(screen.getByLabelText("Platform"), {
-      target: { value: "Nintendo Switch" },
+      target: { value: "Switch" },
     });
     fireEvent.click(screen.getByRole("button", { name: "Submit Review" }));
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
