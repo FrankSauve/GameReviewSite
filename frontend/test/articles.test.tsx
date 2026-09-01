@@ -36,6 +36,7 @@ const ME = {
   id: "u1",
   slug: "simon",
   username: "simon",
+  avatarColor: null,
   email: null,
 };
 const OTHER = {

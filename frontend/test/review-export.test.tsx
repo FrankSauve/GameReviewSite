@@ -27,6 +27,7 @@ const ME = {
   id: "u1",
   slug: "simon",
   username: "simon",
+  avatarColor: null,
   email: null,
 };
 
@@ -50,6 +51,7 @@ function profileMock(username: string, reviewCount: number) {
           id: PROFILES[username],
           slug: username,
           username,
+          avatarColor: null,
           bio: null,
           reviewCount,
           averageRating: 8,

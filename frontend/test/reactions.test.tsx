@@ -37,6 +37,7 @@ const meMock = {
         id: "u1",
         slug: "alice",
         username: "alice",
+        avatarColor: null,
         email: "alice@example.com",
       },
     },

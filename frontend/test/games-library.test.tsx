@@ -70,6 +70,7 @@ const usersMock = {
           id: "u1",
           slug: "alice",
           username: "alice",
+          avatarColor: null,
           reviewCount: 3,
           averageRating: 8,
         },
