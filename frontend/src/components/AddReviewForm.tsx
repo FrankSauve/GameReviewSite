@@ -7,6 +7,7 @@ import { currentYear, snapHours } from "../lib/playtime";
 import { RatingInput } from "./RatingInput";
 import { PlaytimeInput } from "./PlaytimeInput";
 import { PlatformSelect } from "./PlatformSelect";
+import { DEFAULT_PLATFORM } from "../lib/platforms";
 import { MarkdownEditor } from "./MarkdownEditor";
 
 interface AddReviewFormProps {
@@ -23,7 +24,7 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
   const [rating, setRating] = useState<number>(DEFAULT_RATING);
   const [yearPlayed, setYearPlayed] = useState<number>(currentYear());
   const [hoursPlayed, setHoursPlayed] = useState("");
-  const [platform, setPlatform] = useState("");
+  const [platform, setPlatform] = useState(DEFAULT_PLATFORM);
 
   const [createReview, { loading, error }] = useMutation(CREATE_REVIEW, {
     refetchQueries: [{ query: GET_GAME, variables: { id: gameId } }],
@@ -32,7 +33,7 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
       setRating(DEFAULT_RATING);
       setYearPlayed(currentYear());
       setHoursPlayed("");
-      setPlatform("");
+      setPlatform(DEFAULT_PLATFORM);
       onSuccess?.();
     },
   });

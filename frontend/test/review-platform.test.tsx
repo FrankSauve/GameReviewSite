@@ -11,7 +11,7 @@ import { MockedProvider, type MockedResponse } from "@apollo/client/testing";
 import { AddReviewForm } from "../src/components/AddReviewForm";
 import { CREATE_REVIEW, GET_ME } from "../src/graphql/mutations";
 import { AuthProvider } from "../src/contexts/AuthContext";
-import { PLATFORMS } from "../src/lib/platforms";
+import { DEFAULT_PLATFORM, PLATFORMS } from "../src/lib/platforms";
 
 /** See the note in profile-views.test.tsx: vitest runs without globals here. */
 afterEach(cleanup);
@@ -102,11 +102,11 @@ describe("choosing the platform a review was played on", () => {
     expect([...select.options].map((o) => o.value)).toEqual(["", ...PLATFORMS]);
   });
 
-  /** The first option is a real choice: not every review records one. */
-  it("starts on no platform", async () => {
+  /** The first option is still a real choice: not every review records one. */
+  it("starts on PC, with no platform still on offer", async () => {
     await renderForm();
     const select = screen.getByLabelText("Platform") as HTMLSelectElement;
-    expect(select.value).toBe("");
+    expect(select.value).toBe(DEFAULT_PLATFORM);
     expect(select.options[0]?.textContent).toBe("Not recorded");
   });
 
@@ -127,6 +127,9 @@ describe("choosing the platform a review was played on", () => {
   it("sends null when none was chosen", async () => {
     const onSuccess = await renderForm([meMock, createMock(null)]);
     fillBody();
+    fireEvent.change(screen.getByLabelText("Platform"), {
+      target: { value: "" },
+    });
     fireEvent.click(screen.getByRole("button", { name: "Submit Review" }));
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
   });
