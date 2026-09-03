@@ -17,3 +17,9 @@ export const PLATFORMS = [
   "Android",
   "Web",
 ];
+
+/**
+ * What a new review starts on. Editing an existing one keeps what it stored,
+ * so saving an unrelated edit never invents a platform it never had.
+ */
+export const DEFAULT_PLATFORM = "PC";
