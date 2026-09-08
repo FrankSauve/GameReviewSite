@@ -141,7 +141,7 @@ describe("the profile favorites grid", () => {
     ]);
 
     await waitFor(() => {
-      expect(screen.getByText("Favorite Game")).toBeDefined();
+      expect(screen.getByText("Favourite Game")).toBeDefined();
     });
     for (const { label } of FAVORITE_CATEGORIES) {
       expect(screen.getByText(label)).toBeDefined();
@@ -157,7 +157,7 @@ describe("the profile favorites grid", () => {
     ]);
 
     await waitFor(() => {
-      expect(screen.getByText("Favorite Game")).toBeDefined();
+      expect(screen.getByText("Favourite Game")).toBeDefined();
     });
     expect(screen.queryByLabelText(/^Select /)).toBeNull();
     expect(screen.queryByLabelText(/^Change /)).toBeNull();
@@ -167,7 +167,7 @@ describe("the profile favorites grid", () => {
     renderFavorites([meMock(ME), summariesMock(), favoritesMock([])]);
 
     await waitFor(() => {
-      expect(screen.getByLabelText("Select Favorite Game")).toBeDefined();
+      expect(screen.getByLabelText("Select Favourite Game")).toBeDefined();
     });
     expect(screen.getAllByLabelText(/^Select /)).toHaveLength(
       FAVORITE_CATEGORIES.length,
@@ -185,7 +185,7 @@ describe("the profile favorites grid", () => {
     ]);
 
     const tile = await screen.findByLabelText(
-      "Change Favorite Game: Elden Ring",
+      "Change Favourite Game: Elden Ring",
     );
     fireEvent.click(tile);
 
@@ -193,7 +193,7 @@ describe("the profile favorites grid", () => {
 
     await waitFor(() => {
       expect(
-        screen.getByLabelText("Change Favorite Game: Hades"),
+        screen.getByLabelText("Change Favourite Game: Hades"),
       ).toBeDefined();
     });
   });

@@ -41,7 +41,7 @@ const TABS: { tab: ProfileTab; label: string; path: string }[] = [
   { tab: "year", label: "By year", path: "" },
   { tab: "score", label: "By score", path: "by-score" },
   { tab: "recent", label: "Recent", path: "recent" },
-  { tab: "favorites", label: "Favorites", path: "favorites" },
+  { tab: "favorites", label: "Favourites", path: "favorites" },
 ];
 
 interface UserProfilePageProps {

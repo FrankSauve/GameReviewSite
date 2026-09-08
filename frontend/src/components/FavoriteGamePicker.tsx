@@ -70,7 +70,7 @@ export function FavoriteGamePicker({
 
       {games.length === 0 ? (
         <p className="px-3 py-6 text-center text-sm text-gray-500">
-          Review a game first — favorites are picked from games you have
+          Review a game first — favourites are picked from games you have
           reviewed.
         </p>
       ) : matches.length === 0 ? (
