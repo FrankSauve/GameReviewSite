@@ -152,3 +152,30 @@ export const TOGGLE_REACTION = gql`
     }
   }
 `;
+
+/** Selection set kept identical to GET_USER_FAVORITES; see the note there. */
+const FAVORITES_RESULT = `
+  id
+  favorites {
+    id
+    category
+    game {
+      id
+      slug
+      title
+      coverUrl
+    }
+  }
+`;
+
+export const SET_FAVORITE_GAME = gql`
+  mutation SetFavoriteGame($input: SetFavoriteGameInput!) {
+    setFavoriteGame(input: $input) { ${FAVORITES_RESULT} }
+  }
+`;
+
+export const CLEAR_FAVORITE_GAME = gql`
+  mutation ClearFavoriteGame($category: String!) {
+    clearFavoriteGame(category: $category) { ${FAVORITES_RESULT} }
+  }
+`;

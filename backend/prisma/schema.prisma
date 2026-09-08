@@ -34,6 +34,7 @@ model User {
   sessions  Session[]
   articles  Article[]
   reactions Reaction[]
+  favorites FavoriteGame[]
 }
 
 /// A signed-in browser.
@@ -72,6 +73,7 @@ model Game {
   createdById String?
   createdBy   User?    @relation("GameCreator", fields: [createdById], references: [id], onDelete: SetNull)
   reviews     Review[]
+  favorites   FavoriteGame[]
 }
 
 model Review {
@@ -150,4 +152,23 @@ model Reaction {
   @@unique([userId, commentId, emoji])
   @@index([reviewId])
   @@index([commentId])
+}
+
+/// One game a person picked for one of the fixed categories in
+/// lib/favoriteCategories.ts, drawn as the Favorites grid on their profile.
+model FavoriteGame {
+  id        String   @id @default(uuid())
+  /// A key from lib/favoriteCategories.ts, never a display label.
+  category  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  gameId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  /// The pair is what makes re-picking a category a replace rather than a
+  /// second row.
+  @@unique([userId, category])
+  @@index([gameId])
 }

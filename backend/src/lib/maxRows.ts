@@ -4,7 +4,12 @@ import {
   type FieldNode,
   type ValidationContext,
 } from "graphql";
-import { LIST_BOUNDS, REACTION_BOUNDS, type Bounds } from "./pagination.js";
+import {
+  FAVORITE_BOUNDS,
+  LIST_BOUNDS,
+  REACTION_BOUNDS,
+  type Bounds,
+} from "./pagination.js";
 import { DEFAULT_ROW_BUDGET } from "./budget.js";
 
 /**
@@ -38,6 +43,7 @@ const EXPLICIT_BOUNDS: Record<string, Bounds> = {
   // asks for `review { comments { reactions } }` — 2500 rows, and refused.
   "Review.reactions": REACTION_BOUNDS,
   "Comment.reactions": REACTION_BOUNDS,
+  "User.favorites": FAVORITE_BOUNDS,
 };
 
 function boundsFor(parentType: string, fieldName: string): Bounds {

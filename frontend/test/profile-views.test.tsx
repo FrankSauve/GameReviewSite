@@ -98,21 +98,18 @@ function renderAt(path: string) {
     >
       <MemoryRouter initialEntries={[path]}>
         <Routes>
-          <Route
-            path="/users/:id"
-            element={<UserProfilePage grouping="year" />}
-          />
+          <Route path="/users/:id" element={<UserProfilePage tab="year" />} />
           <Route
             path="/users/:id/by-year"
-            element={<UserProfilePage grouping="year" />}
+            element={<UserProfilePage tab="year" />}
           />
           <Route
             path="/users/:id/by-score"
-            element={<UserProfilePage grouping="score" />}
+            element={<UserProfilePage tab="score" />}
           />
           <Route
             path="/users/:id/recent"
-            element={<UserProfilePage grouping="recent" />}
+            element={<UserProfilePage tab="recent" />}
           />
         </Routes>
       </MemoryRouter>

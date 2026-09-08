@@ -11,6 +11,8 @@ import {
   type ReviewSummary,
 } from "../lib/grouping";
 import { GroupedReviewList } from "../components/GroupedReviewList";
+import { FavoritesGrid } from "../components/FavoritesGrid";
+import { pickableGames } from "../lib/favorites";
 import { ProfileBio } from "../components/ProfileBio";
 import { Avatar } from "../components/Avatar";
 import { AvatarColorPicker } from "../components/AvatarColorPicker";
@@ -32,10 +34,14 @@ interface ProfileData {
   reviewSummariesByUser: ReviewSummary[];
 }
 
-const TABS: { grouping: Grouping; label: string; path: string }[] = [
-  { grouping: "year", label: "By year", path: "" },
-  { grouping: "score", label: "By score", path: "by-score" },
-  { grouping: "recent", label: "Recent", path: "recent" },
+/** Favorites is the one tab that is not a view of the review list. */
+export type ProfileTab = Grouping | "favorites";
+
+const TABS: { tab: ProfileTab; label: string; path: string }[] = [
+  { tab: "year", label: "By year", path: "" },
+  { tab: "score", label: "By score", path: "by-score" },
+  { tab: "recent", label: "Recent", path: "recent" },
+  { tab: "favorites", label: "Favorites", path: "favorites" },
 ];
 
 interface UserProfilePageProps {
@@ -43,12 +49,17 @@ interface UserProfilePageProps {
    * Which view this route renders. By year is the default, per the brief — a
    * profile reads as a playing history rather than a posting log.
    */
-  grouping?: Grouping;
+  tab?: ProfileTab;
 }
 
-export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
+export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
   const { id } = useParams<{ id: string }>();
   const { user: me } = useAuth();
+
+  // Favorites still needs the summaries: the header's totals come from them,
+  // and the picker offers exactly the games they name. Borrowing the default
+  // tab's ordering shares its cache entry rather than adding a fourth.
+  const grouping: Grouping = tab === "favorites" ? "year" : tab;
 
   const { data, loading, error } = useQuery<ProfileData>(
     GET_USER_REVIEW_SUMMARIES,
@@ -58,7 +69,7 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
     },
   );
 
-  const tabPath = TABS.find((t) => t.grouping === grouping)?.path ?? "";
+  const tabPath = TABS.find((t) => t.tab === tab)?.path ?? "";
   useCanonicalPath(data?.user ? userPath(data.user, tabPath) : null);
 
   if (loading) {
@@ -176,12 +187,12 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
 
       {/* ── View tabs ── */}
       <nav className="flex gap-1 border-b border-gray-800">
-        {TABS.map((tab) => {
-          const active = tab.grouping === grouping;
+        {TABS.map((entry) => {
+          const active = entry.tab === tab;
           return (
             <Link
-              key={tab.grouping}
-              to={userPath(profile, tab.path)}
+              key={entry.tab}
+              to={userPath(profile, entry.path)}
               aria-current={active ? "page" : undefined}
               className={`px-3 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${
                 active
@@ -189,14 +200,20 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
                   : "border-transparent text-gray-500 hover:text-gray-300"
               }`}
             >
-              {tab.label}
+              {entry.label}
             </Link>
           );
         })}
       </nav>
 
-      {/* ── Reviews ── */}
-      {groups.length === 0 ? (
+      {/* ── Favorites, or the reviews every other tab shows ── */}
+      {tab === "favorites" ? (
+        <FavoritesGrid
+          userId={profile.id}
+          isOwnProfile={isOwnProfile}
+          pickable={pickableGames(reviews)}
+        />
+      ) : groups.length === 0 ? (
         <div className="card p-10 text-center space-y-2">
           <p className="text-3xl">✍️</p>
           <p className="text-gray-400">
@@ -206,10 +223,7 @@ export function UserProfilePage({ grouping = "year" }: UserProfilePageProps) {
           </p>
         </div>
       ) : (
-        <GroupedReviewList
-          groups={groups}
-          showGroupAverage={grouping === "year"}
-        />
+        <GroupedReviewList groups={groups} showGroupAverage={tab === "year"} />
       )}
     </div>
   );

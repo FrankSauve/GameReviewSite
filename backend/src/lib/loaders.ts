@@ -1,7 +1,7 @@
 import DataLoader from "dataloader";
-import type { Comment, Game, Review, User } from "@prisma/client";
+import type { Comment, FavoriteGame, Game, Review, User } from "@prisma/client";
 import { prisma } from "./prisma.js";
-import { LIST_BOUNDS, REACTION_BOUNDS } from "./pagination.js";
+import { FAVORITE_BOUNDS, LIST_BOUNDS, REACTION_BOUNDS } from "./pagination.js";
 
 /**
  * Per-request batching for the relation fields. Built per request, never per
@@ -13,6 +13,8 @@ export interface Loaders {
   gameById: DataLoader<string, Game | null>;
   /** Bounded at LIST_BOUNDS.nested.max rows per parent. */
   reviewsByUserId: DataLoader<string, Review[]>;
+  /** Bounded at FAVORITE_BOUNDS.max: one row per category, by the unique pair. */
+  favoritesByUserId: DataLoader<string, FavoriteGame[]>;
   reviewsByGameId: DataLoader<string, Review[]>;
   commentsByReviewId: DataLoader<string, Comment[]>;
   /** Aggregates, so a count or an average never loads the rows it summarises. */
@@ -42,13 +44,14 @@ function groupBy<T>(
   rows: T[],
   key: (row: T) => string,
   ids: readonly string[],
+  cap: number = LIST_BOUNDS.nested.max,
 ): T[][] {
   const buckets = new Map<string, T[]>();
   for (const row of rows) {
     const id = key(row);
     const bucket = buckets.get(id);
     if (bucket) {
-      if (bucket.length < LIST_BOUNDS.nested.max) bucket.push(row);
+      if (bucket.length < cap) bucket.push(row);
     } else {
       buckets.set(id, [row]);
     }
@@ -148,6 +151,14 @@ export function createLoaders(viewerId: string | null): Loaders {
         take: LIST_BOUNDS.nested.max * userIds.length,
       });
       return groupBy(reviews, (r) => r.userId, userIds);
+    }),
+
+    favoritesByUserId: new DataLoader(async (userIds) => {
+      const favorites = await prisma.favoriteGame.findMany({
+        where: { userId: { in: [...userIds] } },
+        take: FAVORITE_BOUNDS.max * userIds.length,
+      });
+      return groupBy(favorites, (f) => f.userId, userIds, FAVORITE_BOUNDS.max);
     }),
 
     reviewsByGameId: new DataLoader(async (gameIds) => {

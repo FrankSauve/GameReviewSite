@@ -1,0 +1,126 @@
+import { useMemo, useRef, useState, useCallback } from "react";
+import { useMutation } from "@apollo/client";
+import { CLEAR_FAVORITE_GAME, SET_FAVORITE_GAME } from "../graphql/mutations";
+import { useDismiss } from "../hooks/useDismiss";
+import type { PickableGame } from "../lib/favorites";
+
+interface FavoriteGamePickerProps {
+  category: string;
+  label: string;
+  games: PickableGame[];
+  /** Set when the category already holds a pick, which adds the clear action. */
+  filled: boolean;
+  onClose: () => void;
+}
+
+export function FavoriteGamePicker({
+  category,
+  label,
+  games,
+  filled,
+  onClose,
+}: FavoriteGamePickerProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [filter, setFilter] = useState("");
+  useDismiss(containerRef, onClose);
+
+  const [setFavorite, { loading: saving }] = useMutation(SET_FAVORITE_GAME, {
+    onCompleted: onClose,
+  });
+  const [clearFavorite, { loading: clearing }] = useMutation(
+    CLEAR_FAVORITE_GAME,
+    { onCompleted: onClose },
+  );
+
+  // The list is already in memory, so this filters rather than searches: no
+  // debounce and no request until something is actually picked.
+  const matches = useMemo(() => {
+    const needle = filter.trim().toLowerCase();
+    const hits = needle
+      ? games.filter((g) => g.title.toLowerCase().includes(needle))
+      : games;
+    return hits.slice(0, 50);
+  }, [games, filter]);
+
+  const pick = useCallback(
+    (gameId: string) => {
+      void setFavorite({ variables: { input: { category, gameId } } });
+    },
+    [setFavorite, category],
+  );
+
+  return (
+    <div
+      ref={containerRef}
+      role="dialog"
+      aria-label={`Pick a game for ${label}`}
+      className="absolute z-40 top-full mt-1 left-0 right-0 min-w-[16rem] bg-gray-900 border border-gray-700 rounded-xl shadow-2xl shadow-black/60 overflow-hidden"
+    >
+      <div className="p-2 border-b border-gray-800">
+        <input
+          autoFocus
+          value={filter}
+          onChange={(e) => setFilter(e.target.value)}
+          placeholder="Filter your reviewed games…"
+          aria-label={`Filter games for ${label}`}
+          className="w-full bg-gray-800/70 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
+        />
+      </div>
+
+      {games.length === 0 ? (
+        <p className="px-3 py-6 text-center text-sm text-gray-500">
+          Review a game first — favorites are picked from games you have
+          reviewed.
+        </p>
+      ) : matches.length === 0 ? (
+        <p className="px-3 py-6 text-center text-sm text-gray-500">
+          No match for "{filter}"
+        </p>
+      ) : (
+        <ul className="max-h-72 overflow-y-auto divide-y divide-gray-800">
+          {matches.map((game) => (
+            <li key={game.id}>
+              <button
+                type="button"
+                disabled={saving}
+                onClick={() => pick(game.id)}
+                className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-800 disabled:opacity-50 transition-colors text-left"
+              >
+                <div className="w-8 h-11 rounded overflow-hidden bg-gray-800 shrink-0">
+                  {game.coverUrl ? (
+                    <img
+                      src={game.coverUrl}
+                      alt=""
+                      className="w-full h-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-600">
+                      🎮
+                    </div>
+                  )}
+                </div>
+                <span className="text-sm text-gray-100 truncate">
+                  {game.title}
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {filled && (
+        <div className="border-t border-gray-800 p-2">
+          <button
+            type="button"
+            disabled={clearing}
+            onClick={() => void clearFavorite({ variables: { category } })}
+            className="w-full text-xs text-gray-500 hover:text-rose-300 disabled:opacity-50 py-1 transition-colors"
+          >
+            Clear {label}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

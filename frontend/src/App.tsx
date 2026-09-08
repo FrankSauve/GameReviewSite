@@ -29,21 +29,25 @@ function App() {
                     history rather than a posting log. */}
                 <Route
                   path="/users/:id"
-                  element={<UserProfilePage grouping="year" />}
+                  element={<UserProfilePage tab="year" />}
                 />
                 <Route
                   path="/users/:id/by-score"
-                  element={<UserProfilePage grouping="score" />}
+                  element={<UserProfilePage tab="score" />}
                 />
                 <Route
                   path="/users/:id/recent"
-                  element={<UserProfilePage grouping="recent" />}
+                  element={<UserProfilePage tab="recent" />}
+                />
+                <Route
+                  path="/users/:id/favorites"
+                  element={<UserProfilePage tab="favorites" />}
                 />
                 {/* The by-year view is reachable at its own path too, so a link
                     to it survives the default changing. */}
                 <Route
                   path="/users/:id/by-year"
-                  element={<UserProfilePage grouping="year" />}
+                  element={<UserProfilePage tab="year" />}
                 />
                 {/* A splat, because a review is at /reviews/<user>/<game>. */}
                 <Route path="/reviews/*" element={<ReviewDetailPage />} />

@@ -284,3 +284,26 @@ export const GET_ARTICLE = gql`
     }
   }
 `;
+
+/**
+ * The profile's Favorites tab. Its selection set is repeated by
+ * SET_FAVORITE_GAME and CLEAR_FAVORITE_GAME so a write updates the cache
+ * without a refetch; the three must stay identical.
+ */
+export const GET_USER_FAVORITES = gql`
+  query GetUserFavorites($id: ID!) {
+    user(id: $id) {
+      id
+      favorites {
+        id
+        category
+        game {
+          id
+          slug
+          title
+          coverUrl
+        }
+      }
+    }
+  }
+`;
