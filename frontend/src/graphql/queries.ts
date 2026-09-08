@@ -307,3 +307,14 @@ export const GET_USER_FAVORITES = gql`
     }
   }
 `;
+
+/**
+ * Who reacted with one emoji, for the hover card. Its own query, fetched when a
+ * chip is hovered rather than with the review: a feed page carries hundreds of
+ * chips and nobody hovers more than a few.
+ */
+export const GET_REACTION_USERS = gql`
+  query GetReactionUsers($reviewId: ID, $commentId: ID, $emoji: String!) {
+    reactionUsers(reviewId: $reviewId, commentId: $commentId, emoji: $emoji)
+  }
+`;

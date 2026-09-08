@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   act,
   cleanup,
@@ -14,6 +14,8 @@ import type { ReactionSummary } from "../src/types";
 import { AuthProvider } from "../src/contexts/AuthContext";
 import { GET_ME, TOGGLE_REACTION } from "../src/graphql/mutations";
 import { DEFAULT_REACTIONS, searchEmoji } from "../src/lib/emoji";
+import { describeReactors } from "../src/lib/reactors";
+import { GET_REACTION_USERS } from "../src/graphql/queries";
 
 /** See the note in profile-views.test.tsx: vitest runs without globals here. */
 afterEach(cleanup);
@@ -63,6 +65,16 @@ function toggleMock(emoji: string, result: ReactionSummary[]) {
         })),
       },
     },
+  };
+}
+
+function reactorsMock(emoji: string, usernames: string[]) {
+  return {
+    request: {
+      query: GET_REACTION_USERS,
+      variables: { reviewId: "r1", emoji },
+    },
+    result: { data: { reactionUsers: usernames } },
   };
 }
 
@@ -189,6 +201,116 @@ describe("the quick reaction menu", () => {
       ).toBe("👍1"),
     );
     expect(screen.queryByRole("button", { name: "More emoji" })).toBeNull();
+  });
+});
+
+describe("naming who reacted", () => {
+  const chip = () => screen.getByRole("button", { name: "React with 👍" });
+  const two: ReactionSummary[] = [{ emoji: "👍", count: 2, reacted: false }];
+
+  it("names them on hover and hides them again on leave", async () => {
+    renderBar(two, [meMock, reactorsMock("👍", ["alice", "bob"])]);
+    expect(screen.queryByRole("tooltip")).toBeNull();
+
+    fireEvent.mouseEnter(chip());
+    // The card opens on the count it already has and fills in the names.
+    expect(screen.getByRole("tooltip").textContent).toBe(
+      "2 people reacted with 👍",
+    );
+    await waitFor(() =>
+      expect(screen.getByRole("tooltip").textContent).toBe(
+        "alice and bob reacted with 👍",
+      ),
+    );
+
+    fireEvent.mouseLeave(chip());
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
+  it("asks for nobody's names until a chip is hovered", async () => {
+    let asked = 0;
+    // Matches whatever it is asked, so an eager fetch counts too.
+    const counted: MockedResponse = {
+      request: { query: GET_REACTION_USERS },
+      variableMatcher: () => true,
+      result: () => {
+        asked += 1;
+        return { data: { reactionUsers: ["alice", "bob"] } };
+      },
+    };
+    renderBar(two, [meMock, counted]);
+    await whenSignedIn();
+    expect(asked).toBe(0);
+
+    fireEvent.mouseEnter(chip());
+    await waitFor(() => expect(asked).toBe(1));
+  });
+
+  it("names them on keyboard focus too", async () => {
+    renderBar(two, [meMock, reactorsMock("👍", ["alice", "bob"])]);
+    fireEvent.focus(chip());
+    const tooltip = screen.getByRole("tooltip");
+    expect(chip().getAttribute("aria-describedby")).toBe(tooltip.id);
+    await waitFor(() =>
+      expect(screen.getByRole("tooltip").textContent).toBe(
+        "alice and bob reacted with 👍",
+      ),
+    );
+  });
+
+  it("names them on a long press, without toggling the reaction", async () => {
+    vi.useFakeTimers();
+    try {
+      renderBar(two, [meMock, reactorsMock("👍", ["alice", "bob"])]);
+      fireEvent.touchStart(chip());
+      act(() => {
+        vi.advanceTimersByTime(1000);
+      });
+      expect(screen.getByRole("tooltip")).toBeTruthy();
+      fireEvent.touchEnd(chip());
+      // The browser fires this after the hold; there is no toggle mocked for
+      // it, so a mutation here would fail the test.
+      fireEvent.click(chip());
+      expect(chip().textContent).toBe("👍2");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("still toggles on a tap that is not held", async () => {
+    renderBar(two, [
+      meMock,
+      toggleMock("👍", [{ emoji: "👍", count: 3, reacted: true }]),
+    ]);
+    await whenSignedIn();
+    fireEvent.touchStart(chip());
+    fireEvent.touchEnd(chip());
+    fireEvent.click(chip());
+    await waitFor(() => expect(chip().textContent).toBe("👍3"));
+  });
+});
+
+describe("the reactor list", () => {
+  it("joins two names with and, and more with commas", () => {
+    expect(describeReactors(["alice"], 1)).toBe("alice");
+    expect(describeReactors(["alice", "bob"], 2)).toBe("alice and bob");
+    expect(describeReactors(["alice", "bob", "cara"], 3)).toBe(
+      "alice, bob and cara",
+    );
+  });
+
+  it("counts the ones the query did not name", () => {
+    expect(describeReactors(["alice", "bob"], 3)).toBe(
+      "alice, bob and 1 other",
+    );
+    expect(describeReactors(["alice", "bob"], 7)).toBe(
+      "alice, bob and 5 others",
+    );
+  });
+
+  it("falls back to a bare count while the names are in flight", () => {
+    expect(describeReactors([], 1)).toBe("1 person");
+    expect(describeReactors([], 4)).toBe("4 people");
   });
 });
 

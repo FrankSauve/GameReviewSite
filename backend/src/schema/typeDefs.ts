@@ -311,6 +311,15 @@ export const typeDefs = `#graphql
     articles(limit: Int, offset: Int): [Article!]!
     articlesCount: Int!
     article(id: ID!): Article
+
+    # Who reacted to one review or comment with one emoji, oldest first. Give
+    # either reviewId or commentId, the same rule toggleReaction follows.
+    #
+    # Its own query rather than a field on ReactionSummary: the names are read
+    # one emoji at a time, when somebody hovers a chip, and a feed page carries
+    # hundreds of chips nobody will hover. Truncated to REACTOR_NAMES_MAX, so it
+    # is shorter than the summary count once enough people have reacted.
+    reactionUsers(reviewId: ID, commentId: ID, emoji: String!): [String!]!
   }
 
   # ── Mutations ────────────────────────────────────────────────────────────────

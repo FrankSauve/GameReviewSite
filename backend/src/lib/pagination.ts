@@ -55,6 +55,13 @@ export const LIST_BOUNDS = {
 export const REACTION_BOUNDS: Bounds = { def: 24, max: 24 };
 
 /**
+ * `Query.reactionUsers`. The hover card names a few and leaves the rest to the
+ * summary's count, so this is a display bound rather than a page: the field
+ * takes no limit, and `def` would equal `max`.
+ */
+export const REACTOR_NAMES_MAX = 8;
+
+/**
  * `User.favorites`. One row per category at most, enforced by the unique pair
  * on the table, so the list takes no arguments and `def` equals `max`.
  */
