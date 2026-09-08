@@ -19,6 +19,7 @@ import { ReactionBar } from "../components/ReactionBar";
 import type { ReactionSummary } from "../types";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { gamePath, reviewPath, userPath } from "../lib/links";
+import { GameCover } from "../components/GameCover";
 import { useCanonicalPath } from "../hooks/useCanonicalPath";
 import { Avatar } from "../components/Avatar";
 
@@ -222,15 +223,7 @@ export function ReviewDetailPage() {
         {game && (
           <Link to={gamePath(game)} className="group block">
             <div className="relative h-40 rounded-xl overflow-hidden">
-              {game.coverUrl ? (
-                <img
-                  src={game.coverUrl}
-                  alt={game.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                />
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-900" />
-              )}
+              <GameCover game={game} size="lg" eager />
               <div className="absolute inset-0 bg-gradient-to-t from-gray-950/90 via-gray-950/40 to-transparent" />
               <div className="absolute bottom-4 left-4">
                 <h2 className="text-xl font-bold text-white group-hover:text-violet-300 transition-colors">

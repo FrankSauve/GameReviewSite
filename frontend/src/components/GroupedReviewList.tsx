@@ -3,6 +3,7 @@ import { formatRating, ratingColor } from "../lib/rating";
 import { formatHours } from "../lib/playtime";
 import type { ReviewGroup } from "../lib/grouping";
 import { reviewPath } from "../lib/links";
+import { GameCover } from "./GameCover";
 
 function ReviewRow({ item }: { item: ReviewGroup["items"][number] }) {
   const game = item.game;
@@ -11,18 +12,7 @@ function ReviewRow({ item }: { item: ReviewGroup["items"][number] }) {
     <Link to={reviewPath(item)} className="group block">
       <article className="card overflow-hidden flex items-stretch hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
         <div className="w-14 sm:w-16 shrink-0 overflow-hidden">
-          {game?.coverUrl ? (
-            <img
-              src={game.coverUrl}
-              alt=""
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-b from-gray-800 to-gray-900 flex items-center justify-center">
-              <span className="text-lg opacity-20">🎮</span>
-            </div>
-          )}
+          <GameCover game={game} size="sm" decorative />
         </div>
 
         <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-3">

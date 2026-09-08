@@ -5,6 +5,7 @@ import { GET_USER_FAVORITES } from "../graphql/queries";
 import { FAVORITE_CATEGORIES } from "../lib/favoriteCategories";
 import type { PickableGame } from "../lib/favorites";
 import { FavoriteGamePicker } from "./FavoriteGamePicker";
+import { GameCover } from "./GameCover";
 import { gamePath } from "../lib/links";
 
 interface Favorite {
@@ -22,25 +23,6 @@ interface FavoritesGridProps {
   isOwnProfile: boolean;
   /** The games this account has reviewed; the only ones it may pick. */
   pickable: PickableGame[];
-}
-
-/**
- * The six other cover sites disagree on alt text, fallback and hover, so this
- * draws its own rather than sharing one with them.
- */
-function Cover({ game }: { game: PickableGame }) {
-  return game.coverUrl ? (
-    <img
-      src={game.coverUrl}
-      alt=""
-      className="w-full h-full object-cover"
-      loading="lazy"
-    />
-  ) : (
-    <div className="w-full h-full flex items-center justify-center bg-gradient-to-b from-gray-800 to-gray-900">
-      <span className="text-2xl opacity-30">🎮</span>
-    </div>
-  );
 }
 
 export function FavoritesGrid({
@@ -79,7 +61,7 @@ export function FavoritesGrid({
         const tile = (
           <div className="aspect-video rounded-lg overflow-hidden border border-gray-800 bg-gray-900">
             {pick ? (
-              <Cover game={pick.game} />
+              <GameCover game={pick.game} size="md" decorative />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-xs text-gray-600">
                 {isOwnProfile ? "Select" : "—"}

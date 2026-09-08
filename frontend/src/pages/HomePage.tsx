@@ -12,6 +12,7 @@ import { formatRating, ratingColor } from "../lib/rating";
 import { excerpt } from "../lib/markdown";
 import { formatPlaytime } from "../lib/playtime";
 import { gamePath, reviewPath, userPath } from "../lib/links";
+import { GameCover } from "../components/GameCover";
 import { Pagination } from "../components/Pagination";
 import { ReactionBar } from "../components/ReactionBar";
 import { Avatar } from "../components/Avatar";
@@ -30,20 +31,6 @@ function timeAgo(iso: string): string {
     day: "numeric",
     year: "numeric",
   });
-}
-
-function titleGradient(title: string): string {
-  const gradients: [string, ...string[]] = [
-    "from-violet-900 to-indigo-900",
-    "from-rose-900 to-pink-900",
-    "from-emerald-900 to-teal-900",
-    "from-blue-900 to-cyan-900",
-    "from-amber-900 to-orange-900",
-    "from-fuchsia-900 to-purple-900",
-  ];
-  const idx =
-    [...title].reduce((a, c) => a + c.charCodeAt(0), 0) % gradients.length;
-  return gradients[idx] ?? gradients[0];
 }
 
 // ─── Review feed card ────────────────────────────────────────────────────────
@@ -86,20 +73,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
       >
         {/* Cover art */}
         <div className="w-28 sm:w-36 shrink-0 relative overflow-hidden rounded-l-xl">
-          {game?.coverUrl ? (
-            <img
-              src={game.coverUrl}
-              alt={game.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-              loading="lazy"
-            />
-          ) : (
-            <div
-              className={`w-full h-full bg-gradient-to-b ${titleGradient(game?.title ?? "")} flex items-center justify-center`}
-            >
-              <span className="text-3xl opacity-30">🎮</span>
-            </div>
-          )}
+          <GameCover game={game} size="md" />
         </div>
 
         {/* Content */}

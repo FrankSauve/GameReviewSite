@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import type { Game } from "../types";
 import { formatRating, ratingColor } from "../lib/rating";
 import { gamePath } from "../lib/links";
+import { GameCover } from "./GameCover";
 interface GameCardProps {
   game: Game;
 }
@@ -22,21 +23,6 @@ function genreColor(genre?: string | null) {
   return GENRE_COLORS[genre] ?? "bg-gray-800 text-gray-400";
 }
 
-// Deterministic gradient fallback for games without cover art
-function titleGradient(title: string): string {
-  const gradients: [string, ...string[]] = [
-    "from-violet-900 via-indigo-900 to-gray-900",
-    "from-rose-900 via-pink-900 to-gray-900",
-    "from-emerald-900 via-teal-900 to-gray-900",
-    "from-blue-900 via-cyan-900 to-gray-900",
-    "from-amber-900 via-orange-900 to-gray-900",
-    "from-fuchsia-900 via-purple-900 to-gray-900",
-  ];
-  const idx =
-    [...title].reduce((acc, c) => acc + c.charCodeAt(0), 0) % gradients.length;
-  return gradients[idx] ?? gradients[0];
-}
-
 export function GameCard({ game }: GameCardProps) {
   // The aggregate, so a grid of cards need not fetch every review body.
   const reviewCount = game.reviewCount ?? 0;
@@ -44,24 +30,10 @@ export function GameCard({ game }: GameCardProps) {
   return (
     <Link to={gamePath(game)} className="group block">
       <div className="card overflow-hidden hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
-        {/* Cover image or gradient fallback */}
         <div className="relative h-44 overflow-hidden">
-          {game.coverUrl ? (
-            <>
-              <img
-                src={game.coverUrl}
-                alt={game.title}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-transparent to-transparent" />
-            </>
-          ) : (
-            <div
-              className={`w-full h-full bg-gradient-to-br ${titleGradient(game.title)} flex items-center justify-center`}
-            >
-              <span className="text-4xl opacity-30">🎮</span>
-            </div>
+          <GameCover game={game} size="lg" />
+          {game.coverUrl && (
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-950/80 via-transparent to-transparent" />
           )}
         </div>
 
