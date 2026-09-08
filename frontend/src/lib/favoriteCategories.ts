@@ -1,5 +1,8 @@
 /**
- * The categories the Favorites grid draws, in the order it draws them.
+ * The categories the Favourites grid draws, in the order it draws them.
+ *
+ * The labels are British, the keys are not: a key is stored on every row, so
+ * respelling one would orphan the picks already made under it.
  *
  * A copy of FAVORITE_CATEGORIES in backend/src/lib/favoriteCategories.ts, which
  * is authoritative and refuses anything off it — there is no package shared
@@ -7,17 +10,17 @@
  * server rejects.
  */
 export const FAVORITE_CATEGORIES = [
-  { key: "favorite-game", label: "Favorite Game" },
-  { key: "favorite-series", label: "Favorite Series" },
+  { key: "favorite-game", label: "Favourite Game" },
+  { key: "favorite-series", label: "Favourite Series" },
   { key: "best-story", label: "Best Story" },
-  { key: "favorite-art-style", label: "Favorite Art Style" },
+  { key: "favorite-art-style", label: "Favourite Art Style" },
   { key: "biggest-personal-impact", label: "Biggest Personal Impact" },
   { key: "best-combat", label: "Best Combat" },
   { key: "underrated", label: "Underrated" },
   { key: "overrated", label: "Overrated" },
   { key: "worst-game", label: "Worst Game" },
-  { key: "favorite-protagonist", label: "Favorite Protagonist" },
-  { key: "favorite-antagonist", label: "Favorite Antagonist" },
+  { key: "favorite-protagonist", label: "Favourite Protagonist" },
+  { key: "favorite-antagonist", label: "Favourite Antagonist" },
   { key: "best-soundtrack", label: "Best Soundtrack" },
   { key: "best-multiplayer", label: "Best Multiplayer" },
   { key: "not-usually-my-thing", label: "Not Usually My Thing, But…" },
