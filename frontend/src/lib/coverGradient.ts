@@ -1,3 +1,5 @@
+import { seedHash } from "./hash";
+
 /**
  * The placeholder a game with no cover art gets, picked from its title so the
  * same game always draws the same one.
@@ -15,7 +17,6 @@ const GRADIENTS: [string, ...string[]] = [
 ];
 
 export function titleGradient(title: string): string {
-  const idx =
-    [...title].reduce((acc, c) => acc + c.charCodeAt(0), 0) % GRADIENTS.length;
+  const idx = seedHash(title) % GRADIENTS.length;
   return GRADIENTS[idx] ?? GRADIENTS[0];
 }

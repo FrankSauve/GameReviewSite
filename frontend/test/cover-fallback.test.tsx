@@ -68,6 +68,15 @@ describe("the placeholder gradient", () => {
     expect(titleGradient("Hades")).toBe(titleGradient("Hades"));
   });
 
+  /**
+   * The reason it is djb2 and not a sum of char codes: a sum is
+   * order-independent, so it hands every anagram of a title the same colour.
+   */
+  it("separates titles that are anagrams of each other", () => {
+    expect(titleGradient("Limbo")).not.toBe(titleGradient("Bloim"));
+    expect(titleGradient("Doom")).not.toBe(titleGradient("Modo"));
+  });
+
   it("differs across titles, so a list is not one flat colour", () => {
     const seen = new Set(
       ["Hades", "Elden Ring", "Celeste", "Doom", "Hollow Knight"].map(

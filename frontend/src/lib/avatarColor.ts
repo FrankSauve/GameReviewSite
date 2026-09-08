@@ -1,3 +1,5 @@
+import { seedHash } from "./hash";
+
 /**
  * The colours an account may pick for its avatar, each with the gradient that
  * draws it. Written out in full because Tailwind scans for whole class names
@@ -28,16 +30,6 @@ export const AVATAR_COLOR_KEYS = Object.keys(AVATAR_COLORS) as AvatarColor[];
 const FALLBACK: AvatarColor = "violet";
 
 /**
- * djb2 rather than a sum of char codes: a sum collides across anagrams and
- * clusters short names onto the same few keys, which is what #107 reported.
- */
-function hash(seed: string): number {
-  let h = 5381;
-  for (const c of seed) h = (h * 33) ^ c.charCodeAt(0);
-  return Math.abs(h);
-}
-
-/**
  * The account's own colour, or one derived from its slug while it has not
  * picked. Seeded by slug, not username: authentik may rename a username, and
  * a colour that changes under a user is the other half of #107.
@@ -50,7 +42,9 @@ export function avatarColor(user: {
   if (chosen && chosen in AVATAR_COLORS) return chosen as AvatarColor;
   const seed = user.slug;
   if (!seed) return FALLBACK;
-  return AVATAR_COLOR_KEYS[hash(seed) % AVATAR_COLOR_KEYS.length] ?? FALLBACK;
+  return (
+    AVATAR_COLOR_KEYS[seedHash(seed) % AVATAR_COLOR_KEYS.length] ?? FALLBACK
+  );
 }
 
 /** The Tailwind gradient stops for an avatar, ready for `bg-gradient-to-br`. */
