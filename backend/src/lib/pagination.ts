@@ -3,6 +3,7 @@
  * schema is cyclic, so one unbounded list lets a fixed-size request ask for an
  * unbounded response. See lib/maxRows.ts for why armor does not cover this.
  */
+import { FAVORITE_CATEGORIES } from "./favoriteCategories.js";
 
 export interface PageArgs {
   limit?: number | null;
@@ -52,6 +53,15 @@ export const LIST_BOUNDS = {
  * so `def` and `max` are the same number. lib/loaders.ts truncates to it.
  */
 export const REACTION_BOUNDS: Bounds = { def: 24, max: 24 };
+
+/**
+ * `User.favorites`. One row per category at most, enforced by the unique pair
+ * on the table, so the list takes no arguments and `def` equals `max`.
+ */
+export const FAVORITE_BOUNDS: Bounds = {
+  def: FAVORITE_CATEGORIES.length,
+  max: FAVORITE_CATEGORIES.length,
+};
 
 function intOr(value: number | null | undefined, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value)

@@ -87,6 +87,27 @@ describe("query abuse limits", () => {
     );
   });
 
+  /**
+   * `User.favorites` is registered in lib/maxRows.ts at the category count
+   * rather than left on the nested default, which is what keeps the grid's own
+   * shape inside the budget while a list nested under it stays refused.
+   */
+  it("prices the favorites grid at the category count", async () => {
+    const grid = await publicQuery(
+      app,
+      "{ users { favorites { id category game { id title coverUrl } } } }",
+    );
+    expect(grid.errors).toBeUndefined();
+
+    const nested = await publicQuery(
+      app,
+      "{ users { favorites { game { reviews { id } } } } }",
+    );
+    expect(nested.errors?.[0]?.message).toMatch(
+      /could return up to \d+ records/,
+    );
+  });
+
   it("rejects a query with an excessive number of aliases", async () => {
     const aliases = Array.from(
       { length: 40 },

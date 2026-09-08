@@ -16,6 +16,17 @@ export const typeDefs = `#graphql
     reviews(limit: Int, offset: Int): [Review!]
     reviewCount: Int!
     averageRating: Float
+    # Bounded by the category list itself, so it takes no window.
+    favorites: [FavoriteGame!]!
+  }
+
+  # One game this account picked for one of the fixed categories in
+  # backend/src/lib/favoriteCategories.ts. At most one per category.
+  type FavoriteGame {
+    id: ID!
+    # A key from that list, not a display label; the client draws the label.
+    category: String!
+    game: Game!
   }
 
   type Game {
@@ -223,6 +234,11 @@ export const typeDefs = `#graphql
     avatarColor: String
   }
 
+  input SetFavoriteGameInput {
+    category: String!
+    gameId: ID!
+  }
+
   input CreateCommentInput {
     reviewId: ID!
     content: String!
@@ -303,6 +319,10 @@ export const typeDefs = `#graphql
     deleteUser: Boolean!
     # Edits the signed-in account. No id: you may only edit your own profile.
     updateProfile(input: UpdateProfileInput!): User!
+    # Sets or replaces the signed-in account's pick for one category, which must
+    # name a game it has reviewed. No id, for the same reason as updateProfile.
+    setFavoriteGame(input: SetFavoriteGameInput!): User!
+    clearFavoriteGame(category: String!): User!
 
     importGame(input: ImportGameInput!): Game!
     createGame(input: CreateGameInput!): Game!
