@@ -13,6 +13,7 @@ export const resolvers = {
     ...reviewResolvers.Query,
     ...commentResolvers.Query,
     ...articleResolvers.Query,
+    ...reactionResolvers.Query,
   },
   Mutation: {
     ...userResolvers.Mutation,

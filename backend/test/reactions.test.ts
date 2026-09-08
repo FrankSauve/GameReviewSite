@@ -3,6 +3,7 @@ import type { Express } from "express";
 import { prisma } from "../src/lib/prisma.js";
 import { slugify } from "../src/lib/slug.js";
 import { validateEmoji } from "../src/lib/emoji.js";
+import { REACTOR_NAMES_MAX } from "../src/lib/pagination.js";
 import {
   ALICE,
   BOB,
@@ -25,6 +26,10 @@ const READ_REVIEW = `query Read($id: ID!) {
     reactions { emoji count reacted }
     comments { id reactions { emoji count reacted } }
   }
+}`;
+
+const READ_NAMES = `query Names($reviewId: ID, $commentId: ID, $emoji: String!) {
+  reactionUsers(reviewId: $reviewId, commentId: $commentId, emoji: $emoji)
 }`;
 
 interface Summary {
@@ -148,6 +153,117 @@ describe("emoji reactions", () => {
       expect(res.data?.review?.comments[0]?.reactions).toEqual([
         { emoji: "😢", count: 1, reacted: true },
       ]);
+    });
+  });
+
+  describe("who reacted", () => {
+    /** Reacts as `n` fresh people, a second apart, oldest first. */
+    async function crowd(reviewId: string, n: number): Promise<string[]> {
+      const names: string[] = [];
+      for (let i = 0; i < n; i++) {
+        const username = `fan${String(i).padStart(2, "0")}`;
+        const user = await prisma.user.create({
+          data: { username, slug: slugify(username, "user") },
+        });
+        await prisma.reaction.create({
+          data: {
+            userId: user.id,
+            reviewId,
+            emoji: "👍",
+            createdAt: new Date(Date.UTC(2026, 0, 1, 0, 0, i)),
+          },
+        });
+        names.push(username);
+      }
+      return names;
+    }
+
+    it("names the people behind an emoji, oldest first", async () => {
+      const { reviewId } = await seedThread();
+      const names = await crowd(reviewId, 3);
+      const res = await publicQuery<{ reactionUsers: string[] }>(
+        app,
+        READ_NAMES,
+        {},
+        { reviewId, emoji: "👍" },
+      );
+      expect(res.errors).toBeUndefined();
+      expect(res.data?.reactionUsers).toEqual(names);
+    });
+
+    it("names only the first few of a crowd", async () => {
+      const { reviewId } = await seedThread();
+      const names = await crowd(reviewId, REACTOR_NAMES_MAX + 4);
+      const res = await publicQuery<{ reactionUsers: string[] }>(
+        app,
+        READ_NAMES,
+        {},
+        { reviewId, emoji: "👍" },
+      );
+      expect(res.data?.reactionUsers).toEqual(
+        names.slice(0, REACTOR_NAMES_MAX),
+      );
+    });
+
+    it("names nobody for an emoji nobody used", async () => {
+      const { reviewId } = await seedThread();
+      await crowd(reviewId, 2);
+      const res = await publicQuery<{ reactionUsers: string[] }>(
+        app,
+        READ_NAMES,
+        {},
+        { reviewId, emoji: "😂" },
+      );
+      expect(res.data?.reactionUsers).toEqual([]);
+    });
+
+    it("names a comment's reactors, not its review's", async () => {
+      const { reviewId, commentId } = await seedThread();
+      await authedQuery(
+        app,
+        TOGGLE,
+        ALICE,
+        {},
+        { input: { reviewId, emoji: "😂" } },
+      );
+      await authedQuery(
+        app,
+        TOGGLE,
+        BOB,
+        {},
+        { input: { commentId, emoji: "😂" } },
+      );
+      const onComment = await publicQuery<{ reactionUsers: string[] }>(
+        app,
+        READ_NAMES,
+        {},
+        { commentId, emoji: "😂" },
+      );
+      expect(onComment.data?.reactionUsers).toEqual([BOB.username]);
+    });
+
+    it("refuses a target with both parents, and one with neither", async () => {
+      const { reviewId, commentId } = await seedThread();
+      const both = await publicQuery(
+        app,
+        READ_NAMES,
+        {},
+        { reviewId, commentId, emoji: "👍" },
+      );
+      expect(errorCodes(both)).toEqual(["BAD_USER_INPUT"]);
+      const neither = await publicQuery(app, READ_NAMES, {}, { emoji: "👍" });
+      expect(errorCodes(neither)).toEqual(["BAD_USER_INPUT"]);
+    });
+
+    it("refuses text that is not an emoji", async () => {
+      const { reviewId } = await seedThread();
+      const res = await publicQuery(
+        app,
+        READ_NAMES,
+        {},
+        { reviewId, emoji: "not an emoji" },
+      );
+      expect(errorCodes(res)).toEqual(["BAD_USER_INPUT"]);
     });
   });
 

@@ -2,10 +2,12 @@ import { GraphQLError } from "graphql";
 import { prisma } from "../lib/prisma.js";
 import { badInput } from "../lib/badInput.js";
 import { validateEmoji } from "../lib/emoji.js";
+import { REACTOR_NAMES_MAX } from "../lib/pagination.js";
 import type { ReactionSummary } from "../lib/loaders.js";
 import { requireAuth, type Context } from "../context.js";
 
-interface ToggleReactionInput {
+/** What both the query and the mutation name: one emoji on one parent. */
+interface ReactionTarget {
   reviewId?: string | null;
   commentId?: string | null;
   emoji: string;
@@ -14,7 +16,7 @@ interface ToggleReactionInput {
 type Parent = { kind: "review" | "comment"; id: string };
 
 /** Exactly one parent, the same rule the table's CHECK enforces. */
-function parentOf(input: ToggleReactionInput): Parent {
+function parentOf(input: ReactionTarget): Parent {
   if (input.reviewId && input.commentId)
     throw badInput("Give either reviewId or commentId, not both.");
   if (input.reviewId) return { kind: "review", id: input.reviewId };
@@ -23,10 +25,31 @@ function parentOf(input: ToggleReactionInput): Parent {
 }
 
 export const reactionResolvers = {
+  Query: {
+    reactionUsers: async (
+      _parent: unknown,
+      args: ReactionTarget,
+    ): Promise<string[]> => {
+      const emoji = validateEmoji(args.emoji);
+      const parent = parentOf(args);
+      const rows = await prisma.reaction.findMany({
+        where:
+          parent.kind === "review"
+            ? { emoji, reviewId: parent.id }
+            : { emoji, commentId: parent.id },
+        // Oldest first, so the names stay put as more people react.
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        take: REACTOR_NAMES_MAX,
+        select: { user: { select: { username: true } } },
+      });
+      return rows.map((row) => row.user.username);
+    },
+  },
+
   Mutation: {
     toggleReaction: async (
       _parent: unknown,
-      { input }: { input: ToggleReactionInput },
+      { input }: { input: ReactionTarget },
       context: Context,
     ): Promise<ReactionSummary[]> => {
       const authUser = requireAuth(context);
