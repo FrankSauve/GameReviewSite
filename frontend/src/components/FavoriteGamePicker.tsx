@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, useCallback } from "react";
 import { useMutation } from "@apollo/client";
 import { CLEAR_FAVORITE_GAME, SET_FAVORITE_GAME } from "../graphql/mutations";
 import { useDismiss } from "../hooks/useDismiss";
+import { GameCover } from "./GameCover";
 import type { PickableGame } from "../lib/favorites";
 
 interface FavoriteGamePickerProps {
@@ -87,18 +88,7 @@ export function FavoriteGamePicker({
                 className="w-full flex items-center gap-3 px-3 py-2 hover:bg-gray-800 disabled:opacity-50 transition-colors text-left"
               >
                 <div className="w-8 h-11 rounded overflow-hidden bg-gray-800 shrink-0">
-                  {game.coverUrl ? (
-                    <img
-                      src={game.coverUrl}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-600">
-                      🎮
-                    </div>
-                  )}
+                  <GameCover game={game} size="sm" decorative />
                 </div>
                 <span className="text-sm text-gray-100 truncate">
                   {game.title}

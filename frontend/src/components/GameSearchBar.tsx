@@ -7,6 +7,7 @@ import { useAuth } from "../contexts/AuthContext";
 import type { ExternalGame } from "../types";
 import { gamePath } from "../lib/links";
 import { useDismiss } from "../hooks/useDismiss";
+import { GameCover } from "./GameCover";
 
 interface SearchResult {
   searchGamesExternal: ExternalGame[];
@@ -132,18 +133,7 @@ export function GameSearchBar() {
                   >
                     {/* Cover thumbnail */}
                     <div className="w-10 h-14 rounded-md overflow-hidden bg-gray-800 shrink-0">
-                      {game.coverUrl ? (
-                        <img
-                          src={game.coverUrl}
-                          alt={game.title}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-600 text-lg">
-                          🎮
-                        </div>
-                      )}
+                      <GameCover game={game} size="sm" />
                     </div>
 
                     {/* Info */}

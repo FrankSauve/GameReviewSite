@@ -8,6 +8,7 @@ import { useAuth } from "../contexts/AuthContext";
 import type { Game } from "../types";
 import { formatRating, ratingColor } from "../lib/rating";
 import { gamePath } from "../lib/links";
+import { GameCover } from "../components/GameCover";
 import { LabelChips } from "../components/LabelChips";
 import { useCanonicalPath } from "../hooks/useCanonicalPath";
 
@@ -58,11 +59,7 @@ export function GameDetailPage() {
         {/* Cover hero */}
         {game.coverUrl ? (
           <div className="relative h-56 sm:h-72 overflow-hidden">
-            <img
-              src={game.coverUrl}
-              alt={game.title}
-              className="w-full h-full object-cover"
-            />
+            <GameCover game={game} size="lg" eager />
             <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent" />
             {/* Title overlaid on cover */}
             <div className="absolute bottom-0 left-0 p-6">
