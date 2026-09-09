@@ -76,7 +76,7 @@ export function ArticleEditorPage() {
   }
 
   if (editing && loadingExisting) {
-    return <div className="card p-8 max-w-3xl mx-auto h-64 animate-pulse" />;
+    return <div className="card p-8 page-column h-64 animate-pulse" />;
   }
 
   if (editing && !existing) {
@@ -132,7 +132,7 @@ export function ArticleEditorPage() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-4">
+    <form onSubmit={handleSubmit} className="page-column space-y-4">
       <h1 className="text-xl font-bold text-gray-100 flex items-center gap-2">
         <span className="w-1 h-5 bg-violet-500 rounded-full inline-block" />
         {editing ? "Edit article" : "Write an article"}
