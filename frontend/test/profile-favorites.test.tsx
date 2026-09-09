@@ -148,6 +148,18 @@ describe("the profile favorites grid", () => {
     }
   });
 
+  /** Box art alone is not identifiable; the tile has to say which game it is. */
+  it("names the picked game on the tile itself", async () => {
+    renderFavorites([
+      meMock(null),
+      summariesMock(),
+      favoritesMock([favorite("favorite-game", game("g1", "Elden Ring"))]),
+    ]);
+
+    const title = await screen.findByText("Elden Ring");
+    expect(title.closest("a")?.getAttribute("href")).toBe("/games/elden-ring");
+  });
+
   /** A visitor reads the grid; only the owner edits it. */
   it("offers a visitor no way to pick", async () => {
     renderFavorites([
