@@ -59,9 +59,18 @@ export function FavoritesGrid({
       {FAVORITE_CATEGORIES.map(({ key, label }) => {
         const pick = picks.get(key);
         const tile = (
-          <div className="aspect-video rounded-lg overflow-hidden border border-gray-800 bg-gray-900">
+          <div className="relative aspect-video rounded-lg overflow-hidden border border-gray-800 bg-gray-900">
             {pick ? (
-              <GameCover game={pick.game} size="md" decorative />
+              <>
+                <GameCover game={pick.game} size="md" decorative />
+                {/* The scrim is what makes the title readable over box art of
+                    any brightness; the title is why the tile is identifiable. */}
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-gray-950/95 via-gray-950/70 to-transparent px-1.5 pb-1 pt-5">
+                  <p className="text-[11px] font-semibold text-gray-100 leading-tight line-clamp-2">
+                    {pick.game.title}
+                  </p>
+                </div>
+              </>
             ) : (
               <div className="w-full h-full flex items-center justify-center text-xs text-gray-600">
                 {isOwnProfile ? "Select" : "—"}
@@ -91,11 +100,7 @@ export function FavoritesGrid({
                 {tile}
               </button>
             ) : pick ? (
-              <Link
-                to={gamePath(pick.game)}
-                className="block"
-                title={pick.game.title}
-              >
+              <Link to={gamePath(pick.game)} className="block">
                 {tile}
               </Link>
             ) : (
