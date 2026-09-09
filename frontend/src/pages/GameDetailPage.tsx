@@ -46,7 +46,7 @@ export function GameDetailPage() {
     : false;
 
   return (
-    <div className="space-y-8 max-w-3xl mx-auto">
+    <div className="space-y-8 page-column">
       <Link
         to="/"
         className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-300 transition-colors"
@@ -215,7 +215,7 @@ function GameDescription({ description }: { description: string }) {
 
 function DetailSkeleton() {
   return (
-    <div className="space-y-6 max-w-3xl mx-auto animate-pulse">
+    <div className="space-y-6 page-column animate-pulse">
       <div className="h-4 bg-gray-800 rounded w-24" />
       <div className="card p-6 space-y-4">
         <div className="h-8 bg-gray-800 rounded w-2/3" />

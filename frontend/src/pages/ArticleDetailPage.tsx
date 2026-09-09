@@ -36,7 +36,7 @@ export function ArticleDetailPage() {
 
   if (loading) {
     return (
-      <div className="card p-8 animate-pulse space-y-4 max-w-3xl mx-auto">
+      <div className="card p-8 animate-pulse space-y-4 page-column">
         <div className="h-6 bg-gray-800 rounded w-2/3" />
         <div className="h-3 bg-gray-800 rounded w-1/4" />
         <div className="h-3 bg-gray-800 rounded" />
@@ -71,7 +71,7 @@ export function ArticleDetailPage() {
   );
 
   return (
-    <article className="max-w-3xl mx-auto space-y-6">
+    <article className="page-column space-y-6">
       <header className="space-y-2">
         <div className="flex items-baseline gap-2 flex-wrap">
           <h1 className="text-2xl font-bold text-gray-100">{article.title}</h1>

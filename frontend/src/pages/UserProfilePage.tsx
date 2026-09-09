@@ -74,7 +74,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
 
   if (loading) {
     return (
-      <div className="space-y-6 max-w-3xl lg:max-w-5xl 2xl:max-w-6xl mx-auto">
+      <div className="space-y-6 page-column">
         <div className="card p-6 flex items-center gap-5 animate-pulse">
           <div className="w-16 h-16 rounded-full bg-gray-800 shrink-0" />
           <div className="space-y-2 flex-1">
@@ -115,7 +115,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
     .reduce((sum, h) => sum + h, 0);
 
   return (
-    <div className="space-y-6 max-w-3xl lg:max-w-5xl 2xl:max-w-6xl mx-auto">
+    <div className="space-y-6 page-column">
       {/* ── Profile header ── */}
       <div className="card p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
         {isOwnProfile ? (
