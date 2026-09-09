@@ -118,7 +118,7 @@ export function ReviewDetailPage() {
   if (loading) {
     return (
       <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] px-4 sm:px-6 lg:px-10">
-        <div className="max-w-3xl lg:max-w-5xl 2xl:max-w-6xl mx-auto space-y-4 animate-pulse">
+        <div className="page-column space-y-4 animate-pulse">
           <div className="h-52 bg-gray-800 rounded-xl" />
           <div className="card p-6 space-y-3">
             <div className="h-5 bg-gray-800 rounded w-1/3" />
@@ -195,7 +195,7 @@ export function ReviewDetailPage() {
 
   return (
     <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] px-4 sm:px-6 lg:px-10">
-      <div className="max-w-3xl lg:max-w-5xl 2xl:max-w-6xl mx-auto space-y-5">
+      <div className="page-column space-y-5">
         {/* ── Back breadcrumb ── */}
         <div className="flex items-center gap-2 text-sm">
           <Link

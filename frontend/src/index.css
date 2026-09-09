@@ -35,6 +35,11 @@
     @apply w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow duration-150;
   }
 
+  /* The one desktop content width; every page-level container uses it. */
+  .page-column {
+    @apply max-w-3xl lg:max-w-5xl 2xl:max-w-6xl mx-auto;
+  }
+
   .card {
     @apply bg-gray-900 border border-gray-800 rounded-xl;
   }
