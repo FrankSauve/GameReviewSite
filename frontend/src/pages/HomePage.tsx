@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useQuery, useMutation } from "@apollo/client";
 import {
   GET_RECENT_REVIEWS,
@@ -7,6 +7,7 @@ import {
 } from "../graphql/queries";
 import { CREATE_COMMENT } from "../graphql/mutations";
 import { useAuth } from "../contexts/AuthContext";
+import { usePageParam } from "../hooks/usePageParam";
 import type { Review } from "../types";
 import { formatRating, ratingColor } from "../lib/rating";
 import { excerpt } from "../lib/markdown";
@@ -257,19 +258,7 @@ function ReviewFeedSkeleton() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function HomePage() {
-  const [params, setParams] = useSearchParams();
-
-  const requested = parseInt(params.get("page") ?? "1", 10);
-  const page = Number.isFinite(requested) && requested > 1 ? requested - 1 : 0;
-
-  const goTo = (nextPage: number) => {
-    const next = new URLSearchParams(params);
-    // Page one is the bare URL, so it is not a second history entry.
-    if (nextPage === 0) next.delete("page");
-    else next.set("page", String(nextPage + 1));
-    setParams(next);
-    window.scrollTo({ top: 0 });
-  };
+  const [page, goTo] = usePageParam();
 
   const { data: reviewsData, loading: reviewsLoading } = useQuery<{
     recentReviews: Review[];

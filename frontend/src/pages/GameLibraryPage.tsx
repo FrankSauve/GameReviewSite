@@ -4,6 +4,7 @@ import { GET_GAMES, GET_GAME_FACETS, GET_USERS } from "../graphql/queries";
 import type { Game, User } from "../types";
 import { GameCard } from "../components/GameCard";
 import { Pagination } from "../components/Pagination";
+import { usePageParam } from "../hooks/usePageParam";
 
 /**
  * The games library. Every control lives in the query string, so a filtered,
@@ -61,10 +62,7 @@ function Field({
 
 export function GameLibraryPage() {
   const [params, setParams] = useSearchParams();
-
-  // Clamped low but not high: the total is unknown until the query resolves.
-  const requested = parseInt(params.get("page") ?? "1", 10);
-  const page = Number.isFinite(requested) && requested > 1 ? requested - 1 : 0;
+  const [page, goTo] = usePageParam();
 
   const genre = params.get("genre") ?? "";
   const reviewedBy = params.get("reviewedBy") ?? "";
@@ -111,15 +109,6 @@ export function GameLibraryPage() {
       else next.delete(key);
     }
     next.delete("page");
-    setParams(next);
-    window.scrollTo({ top: 0 });
-  };
-
-  const goTo = (nextPage: number) => {
-    const next = new URLSearchParams(params);
-    // Page one is the bare URL, so it is not a second history entry.
-    if (nextPage === 0) next.delete("page");
-    else next.set("page", String(nextPage + 1));
     setParams(next);
     window.scrollTo({ top: 0 });
   };
