@@ -192,10 +192,10 @@ export function ArticleEditorPage() {
         )}
 
         <div className="flex items-baseline justify-between mt-1">
-          <p className="text-sm text-content-faint">
+          <p className="text-sm text-content-subtle">
             Markdown: **bold**, *italic*, - lists, &gt; quotes
           </p>
-          <p className="text-sm text-content-faint">
+          <p className="text-sm text-content-subtle">
             {content.length}/{CONTENT_MAX}
           </p>
         </div>

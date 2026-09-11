@@ -42,7 +42,7 @@ export function RatingInput({
           aria-label="Score out of 10"
           aria-valuetext={`${formatRating(value)} out of ${RATING_MAX}`}
         />
-        <div className="flex justify-between text-sm text-content-faint mt-0.5 select-none">
+        <div className="flex justify-between text-sm text-content-subtle mt-0.5 select-none">
           <span>{RATING_MIN}</span>
           <span>{RATING_MAX}</span>
         </div>
@@ -54,7 +54,7 @@ export function RatingInput({
         >
           {formatRating(value)}
         </span>
-        <span className="text-sm text-content-faint">/ {RATING_MAX}</span>
+        <span className="text-sm text-content-subtle">/ {RATING_MAX}</span>
       </div>
     </div>
   );

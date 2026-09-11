@@ -96,7 +96,7 @@ export function GameDetailPage() {
                   {formatRating(game.averageRating)}
                 </p>
                 <p className="text-xs text-content-subtle mt-1">out of 10</p>
-                <p className="text-xs text-content-faint mt-1">
+                <p className="text-xs text-content-subtle mt-1">
                   {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
                 </p>
               </div>
@@ -114,7 +114,7 @@ export function GameDetailPage() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-display text-xl text-content">
             Reviews{" "}
-            <span className="text-content-faint font-normal text-base">
+            <span className="text-content-subtle font-normal text-base">
               ({reviews.length})
             </span>
           </h2>

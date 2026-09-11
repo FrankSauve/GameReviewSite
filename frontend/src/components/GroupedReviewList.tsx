@@ -20,7 +20,7 @@ function ReviewRow({ item }: { item: ReviewGroup["items"][number] }) {
             <p className="font-semibold text-content group-hover:text-accent-subtle-text transition-colors duration-theme truncate text-sm">
               {game?.title ?? "Unknown game"}
             </p>
-            <p className="text-xs text-content-faint truncate">
+            <p className="text-sm text-content-subtle truncate">
               {[
                 game?.releaseYear ? `Released ${game.releaseYear}` : null,
                 item.hoursPlayed != null ? formatHours(item.hoursPlayed) : null,
@@ -39,7 +39,7 @@ function ReviewRow({ item }: { item: ReviewGroup["items"][number] }) {
             >
               {formatRating(item.rating)}
             </span>
-            <span className="text-xs text-content-faint">/10</span>
+            <span className="text-xs text-content-subtle">/10</span>
           </div>
         </div>
       </article>
@@ -66,7 +66,7 @@ export function GroupedReviewList({
               <h3 className="font-display text-lg text-content">
                 {group.label}
               </h3>
-              <span className="text-xs text-content-faint">
+              <span className="text-xs text-content-subtle">
                 {group.items.length}
                 {group.items.length === 1 ? " game" : " games"}
               </span>
@@ -78,7 +78,7 @@ export function GroupedReviewList({
                 </span>
               )}
               {group.hours != null && (
-                <span className="text-xs text-content-faint ml-auto">
+                <span className="text-xs text-content-subtle ml-auto">
                   {formatHours(Math.round(group.hours * 10) / 10)}
                 </span>
               )}

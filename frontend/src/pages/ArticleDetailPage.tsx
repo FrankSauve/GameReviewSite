@@ -53,7 +53,7 @@ export function ArticleDetailPage() {
         <p className="text-content-muted font-medium">
           This article is not here
         </p>
-        <p className="text-sm text-content-faint">
+        <p className="text-sm text-content-subtle">
           It may have been deleted, or it may still be a draft.
         </p>
         <Link

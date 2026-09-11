@@ -7,6 +7,7 @@ import {
 } from "../graphql/queries";
 import { CREATE_COMMENT } from "../graphql/mutations";
 import { useAuth } from "../contexts/AuthContext";
+import { usePageParam } from "../hooks/usePageParam";
 import type { Review } from "../types";
 import { formatRating, ratingColor } from "../lib/rating";
 import { excerpt } from "../lib/markdown";
@@ -88,7 +89,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
               {game?.title ?? "Unknown Game"}
             </Link>
             {game?.releaseYear && (
-              <span className="text-xs text-content-faint">
+              <span className="text-sm text-content-subtle">
                 {game.releaseYear}
               </span>
             )}
@@ -101,7 +102,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
             >
               {formatRating(review.rating)}
             </span>
-            <span className="text-sm text-content-faint">/ 10</span>
+            <span className="text-sm text-content-subtle">/ 10</span>
           </div>
 
           {/* Excerpt */}
@@ -119,7 +120,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
             >
               {review.user?.username ?? "Anonymous"}
             </Link>
-            <span className="text-xs text-content-faint ml-auto shrink-0">
+            <span className="text-sm text-content-subtle ml-auto shrink-0">
               {formatPlaytime(review.yearPlayed, review.hoursPlayed) ??
                 timeAgo(review.createdAt)}
             </span>
@@ -180,7 +181,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
                       <span className="text-xs font-semibold text-content-body">
                         {comment.user?.username ?? "Unknown"}
                       </span>
-                      <span className="text-xs text-content-faint ml-2">
+                      <span className="text-xs text-content-subtle ml-2">
                         {timeAgo(comment.createdAt)}
                       </span>
                       <p className="text-xs text-content-muted mt-0.5">
@@ -217,7 +218,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
                 </button>
               </form>
             ) : (
-              <p className="text-xs text-content-faint pt-1 pl-1">
+              <p className="text-xs text-content-subtle pt-1 pl-1">
                 <button
                   onClick={() => signIn()}
                   className="text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
@@ -257,7 +258,7 @@ function ReviewFeedSkeleton() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function HomePage() {
-  const [page, setPage] = useState(0);
+  const [page, goTo] = usePageParam();
 
   const { data: reviewsData, loading: reviewsLoading } = useQuery<{
     recentReviews: Review[];
@@ -278,7 +279,7 @@ export function HomePage() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="section-head text-xl">Recent Reviews</h2>
           {totalReviews > 0 && (
-            <span className="text-xs text-content-faint">
+            <span className="text-xs text-content-subtle">
               {totalReviews} total
             </span>
           )}
@@ -289,10 +290,20 @@ export function HomePage() {
         {!reviewsLoading && reviews.length === 0 && (
           <div className="empty-state space-y-3">
             <p className="text-4xl">✍️</p>
-            <p className="text-content-muted font-medium">No reviews yet</p>
-            <p className="text-sm text-content-faint">
-              Search for a game in the navbar, then be the first to leave a
-              review.
+            <p className="text-content-muted font-medium">
+              {totalReviews > 0 ? "Nothing on this page" : "No reviews yet"}
+            </p>
+            <p className="text-sm text-content-subtle">
+              {totalReviews > 0 ? (
+                <button
+                  onClick={() => goTo(0)}
+                  className="text-accent-subtle-text transition-colors duration-theme"
+                >
+                  The feed is not that long — back to page one.
+                </button>
+              ) : (
+                "Search for a game in the navbar, then be the first to leave a review."
+              )}
             </p>
           </div>
         )}
@@ -308,7 +319,7 @@ export function HomePage() {
             <Pagination
               page={page}
               totalPages={totalPages}
-              onChange={setPage}
+              onChange={goTo}
               label="Recent review pages"
             />
           </>

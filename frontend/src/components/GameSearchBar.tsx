@@ -169,7 +169,7 @@ export function GameSearchBar() {
                     </div>
 
                     {/* Action hint */}
-                    <span className="text-xs text-content-faint shrink-0">
+                    <span className="text-xs text-content-subtle shrink-0">
                       {user ? "Review →" : "Sign in →"}
                     </span>
                   </button>
@@ -180,7 +180,7 @@ export function GameSearchBar() {
 
           {/* RAWG attribution */}
           <div className="px-3 py-2 border-t border-line flex items-center justify-end gap-1">
-            <span className="text-xs text-content-faint">Powered by</span>
+            <span className="text-xs text-content-subtle">Powered by</span>
             <a
               href="https://rawg.io"
               target="_blank"

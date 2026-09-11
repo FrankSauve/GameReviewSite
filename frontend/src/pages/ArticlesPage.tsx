@@ -72,7 +72,7 @@ export function ArticlesPage() {
         <div className="empty-state space-y-3">
           <p className="text-4xl">📜</p>
           <p className="text-content-muted font-medium">Nothing written yet</p>
-          <p className="text-sm text-content-faint">
+          <p className="text-sm text-content-subtle">
             Manifestos, essays, anything that is not a review goes here.
           </p>
         </div>
@@ -97,7 +97,7 @@ export function ArticlesPage() {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-content-faint">
+                  <p className="text-xs text-content-subtle">
                     {article.author?.username ?? "unknown"} ·{" "}
                     {dateLine(article)}
                   </p>
