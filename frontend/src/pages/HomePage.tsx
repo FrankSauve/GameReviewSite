@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useQuery, useMutation } from "@apollo/client";
 import {
   GET_RECENT_REVIEWS,
@@ -257,7 +257,19 @@ function ReviewFeedSkeleton() {
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export function HomePage() {
-  const [page, setPage] = useState(0);
+  const [params, setParams] = useSearchParams();
+
+  const requested = parseInt(params.get("page") ?? "1", 10);
+  const page = Number.isFinite(requested) && requested > 1 ? requested - 1 : 0;
+
+  const goTo = (nextPage: number) => {
+    const next = new URLSearchParams(params);
+    // Page one is the bare URL, so it is not a second history entry.
+    if (nextPage === 0) next.delete("page");
+    else next.set("page", String(nextPage + 1));
+    setParams(next);
+    window.scrollTo({ top: 0 });
+  };
 
   const { data: reviewsData, loading: reviewsLoading } = useQuery<{
     recentReviews: Review[];
@@ -289,10 +301,20 @@ export function HomePage() {
         {!reviewsLoading && reviews.length === 0 && (
           <div className="empty-state space-y-3">
             <p className="text-4xl">✍️</p>
-            <p className="text-content-muted font-medium">No reviews yet</p>
-            <p className="text-sm text-content-faint">
-              Search for a game in the navbar, then be the first to leave a
-              review.
+            <p className="text-content-muted font-medium">
+              {totalReviews > 0 ? "Nothing on this page" : "No reviews yet"}
+            </p>
+            <p className="text-sm text-content-subtle">
+              {totalReviews > 0 ? (
+                <button
+                  onClick={() => goTo(0)}
+                  className="text-accent-subtle-text transition-colors duration-theme"
+                >
+                  The feed is not that long — back to page one.
+                </button>
+              ) : (
+                "Search for a game in the navbar, then be the first to leave a review."
+              )}
             </p>
           </div>
         )}
@@ -308,7 +330,7 @@ export function HomePage() {
             <Pagination
               page={page}
               totalPages={totalPages}
-              onChange={setPage}
+              onChange={goTo}
               label="Recent review pages"
             />
           </>
