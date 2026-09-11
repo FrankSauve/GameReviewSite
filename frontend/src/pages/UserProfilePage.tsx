@@ -76,10 +76,10 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
     return (
       <div className="space-y-6 page-column">
         <div className="card p-6 flex items-center gap-5 animate-pulse">
-          <div className="w-16 h-16 rounded-full bg-gray-800 shrink-0" />
+          <div className="w-16 h-16 rounded-pill bg-surface-raised shrink-0" />
           <div className="space-y-2 flex-1">
-            <div className="h-5 bg-gray-800 rounded w-40" />
-            <div className="h-3 bg-gray-800 rounded w-28" />
+            <div className="h-5 skeleton-bar w-40" />
+            <div className="h-3 skeleton-bar w-28" />
           </div>
         </div>
         {Array.from({ length: 5 }).map((_, i) => (
@@ -91,12 +91,12 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
 
   if (error || !data?.user) {
     return (
-      <div className="card p-12 text-center space-y-3">
+      <div className="empty-state space-y-3">
         <p className="text-4xl">👤</p>
-        <p className="text-gray-300 font-medium">User not found</p>
+        <p className="text-content-body font-medium">User not found</p>
         <Link
           to="/"
-          className="text-violet-400 hover:text-violet-300 text-sm transition-colors"
+          className="text-accent-subtle-text hover:text-accent-subtle-text text-sm transition-colors duration-theme"
         >
           Back to home
         </Link>
@@ -125,11 +125,11 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
         )}
         <div className="flex-1 text-center sm:text-left space-y-1">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-            <h1 className="text-xl font-bold text-gray-100">
+            <h1 className="font-display text-xl text-content">
               {profile.username}
             </h1>
             {isOwnProfile && (
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-violet-900/60 text-violet-300 border border-violet-800">
+              <span className="text-xs font-medium px-2 py-0.5 rounded-pill bg-accent-subtle/60 text-accent-subtle-text border border-accent-subtle-border">
                 You
               </span>
             )}
@@ -144,7 +144,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
               <a
                 href={EXPORT_REVIEWS_PATH}
                 download
-                className="text-xs font-medium text-gray-400 hover:text-violet-300 transition-colors"
+                className="text-xs font-medium text-content-muted hover:text-accent-subtle-text transition-colors duration-theme"
               >
                 Export as zip
               </a>
@@ -156,10 +156,10 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
 
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 pt-2">
             <div className="text-center">
-              <p className="text-lg font-bold text-gray-100">
+              <p className="font-display text-lg text-content">
                 {profile.reviewCount}
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-content-subtle">
                 {profile.reviewCount === 1 ? "review" : "reviews"}
               </p>
             </div>
@@ -170,15 +170,15 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
                 >
                   {formatRating(Math.round(profile.averageRating * 10) / 10)}
                 </p>
-                <p className="text-xs text-gray-500">avg score</p>
+                <p className="text-xs text-content-subtle">avg score</p>
               </div>
             )}
             {totalHours > 0 && (
               <div className="text-center">
-                <p className="text-lg font-bold text-gray-100">
+                <p className="font-display text-lg text-content">
                   {formatHours(Math.round(totalHours))}
                 </p>
-                <p className="text-xs text-gray-500">played</p>
+                <p className="text-xs text-content-subtle">played</p>
               </div>
             )}
           </div>
@@ -186,7 +186,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
       </div>
 
       {/* ── View tabs ── */}
-      <nav className="flex gap-1 border-b border-gray-800">
+      <nav className="flex gap-1 border-b border-line">
         {TABS.map((entry) => {
           const active = entry.tab === tab;
           return (
@@ -194,10 +194,10 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
               key={entry.tab}
               to={userPath(profile, entry.path)}
               aria-current={active ? "page" : undefined}
-              className={`px-3 py-2 text-sm font-medium -mb-px border-b-2 transition-colors ${
+              className={`px-3 py-2 text-sm font-medium -mb-px border-b-2 transition-colors duration-theme ${
                 active
-                  ? "border-violet-500 text-violet-300"
-                  : "border-transparent text-gray-500 hover:text-gray-300"
+                  ? "border-accent-hover text-accent-subtle-text"
+                  : "border-transparent text-content-subtle hover:text-content-body"
               }`}
             >
               {entry.label}
@@ -216,7 +216,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
       ) : groups.length === 0 ? (
         <div className="card p-10 text-center space-y-2">
           <p className="text-3xl">✍️</p>
-          <p className="text-gray-400">
+          <p className="text-content-muted">
             {isOwnProfile
               ? "You haven't written any reviews yet."
               : "No reviews yet."}

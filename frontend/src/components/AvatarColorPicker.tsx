@@ -36,13 +36,13 @@ export function AvatarColorPicker({ user }: { user: AvatarUser }) {
         onClick={() => setOpen((o) => !o)}
         aria-label="Change avatar colour"
         aria-expanded={open}
-        className="block rounded-full ring-offset-2 ring-offset-gray-900 hover:ring-2 hover:ring-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500 transition-shadow"
+        className="block rounded-pill ring-offset-2 ring-offset-surface hover:ring-2 hover:ring-accent-hover focus:outline-none focus:ring-2 focus:ring-accent-hover transition-shadow duration-theme"
       >
         <Avatar user={user} size={16} />
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-2 w-max left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 p-3 rounded-xl bg-gray-900 border border-gray-700 shadow-xl">
+        <div className="absolute z-20 mt-2 w-max left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 popover p-3">
           <div className="grid grid-cols-6 gap-2">
             {AVATAR_COLOR_KEYS.map((key) => (
               <button
@@ -52,16 +52,16 @@ export function AvatarColorPicker({ user }: { user: AvatarUser }) {
                 disabled={loading}
                 aria-label={key}
                 aria-pressed={key === current}
-                className={`w-7 h-7 rounded-full bg-gradient-to-br ${AVATAR_COLORS[key]} disabled:opacity-50 ${
+                className={`w-7 h-7 rounded-pill ${AVATAR_COLORS[key]} disabled:opacity-50 ${
                   key === current
-                    ? "ring-2 ring-white ring-offset-2 ring-offset-gray-900"
-                    : "hover:ring-2 hover:ring-gray-500 ring-offset-2 ring-offset-gray-900"
+                    ? "ring-2 ring-content ring-offset-2 ring-offset-surface"
+                    : "hover:ring-2 hover:ring-line-strong ring-offset-2 ring-offset-surface"
                 }`}
               />
             ))}
           </div>
           {error && (
-            <p className="text-red-400 text-xs mt-2 max-w-[12rem]">
+            <p className="text-danger-text text-xs mt-2 max-w-[12rem]">
               {error.graphQLErrors[0]?.message ?? error.message}
             </p>
           )}

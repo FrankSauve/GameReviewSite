@@ -94,10 +94,8 @@ export function MarkdownEditor({
     setPendingSelection([next.start, next.end]);
   };
 
-  const tab = (active: boolean) =>
-    `px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
-      active ? "bg-gray-800 text-gray-200" : "text-gray-500 hover:text-gray-300"
-    }`;
+  // .btn-quiet draws its own selected state from aria-selected.
+  const TAB_CLASS = "btn-quiet text-sm px-3 py-1.5";
 
   return (
     <div>
@@ -109,7 +107,7 @@ export function MarkdownEditor({
             role="tab"
             aria-selected={!previewing}
             onClick={() => setPreviewing(false)}
-            className={tab(!previewing)}
+            className={TAB_CLASS}
           >
             Write
           </button>
@@ -119,7 +117,7 @@ export function MarkdownEditor({
             aria-selected={previewing}
             onClick={() => setPreviewing(true)}
             disabled={!value.trim()}
-            className={`${tab(previewing)} disabled:text-gray-700 disabled:cursor-not-allowed`}
+            className={TAB_CLASS}
           >
             Preview
           </button>
@@ -138,7 +136,7 @@ export function MarkdownEditor({
                 // selection the command is about to act on with it.
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => run(tool.name)}
-                className={`w-8 h-8 rounded-md text-sm text-gray-400 hover:text-gray-100 hover:bg-gray-800 transition-colors ${tool.className ?? ""}`}
+                className={`btn-quiet w-8 h-8 px-0 text-sm ${tool.className ?? ""}`}
               >
                 {tool.label}
               </button>
@@ -149,7 +147,7 @@ export function MarkdownEditor({
 
       {previewing ? (
         <div
-          className={`input-field ${bodyHeight} text-base text-gray-300 leading-relaxed overflow-y-auto`}
+          className={`input-field ${bodyHeight} text-base text-content-body leading-relaxed overflow-y-auto`}
         >
           <Markdown>{value}</Markdown>
         </div>
@@ -168,10 +166,10 @@ export function MarkdownEditor({
       )}
 
       <div className="flex items-baseline justify-between mt-1">
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-content-faint">
           Markdown supported, including ||spoilers||
         </p>
-        <p className="text-sm text-gray-600">
+        <p className="text-sm text-content-faint">
           {value.length}/{maxLength}
         </p>
       </div>

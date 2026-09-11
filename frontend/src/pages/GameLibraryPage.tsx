@@ -30,11 +30,11 @@ function GameGridSkeleton() {
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {Array.from({ length: 6 }).map((_, i) => (
         <div key={i} className="card overflow-hidden animate-pulse">
-          <div className="h-44 bg-gray-800" />
+          <div className="h-44 bg-surface-raised" />
           <div className="p-4 space-y-3">
-            <div className="h-4 bg-gray-800 rounded w-2/3" />
-            <div className="h-3 bg-gray-800 rounded w-1/3" />
-            <div className="h-3 bg-gray-800 rounded" />
+            <div className="h-4 skeleton-bar w-2/3" />
+            <div className="h-3 skeleton-bar w-1/3" />
+            <div className="h-3 skeleton-bar" />
           </div>
         </div>
       ))}
@@ -42,9 +42,7 @@ function GameGridSkeleton() {
   );
 }
 
-const selectClass =
-  "bg-gray-900 border border-gray-800 rounded-lg text-sm text-gray-300 px-2 py-1.5 " +
-  "focus:outline-none focus:border-violet-700 transition-colors";
+const selectClass = "input-field w-auto text-sm px-2 py-1.5";
 
 function Field({
   label,
@@ -54,7 +52,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex items-center gap-1.5 text-xs text-gray-500">
+    <label className="flex items-center gap-1.5 text-xs text-content-subtle">
       {label}
       {children}
     </label>
@@ -129,12 +127,9 @@ export function GameLibraryPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-gray-100 flex items-center gap-2">
-          <span className="w-1 h-5 bg-violet-500 rounded-full inline-block" />
-          Games Library
-        </h1>
+        <h1 className="section-head text-xl">Games Library</h1>
         {total > 0 && (
-          <span className="text-xs text-gray-600">
+          <span className="text-xs text-content-faint">
             {total} {total === 1 ? "game" : "games"}
           </span>
         )}
@@ -188,12 +183,12 @@ export function GameLibraryPage() {
           </select>
         </Field>
 
-        <label className="flex items-center gap-1.5 text-xs text-gray-500 cursor-pointer">
+        <label className="flex items-center gap-1.5 text-xs text-content-subtle cursor-pointer">
           <input
             type="checkbox"
             checked={reviewedOnly}
             onChange={(e) => update({ reviewed: e.target.checked ? "1" : "" })}
-            className="accent-violet-600"
+            className="accent-accent"
           />
           Reviewed only
         </label>
@@ -201,7 +196,7 @@ export function GameLibraryPage() {
         {filtered && (
           <button
             onClick={() => update({ genre: "", reviewedBy: "", reviewed: "" })}
-            className="ml-auto text-xs text-violet-400 hover:text-violet-300 transition-colors"
+            className="ml-auto text-xs text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
           >
             Clear filters
           </button>
@@ -211,16 +206,16 @@ export function GameLibraryPage() {
       {loading && <GameGridSkeleton />}
 
       {!loading && games.length === 0 && (
-        <div className="card p-12 text-center space-y-3">
+        <div className="empty-state space-y-3">
           <p className="text-4xl">🎮</p>
-          <p className="text-gray-400 font-medium">
+          <p className="text-content-muted font-medium">
             {total > 0
               ? "Nothing on this page"
               : filtered
                 ? "No games match these filters"
                 : "No games yet"}
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-content-faint">
             {total > 0
               ? "The library is not that long — try page one."
               : filtered

@@ -63,10 +63,10 @@ export function ArticleEditorPage() {
 
   if (!user) {
     return (
-      <p className="text-sm text-gray-500 text-center py-12">
+      <p className="text-sm text-content-subtle text-center py-12">
         <button
           onClick={() => signIn()}
-          className="text-violet-400 hover:text-violet-300 font-medium"
+          className="text-accent-subtle-text hover:text-accent-subtle-text font-medium"
         >
           Sign in
         </button>{" "}
@@ -81,11 +81,13 @@ export function ArticleEditorPage() {
 
   if (editing && !existing) {
     return (
-      <div className="card p-12 text-center space-y-3 max-w-3xl mx-auto">
-        <p className="text-gray-400 font-medium">This article is not here</p>
+      <div className="empty-state space-y-3 max-w-3xl mx-auto">
+        <p className="text-content-muted font-medium">
+          This article is not here
+        </p>
         <Link
           to="/articles"
-          className="text-sm text-violet-400 hover:text-violet-300"
+          className="text-sm text-accent-subtle-text hover:text-accent-subtle-text"
         >
           Back to the articles
         </Link>
@@ -102,13 +104,13 @@ export function ArticleEditorPage() {
     existing.author.id !== user.id
   ) {
     return (
-      <div className="card p-12 text-center space-y-3 max-w-3xl mx-auto">
-        <p className="text-gray-400 font-medium">
+      <div className="empty-state space-y-3 max-w-3xl mx-auto">
+        <p className="text-content-muted font-medium">
           This article is not yours to edit
         </p>
         <Link
           to={articlePath(existing)}
-          className="text-sm text-violet-400 hover:text-violet-300"
+          className="text-sm text-accent-subtle-text hover:text-accent-subtle-text"
         >
           Read it instead
         </Link>
@@ -133,16 +135,12 @@ export function ArticleEditorPage() {
 
   return (
     <form onSubmit={handleSubmit} className="page-column space-y-4">
-      <h1 className="text-xl font-bold text-gray-100 flex items-center gap-2">
-        <span className="w-1 h-5 bg-violet-500 rounded-full inline-block" />
+      <h1 className="section-head text-xl">
         {editing ? "Edit article" : "Write an article"}
       </h1>
 
       <div>
-        <label
-          htmlFor={titleId}
-          className="block text-base font-medium text-gray-400 mb-1.5"
-        >
+        <label htmlFor={titleId} className="field-label text-base">
           Title
         </label>
         <input
@@ -160,7 +158,7 @@ export function ArticleEditorPage() {
         <div className="flex items-baseline justify-between mb-1.5">
           <label
             htmlFor={bodyId}
-            className="block text-base font-medium text-gray-400"
+            className="block text-base font-medium text-content-muted"
           >
             Body
           </label>
@@ -168,7 +166,7 @@ export function ArticleEditorPage() {
             type="button"
             onClick={() => setPreviewing((p) => !p)}
             disabled={!content.trim()}
-            className="text-sm text-violet-400 hover:text-violet-300 disabled:text-gray-600 disabled:cursor-not-allowed transition-colors"
+            className="text-sm text-accent-subtle-text hover:text-accent-subtle-text disabled:text-content-faint disabled:cursor-not-allowed transition-colors duration-theme"
           >
             {previewing ? "Write" : "Preview"}
           </button>
@@ -176,7 +174,7 @@ export function ArticleEditorPage() {
 
         {previewing ? (
           <div
-            className={`input-field ${BODY_HEIGHT} text-gray-300 leading-relaxed overflow-y-auto`}
+            className={`input-field ${BODY_HEIGHT} text-content-body leading-relaxed overflow-y-auto`}
           >
             <Markdown>{content}</Markdown>
           </div>
@@ -194,27 +192,27 @@ export function ArticleEditorPage() {
         )}
 
         <div className="flex items-baseline justify-between mt-1">
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-content-faint">
             Markdown: **bold**, *italic*, - lists, &gt; quotes
           </p>
-          <p className="text-sm text-gray-600">
+          <p className="text-sm text-content-faint">
             {content.length}/{CONTENT_MAX}
           </p>
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-gray-400">
+      <label className="flex items-center gap-2 text-sm text-content-muted">
         <input
           type="checkbox"
           checked={published}
           onChange={(e) => setPublished(e.target.checked)}
-          className="accent-violet-500"
+          className="accent-accent-hover"
         />
         Publish it. Leave this off to keep it a draft only you can read.
       </label>
 
       {error && (
-        <p className="text-red-400 text-sm bg-red-900/20 border border-red-800 rounded-lg px-3 py-2">
+        <p className="text-danger-text text-sm bg-danger-subtle/20 border border-danger-subtle-border rounded-control px-3 py-2">
           {error.graphQLErrors[0]?.message ?? error.message}
         </p>
       )}
@@ -229,7 +227,7 @@ export function ArticleEditorPage() {
         </button>
         <Link
           to={editing && existing ? articlePath(existing) : "/articles"}
-          className="text-sm text-gray-500 hover:text-gray-300"
+          className="text-sm text-content-subtle hover:text-content-body"
         >
           Cancel
         </Link>

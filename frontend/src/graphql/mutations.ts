@@ -13,19 +13,6 @@ export const IMPORT_GAME = gql`
   }
 `;
 
-export const CREATE_GAME = gql`
-  mutation CreateGame($input: CreateGameInput!) {
-    createGame(input: $input) {
-      id
-      slug
-      title
-      genres
-      description
-      releaseYear
-    }
-  }
-`;
-
 export const CREATE_REVIEW = gql`
   mutation CreateReview($input: CreateReviewInput!) {
     createReview(input: $input) {
@@ -72,6 +59,8 @@ export const UPDATE_PROFILE = gql`
       id
       bio
       avatarColor
+      theme
+      palette
     }
   }
 `;
@@ -83,6 +72,8 @@ export const GET_ME = gql`
       slug
       username
       avatarColor
+      theme
+      palette
       email
     }
   }

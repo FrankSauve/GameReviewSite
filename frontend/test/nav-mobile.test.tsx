@@ -64,7 +64,7 @@ describe("collapsed navigation menu", () => {
     const current = within(menu() as HTMLElement).getByRole("link", {
       name: "Reviewers",
     });
-    expect(current.className).toContain("text-violet-300");
+    expect(current.className).toContain("text-accent-subtle-text");
   });
 
   it("closes again on a second press", () => {

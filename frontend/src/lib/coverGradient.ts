@@ -2,18 +2,20 @@ import { seedHash } from "./hash";
 
 /**
  * The placeholder a game with no cover art gets, picked from its title so the
- * same game always draws the same one.
+ * same game always draws the same one. Each class reads its stops from
+ * --cover-N in the token layer and fades into the palette's own surface, so a
+ * light palette does not fade art into near-black.
  *
  * Written out in full because Tailwind scans for whole class names and would
- * not see a composed `from-${hue}-900`.
+ * not see a composed `cover-${idx}`.
  */
 const GRADIENTS: [string, ...string[]] = [
-  "from-violet-900 via-indigo-900 to-gray-900",
-  "from-rose-900 via-pink-900 to-gray-900",
-  "from-emerald-900 via-teal-900 to-gray-900",
-  "from-blue-900 via-cyan-900 to-gray-900",
-  "from-amber-900 via-orange-900 to-gray-900",
-  "from-fuchsia-900 via-purple-900 to-gray-900",
+  "cover-0",
+  "cover-1",
+  "cover-2",
+  "cover-3",
+  "cover-4",
+  "cover-5",
 ];
 
 export function titleGradient(title: string): string {

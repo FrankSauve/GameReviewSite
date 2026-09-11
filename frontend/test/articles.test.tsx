@@ -37,6 +37,8 @@ const ME = {
   slug: "simon",
   username: "simon",
   avatarColor: null,
+  theme: null,
+  palette: null,
   email: null,
 };
 const OTHER = {

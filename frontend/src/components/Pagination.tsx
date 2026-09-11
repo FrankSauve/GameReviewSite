@@ -44,7 +44,7 @@ export function Pagination({
       <button
         onClick={() => onChange(page - 1)}
         disabled={page === 0}
-        className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="btn-secondary text-sm px-3 py-1.5"
       >
         ← Prev
       </button>
@@ -54,7 +54,7 @@ export function Pagination({
           item === null ? (
             <span
               key={`gap-${i}`}
-              className="px-1 text-sm text-gray-600 select-none"
+              className="px-1 text-sm text-content-faint select-none"
             >
               …
             </span>
@@ -63,10 +63,8 @@ export function Pagination({
               key={item}
               onClick={() => onChange(item)}
               aria-current={item === page ? "page" : undefined}
-              className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
-                item === page
-                  ? "bg-violet-600 text-white"
-                  : "bg-gray-800 text-gray-400 hover:bg-gray-700"
+              className={`w-8 h-8 text-sm px-0 ${
+                item === page ? "btn-primary" : "btn-secondary"
               }`}
             >
               {item + 1}
@@ -78,7 +76,7 @@ export function Pagination({
       <button
         onClick={() => onChange(page + 1)}
         disabled={page >= totalPages - 1}
-        className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-800 text-gray-300 hover:bg-gray-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        className="btn-secondary text-sm px-3 py-1.5"
       >
         Next →
       </button>

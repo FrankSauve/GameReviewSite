@@ -65,14 +65,14 @@ function ReviewFeedCard({ review }: { review: Review }) {
     // No overflow-hidden on the card: it would clip the reaction menu, which
     // opens below a bar that sits on the bottom edge. The cover art rounds
     // its own corners instead.
-    <article className="card flex flex-col hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
+    <article className="card card-interactive flex flex-col">
       {/* Main clickable row */}
       <button
         onClick={() => void navigate(reviewPath(review))}
         className="flex gap-0 text-left group w-full"
       >
         {/* Cover art */}
-        <div className="w-28 sm:w-36 shrink-0 relative overflow-hidden rounded-l-xl">
+        <div className="w-28 sm:w-36 shrink-0 relative overflow-hidden rounded-l-card">
           <GameCover game={game} size="md" />
         </div>
 
@@ -83,41 +83,43 @@ function ReviewFeedCard({ review }: { review: Review }) {
             <Link
               to={gamePath(game)}
               onClick={(e) => e.stopPropagation()}
-              className="font-bold text-gray-100 hover:text-violet-300 transition-colors truncate"
+              className="font-display text-content hover:text-accent-subtle-text transition-colors duration-theme truncate"
             >
               {game?.title ?? "Unknown Game"}
             </Link>
             {game?.releaseYear && (
-              <span className="text-xs text-gray-600">{game.releaseYear}</span>
+              <span className="text-xs text-content-faint">
+                {game.releaseYear}
+              </span>
             )}
           </div>
 
           {/* Score out of 10 */}
           <div className="flex items-baseline gap-1">
             <span
-              className={`text-2xl font-extrabold ${ratingColor(review.rating)}`}
+              className={`font-numeric text-2xl font-extrabold ${ratingColor(review.rating)}`}
             >
               {formatRating(review.rating)}
             </span>
-            <span className="text-sm text-gray-600">/ 10</span>
+            <span className="text-sm text-content-faint">/ 10</span>
           </div>
 
           {/* Excerpt */}
-          <p className="text-sm text-gray-400 leading-relaxed flex-1">
+          <p className="text-sm text-content-muted leading-relaxed flex-1">
             {summary}
           </p>
 
           {/* Footer: reviewer + time */}
-          <div className="flex items-center gap-2 pt-1 border-t border-gray-800/60">
+          <div className="flex items-center gap-2 pt-1 border-t border-line/60">
             <Avatar user={review.user} size={6} />
             <Link
               to={userPath(review.user)}
               onClick={(e) => e.stopPropagation()}
-              className="text-sm font-medium text-violet-400 hover:text-violet-300 transition-colors"
+              className="text-sm font-medium text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
             >
               {review.user?.username ?? "Anonymous"}
             </Link>
-            <span className="text-xs text-gray-600 ml-auto shrink-0">
+            <span className="text-xs text-content-faint ml-auto shrink-0">
               {formatPlaytime(review.yearPlayed, review.hoursPlayed) ??
                 timeAgo(review.createdAt)}
             </span>
@@ -126,12 +128,12 @@ function ReviewFeedCard({ review }: { review: Review }) {
       </button>
 
       {/* Reactions and comments */}
-      <div className="px-4 pb-3 border-t border-gray-800/60">
+      <div className="px-4 pb-3 border-t border-line/60">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 pt-2.5">
           {/* Toggle button */}
           <button
             onClick={() => setShowComments((v) => !v)}
-            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-200 transition-colors"
+            className="flex items-center gap-1.5 text-xs text-content-muted hover:text-content transition-colors duration-theme"
           >
             <svg
               className="w-3.5 h-3.5"
@@ -149,7 +151,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
             {localComments.length}{" "}
             {localComments.length === 1 ? "comment" : "comments"}
             <svg
-              className={`w-3 h-3 transition-transform ${showComments ? "rotate-180" : ""}`}
+              className={`w-3 h-3 transition-transform duration-theme ${showComments ? "rotate-180" : ""}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -170,18 +172,18 @@ function ReviewFeedCard({ review }: { review: Review }) {
           <div className="mt-2 space-y-3">
             {/* Existing comments */}
             {localComments.length > 0 && (
-              <div className="space-y-2 pl-3 border-l-2 border-gray-800">
+              <div className="space-y-2 pl-3 border-l-2 border-line">
                 {localComments.map((comment) => (
                   <div key={comment.id} className="flex gap-2">
                     <Avatar user={comment.user} size={5} className="mt-0.5" />
                     <div className="min-w-0">
-                      <span className="text-xs font-semibold text-gray-300">
+                      <span className="text-xs font-semibold text-content-body">
                         {comment.user?.username ?? "Unknown"}
                       </span>
-                      <span className="text-xs text-gray-600 ml-2">
+                      <span className="text-xs text-content-faint ml-2">
                         {timeAgo(comment.createdAt)}
                       </span>
-                      <p className="text-xs text-gray-400 mt-0.5">
+                      <p className="text-xs text-content-muted mt-0.5">
                         {comment.content}
                       </p>
                     </div>
@@ -204,21 +206,21 @@ function ReviewFeedCard({ review }: { review: Review }) {
                   placeholder="Add a comment…"
                   maxLength={500}
                   disabled={submitting}
-                  className="flex-1 bg-gray-800/60 border border-gray-700 rounded-full px-3 py-1.5 text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-600 disabled:opacity-50 transition-colors"
+                  className="input-field flex-1 rounded-pill px-3 py-1.5 text-xs"
                 />
                 <button
                   type="submit"
                   disabled={!newComment.trim() || submitting}
-                  className="px-3 py-1.5 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-full transition-colors"
+                  className="btn-primary rounded-pill px-3 py-1.5 text-xs"
                 >
                   {submitting ? "…" : "Post"}
                 </button>
               </form>
             ) : (
-              <p className="text-xs text-gray-600 pt-1 pl-1">
+              <p className="text-xs text-content-faint pt-1 pl-1">
                 <button
                   onClick={() => signIn()}
-                  className="text-violet-400 hover:text-violet-300 transition-colors"
+                  className="text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
                 >
                   Sign in
                 </button>{" "}
@@ -239,12 +241,12 @@ function ReviewFeedSkeleton() {
     <div className="space-y-3">
       {Array.from({ length: 5 }).map((_, i) => (
         <div key={i} className="card overflow-hidden flex animate-pulse h-36">
-          <div className="w-28 sm:w-36 bg-gray-800 shrink-0" />
+          <div className="w-28 sm:w-36 bg-surface-raised shrink-0" />
           <div className="flex-1 p-4 space-y-3">
-            <div className="h-4 bg-gray-800 rounded w-2/3" />
-            <div className="h-3 bg-gray-800 rounded w-1/4" />
-            <div className="h-12 bg-gray-800 rounded" />
-            <div className="h-3 bg-gray-800 rounded w-1/3 mt-auto" />
+            <div className="h-4 skeleton-bar w-2/3" />
+            <div className="h-3 skeleton-bar w-1/4" />
+            <div className="h-12 skeleton-bar" />
+            <div className="h-3 skeleton-bar w-1/3 mt-auto" />
           </div>
         </div>
       ))}
@@ -274,22 +276,21 @@ export function HomePage() {
       {/* ── Recent Reviews ───────────────────────────────────────────── */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-100 flex items-center gap-2">
-            <span className="w-1 h-5 bg-violet-500 rounded-full inline-block" />
-            Recent Reviews
-          </h2>
+          <h2 className="section-head text-xl">Recent Reviews</h2>
           {totalReviews > 0 && (
-            <span className="text-xs text-gray-600">{totalReviews} total</span>
+            <span className="text-xs text-content-faint">
+              {totalReviews} total
+            </span>
           )}
         </div>
 
         {reviewsLoading && <ReviewFeedSkeleton />}
 
         {!reviewsLoading && reviews.length === 0 && (
-          <div className="card p-12 text-center space-y-3">
+          <div className="empty-state space-y-3">
             <p className="text-4xl">✍️</p>
-            <p className="text-gray-400 font-medium">No reviews yet</p>
-            <p className="text-sm text-gray-600">
+            <p className="text-content-muted font-medium">No reviews yet</p>
+            <p className="text-sm text-content-faint">
               Search for a game in the navbar, then be the first to leave a
               review.
             </p>

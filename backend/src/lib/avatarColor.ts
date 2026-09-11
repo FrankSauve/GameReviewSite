@@ -1,4 +1,4 @@
-import { badInput } from "./badInput.js";
+import { validateChoice } from "./validate.js";
 
 /**
  * The colours an account may pick for its avatar.
@@ -26,10 +26,5 @@ const KNOWN = new Set<string>(AVATAR_COLORS);
 
 /** Null clears the choice, which puts the account back on the slug fallback. */
 export function validateAvatarColor(value: string | null): string | null {
-  if (value === null) return null;
-  const key = value.trim().toLowerCase();
-  if (!key) return null;
-  if (!KNOWN.has(key))
-    throw badInput("avatarColor must be one of the colours offered.");
-  return key;
+  return validateChoice(value, KNOWN, "avatarColor", "colours");
 }

@@ -24,6 +24,8 @@ function updateMock(bio: string, result = bio) {
           id: "u1",
           bio: result,
           avatarColor: null,
+          theme: null,
+          palette: null,
         },
       },
     },

@@ -92,7 +92,7 @@ export function GameSearchBar() {
         <SearchIcon />
         <input
           ref={inputRef}
-          className="w-full bg-gray-800/70 border border-gray-700 rounded-xl pl-9 pr-4 py-2 text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all"
+          className="input-field rounded-card pl-9 pr-4 text-sm"
           placeholder="Search games to review…"
           value={query}
           onChange={handleInput}
@@ -110,45 +110,45 @@ export function GameSearchBar() {
       {showDropdown && (
         // The header is sticky at top-0 with a fixed h-16, so max-sm can pin the
         // panel under it with static insets instead of measuring the input.
-        <div className="absolute top-full mt-2 left-0 right-0 max-sm:fixed max-sm:top-16 max-sm:left-2 max-sm:right-2 bg-gray-900 border border-gray-700 rounded-xl shadow-2xl shadow-black/60 z-50 overflow-hidden">
+        <div className="absolute top-full mt-2 left-0 right-0 max-sm:fixed max-sm:top-16 max-sm:left-2 max-sm:right-2 popover z-50 overflow-hidden">
           {searching && results.length === 0 && (
-            <div className="flex items-center justify-center gap-2 py-6 text-sm text-gray-500">
+            <div className="flex items-center justify-center gap-2 py-6 text-sm text-content-subtle">
               <Spinner /> Searching RAWG…
             </div>
           )}
 
           {!searching && results.length === 0 && (
-            <div className="py-6 text-center text-sm text-gray-500">
+            <div className="py-6 text-center text-sm text-content-subtle">
               No games found for "{query}"
             </div>
           )}
 
           {results.length > 0 && (
-            <ul className="max-h-[420px] overflow-y-auto divide-y divide-gray-800">
+            <ul className="max-h-[420px] overflow-y-auto divide-y divide-line">
               {results.map((game) => (
                 <li key={game.rawgId}>
                   <button
-                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-gray-800 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-surface-raised transition-colors duration-theme text-left"
                     onClick={() => void handleSelect(game)}
                   >
                     {/* Cover thumbnail */}
-                    <div className="w-10 h-14 rounded-md overflow-hidden bg-gray-800 shrink-0">
+                    <div className="w-10 h-14 rounded-control overflow-hidden bg-surface-raised shrink-0">
                       <GameCover game={game} size="sm" />
                     </div>
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-100 truncate">
+                      <p className="text-sm font-semibold text-content truncate">
                         {game.title}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         {game.releaseYear && (
-                          <span className="text-xs text-gray-500">
+                          <span className="text-xs text-content-subtle">
                             {game.releaseYear}
                           </span>
                         )}
                         {game.genres?.[0] && (
-                          <span className="text-xs bg-violet-900/50 text-violet-400 px-1.5 py-0.5 rounded-full">
+                          <span className="text-xs bg-accent-subtle/50 text-accent-subtle-text px-1.5 py-0.5 rounded-pill">
                             {game.genres[0]}
                           </span>
                         )}
@@ -156,10 +156,10 @@ export function GameSearchBar() {
                           <span
                             className={`text-xs font-bold px-1.5 py-0.5 rounded ${
                               game.metacritic >= 75
-                                ? "bg-emerald-900/50 text-emerald-400"
+                                ? "bg-rating-high/20 text-rating-high"
                                 : game.metacritic >= 50
-                                  ? "bg-amber-900/50 text-amber-400"
-                                  : "bg-red-900/50 text-red-400"
+                                  ? "bg-rating-mid/20 text-rating-mid"
+                                  : "bg-rating-low/20 text-rating-low"
                             }`}
                           >
                             {game.metacritic}
@@ -169,7 +169,7 @@ export function GameSearchBar() {
                     </div>
 
                     {/* Action hint */}
-                    <span className="text-xs text-gray-600 shrink-0">
+                    <span className="text-xs text-content-faint shrink-0">
                       {user ? "Review →" : "Sign in →"}
                     </span>
                   </button>
@@ -179,13 +179,13 @@ export function GameSearchBar() {
           )}
 
           {/* RAWG attribution */}
-          <div className="px-3 py-2 border-t border-gray-800 flex items-center justify-end gap-1">
-            <span className="text-xs text-gray-600">Powered by</span>
+          <div className="px-3 py-2 border-t border-line flex items-center justify-end gap-1">
+            <span className="text-xs text-content-faint">Powered by</span>
             <a
               href="https://rawg.io"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-gray-500 hover:text-gray-400"
+              className="text-xs text-content-subtle hover:text-content-muted"
             >
               RAWG
             </a>
@@ -199,7 +199,7 @@ export function GameSearchBar() {
 function SearchIcon() {
   return (
     <svg
-      className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none"
+      className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-subtle pointer-events-none"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
@@ -217,7 +217,7 @@ function SearchIcon() {
 function Spinner() {
   return (
     <svg
-      className="w-4 h-4 animate-spin text-gray-500"
+      className="w-4 h-4 animate-spin text-content-subtle"
       fill="none"
       viewBox="0 0 24 24"
     >

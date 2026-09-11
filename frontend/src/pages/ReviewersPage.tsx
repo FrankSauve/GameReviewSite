@@ -26,12 +26,9 @@ export function ReviewersPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-100 flex items-center gap-2">
-          <span className="w-1 h-6 bg-violet-500 rounded-full inline-block" />
-          Reviewers
-        </h1>
+        <h1 className="section-head text-2xl">Reviewers</h1>
         {!loading && (
-          <span className="text-xs text-gray-600">
+          <span className="text-xs text-content-faint">
             {users.length} {users.length === 1 ? "member" : "members"}
           </span>
         )}
@@ -44,10 +41,10 @@ export function ReviewersPage() {
               key={i}
               className="card p-5 flex items-center gap-4 animate-pulse"
             >
-              <div className="w-12 h-12 rounded-full bg-gray-800 shrink-0" />
+              <div className="w-12 h-12 rounded-pill bg-surface-raised shrink-0" />
               <div className="space-y-2 flex-1">
-                <div className="h-4 bg-gray-800 rounded w-2/3" />
-                <div className="h-3 bg-gray-800 rounded w-1/3" />
+                <div className="h-4 skeleton-bar w-2/3" />
+                <div className="h-3 skeleton-bar w-1/3" />
               </div>
             </div>
           ))}
@@ -55,9 +52,9 @@ export function ReviewersPage() {
       )}
 
       {!loading && users.length === 0 && (
-        <div className="card p-12 text-center space-y-2">
+        <div className="empty-state space-y-2">
           <p className="text-3xl">👥</p>
-          <p className="text-gray-400">No users yet.</p>
+          <p className="text-content-muted">No users yet.</p>
         </div>
       )}
 
@@ -70,29 +67,29 @@ export function ReviewersPage() {
 
             return (
               <Link key={u.id} to={userPath(u)} className="group block">
-                <div className="card p-5 flex items-center gap-4 hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
+                <div className="card card-interactive p-5 flex items-center gap-4">
                   {/* Avatar */}
                   <Avatar user={u} size={11} />
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-semibold text-gray-100 group-hover:text-violet-300 transition-colors truncate text-sm">
+                      <span className="font-semibold text-content group-hover:text-accent-subtle-text transition-colors duration-theme truncate text-sm">
                         {u.username}
                       </span>
                       {isMe && (
-                        <span className="text-xs px-1.5 py-0.5 rounded-full bg-violet-900/60 text-violet-300 border border-violet-800 shrink-0">
+                        <span className="text-xs px-1.5 py-0.5 rounded-pill bg-accent-subtle/60 text-accent-subtle-text border border-accent-subtle-border shrink-0">
                           You
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-content-subtle">
                         {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
                       </span>
                       {avgRating !== null && (
                         <>
-                          <span className="text-gray-700 text-xs">·</span>
+                          <span className="text-content-faint text-xs">·</span>
                           <span
                             className={`text-xs font-semibold ${ratingColor(avgRating)}`}
                           >

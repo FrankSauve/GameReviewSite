@@ -119,11 +119,11 @@ export function ReviewDetailPage() {
     return (
       <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] px-4 sm:px-6 lg:px-10">
         <div className="page-column space-y-4 animate-pulse">
-          <div className="h-52 bg-gray-800 rounded-xl" />
+          <div className="h-52 bg-surface-raised rounded-card" />
           <div className="card p-6 space-y-3">
-            <div className="h-5 bg-gray-800 rounded w-1/3" />
-            <div className="h-3 bg-gray-800 rounded w-1/5" />
-            <div className="h-24 bg-gray-800 rounded" />
+            <div className="h-5 skeleton-bar w-1/3" />
+            <div className="h-3 skeleton-bar w-1/5" />
+            <div className="h-24 skeleton-bar" />
           </div>
         </div>
       </div>
@@ -132,12 +132,12 @@ export function ReviewDetailPage() {
 
   if (error || !data?.review) {
     return (
-      <div className="card p-12 text-center space-y-3 max-w-2xl mx-auto">
+      <div className="empty-state space-y-3 max-w-2xl mx-auto">
         <p className="text-4xl">💬</p>
-        <p className="text-gray-300 font-medium">Review not found</p>
+        <p className="text-content-body font-medium">Review not found</p>
         <Link
           to="/"
-          className="text-violet-400 hover:text-violet-300 text-sm transition-colors"
+          className="text-accent-subtle-text hover:text-accent-subtle-text text-sm transition-colors duration-theme"
         >
           Back to home
         </Link>
@@ -200,43 +200,43 @@ export function ReviewDetailPage() {
         <div className="flex items-center gap-2 text-sm">
           <Link
             to="/"
-            className="text-gray-500 hover:text-gray-300 transition-colors"
+            className="text-content-subtle hover:text-content-body transition-colors duration-theme"
           >
             Home
           </Link>
-          <span className="text-gray-700">/</span>
+          <span className="text-content-faint">/</span>
           {game && (
             <>
               <Link
                 to={gamePath(game)}
-                className="text-gray-500 hover:text-gray-300 transition-colors truncate max-w-xs"
+                className="text-content-subtle hover:text-content-body transition-colors duration-theme truncate max-w-xs"
               >
                 {game.title}
               </Link>
-              <span className="text-gray-700">/</span>
+              <span className="text-content-faint">/</span>
             </>
           )}
-          <span className="text-gray-400 truncate">Review</span>
+          <span className="text-content-muted truncate">Review</span>
         </div>
 
         {/* ── Game banner ── */}
         {game && (
           <Link to={gamePath(game)} className="group block">
-            <div className="relative h-40 rounded-xl overflow-hidden">
+            <div className="relative h-40 rounded-card overflow-hidden">
               <GameCover game={game} size="lg" eager />
-              <div className="absolute inset-0 bg-gradient-to-t from-gray-950/90 via-gray-950/40 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-scrim/90 via-scrim/40 to-transparent" />
               <div className="absolute bottom-4 left-4">
-                <h2 className="text-xl font-bold text-white group-hover:text-violet-300 transition-colors">
+                <h2 className="text-xl font-bold text-accent-contrast group-hover:text-accent-subtle-text transition-colors duration-theme">
                   {game.title}
                 </h2>
                 <div className="flex items-center gap-2 mt-0.5">
                   {game.releaseYear && (
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-content-muted">
                       {game.releaseYear}
                     </span>
                   )}
                   {game.genres && game.genres.length > 0 && (
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-content-subtle">
                       · {game.genres.join(", ")}
                     </span>
                   )}
@@ -257,18 +257,21 @@ export function ReviewDetailPage() {
               <div>
                 <Link
                   to={userPath(review.user)}
-                  className="font-semibold text-gray-100 hover:text-violet-300 transition-colors"
+                  className="font-semibold text-content hover:text-accent-subtle-text transition-colors duration-theme"
                 >
                   {review.user?.username ?? "Unknown"}
                 </Link>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-content-subtle">
                   {timeAgo(review.createdAt)}
                   {playtime && (
-                    <span className="text-gray-600"> · played {playtime}</span>
+                    <span className="text-content-faint">
+                      {" "}
+                      · played {playtime}
+                    </span>
                   )}
                 </p>
                 {review.platform && (
-                  <span className="inline-block mt-1 text-xs font-medium bg-gray-800 text-gray-300 px-2 py-0.5 rounded-full border border-gray-700">
+                  <span className="inline-block mt-1 text-xs font-medium bg-surface-raised text-content-body px-2 py-0.5 rounded-pill border border-line-strong">
                     {review.platform}
                   </span>
                 )}
@@ -283,27 +286,29 @@ export function ReviewDetailPage() {
                 >
                   {formatRating(review.rating)}
                 </span>
-                <span className="text-sm text-gray-600">/ 10</span>
+                <span className="text-sm text-content-faint">/ 10</span>
               </div>
             )}
           </div>
 
           {/* Delete confirmation */}
           {confirmDelete && (
-            <div className="flex items-center gap-3 bg-red-950/40 border border-red-900/50 rounded-lg px-3 py-2.5">
-              <p className="text-sm text-red-300 flex-1">Delete this review?</p>
+            <div className="flex items-center gap-3 bg-danger-subtle/40 border border-danger-subtle-border/50 rounded-control px-3 py-2.5">
+              <p className="text-sm text-danger-text flex-1">
+                Delete this review?
+              </p>
               <Link
                 to={gamePath(game)}
                 onClick={() =>
                   void deleteReview({ variables: { id: review.id } })
                 }
-                className="text-xs font-semibold bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded-lg transition-colors disabled:opacity-50"
+                className="text-xs font-semibold bg-danger hover:bg-danger-hover text-accent-contrast px-3 py-1 rounded-control transition-colors duration-theme disabled:opacity-50"
               >
                 {deleting ? "Deleting…" : "Delete"}
               </Link>
               <button
                 onClick={() => setConfirmDelete(false)}
-                className="text-xs text-gray-400 hover:text-gray-200 transition-colors"
+                className="text-xs text-content-muted hover:text-content transition-colors duration-theme"
               >
                 Cancel
               </button>
@@ -314,7 +319,7 @@ export function ReviewDetailPage() {
           {editing ? (
             <div className="space-y-3">
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-xs text-gray-400 w-14 shrink-0">
+                <span className="text-xs text-content-muted w-14 shrink-0">
                   Rating
                 </span>
                 <div className="flex-1 min-w-[16rem]">
@@ -361,7 +366,7 @@ export function ReviewDetailPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="text-gray-200 leading-relaxed">
+              <div className="text-content leading-relaxed">
                 <Markdown>{review.content}</Markdown>
               </div>
               <ReactionBar reviewId={review.id} reactions={review.reactions} />
@@ -370,16 +375,16 @@ export function ReviewDetailPage() {
 
           {/* Owner actions */}
           {isOwner && !editing && !confirmDelete && (
-            <div className="flex items-center gap-3 pt-1 border-t border-gray-800">
+            <div className="flex items-center gap-3 pt-1 border-t border-line">
               <button
                 onClick={startEdit}
-                className="flex items-center gap-1 text-xs text-gray-400 hover:text-violet-400 transition-colors"
+                className="flex items-center gap-1 text-xs text-content-muted hover:text-accent-subtle-text transition-colors duration-theme"
               >
                 <PencilIcon /> Edit
               </button>
               <button
                 onClick={() => setConfirmDelete(true)}
-                className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-400 transition-colors"
+                className="flex items-center gap-1 text-xs text-content-muted hover:text-danger-text transition-colors duration-theme"
               >
                 <TrashIcon /> Delete
               </button>
@@ -389,12 +394,12 @@ export function ReviewDetailPage() {
 
         {/* ── Comments ── */}
         <div className="card p-6 space-y-4">
-          <h3 className="font-semibold text-gray-300 text-sm">
+          <h3 className="font-semibold text-content-body text-sm">
             {comments.length} {comments.length === 1 ? "Comment" : "Comments"}
           </h3>
 
           {comments.length > 0 && (
-            <div className="space-y-4 divide-y divide-gray-800">
+            <div className="space-y-4 divide-y divide-line">
               {comments.map((comment) => (
                 <div key={comment.id} className="flex gap-3 pt-4 first:pt-0">
                   <Link to={userPath(comment.user)} className="shrink-0">
@@ -404,12 +409,12 @@ export function ReviewDetailPage() {
                     <div className="flex items-baseline justify-between gap-2">
                       <Link
                         to={userPath(comment.user)}
-                        className="text-sm font-semibold text-gray-200 hover:text-violet-300 transition-colors"
+                        className="text-sm font-semibold text-content hover:text-accent-subtle-text transition-colors duration-theme"
                       >
                         {comment.user?.username ?? "Unknown"}
                       </Link>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs text-gray-600">
+                        <span className="text-xs text-content-faint">
                           {timeAgo(comment.createdAt)}
                         </span>
                         {user?.id === comment.user?.id && (
@@ -419,7 +424,7 @@ export function ReviewDetailPage() {
                                 variables: { id: comment.id },
                               })
                             }
-                            className="text-gray-600 hover:text-red-400 transition-colors"
+                            className="text-content-faint hover:text-danger-text transition-colors duration-theme"
                             title="Delete comment"
                           >
                             <TrashIcon size="sm" />
@@ -427,7 +432,7 @@ export function ReviewDetailPage() {
                         )}
                       </div>
                     </div>
-                    <p className="text-sm text-gray-300 mt-1">
+                    <p className="text-sm text-content-body mt-1">
                       {comment.content}
                     </p>
                     <div className="mt-2">
@@ -446,7 +451,7 @@ export function ReviewDetailPage() {
           {user ? (
             <form
               onSubmit={handleSubmitComment}
-              className="flex items-center gap-3 pt-2 border-t border-gray-800"
+              className="flex items-center gap-3 pt-2 border-t border-line"
             >
               <Avatar user={user} size={8} />
               <input
@@ -456,21 +461,21 @@ export function ReviewDetailPage() {
                 placeholder="Add a comment…"
                 maxLength={500}
                 disabled={submitting}
-                className="flex-1 bg-gray-800/60 border border-gray-700 rounded-full px-4 py-2 text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-violet-600 disabled:opacity-50 transition-colors"
+                className="flex-1 bg-surface-raised/60 border border-line-strong rounded-pill px-4 py-2 text-sm text-content placeholder-content-subtle focus:outline-none focus:border-accent-border disabled:opacity-50 transition-colors duration-theme"
               />
               <button
                 type="submit"
                 disabled={!newComment.trim() || submitting}
-                className="px-4 py-2 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-full transition-colors"
+                className="px-4 py-2 bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed text-accent-contrast text-sm font-semibold rounded-pill transition-colors duration-theme"
               >
                 {submitting ? "…" : "Post"}
               </button>
             </form>
           ) : (
-            <p className="text-sm text-gray-600 pt-2 border-t border-gray-800">
+            <p className="text-sm text-content-faint pt-2 border-t border-line">
               <button
                 onClick={() => signIn()}
-                className="text-violet-400 hover:text-violet-300 transition-colors"
+                className="text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
               >
                 Sign in
               </button>{" "}

@@ -18,7 +18,9 @@ export function PlatformSelect({
 }: PlatformSelectProps) {
   const id = useId();
   const label =
-    size === "md" ? "text-base text-gray-400" : "text-sm text-gray-400";
+    size === "md"
+      ? "text-base text-content-muted"
+      : "text-sm text-content-muted";
 
   return (
     <div>

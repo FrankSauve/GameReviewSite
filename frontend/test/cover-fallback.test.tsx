@@ -87,6 +87,6 @@ describe("the placeholder gradient", () => {
   });
 
   it("handles a game with no title at all", () => {
-    expect(titleGradient("")).toContain("from-");
+    expect(titleGradient("")).toMatch(/^cover-\d+$/);
   });
 });

@@ -39,7 +39,7 @@ export function GameCover({
       <img
         src={game.coverUrl}
         alt={decorative ? "" : title}
-        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-theme"
         {...(eager ? {} : { loading: "lazy" as const })}
       />
     );
@@ -47,7 +47,7 @@ export function GameCover({
 
   return (
     <div
-      className={`w-full h-full bg-gradient-to-br ${titleGradient(title)} flex items-center justify-center`}
+      className={`w-full h-full ${titleGradient(title)} flex items-center justify-center`}
     >
       <span className={`${EMOJI[size]} opacity-30`}>🎮</span>
     </div>
