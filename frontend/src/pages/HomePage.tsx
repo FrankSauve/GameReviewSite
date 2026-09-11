@@ -88,7 +88,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
               {game?.title ?? "Unknown Game"}
             </Link>
             {game?.releaseYear && (
-              <span className="text-xs text-content-faint">
+              <span className="text-sm text-content-subtle">
                 {game.releaseYear}
               </span>
             )}
@@ -101,7 +101,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
             >
               {formatRating(review.rating)}
             </span>
-            <span className="text-sm text-content-faint">/ 10</span>
+            <span className="text-sm text-content-subtle">/ 10</span>
           </div>
 
           {/* Excerpt */}
@@ -119,7 +119,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
             >
               {review.user?.username ?? "Anonymous"}
             </Link>
-            <span className="text-xs text-content-faint ml-auto shrink-0">
+            <span className="text-sm text-content-subtle ml-auto shrink-0">
               {formatPlaytime(review.yearPlayed, review.hoursPlayed) ??
                 timeAgo(review.createdAt)}
             </span>
@@ -180,7 +180,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
                       <span className="text-xs font-semibold text-content-body">
                         {comment.user?.username ?? "Unknown"}
                       </span>
-                      <span className="text-xs text-content-faint ml-2">
+                      <span className="text-xs text-content-subtle ml-2">
                         {timeAgo(comment.createdAt)}
                       </span>
                       <p className="text-xs text-content-muted mt-0.5">
@@ -217,7 +217,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
                 </button>
               </form>
             ) : (
-              <p className="text-xs text-content-faint pt-1 pl-1">
+              <p className="text-xs text-content-subtle pt-1 pl-1">
                 <button
                   onClick={() => signIn()}
                   className="text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
@@ -278,7 +278,7 @@ export function HomePage() {
         <div className="flex items-center justify-between mb-4">
           <h2 className="section-head text-xl">Recent Reviews</h2>
           {totalReviews > 0 && (
-            <span className="text-xs text-content-faint">
+            <span className="text-xs text-content-subtle">
               {totalReviews} total
             </span>
           )}

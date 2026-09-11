@@ -28,7 +28,7 @@ export function ReviewersPage() {
       <div className="flex items-center justify-between">
         <h1 className="section-head text-2xl">Reviewers</h1>
         {!loading && (
-          <span className="text-xs text-content-faint">
+          <span className="text-xs text-content-subtle">
             {users.length} {users.length === 1 ? "member" : "members"}
           </span>
         )}

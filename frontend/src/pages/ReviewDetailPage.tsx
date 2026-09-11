@@ -261,14 +261,9 @@ export function ReviewDetailPage() {
                 >
                   {review.user?.username ?? "Unknown"}
                 </Link>
-                <p className="text-xs text-content-subtle">
+                <p className="text-sm text-content-subtle">
                   {timeAgo(review.createdAt)}
-                  {playtime && (
-                    <span className="text-content-faint">
-                      {" "}
-                      · played {playtime}
-                    </span>
-                  )}
+                  {playtime && <span> · played {playtime}</span>}
                 </p>
                 {review.platform && (
                   <span className="inline-block mt-1 text-xs font-medium bg-surface-raised text-content-body px-2 py-0.5 rounded-pill border border-line-strong">
@@ -286,7 +281,7 @@ export function ReviewDetailPage() {
                 >
                   {formatRating(review.rating)}
                 </span>
-                <span className="text-sm text-content-faint">/ 10</span>
+                <span className="text-sm text-content-subtle">/ 10</span>
               </div>
             )}
           </div>
@@ -414,7 +409,7 @@ export function ReviewDetailPage() {
                         {comment.user?.username ?? "Unknown"}
                       </Link>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs text-content-faint">
+                        <span className="text-xs text-content-subtle">
                           {timeAgo(comment.createdAt)}
                         </span>
                         {user?.id === comment.user?.id && (
@@ -424,7 +419,7 @@ export function ReviewDetailPage() {
                                 variables: { id: comment.id },
                               })
                             }
-                            className="text-content-faint hover:text-danger-text transition-colors duration-theme"
+                            className="text-content-subtle hover:text-danger-text transition-colors duration-theme"
                             title="Delete comment"
                           >
                             <TrashIcon size="sm" />
@@ -472,7 +467,7 @@ export function ReviewDetailPage() {
               </button>
             </form>
           ) : (
-            <p className="text-sm text-content-faint pt-2 border-t border-line">
+            <p className="text-sm text-content-subtle pt-2 border-t border-line">
               <button
                 onClick={() => signIn()}
                 className="text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"

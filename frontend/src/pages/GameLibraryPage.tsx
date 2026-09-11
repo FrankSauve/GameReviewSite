@@ -129,7 +129,7 @@ export function GameLibraryPage() {
       <div className="flex items-center justify-between">
         <h1 className="section-head text-xl">Games Library</h1>
         {total > 0 && (
-          <span className="text-xs text-content-faint">
+          <span className="text-xs text-content-subtle">
             {total} {total === 1 ? "game" : "games"}
           </span>
         )}
@@ -215,7 +215,7 @@ export function GameLibraryPage() {
                 ? "No games match these filters"
                 : "No games yet"}
           </p>
-          <p className="text-sm text-content-faint">
+          <p className="text-sm text-content-subtle">
             {total > 0
               ? "The library is not that long — try page one."
               : filtered

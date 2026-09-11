@@ -107,7 +107,7 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
               >
                 {review.user?.username ?? "Unknown"}
               </Link>
-              <p className="text-xs text-content-muted">
+              <p className="text-sm text-content-muted">
                 {timeAgo(review.createdAt)}
               </p>{" "}
             </div>
@@ -121,7 +121,7 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
                 >
                   {formatRating(review.rating)}
                 </span>
-                <span className="text-xs text-content-faint">/ 10</span>
+                <span className="text-xs text-content-subtle">/ 10</span>
               </div>
             )}
             {isOwner && !editing && (
@@ -226,7 +226,7 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
 
         {/* Comment count and playtime */}
         {!editing && (
-          <div className="pt-2 border-t border-line flex items-center gap-3 text-xs text-content-subtle">
+          <div className="pt-2 border-t border-line flex items-center gap-3 text-sm text-content-subtle">
             <span className="flex items-center gap-1.5">
               <CommentIcon />
               {commentCount} {commentCount === 1 ? "comment" : "comments"}

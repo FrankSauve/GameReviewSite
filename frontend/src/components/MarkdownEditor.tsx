@@ -166,10 +166,10 @@ export function MarkdownEditor({
       )}
 
       <div className="flex items-baseline justify-between mt-1">
-        <p className="text-sm text-content-faint">
+        <p className="text-sm text-content-subtle">
           Markdown supported, including ||spoilers||
         </p>
-        <p className="text-sm text-content-faint">
+        <p className="text-sm text-content-subtle">
           {value.length}/{maxLength}
         </p>
       </div>

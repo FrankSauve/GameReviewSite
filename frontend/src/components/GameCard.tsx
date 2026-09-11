@@ -69,10 +69,10 @@ export function GameCard({ game }: GameCardProps) {
                 >
                   {formatRating(game.averageRating)}
                 </span>
-                <span className="text-xs text-content-faint">/ 10</span>
+                <span className="text-xs text-content-subtle">/ 10</span>
               </div>
             ) : (
-              <span className="text-xs text-content-faint italic">
+              <span className="text-xs text-content-subtle italic">
                 No reviews yet
               </span>
             )}

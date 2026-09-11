@@ -72,7 +72,7 @@ export function FavoritesGrid({
                 </div>
               </>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-xs text-content-faint">
+              <div className="w-full h-full flex items-center justify-center text-xs text-content-subtle">
                 {isOwnProfile ? "Select" : "—"}
               </div>
             )}
