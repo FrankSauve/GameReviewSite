@@ -38,11 +38,11 @@ export function RatingInput({
           step={RATING_STEP}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full accent-amber-500 cursor-pointer"
+          className="w-full accent-warning-text cursor-pointer"
           aria-label="Score out of 10"
           aria-valuetext={`${formatRating(value)} out of ${RATING_MAX}`}
         />
-        <div className="flex justify-between text-sm text-gray-600 mt-0.5 select-none">
+        <div className="flex justify-between text-sm text-content-faint mt-0.5 select-none">
           <span>{RATING_MIN}</span>
           <span>{RATING_MAX}</span>
         </div>
@@ -50,11 +50,11 @@ export function RatingInput({
 
       <div className="flex items-baseline gap-1 shrink-0 w-20 justify-end">
         <span
-          className={`${readout} font-extrabold tabular-nums ${ratingColor(value)}`}
+          className={`${readout} font-numeric font-extrabold ${ratingColor(value)}`}
         >
           {formatRating(value)}
         </span>
-        <span className="text-sm text-gray-600">/ {RATING_MAX}</span>
+        <span className="text-sm text-content-faint">/ {RATING_MAX}</span>
       </div>
     </div>
   );

@@ -11,6 +11,7 @@ import { GraphQLError } from "graphql";
 import { requireAuth, type Context } from "../context.js";
 import { byIdOrSlug } from "../lib/slug.js";
 import { validateAvatarColor } from "../lib/avatarColor.js";
+import { validateTheme, validatePalette } from "../lib/theme.js";
 
 /** Enforced here; the textarea's maxLength is only a hint to the browser. */
 export const BIO_MAX = 3000;
@@ -18,6 +19,8 @@ export const BIO_MAX = 3000;
 interface UpdateProfileInput {
   bio?: string | null;
   avatarColor?: string | null;
+  theme?: string | null;
+  palette?: string | null;
 }
 
 export const userResolvers = {
@@ -52,7 +55,8 @@ export const userResolvers = {
   },
 
   Mutation: {
-    // Edits the fields authentik does not own: the bio and the avatar colour.
+    // Edits the fields authentik does not own: the bio, the avatar colour and
+    // the chosen look.
     // Still no username or email: authentik is the source for both. No id
     // argument either — you may only ever edit your own profile.
     updateProfile: async (
@@ -62,7 +66,12 @@ export const userResolvers = {
     ) => {
       const authUser = requireAuth(context);
 
-      const data: { bio?: string | null; avatarColor?: string | null } = {};
+      const data: {
+        bio?: string | null;
+        avatarColor?: string | null;
+        theme?: string | null;
+        palette?: string | null;
+      } = {};
       if (input.bio !== undefined) {
         const trimmed = (input.bio ?? "").trim();
         if (trimmed.length > BIO_MAX)
@@ -74,6 +83,12 @@ export const userResolvers = {
       }
       if (input.avatarColor !== undefined) {
         data.avatarColor = validateAvatarColor(input.avatarColor);
+      }
+      if (input.theme !== undefined) {
+        data.theme = validateTheme(input.theme);
+      }
+      if (input.palette !== undefined) {
+        data.palette = validatePalette(input.palette);
       }
 
       const user = await prisma.user.update({
@@ -97,6 +112,17 @@ export const userResolvers = {
      */
     email: (parent: User, _args: unknown, context: Context) =>
       context.user?.id === parent.id ? parent.email : null,
+
+    /**
+     * The chosen look is a viewer preference, not profile content: it is read
+     * back through `me` and nowhere else. Guarded like the email so the public
+     * `users` and `user(id)` queries do not hand out every account's settings.
+     */
+    theme: (parent: User, _args: unknown, context: Context) =>
+      context.user?.id === parent.id ? parent.theme : null,
+
+    palette: (parent: User, _args: unknown, context: Context) =>
+      context.user?.id === parent.id ? parent.palette : null,
 
     reviews: async (
       parent: User,

@@ -26,6 +26,11 @@ model User {
   /// A key from lib/avatarColor.ts, not a colour value. Null until the account
   /// picks one, which leaves it on the slug-derived fallback.
   avatarColor String?
+  /// A key from lib/theme.ts, not any part of the design itself. Null until the
+  /// account picks one, which leaves it on the default. Theme and palette vary
+  /// independently: the theme is shape and type, the palette is colour.
+  theme     String?
+  palette   String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   reviews   Review[]

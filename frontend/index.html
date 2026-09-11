@@ -7,6 +7,22 @@
     <link rel="icon" href="/favicon.ico" sizes="32x32" />
     <link rel="icon" href="/icon.png" type="image/png" sizes="64x64" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <!-- The two faces the default theme needs. crossorigin is required on font
+         preloads even same-origin, or the file is fetched a second time. -->
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      crossorigin
+      href="/src/assets/fonts/inter/Inter-Variable.woff2"
+    />
+    <link
+      rel="preload"
+      as="font"
+      type="font/woff2"
+      crossorigin
+      href="/src/assets/fonts/archivo-narrow/ArchivoNarrow-Variable.woff2"
+    />
     <meta
       name="description"
       content="Game reviews, scores and playtime from a small group of friends."
@@ -19,10 +35,23 @@
       content="Game reviews, scores and playtime from a small group of friends."
     />
     <meta name="twitter:card" content="summary" />
-    <meta name="theme-color" content="#8b5cf6" />
+    <meta name="theme-color" content="#7c3aed" />
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Stamps the remembered look before the stylesheet applies. Without it
+      // every load paints the default theme first and then swaps. Inline and
+      // tiny on purpose: anything deferred is already too late. Storage access
+      // itself throws in some privacy modes, hence the try.
+      try {
+        var d = document.documentElement;
+        var t = localStorage.getItem("gr-theme");
+        var p = localStorage.getItem("gr-palette");
+        if (t) d.setAttribute("data-theme", t);
+        if (p) d.setAttribute("data-palette", p);
+      } catch (e) {}
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

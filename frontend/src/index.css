@@ -2,45 +2,807 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Self-hosted, from the files in src/assets/fonts. Nothing is fetched from a
+ * third party: the stylesheet this used to pull from fonts.googleapis.com
+ * handed every visitor's IP address and Referer to Google before the page had
+ * rendered, on a site whose whole point is being self-hosted.
+ *
+ * All three are variable, so one file covers every weight a theme asks for, and
+ * the `font-weight` range below is the face's real axis — a request outside it
+ * is clamped rather than faked. Subset to latin, latin-ext and Vietnamese.
+ *
+ * A face is only downloaded once a rule actually uses it, so a visitor who
+ * stays on the default theme never fetches the serif.
+ */
+
+@font-face {
+  font-family: "Inter";
+  src: url("./assets/fonts/inter/Inter-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("./assets/fonts/inter/Inter-Italic-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Archivo Narrow";
+  src: url("./assets/fonts/archivo-narrow/ArchivoNarrow-Variable.woff2")
+    format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Source Serif 4";
+  src: url("./assets/fonts/source-serif-4/SourceSerif4-Variable.woff2")
+    format("woff2");
+  font-weight: 200 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
+ * The token layer. Two attributes on <html> vary the design independently:
+ * data-theme owns shape, type, motion and density; data-palette owns colour.
+ *
+ * The invariant that keeps 4 themes x N palettes from becoming 4N designs:
+ * a [data-theme] block sets no colour token, and a [data-palette] block sets
+ * no shape, type or motion token. Anything a theme needs to say about colour
+ * it says as an alpha or a width, never as a hue.
+ */
+
 @layer base {
-  body {
-    @apply bg-gray-950 text-gray-100 font-sans antialiased;
+  :root {
+    /* --- Shape. These defaults are the HUD theme, so a page that has not
+           been stamped yet still renders the default rather than flashing. --- */
+    --radius-card: 0px;
+    --radius-control: 0px;
+    --radius-chip: 0px;
+    --radius-pill: 0.125rem;
+    --radius-sm: 0px;
+
+    --card-border-width: 1px;
+    --card-border-bottom-width: 1px;
+    /* Whether a card is a filled box (1) or dissolves into rules (0). The hue
+       is the palette's; only the presence of a fill is the theme's to say. */
+    --card-surface-alpha: 1;
+    /* The clipped corner that makes a panel read as a console readout. */
+    --card-clip: polygon(
+      14px 0,
+      100% 0,
+      100% calc(100% - 14px),
+      calc(100% - 14px) 100%,
+      0 100%,
+      0 14px
+    );
+    --card-rail-width: 3px;
+    --card-hover-lift: none;
+    --control-pad-x: 1.125rem;
+    --control-pad-y: 0.5rem;
+
+    --shadow-card: none;
+    --shadow-card-hover: inset 0 0 0 1px rgb(var(--accent) / 0.45);
+    --shadow-button: none;
+    --shadow-button-press: none;
+    --button-press: none;
+    --shadow-popover: 0 25px 50px -12px rgb(var(--scrim) / 0.6);
+    --chip-border-width: 1px;
+    --chip-bg-alpha: 0.25;
+
+    /* --- Type --- */
+    /* Inter is served from src/assets/fonts; the rest of the stack is what a
+       browser falls back to before the file arrives. */
+    --font-body:
+      Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+      "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+      "Apple Color Emoji", "Segoe UI Emoji";
+    --font-display:
+      "Archivo Narrow", "Roboto Condensed", "Liberation Sans Narrow",
+      var(--font-body);
+    --font-numeric: var(--font-display);
+    /* Archivo Narrow's wght axis stops at 700; asking for more is clamped. */
+    --weight-display: 700;
+    --weight-button: 700;
+    --tracking-display: 0.01em;
+    --tracking-button: 0.08em;
+    --case-button: uppercase;
+    --case-section-head: uppercase;
+    --numeric-variant: tabular-nums;
+
+    /* --- Motion --- */
+    --motion-duration: 150ms;
+
+    /* --- Section head --- */
+    --section-tick-width: 0.1875rem;
+    --section-tick-height: 1.125rem;
+    --section-tick-radius: 0;
+    --section-rule-width: 0px;
+
+    /* --- Colour (palette-owned). RGB channel triplets so Tailwind's
+           <alpha-value> works. These defaults are the site as it was. --- */
+    --bg: 3 7 18;
+    --surface: 17 24 39;
+    --surface-raised: 31 41 55;
+    --line: 31 41 55;
+    --line-strong: 55 65 81;
+
+    --text: 243 244 246;
+    --text-body: 209 213 219;
+    --text-muted: 156 163 175;
+    --text-subtle: 107 114 128;
+    --text-faint: 75 85 99;
+
+    --accent: 124 58 237;
+    --accent-hover: 139 92 246;
+    --accent-active: 109 40 217;
+    --accent-contrast: 255 255 255;
+    --accent-border: 109 40 217;
+    --accent-subtle-bg: 76 29 149;
+    --accent-subtle-border: 91 33 182;
+    --accent-subtle-text: 196 181 253;
+    --ring: 139 92 246;
+
+    --danger: 220 38 38;
+    --danger-hover: 239 68 68;
+    --danger-contrast: 255 255 255;
+    --danger-text: 248 113 113;
+    --danger-subtle-bg: 127 29 29;
+    --danger-subtle-border: 153 27 27;
+
+    --warning-text: 251 191 36;
+    --warning-border: 146 64 14;
+
+    --rating-high: 52 211 153;
+    --rating-mid: 251 191 36;
+    --rating-low: 248 113 113;
+
+    /* The dark end every cover scrim and placeholder fades into. A token so a
+       light palette does not have to fade art into near-black. */
+    --scrim: 3 7 18;
+
+    /* Decorative identity colour: avatar and cover gradients, and the chip
+       hues genres are assigned. Held as gradient stop lists rather than channel
+       triplets, so a rule can drop one straight into linear-gradient(). A
+       palette may override any of these but need not: leaving them alone
+       inherits this set. */
+    --avatar-violet: #7c3aed, #4338ca;
+    --avatar-indigo: #4f46e5, #1d4ed8;
+    --avatar-blue: #2563eb, #0e7490;
+    --avatar-cyan: #0891b2, #0369a1;
+    --avatar-teal: #0d9488, #047857;
+    --avatar-emerald: #059669, #15803d;
+    --avatar-lime: #65a30d, #15803d;
+    --avatar-amber: #d97706, #c2410c;
+    --avatar-orange: #ea580c, #b91c1c;
+    --avatar-rose: #e11d48, #be185d;
+    --avatar-pink: #db2777, #a21caf;
+    --avatar-fuchsia: #c026d3, #7e22ce;
+
+    --cover-0: #4c1d95, #312e81;
+    --cover-1: #881337, #831843;
+    --cover-2: #064e3b, #134e4a;
+    --cover-3: #1e3a8a, #164e63;
+    --cover-4: #78350f, #7c2d12;
+    --cover-5: #701a75, #581c87;
+
+    /* Chip hues, as a background triplet and a foreground triplet: the
+       background is drawn at an alpha the theme sets, so both are channels. */
+    --hue-1-bg: 76 29 149;
+    --hue-1-fg: 196 181 253;
+    --hue-2-bg: 127 29 29;
+    --hue-2-fg: 252 165 165;
+    --hue-3-bg: 6 78 59;
+    --hue-3-fg: 110 231 183;
+    --hue-4-bg: 30 58 138;
+    --hue-4-fg: 147 197 253;
+    --hue-5-bg: 124 45 18;
+    --hue-5-fg: 253 186 116;
+    --hue-6-bg: 22 78 99;
+    --hue-6-fg: 103 232 249;
+    --hue-7-bg: 136 19 55;
+    --hue-7-fg: 253 164 175;
   }
 
-  /* Custom scrollbar */
+  /*
+   * The other three themes. Each overrides only what it changes, and none of
+   * them names a colour: where a theme wants less contrast it says so as an
+   * alpha or a width, leaving the hue to whichever palette is active.
+   */
+
+  /* Quiet, Swiss-adjacent: hierarchy from size, weight and space alone. No
+     shadow, no lift, no decoration. */
+  [data-theme="swiss"] {
+    --radius-card: 2px;
+    --radius-control: 2px;
+    --radius-chip: 2px;
+    --radius-pill: 9999px;
+    --radius-sm: 2px;
+
+    --card-clip: none;
+    --card-rail-width: 0px;
+    --card-hover-lift: none;
+    --shadow-card: none;
+    --shadow-card-hover: none;
+    --shadow-popover: 0 8px 24px -8px rgb(var(--scrim) / 0.5);
+    --chip-border-width: 1px;
+    --chip-bg-alpha: 0;
+
+    --font-display: "Inter Tight", var(--font-body);
+    --font-numeric: var(--font-body);
+    --weight-display: 700;
+    --weight-button: 600;
+    --tracking-display: -0.02em;
+    --tracking-button: 0;
+    --case-button: none;
+    --case-section-head: none;
+    --numeric-variant: tabular-nums;
+
+    --motion-duration: 120ms;
+
+    /* No tick; the head is followed by a rule across the remaining width. */
+    --section-tick-width: 0px;
+    --section-rule-width: 1px;
+  }
+
+  /* Print editorial: cards stop being boxes and become ruled rows, and the
+     display face is a serif. */
+  [data-theme="editorial"] {
+    --radius-card: 0px;
+    --radius-control: 0px;
+    --radius-chip: 0px;
+    --radius-pill: 9999px;
+    --radius-sm: 0px;
+
+    /* The whole of "cards dissolve into rules": no fill, no box, one hairline
+       along the bottom edge. */
+    --card-surface-alpha: 0;
+    --card-border-width: 0px;
+    --card-border-bottom-width: 1px;
+    --card-clip: none;
+    --card-rail-width: 0px;
+    --card-hover-lift: none;
+    --shadow-card: none;
+    --shadow-card-hover: none;
+    --shadow-popover: 0 12px 32px -12px rgb(var(--scrim) / 0.5);
+    --chip-border-width: 0px;
+    --chip-bg-alpha: 0;
+
+    --font-display:
+      "Source Serif 4", Newsreader, Georgia, "Times New Roman", serif;
+    --font-numeric: var(--font-display);
+    --weight-display: 700;
+    --weight-button: 600;
+    --tracking-display: 0;
+    --tracking-button: 0.04em;
+    --case-button: none;
+    --case-section-head: uppercase;
+    --numeric-variant: oldstyle-nums;
+
+    --motion-duration: 160ms;
+
+    --section-tick-width: 0px;
+    --section-rule-width: 1px;
+  }
+
+  /* Terminal brutalism: hard edges, offset shadows a press pushes the control
+     into, and no motion at all. */
+  [data-theme="brutalist"] {
+    --radius-card: 0px;
+    --radius-control: 0px;
+    --radius-chip: 0px;
+    --radius-pill: 0px;
+    --radius-sm: 0px;
+
+    --card-border-width: 2px;
+    --card-border-bottom-width: 2px;
+    --card-clip: none;
+    --card-rail-width: 0px;
+    --card-hover-lift: none;
+    --shadow-card: 4px 4px 0 rgb(var(--line-strong));
+    --shadow-card-hover: 4px 4px 0 rgb(var(--accent));
+    --shadow-button: 3px 3px 0 rgb(var(--line-strong));
+    /* The press moves the control onto its own shadow, which is why the two
+       tokens have to change together. */
+    --button-press: translate(3px, 3px);
+    --shadow-button-press: none;
+    --shadow-popover: 4px 4px 0 rgb(var(--line-strong));
+    --chip-border-width: 2px;
+    --chip-bg-alpha: 0;
+
+    --font-numeric:
+      ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+      "Liberation Mono", monospace;
+    --font-display: var(--font-numeric);
+    --weight-display: 700;
+    --weight-button: 700;
+    --tracking-display: 0;
+    --tracking-button: 0.06em;
+    --case-button: uppercase;
+    --case-section-head: uppercase;
+    --numeric-variant: tabular-nums;
+
+    --motion-duration: 0s;
+
+    --section-tick-width: 0.75rem;
+    --section-tick-height: 0.75rem;
+    --section-tick-radius: 0;
+    --section-rule-width: 0px;
+  }
+
+  /*
+   * Palettes. Colour only: a palette never sets a radius, a face or a duration,
+   * which is what lets any palette pair with any theme. The set in :root is the
+   * default. A palette must restate the core tokens; the decorative sets
+   * (--avatar-*, --cover-*, --hue-*) it may leave alone and inherit.
+   */
+
+  [data-palette="ember"] {
+    --accent: 234 88 12;
+    --accent-hover: 249 115 22;
+    --accent-active: 194 65 12;
+    --accent-contrast: 255 255 255;
+    --accent-border: 194 65 12;
+    --accent-subtle-bg: 124 45 18;
+    --accent-subtle-border: 154 52 18;
+    --accent-subtle-text: 253 186 116;
+    --ring: 249 115 22;
+  }
+
+  /* The light palette, and the reason the scrim and surface tokens exist: with
+     the cover fades reading from them, art stops fading into near-black. */
+  [data-palette="paper"] {
+    --bg: 250 250 249;
+    --surface: 255 255 255;
+    --surface-raised: 245 245 244;
+    --line: 231 229 228;
+    --line-strong: 214 211 209;
+
+    --text: 28 25 23;
+    --text-body: 68 64 60;
+    --text-muted: 87 83 78;
+    --text-subtle: 120 113 108;
+    --text-faint: 168 162 158;
+
+    --accent: 109 40 217;
+    --accent-hover: 124 58 237;
+    --accent-active: 76 29 149;
+    --accent-contrast: 255 255 255;
+    --accent-border: 139 92 246;
+    --accent-subtle-bg: 237 233 254;
+    --accent-subtle-border: 196 181 253;
+    --accent-subtle-text: 91 33 182;
+    --ring: 139 92 246;
+
+    --danger: 220 38 38;
+    --danger-hover: 185 28 28;
+    --danger-contrast: 255 255 255;
+    --danger-text: 185 28 28;
+    --danger-subtle-bg: 254 226 226;
+    --danger-subtle-border: 252 165 165;
+
+    --warning-text: 180 83 9;
+    --warning-border: 253 230 138;
+
+    --rating-high: 4 120 87;
+    --rating-mid: 180 83 9;
+    --rating-low: 185 28 28;
+
+    --scrim: 28 25 23;
+
+    /* Chip hues have to be restated: a dark hue laid over white at the theme's
+       alpha reads as mud, so the light palette supplies tints and dark text. */
+    --hue-1-bg: 237 233 254;
+    --hue-1-fg: 91 33 182;
+    --hue-2-bg: 254 226 226;
+    --hue-2-fg: 153 27 27;
+    --hue-3-bg: 209 250 229;
+    --hue-3-fg: 6 95 70;
+    --hue-4-bg: 219 234 254;
+    --hue-4-fg: 30 64 175;
+    --hue-5-bg: 255 237 213;
+    --hue-5-fg: 154 52 18;
+    --hue-6-bg: 207 250 254;
+    --hue-6-fg: 21 94 117;
+    --hue-7-bg: 255 228 230;
+    --hue-7-fg: 159 18 57;
+  }
+
+  body {
+    background-color: rgb(var(--bg));
+    color: rgb(var(--text));
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   ::-webkit-scrollbar {
     width: 6px;
   }
   ::-webkit-scrollbar-track {
-    @apply bg-gray-900;
+    background-color: rgb(var(--surface));
   }
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-700 rounded-full;
+    background-color: rgb(var(--line-strong));
+    border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-600;
+    background-color: rgb(var(--text-faint));
+  }
+}
+
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.5;
   }
 }
 
 @layer components {
+  /* --- Surfaces --- */
+
+  .card {
+    position: relative;
+    background-color: rgb(var(--surface) / var(--card-surface-alpha));
+    border: var(--card-border-width) solid rgb(var(--line));
+    border-bottom-width: var(--card-border-bottom-width);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+    clip-path: var(--card-clip);
+  }
+
+  /* The accent rail down a card's leading edge. Zero-width in every theme but
+     the HUD, which is why it costs nothing to leave on every card. */
+  .card::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: var(--card-rail-width);
+    background-color: rgb(var(--accent));
+    pointer-events: none;
+  }
+
+  .card-interactive {
+    cursor: pointer;
+    transition:
+      border-color var(--motion-duration),
+      box-shadow var(--motion-duration),
+      transform var(--motion-duration);
+  }
+
+  .card-interactive:hover {
+    border-color: rgb(var(--accent-border));
+    box-shadow: var(--shadow-card-hover);
+    transform: var(--card-hover-lift);
+  }
+
+  .popover {
+    background-color: rgb(var(--surface));
+    border: 1px solid rgb(var(--line-strong));
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-popover);
+  }
+
+  .empty-state {
+    background-color: rgb(var(--surface) / var(--card-surface-alpha));
+    border: var(--card-border-width) solid rgb(var(--line));
+    border-radius: var(--radius-card);
+    padding: 3rem;
+    text-align: center;
+  }
+
+  .skeleton-bar {
+    background-color: rgb(var(--surface-raised));
+    border-radius: var(--radius-sm);
+    animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* --- Controls --- */
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: var(--control-pad-y) var(--control-pad-x);
+    border-radius: var(--radius-control);
+    border: var(--card-border-width) solid transparent;
+    font-family: var(--font-body);
+    font-weight: var(--weight-button);
+    letter-spacing: var(--tracking-button);
+    text-transform: var(--case-button);
+    transition:
+      background-color var(--motion-duration),
+      border-color var(--motion-duration),
+      color var(--motion-duration),
+      box-shadow var(--motion-duration),
+      transform var(--motion-duration);
+  }
+
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
   .btn-primary {
-    @apply bg-violet-600 hover:bg-violet-500 active:bg-violet-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply btn;
+    background-color: rgb(var(--accent));
+    color: rgb(var(--accent-contrast));
+    box-shadow: var(--shadow-button);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-color: rgb(var(--accent-hover));
+  }
+  .btn-primary:active:not(:disabled) {
+    background-color: rgb(var(--accent-active));
+    transform: var(--button-press);
+    box-shadow: var(--shadow-button-press);
   }
 
   .btn-secondary {
-    @apply bg-gray-800 hover:bg-gray-700 text-gray-200 font-medium px-4 py-2 rounded-lg border border-gray-700 transition-colors duration-150;
+    @apply btn;
+    background-color: rgb(var(--surface-raised));
+    border-color: rgb(var(--line-strong));
+    color: rgb(var(--text));
+    box-shadow: var(--shadow-button);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: rgb(var(--line-strong));
+  }
+  .btn-secondary:active:not(:disabled) {
+    transform: var(--button-press);
+    box-shadow: var(--shadow-button-press);
+  }
+
+  .btn-danger {
+    @apply btn;
+    background-color: rgb(var(--danger));
+    color: rgb(var(--danger-contrast));
+    box-shadow: var(--shadow-button);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background-color: rgb(var(--danger-hover));
+  }
+
+  /* Pagination, markdown toolbar, tab strips: a control that reads as chrome
+     rather than as an action. */
+  .btn-quiet {
+    @apply btn;
+    background-color: transparent;
+    color: rgb(var(--text-subtle));
+  }
+  .btn-quiet:hover:not(:disabled) {
+    background-color: rgb(var(--surface-raised));
+    color: rgb(var(--text));
+  }
+  .btn-quiet[aria-current="true"],
+  .btn-quiet[aria-current="page"],
+  .btn-quiet[aria-selected="true"],
+  .btn-quiet[data-active="true"] {
+    background-color: rgb(var(--surface-raised));
+    color: rgb(var(--text));
+  }
+
+  .btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    border-radius: var(--radius-control);
+    color: rgb(var(--text-muted));
+    transition: color var(--motion-duration);
+  }
+  .btn-icon:hover {
+    color: rgb(var(--accent-subtle-text));
+  }
+  .btn-icon-danger:hover {
+    color: rgb(var(--danger-text));
   }
 
   .input-field {
-    @apply w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-shadow duration-150;
+    width: 100%;
+    background-color: rgb(var(--surface-raised));
+    border: var(--card-border-width) solid rgb(var(--line-strong));
+    border-radius: var(--radius-control);
+    padding: var(--control-pad-y) 0.75rem;
+    color: rgb(var(--text));
+    font-family: var(--font-body);
+    transition: box-shadow var(--motion-duration);
   }
+  .input-field::placeholder {
+    color: rgb(var(--text-subtle));
+  }
+  .input-field:focus {
+    outline: none;
+    border-color: transparent;
+    box-shadow: 0 0 0 2px rgb(var(--ring));
+  }
+
+  .field-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: rgb(var(--text-muted));
+    margin-bottom: 0.375rem;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-chip);
+    border: var(--chip-border-width) solid transparent;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background-color: rgb(var(--surface-raised));
+    color: rgb(var(--text-muted));
+  }
+
+  /* --- Headings --- */
+
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--font-display);
+    font-weight: var(--weight-display);
+    letter-spacing: var(--tracking-display);
+    text-transform: var(--case-section-head);
+    color: rgb(var(--text));
+  }
+
+  .section-head::before {
+    content: "";
+    flex: none;
+    width: var(--section-tick-width);
+    height: var(--section-tick-height);
+    border-radius: var(--section-tick-radius);
+    background-color: rgb(var(--accent));
+  }
+
+  .section-head::after {
+    content: "";
+    flex: 1;
+    height: var(--section-rule-width);
+    background-color: rgb(var(--line));
+  }
+
+  /* --- Layout --- */
 
   /* The one desktop content width; every page-level container uses it. */
   .page-column {
     @apply max-w-3xl lg:max-w-5xl 2xl:max-w-6xl mx-auto;
   }
+}
 
-  .card {
-    @apply bg-gray-900 border border-gray-800 rounded-xl;
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: var(--weight-display);
+    letter-spacing: var(--tracking-display);
+  }
+
+  .font-numeric {
+    font-family: var(--font-numeric);
+    font-variant-numeric: var(--numeric-variant);
+  }
+
+  /* Avatar, cover and chip colour. Whole class names, because Tailwind's
+     scanner cannot see a composed `avatar-${key}`. */
+  .avatar-violet {
+    background-image: linear-gradient(to bottom right, var(--avatar-violet));
+  }
+  .avatar-indigo {
+    background-image: linear-gradient(to bottom right, var(--avatar-indigo));
+  }
+  .avatar-blue {
+    background-image: linear-gradient(to bottom right, var(--avatar-blue));
+  }
+  .avatar-cyan {
+    background-image: linear-gradient(to bottom right, var(--avatar-cyan));
+  }
+  .avatar-teal {
+    background-image: linear-gradient(to bottom right, var(--avatar-teal));
+  }
+  .avatar-emerald {
+    background-image: linear-gradient(to bottom right, var(--avatar-emerald));
+  }
+  .avatar-lime {
+    background-image: linear-gradient(to bottom right, var(--avatar-lime));
+  }
+  .avatar-amber {
+    background-image: linear-gradient(to bottom right, var(--avatar-amber));
+  }
+  .avatar-orange {
+    background-image: linear-gradient(to bottom right, var(--avatar-orange));
+  }
+  .avatar-rose {
+    background-image: linear-gradient(to bottom right, var(--avatar-rose));
+  }
+  .avatar-pink {
+    background-image: linear-gradient(to bottom right, var(--avatar-pink));
+  }
+  .avatar-fuchsia {
+    background-image: linear-gradient(to bottom right, var(--avatar-fuchsia));
+  }
+
+  .cover-0 {
+    background-image: linear-gradient(
+      to bottom right,
+      var(--cover-0),
+      rgb(var(--surface))
+    );
+  }
+  .cover-1 {
+    background-image: linear-gradient(
+      to bottom right,
+      var(--cover-1),
+      rgb(var(--surface))
+    );
+  }
+  .cover-2 {
+    background-image: linear-gradient(
+      to bottom right,
+      var(--cover-2),
+      rgb(var(--surface))
+    );
+  }
+  .cover-3 {
+    background-image: linear-gradient(
+      to bottom right,
+      var(--cover-3),
+      rgb(var(--surface))
+    );
+  }
+  .cover-4 {
+    background-image: linear-gradient(
+      to bottom right,
+      var(--cover-4),
+      rgb(var(--surface))
+    );
+  }
+  .cover-5 {
+    background-image: linear-gradient(
+      to bottom right,
+      var(--cover-5),
+      rgb(var(--surface))
+    );
+  }
+
+  .chip-hue-1 {
+    background-color: rgb(var(--hue-1-bg) / var(--chip-bg-alpha));
+    color: rgb(var(--hue-1-fg));
+  }
+  .chip-hue-2 {
+    background-color: rgb(var(--hue-2-bg) / var(--chip-bg-alpha));
+    color: rgb(var(--hue-2-fg));
+  }
+  .chip-hue-3 {
+    background-color: rgb(var(--hue-3-bg) / var(--chip-bg-alpha));
+    color: rgb(var(--hue-3-fg));
+  }
+  .chip-hue-4 {
+    background-color: rgb(var(--hue-4-bg) / var(--chip-bg-alpha));
+    color: rgb(var(--hue-4-fg));
+  }
+  .chip-hue-5 {
+    background-color: rgb(var(--hue-5-bg) / var(--chip-bg-alpha));
+    color: rgb(var(--hue-5-fg));
+  }
+  .chip-hue-6 {
+    background-color: rgb(var(--hue-6-bg) / var(--chip-bg-alpha));
+    color: rgb(var(--hue-6-fg));
+  }
+  .chip-hue-7 {
+    background-color: rgb(var(--hue-7-bg) / var(--chip-bg-alpha));
+    color: rgb(var(--hue-7-fg));
   }
 }

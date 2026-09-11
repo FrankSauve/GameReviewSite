@@ -52,12 +52,12 @@ describe("formatRating", () => {
 
 describe("ratingColor", () => {
   it("puts the boundaries in the band they read as", () => {
-    expect(ratingColor(10)).toBe("text-emerald-400");
-    expect(ratingColor(8)).toBe("text-emerald-400");
-    expect(ratingColor(7.5)).toBe("text-amber-400");
-    expect(ratingColor(6)).toBe("text-amber-400");
-    expect(ratingColor(5.5)).toBe("text-red-400");
-    expect(ratingColor(1)).toBe("text-red-400");
+    expect(ratingColor(10)).toBe("text-rating-high");
+    expect(ratingColor(8)).toBe("text-rating-high");
+    expect(ratingColor(7.5)).toBe("text-rating-mid");
+    expect(ratingColor(6)).toBe("text-rating-mid");
+    expect(ratingColor(5.5)).toBe("text-rating-low");
+    expect(ratingColor(1)).toBe("text-rating-low");
   });
 });
 

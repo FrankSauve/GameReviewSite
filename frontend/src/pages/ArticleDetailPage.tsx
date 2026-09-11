@@ -37,10 +37,10 @@ export function ArticleDetailPage() {
   if (loading) {
     return (
       <div className="card p-8 animate-pulse space-y-4 page-column">
-        <div className="h-6 bg-gray-800 rounded w-2/3" />
-        <div className="h-3 bg-gray-800 rounded w-1/4" />
-        <div className="h-3 bg-gray-800 rounded" />
-        <div className="h-3 bg-gray-800 rounded w-5/6" />
+        <div className="h-6 skeleton-bar w-2/3" />
+        <div className="h-3 skeleton-bar w-1/4" />
+        <div className="h-3 skeleton-bar" />
+        <div className="h-3 skeleton-bar w-5/6" />
       </div>
     );
   }
@@ -48,15 +48,17 @@ export function ArticleDetailPage() {
   const article = data?.article;
   if (!article) {
     return (
-      <div className="card p-12 text-center space-y-3 max-w-3xl mx-auto">
+      <div className="empty-state space-y-3 max-w-3xl mx-auto">
         <p className="text-4xl">📜</p>
-        <p className="text-gray-400 font-medium">This article is not here</p>
-        <p className="text-sm text-gray-600">
+        <p className="text-content-muted font-medium">
+          This article is not here
+        </p>
+        <p className="text-sm text-content-faint">
           It may have been deleted, or it may still be a draft.
         </p>
         <Link
           to="/articles"
-          className="text-sm text-violet-400 hover:text-violet-300"
+          className="text-sm text-accent-subtle-text hover:text-accent-subtle-text"
         >
           Back to the articles
         </Link>
@@ -74,17 +76,19 @@ export function ArticleDetailPage() {
     <article className="page-column space-y-6">
       <header className="space-y-2">
         <div className="flex items-baseline gap-2 flex-wrap">
-          <h1 className="text-2xl font-bold text-gray-100">{article.title}</h1>
+          <h1 className="font-display text-2xl text-content">
+            {article.title}
+          </h1>
           {!article.publishedAt && (
-            <span className="text-[0.65rem] uppercase tracking-wide font-semibold text-amber-400 border border-amber-800 rounded px-1.5 py-0.5">
+            <span className="text-[0.65rem] uppercase tracking-wide font-semibold text-warning-text border border-warning-border rounded px-1.5 py-0.5">
               Draft
             </span>
           )}
         </div>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-content-subtle">
           <Link
             to={userPath(article.author)}
-            className="text-violet-400 hover:text-violet-300"
+            className="text-accent-subtle-text hover:text-accent-subtle-text"
           >
             {article.author?.username ?? "unknown"}
           </Link>
@@ -93,14 +97,14 @@ export function ArticleDetailPage() {
         </p>
       </header>
 
-      <div className="card p-6 sm:p-8 text-gray-300 leading-relaxed">
+      <div className="card p-6 sm:p-8 text-content-body leading-relaxed">
         <Markdown>{article.content}</Markdown>
       </div>
 
       <div className="flex items-center justify-between">
         <Link
           to="/articles"
-          className="text-sm text-gray-500 hover:text-gray-300"
+          className="text-sm text-content-subtle hover:text-content-body"
         >
           ← All articles
         </Link>
@@ -108,7 +112,7 @@ export function ArticleDetailPage() {
           <div className="flex items-center gap-4">
             <Link
               to={`/articles/${article.slug ?? article.id}/edit`}
-              className="text-sm text-violet-400 hover:text-violet-300"
+              className="text-sm text-accent-subtle-text hover:text-accent-subtle-text"
             >
               Edit
             </Link>
@@ -118,7 +122,7 @@ export function ArticleDetailPage() {
                   void deleteArticle({ variables: { id: article.id } });
               }}
               disabled={deleting}
-              className="text-sm text-gray-500 hover:text-red-400 transition-colors"
+              className="text-sm text-content-subtle hover:text-danger-text transition-colors duration-theme"
             >
               {deleting ? "Deleting…" : "Delete"}
             </button>

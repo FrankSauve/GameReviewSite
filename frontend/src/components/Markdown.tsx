@@ -89,11 +89,11 @@ function heading(tag: "h3" | "h4" | "h5" | "h6", className: string) {
 const components: Components = {
   p: ({ children }) => <p className="mb-3 last:mb-0">{children}</p>,
   strong: ({ children }) => (
-    <strong className="font-semibold text-gray-100">{children}</strong>
+    <strong className="font-semibold text-content">{children}</strong>
   ),
   em: ({ children }) => <em className="italic">{children}</em>,
   del: ({ children }) => (
-    <del className="line-through text-gray-500">{children}</del>
+    <del className="line-through text-content-subtle">{children}</del>
   ),
   ul: ({ children }) => (
     <ul className="list-disc list-outside pl-5 mb-3 space-y-1 last:mb-0">
@@ -107,39 +107,39 @@ const components: Components = {
   ),
   li: ({ children }) => <li className="leading-relaxed">{children}</li>,
   blockquote: ({ children }) => (
-    <blockquote className="border-l-2 border-violet-800 pl-3 italic text-gray-400 mb-3 last:mb-0">
+    <blockquote className="border-l-2 border-accent-subtle-border pl-3 italic text-content-muted mb-3 last:mb-0">
       {children}
     </blockquote>
   ),
   code: ({ children }) => (
-    <code className="bg-gray-800/80 text-amber-300 rounded px-1 py-0.5 text-[0.9em] font-mono">
+    <code className="bg-surface-raised/80 text-warning-text rounded px-1 py-0.5 text-[0.9em] font-mono">
       {children}
     </code>
   ),
   pre: ({ children }) => (
-    <pre className="bg-gray-900 border border-gray-800 rounded-lg p-3 mb-3 last:mb-0 overflow-x-auto text-xs font-mono">
+    <pre className="bg-surface border border-line rounded-control p-3 mb-3 last:mb-0 overflow-x-auto text-xs font-mono">
       {children}
     </pre>
   ),
-  hr: () => <hr className="border-gray-800 my-4" />,
-  h1: heading("h3", "font-bold text-gray-100 text-xl mt-5 mb-2 first:mt-0"),
-  h2: heading("h4", "font-bold text-gray-100 text-lg mt-4 mb-2 first:mt-0"),
-  h3: heading("h5", "font-bold text-gray-100 text-base mt-4 mb-2 first:mt-0"),
-  h4: heading("h6", "font-semibold text-gray-200 mt-3 mb-1.5 first:mt-0"),
-  h5: heading("h6", "font-semibold text-gray-300 mt-3 mb-1.5 first:mt-0"),
-  h6: heading("h6", "font-semibold text-gray-400 mt-3 mb-1.5 first:mt-0"),
+  hr: () => <hr className="border-line my-4" />,
+  h1: heading("h3", "font-display text-content text-xl mt-5 mb-2 first:mt-0"),
+  h2: heading("h4", "font-display text-content text-lg mt-4 mb-2 first:mt-0"),
+  h3: heading("h5", "font-display text-content text-base mt-4 mb-2 first:mt-0"),
+  h4: heading("h6", "font-semibold text-content mt-3 mb-1.5 first:mt-0"),
+  h5: heading("h6", "font-semibold text-content-body mt-3 mb-1.5 first:mt-0"),
+  h6: heading("h6", "font-semibold text-content-muted mt-3 mb-1.5 first:mt-0"),
   table: ({ children }) => (
     <div className="overflow-x-auto mb-3 last:mb-0">
       <table className="text-xs border-collapse">{children}</table>
     </div>
   ),
   th: ({ children }) => (
-    <th className="border border-gray-800 px-2 py-1 text-left font-semibold text-gray-300">
+    <th className="border border-line px-2 py-1 text-left font-semibold text-content-body">
       {children}
     </th>
   ),
   td: ({ children }) => (
-    <td className="border border-gray-800 px-2 py-1">{children}</td>
+    <td className="border border-line px-2 py-1">{children}</td>
   ),
   /**
    * Renders the alt text, never an `<img>`: the CSP names `media.rawg.io` as
@@ -147,7 +147,7 @@ const components: Components = {
    * real `<img>` elsewhere would show as broken.
    */
   img: ({ alt }) => (
-    <span className="text-xs text-gray-500 italic">
+    <span className="text-xs text-content-subtle italic">
       {alt ? `[image: ${alt}]` : "[image]"}
     </span>
   ),
@@ -166,7 +166,7 @@ const components: Components = {
       href={href}
       target="_blank"
       rel="noopener noreferrer nofollow"
-      className="text-violet-400 hover:text-violet-300 underline underline-offset-2"
+      className="text-accent-subtle-text hover:text-accent-subtle-text underline underline-offset-2"
     >
       {children}
     </a>

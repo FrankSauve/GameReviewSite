@@ -1,30 +1,86 @@
 /** @type {import('tailwindcss').Config} */
+
+/** Palette tokens are RGB channel triplets, so `<alpha-value>` still works. */
+const palette = (name) => `rgb(var(--${name}) / <alpha-value>)`;
+
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
+      // Colour names are semantic, never a hue: the palette on <html> decides
+      // what `accent` is. A `violet-600` in a component is a bug, because no
+      // palette can reach it. See the token layer in src/index.css.
+      colors: {
+        bg: palette("bg"),
+        surface: {
+          DEFAULT: palette("surface"),
+          raised: palette("surface-raised"),
+        },
+        line: {
+          DEFAULT: palette("line"),
+          strong: palette("line-strong"),
+        },
+        content: {
+          DEFAULT: palette("text"),
+          body: palette("text-body"),
+          muted: palette("text-muted"),
+          subtle: palette("text-subtle"),
+          faint: palette("text-faint"),
+        },
+        accent: {
+          DEFAULT: palette("accent"),
+          hover: palette("accent-hover"),
+          active: palette("accent-active"),
+          contrast: palette("accent-contrast"),
+          border: palette("accent-border"),
+          subtle: palette("accent-subtle-bg"),
+          "subtle-border": palette("accent-subtle-border"),
+          "subtle-text": palette("accent-subtle-text"),
+        },
+        danger: {
+          DEFAULT: palette("danger"),
+          hover: palette("danger-hover"),
+          contrast: palette("danger-contrast"),
+          text: palette("danger-text"),
+          subtle: palette("danger-subtle-bg"),
+          "subtle-border": palette("danger-subtle-border"),
+        },
+        warning: {
+          text: palette("warning-text"),
+          border: palette("warning-border"),
+        },
+        rating: {
+          high: palette("rating-high"),
+          mid: palette("rating-mid"),
+          low: palette("rating-low"),
+        },
+        scrim: palette("scrim"),
+      },
+      borderRadius: {
+        card: "var(--radius-card)",
+        control: "var(--radius-control)",
+        chip: "var(--radius-chip)",
+        pill: "var(--radius-pill)",
+      },
+      borderWidth: {
+        theme: "var(--card-border-width)",
+      },
+      boxShadow: {
+        card: "var(--shadow-card)",
+        "card-hover": "var(--shadow-card-hover)",
+        popover: "var(--shadow-popover)",
+      },
+      // `font-display` and `font-numeric` are utilities in index.css, because
+      // each sets weight and tracking alongside the family.
       fontFamily: {
-        // Inter first for anyone who has it installed locally, then the
-        // platform's own UI font. Nothing is fetched from a third party: the
-        // stylesheet this used to pull from fonts.googleapis.com handed every
-        // visitor's IP address and Referer to Google before the page had
-        // rendered, on a site whose whole point is being self-hosted. Inter was
-        // picked to look like a system UI font, so the fallback is close.
-        sans: [
-          "Inter",
-          "ui-sans-serif",
-          "system-ui",
-          "-apple-system",
-          "BlinkMacSystemFont",
-          "Segoe UI",
-          "Roboto",
-          "Helvetica Neue",
-          "Arial",
-          "Noto Sans",
-          "sans-serif",
-          "Apple Color Emoji",
-          "Segoe UI Emoji",
-        ],
+        sans: "var(--font-body)",
+        body: "var(--font-body)",
+      },
+      transitionDuration: {
+        theme: "var(--motion-duration)",
+      },
+      ringColor: {
+        DEFAULT: palette("ring"),
       },
     },
   },

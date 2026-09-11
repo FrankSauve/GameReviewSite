@@ -9,6 +9,8 @@ export interface AuthUser {
   username: string;
   email?: string | null;
   avatarColor?: string | null;
+  theme?: string | null;
+  palette?: string | null;
 }
 
 interface AuthContextValue {

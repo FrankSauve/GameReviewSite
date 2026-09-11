@@ -1,26 +1,27 @@
 import { seedHash } from "./hash";
 
 /**
- * The colours an account may pick for its avatar, each with the gradient that
- * draws it. Written out in full because Tailwind scans for whole class names
- * and would not see a composed `from-${key}-600`.
+ * The colours an account may pick for its avatar, each with the class that
+ * draws its gradient. The stops live on --avatar-* in the token layer, so a
+ * palette can restate them; written out in full because Tailwind scans for
+ * whole class names and would not see a composed `avatar-${key}`.
  *
  * The key list is duplicated as AVATAR_COLORS in backend/src/lib/avatarColor.ts,
  * which is authoritative and refuses a write outside it.
  */
 export const AVATAR_COLORS = {
-  violet: "from-violet-600 to-indigo-700",
-  indigo: "from-indigo-600 to-blue-700",
-  blue: "from-blue-600 to-cyan-700",
-  cyan: "from-cyan-600 to-sky-700",
-  teal: "from-teal-600 to-emerald-700",
-  emerald: "from-emerald-600 to-green-700",
-  lime: "from-lime-600 to-green-700",
-  amber: "from-amber-600 to-orange-700",
-  orange: "from-orange-600 to-red-700",
-  rose: "from-rose-600 to-pink-700",
-  pink: "from-pink-600 to-fuchsia-700",
-  fuchsia: "from-fuchsia-600 to-purple-700",
+  violet: "avatar-violet",
+  indigo: "avatar-indigo",
+  blue: "avatar-blue",
+  cyan: "avatar-cyan",
+  teal: "avatar-teal",
+  emerald: "avatar-emerald",
+  lime: "avatar-lime",
+  amber: "avatar-amber",
+  orange: "avatar-orange",
+  rose: "avatar-rose",
+  pink: "avatar-pink",
+  fuchsia: "avatar-fuchsia",
 } as const;
 
 export type AvatarColor = keyof typeof AVATAR_COLORS;
@@ -47,7 +48,7 @@ export function avatarColor(user: {
   );
 }
 
-/** The Tailwind gradient stops for an avatar, ready for `bg-gradient-to-br`. */
+/** The class that paints an avatar's gradient. */
 export function avatarGradient(user: {
   slug?: string | null;
   avatarColor?: string | null;

@@ -10,6 +10,8 @@ export const typeDefs = `#graphql
     bio: String
     # A palette key, not a colour value. Null means the slug-derived fallback.
     avatarColor: String
+    theme: String
+    palette: String
     createdAt: String
     updatedAt: String
     # Bounded list. Prefer reviewCount/averageRating when you only need totals.
@@ -232,6 +234,8 @@ export const typeDefs = `#graphql
   input UpdateProfileInput {
     bio: String
     avatarColor: String
+    theme: String
+    palette: String
   }
 
   input SetFavoriteGameInput {

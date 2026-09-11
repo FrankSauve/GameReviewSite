@@ -26,11 +26,11 @@ export function Spoiler({ children }: { children: ReactNode }) {
       onClick={toggle}
       onKeyDown={onKeyDown}
       className={
-        "rounded px-1 transition-colors cursor-pointer " +
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 " +
+        "rounded px-1 transition-colors duration-theme cursor-pointer " +
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-hover " +
         (revealed
-          ? "bg-gray-800/60 text-gray-200"
-          : "bg-gray-700 text-transparent select-none hover:bg-gray-600")
+          ? "bg-surface-raised/60 text-content"
+          : "bg-line-strong text-transparent select-none hover:bg-content-faint")
       }
     >
       <span aria-hidden={!revealed}>{children}</span>

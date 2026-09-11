@@ -11,7 +11,7 @@ export function LabelChips({
   labels,
   limit,
   className,
-  overflowClassName = "bg-gray-800 text-gray-500 border border-gray-700",
+  overflowClassName = "bg-surface-raised text-content-subtle border border-line-strong",
 }: LabelChipsProps) {
   if (!labels || labels.length === 0) return null;
 

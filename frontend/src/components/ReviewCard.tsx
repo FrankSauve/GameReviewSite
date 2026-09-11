@@ -91,7 +91,7 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
 
   return (
     <div
-      className="card p-5 relative cursor-pointer hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200"
+      className="card card-interactive p-5 relative"
       onClick={() => void navigate(reviewPath(review))}
     >
       {/* Raised layer so interactive elements stay clickable */}
@@ -103,11 +103,11 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
             <div>
               <Link
                 to={userPath(review.user)}
-                className="font-semibold text-gray-200 hover:text-violet-300 text-sm transition-colors"
+                className="font-semibold text-content hover:text-accent-subtle-text text-sm transition-colors duration-theme"
               >
                 {review.user?.username ?? "Unknown"}
               </Link>
-              <p className="text-xs text-gray-400">
+              <p className="text-xs text-content-muted">
                 {timeAgo(review.createdAt)}
               </p>{" "}
             </div>
@@ -117,25 +117,25 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
             {!editing && (
               <div className="flex items-baseline gap-1">
                 <span
-                  className={`text-lg font-extrabold ${ratingColor(review.rating)}`}
+                  className={`font-numeric text-lg font-extrabold ${ratingColor(review.rating)}`}
                 >
                   {formatRating(review.rating)}
                 </span>
-                <span className="text-xs text-gray-600">/ 10</span>
+                <span className="text-xs text-content-faint">/ 10</span>
               </div>
             )}
             {isOwner && !editing && (
               <>
                 <button
                   onClick={() => setEditing(true)}
-                  className="text-gray-400 hover:text-violet-400 transition-colors p-1"
+                  className="btn-icon"
                   title="Edit review"
                 >
                   <PencilIcon />
                 </button>
                 <button
                   onClick={() => setConfirmDelete(true)}
-                  className="text-gray-400 hover:text-red-400 transition-colors p-1"
+                  className="btn-icon btn-icon-danger"
                   title="Delete review"
                 >
                   <TrashIcon />
@@ -147,20 +147,22 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
 
         {/* Delete confirmation */}
         {confirmDelete && (
-          <div className="flex items-center gap-3 bg-red-950/40 border border-red-900/50 rounded-lg px-3 py-2.5">
-            <p className="text-sm text-red-300 flex-1">Delete this review?</p>
+          <div className="flex items-center gap-3 bg-danger-subtle/40 border border-danger-subtle-border/50 rounded-control px-3 py-2.5">
+            <p className="text-sm text-danger-text flex-1">
+              Delete this review?
+            </p>
             <button
               onClick={() =>
                 void deleteReview({ variables: { id: review.id } })
               }
               disabled={deleting}
-              className="text-xs font-semibold bg-red-600 hover:bg-red-500 text-white px-3 py-1 rounded-lg transition-colors disabled:opacity-50"
+              className="btn-danger text-xs px-3 py-1"
             >
               {deleting ? "Deleting…" : "Delete"}
             </button>
             <button
               onClick={() => setConfirmDelete(false)}
-              className="text-xs text-gray-400 hover:text-gray-200 transition-colors"
+              className="text-xs text-content-muted hover:text-content transition-colors duration-theme"
             >
               Cancel
             </button>
@@ -172,7 +174,7 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
           <div className="space-y-3">
             {/* Rating picker */}
             <div className="flex items-center gap-3">
-              <span className="text-xs text-gray-400 w-14 shrink-0">
+              <span className="text-xs text-content-muted w-14 shrink-0">
                 Rating
               </span>
               <div className="flex-1">
@@ -217,14 +219,14 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
             </div>
           </div>
         ) : (
-          <div className="text-gray-300 text-sm leading-relaxed">
+          <div className="text-content-body text-sm leading-relaxed">
             <Markdown>{review.content}</Markdown>
           </div>
         )}
 
         {/* Comment count and playtime */}
         {!editing && (
-          <div className="pt-2 border-t border-gray-800 flex items-center gap-3 text-xs text-gray-500">
+          <div className="pt-2 border-t border-line flex items-center gap-3 text-xs text-content-subtle">
             <span className="flex items-center gap-1.5">
               <CommentIcon />
               {commentCount} {commentCount === 1 ? "comment" : "comments"}

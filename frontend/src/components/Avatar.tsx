@@ -31,7 +31,7 @@ export function Avatar({ user, size, className = "" }: AvatarProps) {
   const initial = (user?.username?.charAt(0) ?? "?").toUpperCase();
   return (
     <span
-      className={`${SIZES[size]} rounded-full bg-gradient-to-br ${avatarGradient(user ?? {})} flex items-center justify-center text-white shrink-0 ${className}`}
+      className={`${SIZES[size]} rounded-pill ${avatarGradient(user ?? {})} flex items-center justify-center text-accent-contrast shrink-0 ${className}`}
       aria-hidden="true"
     >
       {initial}

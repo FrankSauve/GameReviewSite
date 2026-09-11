@@ -48,7 +48,7 @@ export function ProfileBio({ bio, isOwnProfile }: ProfileBioProps) {
           placeholder="How do you score games? What kind of player are you?"
         />
         {error && (
-          <p className="text-red-400 text-xs">
+          <p className="text-danger-text text-xs">
             {error.graphQLErrors[0]?.message ?? error.message}
           </p>
         )}
@@ -78,7 +78,7 @@ export function ProfileBio({ bio, isOwnProfile }: ProfileBioProps) {
     return (
       <button
         onClick={startEditing}
-        className="text-sm text-violet-400 hover:text-violet-300 transition-colors"
+        className="text-sm text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
       >
         Add a bio
       </button>
@@ -87,13 +87,13 @@ export function ProfileBio({ bio, isOwnProfile }: ProfileBioProps) {
 
   return (
     <div className="space-y-1">
-      <div className="text-sm text-gray-400 leading-relaxed text-left">
+      <div className="text-sm text-content-muted leading-relaxed text-left">
         <Markdown>{bio}</Markdown>
       </div>
       {isOwnProfile && (
         <button
           onClick={startEditing}
-          className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
+          className="text-xs text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
         >
           Edit bio
         </button>

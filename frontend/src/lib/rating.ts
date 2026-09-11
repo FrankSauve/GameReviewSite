@@ -24,9 +24,9 @@ export function formatRating(rating: number): string {
  * different Tailwind shades.
  */
 export function ratingColor(rating: number): string {
-  if (rating >= 8) return "text-emerald-400";
-  if (rating >= 6) return "text-amber-400";
-  return "text-red-400";
+  if (rating >= 8) return "text-rating-high";
+  if (rating >= 6) return "text-rating-mid";
+  return "text-rating-low";
 }
 
 /** Snaps to the nearest half point and clamps to the scale. */

@@ -128,10 +128,10 @@ export function ReactionBar({
             aria-pressed={chip.reacted}
             aria-label={`React with ${chip.emoji}`}
             aria-describedby={named === chip.emoji ? tooltipId : undefined}
-            className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-sm transition-colors ${
+            className={`flex items-center gap-1 rounded-pill border px-2 py-0.5 text-sm transition-colors duration-theme ${
               chip.reacted
-                ? "border-violet-600 bg-violet-600/20 text-violet-200"
-                : "border-gray-700 bg-gray-800/60 text-gray-300 hover:border-gray-600"
+                ? "border-accent-border bg-accent/20 text-accent-subtle-text"
+                : "border-line-strong bg-surface-raised/60 text-content-body hover:border-line-strong"
             }`}
           >
             <span>{chip.emoji}</span>
@@ -142,7 +142,7 @@ export function ReactionBar({
             <span
               id={tooltipId}
               role="tooltip"
-              className="pointer-events-none absolute bottom-full left-0 z-30 mb-1 max-w-64 rounded border border-gray-700 bg-gray-900 px-2 py-1 text-xs text-gray-200 shadow-xl"
+              className="pointer-events-none absolute bottom-full left-0 z-30 mb-1 max-w-64 popover px-2 py-1 text-xs text-content"
             >
               {describeReactors(reactors?.reactionUsers ?? [], chip.count)}{" "}
               reacted with {chip.emoji}
@@ -156,20 +156,20 @@ export function ReactionBar({
         onClick={() => setMenu((open) => (open === "none" ? "quick" : "none"))}
         aria-label="Add a reaction"
         aria-expanded={menu !== "none"}
-        className="flex items-center rounded-full border border-gray-700 bg-gray-800/60 text-gray-400 hover:text-gray-200 hover:border-gray-600 px-2 py-1 transition-colors"
+        className="flex items-center rounded-pill border border-line-strong bg-surface-raised/60 text-content-muted hover:text-content hover:border-line-strong px-2 py-1 transition-colors duration-theme"
       >
         <AddReactionIcon />
       </button>
 
       {menu === "quick" && (
-        <div className="absolute z-20 top-full mt-2 left-0 card p-1 flex items-center gap-0.5 shadow-xl">
+        <div className="absolute z-20 top-full mt-2 left-0 popover p-1 flex items-center gap-0.5">
           {DEFAULT_REACTIONS.map((emoji) => (
             <button
               key={emoji}
               type="button"
               onClick={() => react(emoji)}
               aria-label={`React with ${emoji}`}
-              className="text-lg leading-none p-1 rounded hover:bg-gray-800 transition-colors"
+              className="text-lg leading-none p-1 rounded hover:bg-surface-raised transition-colors duration-theme"
             >
               {emoji}
             </button>
@@ -178,7 +178,7 @@ export function ReactionBar({
             type="button"
             onClick={() => setMenu("all")}
             aria-label="More emoji"
-            className="text-sm leading-none px-2 py-1.5 rounded text-gray-400 hover:text-gray-200 hover:bg-gray-800 transition-colors"
+            className="text-sm leading-none px-2 py-1.5 rounded text-content-muted hover:text-content hover:bg-surface-raised transition-colors duration-theme"
           >
             +
           </button>

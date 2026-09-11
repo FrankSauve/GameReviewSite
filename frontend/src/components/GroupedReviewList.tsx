@@ -10,17 +10,17 @@ function ReviewRow({ item }: { item: ReviewGroup["items"][number] }) {
 
   return (
     <Link to={reviewPath(item)} className="group block">
-      <article className="card overflow-hidden flex items-stretch hover:border-violet-700 hover:shadow-lg hover:shadow-violet-900/20 transition-all duration-200">
+      <article className="card card-interactive overflow-hidden flex items-stretch">
         <div className="w-14 sm:w-16 shrink-0 overflow-hidden">
           <GameCover game={game} size="sm" decorative />
         </div>
 
         <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-gray-100 group-hover:text-violet-300 transition-colors truncate text-sm">
+            <p className="font-semibold text-content group-hover:text-accent-subtle-text transition-colors duration-theme truncate text-sm">
               {game?.title ?? "Unknown game"}
             </p>
-            <p className="text-xs text-gray-600 truncate">
+            <p className="text-xs text-content-faint truncate">
               {[
                 game?.releaseYear ? `Released ${game.releaseYear}` : null,
                 item.hoursPlayed != null ? formatHours(item.hoursPlayed) : null,
@@ -35,11 +35,11 @@ function ReviewRow({ item }: { item: ReviewGroup["items"][number] }) {
 
           <div className="flex items-baseline gap-0.5 shrink-0">
             <span
-              className={`text-lg font-extrabold ${ratingColor(item.rating)}`}
+              className={`font-numeric text-lg font-extrabold ${ratingColor(item.rating)}`}
             >
               {formatRating(item.rating)}
             </span>
-            <span className="text-xs text-gray-700">/10</span>
+            <span className="text-xs text-content-faint">/10</span>
           </div>
         </div>
       </article>
@@ -62,9 +62,11 @@ export function GroupedReviewList({
       {groups.map((group) => (
         <section key={group.key}>
           {group.label && (
-            <div className="flex items-baseline gap-2 mb-2 pb-1 border-b border-gray-800">
-              <h3 className="text-lg font-bold text-gray-100">{group.label}</h3>
-              <span className="text-xs text-gray-600">
+            <div className="flex items-baseline gap-2 mb-2 pb-1 border-b border-line">
+              <h3 className="font-display text-lg text-content">
+                {group.label}
+              </h3>
+              <span className="text-xs text-content-faint">
                 {group.items.length}
                 {group.items.length === 1 ? " game" : " games"}
               </span>
@@ -76,7 +78,7 @@ export function GroupedReviewList({
                 </span>
               )}
               {group.hours != null && (
-                <span className="text-xs text-gray-600 ml-auto">
+                <span className="text-xs text-content-faint ml-auto">
                   {formatHours(Math.round(group.hours * 10) / 10)}
                 </span>
               )}

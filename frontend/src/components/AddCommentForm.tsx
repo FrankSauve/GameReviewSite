@@ -44,7 +44,7 @@ export function AddCommentForm({
         required
       />
       {error && (
-        <p className="text-red-400 text-xs">
+        <p className="text-danger-text text-xs">
           {error.graphQLErrors[0]?.message ?? error.message}
         </p>
       )}

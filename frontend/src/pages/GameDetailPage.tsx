@@ -28,7 +28,7 @@ export function GameDetailPage() {
   if (error)
     return (
       <div className="text-center py-20">
-        <p className="text-red-400">{error.message}</p>
+        <p className="text-danger-text">{error.message}</p>
       </div>
     );
 
@@ -36,7 +36,7 @@ export function GameDetailPage() {
   if (!game)
     return (
       <div className="text-center py-20">
-        <p className="text-gray-500">Game not found.</p>
+        <p className="text-content-subtle">Game not found.</p>
       </div>
     );
 
@@ -49,7 +49,7 @@ export function GameDetailPage() {
     <div className="space-y-8 page-column">
       <Link
         to="/"
-        className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-300 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-content-subtle hover:text-content-body transition-colors duration-theme"
       >
         <BackIcon /> All Games
       </Link>
@@ -60,10 +60,10 @@ export function GameDetailPage() {
         {game.coverUrl ? (
           <div className="relative h-56 sm:h-72 overflow-hidden">
             <GameCover game={game} size="lg" eager />
-            <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-scrim via-scrim/40 to-transparent" />
             {/* Title overlaid on cover */}
             <div className="absolute bottom-0 left-0 p-6">
-              <h1 className="text-3xl font-extrabold text-white drop-shadow-lg">
+              <h1 className="font-display text-3xl text-accent-contrast drop-shadow-lg">
                 {game.title}
               </h1>
             </div>
@@ -72,19 +72,17 @@ export function GameDetailPage() {
 
         <div className="p-6 space-y-4">
           {!game.coverUrl && (
-            <h1 className="text-3xl font-extrabold text-gray-100">
-              {game.title}
-            </h1>
+            <h1 className="font-display text-3xl text-content">{game.title}</h1>
           )}
 
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex flex-wrap items-center gap-2">
               <LabelChips
                 labels={game.genres}
-                className="text-xs font-medium bg-violet-900/50 text-violet-300 px-2.5 py-1 rounded-full border border-violet-800"
+                className="text-xs font-medium bg-accent-subtle/50 text-accent-subtle-text px-2.5 py-1 rounded-pill border border-accent-subtle-border"
               />
               {game.releaseYear && (
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-content-subtle">
                   {game.releaseYear}
                 </span>
               )}
@@ -93,12 +91,12 @@ export function GameDetailPage() {
             {game.averageRating != null && (
               <div className="card px-5 py-4 text-center shrink-0">
                 <p
-                  className={`text-4xl font-extrabold ${ratingColor(game.averageRating)}`}
+                  className={`font-numeric text-4xl font-extrabold ${ratingColor(game.averageRating)}`}
                 >
                   {formatRating(game.averageRating)}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">out of 10</p>
-                <p className="text-xs text-gray-600 mt-1">
+                <p className="text-xs text-content-subtle mt-1">out of 10</p>
+                <p className="text-xs text-content-faint mt-1">
                   {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
                 </p>
               </div>
@@ -114,9 +112,9 @@ export function GameDetailPage() {
       {/* Reviews section */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-gray-100">
+          <h2 className="font-display text-xl text-content">
             Reviews{" "}
-            <span className="text-gray-600 font-normal text-base">
+            <span className="text-content-faint font-normal text-base">
               ({reviews.length})
             </span>
           </h2>
@@ -134,7 +132,7 @@ export function GameDetailPage() {
         {/* Review form */}
         {showReviewForm && user && (
           <div className="card p-5 mb-4">
-            <h3 className="font-semibold text-gray-200 mb-4">Your Review</h3>
+            <h3 className="font-semibold text-content mb-4">Your Review</h3>
             <AddReviewForm
               gameId={game.id}
               onSuccess={() => setShowReviewForm(false)}
@@ -146,10 +144,10 @@ export function GameDetailPage() {
         {!user && (
           <div className="card p-4 mb-4 flex items-center gap-3 border-dashed">
             <span className="text-2xl">🔐</span>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-content-subtle">
               <button
                 onClick={() => signIn(gamePath(game))}
-                className="text-violet-400 hover:text-violet-300 font-medium transition-colors"
+                className="text-accent-subtle-text hover:text-accent-subtle-text font-medium transition-colors duration-theme"
               >
                 Sign in
               </button>{" "}
@@ -160,9 +158,9 @@ export function GameDetailPage() {
 
         {/* Already reviewed */}
         {user && hasReviewed && !showReviewForm && (
-          <div className="card p-4 mb-4 flex items-center gap-3 border-dashed border-gray-700">
+          <div className="card p-4 mb-4 flex items-center gap-3 border-dashed border-line-strong">
             <span className="text-lg">✅</span>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-content-subtle">
               You've already reviewed this game.
             </p>
           </div>
@@ -171,7 +169,7 @@ export function GameDetailPage() {
         {reviews.length === 0 ? (
           <div className="text-center py-12 card">
             <p className="text-4xl mb-3">🎮</p>
-            <p className="text-gray-500">No reviews yet. Be the first!</p>
+            <p className="text-content-subtle">No reviews yet. Be the first!</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -197,14 +195,16 @@ function GameDescription({ description }: { description: string }) {
       : description;
 
   return (
-    <div className="border-t border-gray-800 pt-4 space-y-2">
+    <div className="border-t border-line pt-4 space-y-2">
       <div ref={ref}>
-        <p className="text-gray-400 text-sm leading-relaxed">{displayed}</p>
+        <p className="text-content-muted text-sm leading-relaxed">
+          {displayed}
+        </p>
       </div>
       {isLong && (
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="text-xs text-violet-400 hover:text-violet-300 transition-colors"
+          className="text-xs text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
         >
           {expanded ? "Show less ↑" : "Show more ↓"}
         </button>
@@ -216,22 +216,22 @@ function GameDescription({ description }: { description: string }) {
 function DetailSkeleton() {
   return (
     <div className="space-y-6 page-column animate-pulse">
-      <div className="h-4 bg-gray-800 rounded w-24" />
+      <div className="h-4 skeleton-bar w-24" />
       <div className="card p-6 space-y-4">
-        <div className="h-8 bg-gray-800 rounded w-2/3" />
-        <div className="h-4 bg-gray-800 rounded w-1/3" />
-        <div className="h-16 bg-gray-800 rounded" />
+        <div className="h-8 skeleton-bar w-2/3" />
+        <div className="h-4 skeleton-bar w-1/3" />
+        <div className="h-16 skeleton-bar" />
       </div>
       {[0, 1].map((i) => (
         <div key={i} className="card p-5 space-y-3">
           <div className="flex gap-3">
-            <div className="w-9 h-9 rounded-full bg-gray-800" />
+            <div className="w-9 h-9 rounded-pill bg-surface-raised" />
             <div className="space-y-1.5 flex-1">
-              <div className="h-3 bg-gray-800 rounded w-24" />
-              <div className="h-3 bg-gray-800 rounded w-16" />
+              <div className="h-3 skeleton-bar w-24" />
+              <div className="h-3 skeleton-bar w-16" />
             </div>
           </div>
-          <div className="h-12 bg-gray-800 rounded" />
+          <div className="h-12 skeleton-bar" />
         </div>
       ))}
     </div>
