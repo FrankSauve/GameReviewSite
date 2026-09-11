@@ -32,6 +32,8 @@ const ME = {
   username: "simon",
   email: null,
   avatarColor: null,
+  theme: null,
+  palette: null,
 };
 
 const game = (id: string, title: string) => ({

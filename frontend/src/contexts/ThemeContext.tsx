@@ -51,6 +51,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     applyAppearance({ theme, palette });
   }, [theme, palette]);
 
+  // The account's choice has to reach this browser's storage too, or the
+  // pre-paint script in index.html finds nothing and every load on a device
+  // that never used the picker paints the default until `me` answers.
+  useEffect(() => {
+    if (user?.theme ?? user?.palette) storeAppearance({ theme, palette });
+  }, [user, theme, palette]);
+
   // A visitor who picked a look before signing in keeps it: the local choice is
   // pushed up once, rather than the empty account silently discarding it.
   const adopted = useRef(false);

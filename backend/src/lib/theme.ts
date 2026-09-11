@@ -1,4 +1,4 @@
-import { badInput } from "./badInput.js";
+import { validateChoice } from "./validate.js";
 
 /**
  * The looks an account may pick. A theme owns shape, type, motion and density;
@@ -16,24 +16,12 @@ export const PALETTES = ["midnight", "ember", "paper"] as const;
 const KNOWN_THEMES = new Set<string>(THEMES);
 const KNOWN_PALETTES = new Set<string>(PALETTES);
 
-function validateKey(
-  value: string | null,
-  known: Set<string>,
-  field: string,
-): string | null {
-  if (value === null) return null;
-  const key = value.trim().toLowerCase();
-  if (!key) return null;
-  if (!known.has(key)) throw badInput(`${field} must be one of those offered.`);
-  return key;
-}
-
 /** Null clears the choice, which puts the account back on the default. */
 export function validateTheme(value: string | null): string | null {
-  return validateKey(value, KNOWN_THEMES, "theme");
+  return validateChoice(value, KNOWN_THEMES, "theme", "themes");
 }
 
 /** Null clears the choice, which puts the account back on the default. */
 export function validatePalette(value: string | null): string | null {
-  return validateKey(value, KNOWN_PALETTES, "palette");
+  return validateChoice(value, KNOWN_PALETTES, "palette", "palettes");
 }

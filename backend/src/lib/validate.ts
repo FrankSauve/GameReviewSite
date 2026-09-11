@@ -18,3 +18,23 @@ export function validateString(
     throw badInput(`${field} must be at most ${maxLength} characters.`);
   return trimmed;
 }
+
+/**
+ * Trims and case-folds a key the client sent and refuses anything outside the
+ * set on offer. Null, and a value that trims to nothing, clear the choice
+ * rather than failing — the caller's column is nullable and null is its
+ * default.
+ */
+export function validateChoice(
+  value: string | null,
+  known: ReadonlySet<string>,
+  field: string,
+  offered: string,
+): string | null {
+  if (value === null) return null;
+  const key = value.trim().toLowerCase();
+  if (!key) return null;
+  if (!known.has(key))
+    throw badInput(`${field} must be one of the ${offered} offered.`);
+  return key;
+}

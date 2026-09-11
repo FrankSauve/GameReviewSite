@@ -25,6 +25,7 @@ export type PaletteKey = (typeof PALETTES)[number]["key"];
 export const DEFAULT_THEME: ThemeKey = "hud";
 export const DEFAULT_PALETTE: PaletteKey = "midnight";
 
+/** Both keys are spelled out again in index.html, which reads them before paint. */
 export const THEME_STORAGE_KEY = "gr-theme";
 export const PALETTE_STORAGE_KEY = "gr-palette";
 

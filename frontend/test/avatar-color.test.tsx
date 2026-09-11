@@ -111,6 +111,8 @@ describe("AvatarColorPicker", () => {
             id: "u1",
             bio: null,
             avatarColor: color,
+            theme: null,
+            palette: null,
           },
         },
       },

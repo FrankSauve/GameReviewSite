@@ -13,7 +13,7 @@ import { AuthProvider } from "../src/contexts/AuthContext";
 import { ThemeProvider } from "../src/contexts/ThemeContext";
 import { AppearancePicker } from "../src/components/AppearancePicker";
 import { UPDATE_PROFILE, GET_ME } from "../src/graphql/mutations";
-import { THEME_STORAGE_KEY } from "../src/lib/theme";
+import { PALETTE_STORAGE_KEY, THEME_STORAGE_KEY } from "../src/lib/theme";
 
 /** See the note in profile-views.test.tsx: vitest runs without globals here. */
 afterEach(() => {
@@ -151,5 +151,18 @@ describe("a signed-in account's look", () => {
     renderPicker([meMock({ ...ALICE, theme: null, palette: null }), adopt]);
 
     await waitFor(() => expect(pushed).not.toBeNull());
+  });
+
+  /**
+   * Without this the pre-paint script has nothing to read, so every load on a
+   * device that never used the picker paints the default until `me` answers.
+   */
+  it("is remembered by a browser that never picked it", async () => {
+    renderPicker([meMock({ ...ALICE, theme: "brutalist", palette: "paper" })]);
+
+    await waitFor(() =>
+      expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe("brutalist"),
+    );
+    expect(localStorage.getItem(PALETTE_STORAGE_KEY)).toBe("paper");
   });
 });

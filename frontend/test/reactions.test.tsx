@@ -40,6 +40,8 @@ const meMock = {
         slug: "alice",
         username: "alice",
         avatarColor: null,
+        theme: null,
+        palette: null,
         email: "alice@example.com",
       },
     },
