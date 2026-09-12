@@ -4,6 +4,7 @@
  */
 
 import { formatScore } from "./exportMarkdown.js";
+import { labelFor } from "./favoriteCategories.js";
 
 /** Roughly two lines in a Discord embed before it is truncated for us. */
 export const DESCRIPTION_MAX = 300;
@@ -65,6 +66,10 @@ export function embedDescription(
     .replace(/\s+/g, " ")
     .trim();
 
+  return truncate(text, limit);
+}
+
+function truncate(text: string, limit: number): string {
   if (text.length <= limit) return text;
   const cut = text.slice(0, limit);
   const lastSpace = cut.lastIndexOf(" ");
@@ -98,6 +103,39 @@ export function embedProfileDescription(
     (bio ? embedDescription(bio) : "") ||
     `${username} has not written a bio yet.`
   );
+}
+
+/** The key is American behind a British label, and gets "fixed" into a 404. */
+export const FAVORITES_TAB = "favorites";
+
+export interface FavoritePick {
+  category: string;
+  gameTitle: string;
+}
+
+export function embedFavoritesTitle(username: string, picks: number): string {
+  return `${username}'s favourites — ${picks} ${picks === 1 ? "pick" : "picks"}`;
+}
+
+/** Plain text, not markdown: embedDescription would strip the emphasis out of a
+ *  title like `*Hack`. Escaping happens once, in renderEmbed. */
+export function embedFavoritesDescription(
+  picks: readonly FavoritePick[],
+  limit = DESCRIPTION_MAX,
+): string {
+  const entries = picks.map((p) => `${labelFor(p.category)}: ${p.gameTitle}`);
+  const joined = entries.join(" · ");
+  if (joined.length <= limit) return joined;
+
+  // Whole entries, because half a game title reads as a bug.
+  const kept: string[] = [];
+  for (const entry of entries) {
+    const next = [...kept, entry].join(" · ");
+    if (next.length + 2 > limit) break;
+    kept.push(entry);
+  }
+  if (kept.length === 0) return truncate(entries[0] ?? "", limit);
+  return kept.join(" · ") + " …";
 }
 
 /**
