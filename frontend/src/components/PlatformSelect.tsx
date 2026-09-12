@@ -19,8 +19,8 @@ export function PlatformSelect({
   const id = useId();
   const label =
     size === "md"
-      ? "text-base text-content-muted"
-      : "text-sm text-content-muted";
+      ? "text-body text-content-muted"
+      : "text-meta text-content-muted";
 
   return (
     <div>

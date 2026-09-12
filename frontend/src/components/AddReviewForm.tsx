@@ -40,7 +40,7 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
 
   if (!user) {
     return (
-      <p className="text-sm text-content-subtle">
+      <p className="text-meta text-content-subtle">
         <button
           onClick={() => signIn()}
           className="text-accent-subtle-text hover:text-accent-subtle-text font-medium"
@@ -77,7 +77,7 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-base font-medium text-content-muted mb-2">
+        <label className="block text-body font-medium text-content-muted mb-2">
           Your Rating
         </label>
         <RatingInput value={rating} onChange={setRating} />
@@ -93,7 +93,7 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
       <PlatformSelect value={platform} onChange={setPlatform} />
 
       <div>
-        <label htmlFor={bodyId} className="field-label text-base">
+        <label htmlFor={bodyId} className="field-label text-body">
           Your Review
         </label>
         <MarkdownEditor
@@ -106,7 +106,7 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
       </div>
 
       {error && (
-        <p className="text-danger-text text-sm bg-danger-subtle/20 border border-danger-subtle-border rounded-control px-3 py-2">
+        <p className="text-danger-text text-meta bg-danger-subtle/20 border border-danger-subtle-border rounded-control px-3 py-2">
           {error.graphQLErrors[0]?.message ?? error.message}
         </p>
       )}

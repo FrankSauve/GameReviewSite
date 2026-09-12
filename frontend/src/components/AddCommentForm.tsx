@@ -35,7 +35,7 @@ export function AddCommentForm({
   return (
     <form onSubmit={handleSubmit} className="mt-3 space-y-2">
       <textarea
-        className="input-field text-sm resize-none"
+        className="input-field text-body resize-none"
         rows={2}
         placeholder="Write a comment..."
         value={content}
@@ -44,7 +44,7 @@ export function AddCommentForm({
         required
       />
       {error && (
-        <p className="text-danger-text text-xs">
+        <p className="text-danger-text text-micro">
           {error.graphQLErrors[0]?.message ?? error.message}
         </p>
       )}
@@ -52,14 +52,14 @@ export function AddCommentForm({
         <button
           type="submit"
           disabled={loading || !content.trim()}
-          className="btn-primary text-sm py-1.5"
+          className="btn-primary text-meta py-1.5"
         >
           {loading ? "Posting…" : "Post"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="btn-secondary text-sm py-1.5"
+          className="btn-secondary text-meta py-1.5"
         >
           Cancel
         </button>

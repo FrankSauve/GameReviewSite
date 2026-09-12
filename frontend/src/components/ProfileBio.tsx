@@ -48,7 +48,7 @@ export function ProfileBio({ bio, isOwnProfile }: ProfileBioProps) {
           placeholder="How do you score games? What kind of player are you?"
         />
         {error && (
-          <p className="text-danger-text text-xs">
+          <p className="text-danger-text text-micro">
             {error.graphQLErrors[0]?.message ?? error.message}
           </p>
         )}
@@ -56,13 +56,13 @@ export function ProfileBio({ bio, isOwnProfile }: ProfileBioProps) {
           <button
             onClick={save}
             disabled={loading}
-            className="btn-primary text-sm py-1.5 px-3"
+            className="btn-primary text-meta py-1.5 px-3"
           >
             {loading ? "Saving…" : "Save"}
           </button>
           <button
             onClick={() => setEditing(false)}
-            className="btn-secondary text-sm py-1.5 px-3"
+            className="btn-secondary text-meta py-1.5 px-3"
           >
             Cancel
           </button>
@@ -78,7 +78,7 @@ export function ProfileBio({ bio, isOwnProfile }: ProfileBioProps) {
     return (
       <button
         onClick={startEditing}
-        className="text-sm text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
+        className="text-meta text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
       >
         Add a bio
       </button>
@@ -87,13 +87,13 @@ export function ProfileBio({ bio, isOwnProfile }: ProfileBioProps) {
 
   return (
     <div className="space-y-1">
-      <div className="text-sm text-content-muted leading-relaxed text-left">
+      <div className="text-body text-content-muted text-left">
         <Markdown>{bio}</Markdown>
       </div>
       {isOwnProfile && (
         <button
           onClick={startEditing}
-          className="text-xs text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
+          className="text-micro text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
         >
           Edit bio
         </button>

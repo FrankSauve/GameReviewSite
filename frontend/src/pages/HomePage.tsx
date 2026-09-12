@@ -89,7 +89,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
               {game?.title ?? "Unknown Game"}
             </Link>
             {game?.releaseYear && (
-              <span className="text-sm text-content-subtle">
+              <span className="text-meta text-content-subtle">
                 {game.releaseYear}
               </span>
             )}
@@ -98,17 +98,15 @@ function ReviewFeedCard({ review }: { review: Review }) {
           {/* Score out of 10 */}
           <div className="flex items-baseline gap-1">
             <span
-              className={`font-numeric text-2xl font-extrabold ${ratingColor(review.rating)}`}
+              className={`font-numeric text-title font-extrabold ${ratingColor(review.rating)}`}
             >
               {formatRating(review.rating)}
             </span>
-            <span className="text-sm text-content-subtle">/ 10</span>
+            <span className="text-meta text-content-subtle">/ 10</span>
           </div>
 
           {/* Excerpt */}
-          <p className="text-sm text-content-muted leading-relaxed flex-1">
-            {summary}
-          </p>
+          <p className="text-body text-content-muted flex-1">{summary}</p>
 
           {/* Footer: reviewer + time */}
           <div className="flex items-center gap-2 pt-1 border-t border-line/60">
@@ -116,11 +114,11 @@ function ReviewFeedCard({ review }: { review: Review }) {
             <Link
               to={userPath(review.user)}
               onClick={(e) => e.stopPropagation()}
-              className="text-sm font-medium text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
+              className="text-meta font-medium text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
             >
               {review.user?.username ?? "Anonymous"}
             </Link>
-            <span className="text-sm text-content-subtle ml-auto shrink-0">
+            <span className="text-meta text-content-subtle ml-auto shrink-0">
               {formatPlaytime(review.yearPlayed, review.hoursPlayed) ??
                 timeAgo(review.createdAt)}
             </span>
@@ -134,7 +132,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
           {/* Toggle button */}
           <button
             onClick={() => setShowComments((v) => !v)}
-            className="flex items-center gap-1.5 text-xs text-content-muted hover:text-content transition-colors duration-theme"
+            className="flex items-center gap-1.5 text-micro text-content-muted hover:text-content transition-colors duration-theme"
           >
             <svg
               className="w-3.5 h-3.5"
@@ -178,13 +176,13 @@ function ReviewFeedCard({ review }: { review: Review }) {
                   <div key={comment.id} className="flex gap-2">
                     <Avatar user={comment.user} size={5} className="mt-0.5" />
                     <div className="min-w-0">
-                      <span className="text-xs font-semibold text-content-body">
+                      <span className="text-micro font-semibold text-content-body">
                         {comment.user?.username ?? "Unknown"}
                       </span>
-                      <span className="text-xs text-content-subtle ml-2">
+                      <span className="text-micro text-content-subtle ml-2">
                         {timeAgo(comment.createdAt)}
                       </span>
-                      <p className="text-xs text-content-muted mt-0.5">
+                      <p className="text-micro text-content-muted mt-0.5">
                         {comment.content}
                       </p>
                     </div>
@@ -207,18 +205,18 @@ function ReviewFeedCard({ review }: { review: Review }) {
                   placeholder="Add a comment…"
                   maxLength={500}
                   disabled={submitting}
-                  className="input-field flex-1 rounded-pill px-3 py-1.5 text-xs"
+                  className="input-field flex-1 rounded-pill px-3 py-1.5 text-micro"
                 />
                 <button
                   type="submit"
                   disabled={!newComment.trim() || submitting}
-                  className="btn-primary rounded-pill px-3 py-1.5 text-xs"
+                  className="btn-primary rounded-pill px-3 py-1.5 text-micro"
                 >
                   {submitting ? "…" : "Post"}
                 </button>
               </form>
             ) : (
-              <p className="text-xs text-content-subtle pt-1 pl-1">
+              <p className="text-micro text-content-subtle pt-1 pl-1">
                 <button
                   onClick={() => signIn()}
                   className="text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
@@ -277,9 +275,9 @@ export function HomePage() {
       {/* ── Recent Reviews ───────────────────────────────────────────── */}
       <section>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="section-head text-xl">Recent Reviews</h2>
+          <h2 className="section-head text-title">Recent Reviews</h2>
           {totalReviews > 0 && (
-            <span className="text-xs text-content-subtle">
+            <span className="text-micro text-content-subtle">
               {totalReviews} total
             </span>
           )}
@@ -293,7 +291,7 @@ export function HomePage() {
             <p className="text-content-muted font-medium">
               {totalReviews > 0 ? "Nothing on this page" : "No reviews yet"}
             </p>
-            <p className="text-sm text-content-subtle">
+            <p className="text-meta text-content-subtle">
               {totalReviews > 0 ? (
                 <button
                   onClick={() => goTo(0)}

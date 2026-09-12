@@ -22,7 +22,7 @@ function App() {
           <BrowserRouter>
             <div className="min-h-screen bg-bg text-content">
               <Navbar />
-              <main className="max-w-6xl mx-auto px-4 py-8">
+              <main className="max-w-6xl mx-auto px-4 py-page-y">
                 <Routes>
                   <Route path="/" element={<HomePage />} />
                   <Route path="/games" element={<GameLibraryPage />} />

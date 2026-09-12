@@ -54,7 +54,7 @@ export function GameCard({ game }: GameCardProps) {
                 </span>
               ))}
               {game.releaseYear && (
-                <span className="text-xs text-content-subtle">
+                <span className="text-micro text-content-subtle">
                   {game.releaseYear}
                 </span>
               )}
@@ -65,18 +65,18 @@ export function GameCard({ game }: GameCardProps) {
             {game.averageRating != null ? (
               <div className="flex items-baseline gap-1">
                 <span
-                  className={`font-numeric text-sm font-extrabold ${ratingColor(game.averageRating)}`}
+                  className={`font-numeric text-meta font-extrabold ${ratingColor(game.averageRating)}`}
                 >
                   {formatRating(game.averageRating)}
                 </span>
-                <span className="text-xs text-content-subtle">/ 10</span>
+                <span className="text-micro text-content-subtle">/ 10</span>
               </div>
             ) : (
-              <span className="text-xs text-content-subtle italic">
+              <span className="text-micro text-content-subtle italic">
                 No reviews yet
               </span>
             )}
-            <span className="text-xs text-content-subtle">
+            <span className="text-micro text-content-subtle">
               {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
             </span>
           </div>

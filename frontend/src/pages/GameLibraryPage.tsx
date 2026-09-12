@@ -43,7 +43,7 @@ function GameGridSkeleton() {
   );
 }
 
-const selectClass = "input-field w-auto text-sm px-2 py-1.5";
+const selectClass = "input-field w-auto text-meta px-2 py-1.5";
 
 function Field({
   label,
@@ -53,7 +53,7 @@ function Field({
   children: React.ReactNode;
 }) {
   return (
-    <label className="flex items-center gap-1.5 text-xs text-content-subtle">
+    <label className="flex items-center gap-1.5 text-micro text-content-subtle">
       {label}
       {children}
     </label>
@@ -116,9 +116,9 @@ export function GameLibraryPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="section-head text-xl">Games Library</h1>
+        <h1 className="section-head text-title">Games Library</h1>
         {total > 0 && (
-          <span className="text-xs text-content-subtle">
+          <span className="text-micro text-content-subtle">
             {total} {total === 1 ? "game" : "games"}
           </span>
         )}
@@ -172,7 +172,7 @@ export function GameLibraryPage() {
           </select>
         </Field>
 
-        <label className="flex items-center gap-1.5 text-xs text-content-subtle cursor-pointer">
+        <label className="flex items-center gap-1.5 text-micro text-content-subtle cursor-pointer">
           <input
             type="checkbox"
             checked={reviewedOnly}
@@ -185,7 +185,7 @@ export function GameLibraryPage() {
         {filtered && (
           <button
             onClick={() => update({ genre: "", reviewedBy: "", reviewed: "" })}
-            className="ml-auto text-xs text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
+            className="ml-auto text-micro text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
           >
             Clear filters
           </button>
@@ -204,7 +204,7 @@ export function GameLibraryPage() {
                 ? "No games match these filters"
                 : "No games yet"}
           </p>
-          <p className="text-sm text-content-subtle">
+          <p className="text-meta text-content-subtle">
             {total > 0
               ? "The library is not that long — try page one."
               : filtered

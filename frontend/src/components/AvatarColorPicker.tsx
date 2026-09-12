@@ -61,7 +61,7 @@ export function AvatarColorPicker({ user }: { user: AvatarUser }) {
             ))}
           </div>
           {error && (
-            <p className="text-danger-text text-xs mt-2 max-w-[12rem]">
+            <p className="text-danger-text text-micro mt-2 max-w-[12rem]">
               {error.graphQLErrors[0]?.message ?? error.message}
             </p>
           )}

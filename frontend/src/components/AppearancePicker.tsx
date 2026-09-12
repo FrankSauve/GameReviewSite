@@ -78,7 +78,7 @@ function Group<K extends string>({
             onClick={() => onPick(option.key)}
             aria-pressed={option.key === current}
             data-active={option.key === current}
-            className="btn-quiet text-xs px-2 py-1.5"
+            className="btn-quiet text-micro px-2 py-1.5"
           >
             {option.label}
           </button>

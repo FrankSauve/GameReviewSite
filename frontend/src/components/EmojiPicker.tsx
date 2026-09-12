@@ -22,10 +22,12 @@ export function EmojiPicker({ onSelect }: EmojiPickerProps) {
         placeholder="Search emoji…"
         aria-label="Search emoji"
         autoFocus
-        className="w-full bg-surface-raised/60 border border-line-strong rounded-control px-3 py-1.5 text-sm text-content placeholder-content-subtle focus:outline-none focus:border-accent-border transition-colors duration-theme"
+        className="w-full bg-surface-raised/60 border border-line-strong rounded-control px-3 py-1.5 text-meta text-content placeholder-content-subtle focus:outline-none focus:border-accent-border transition-colors duration-theme"
       />
       {results.length === 0 ? (
-        <p className="text-xs text-content-subtle px-1 py-2">No emoji found.</p>
+        <p className="text-micro text-content-subtle px-1 py-2">
+          No emoji found.
+        </p>
       ) : (
         <div className="grid grid-cols-7 sm:grid-cols-8 gap-0.5 max-h-56 overflow-y-auto">
           {results.map((emoji) => (

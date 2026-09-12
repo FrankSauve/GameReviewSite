@@ -75,7 +75,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
   if (loading) {
     return (
       <div className="space-y-6 page-column">
-        <div className="card p-6 flex items-center gap-5 animate-pulse">
+        <div className="card p-card-pad flex items-center gap-5 animate-pulse">
           <div className="w-16 h-16 rounded-pill bg-surface-raised shrink-0" />
           <div className="space-y-2 flex-1">
             <div className="h-5 skeleton-bar w-40" />
@@ -96,7 +96,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
         <p className="text-content-body font-medium">User not found</p>
         <Link
           to="/"
-          className="text-accent-subtle-text hover:text-accent-subtle-text text-sm transition-colors duration-theme"
+          className="text-accent-subtle-text hover:text-accent-subtle-text text-meta transition-colors duration-theme"
         >
           Back to home
         </Link>
@@ -117,7 +117,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
   return (
     <div className="space-y-6 page-column">
       {/* ── Profile header ── */}
-      <div className="card p-6 flex flex-col sm:flex-row items-center sm:items-start gap-5">
+      <div className="card p-card-pad flex flex-col sm:flex-row items-center sm:items-start gap-5">
         {isOwnProfile ? (
           <AvatarColorPicker user={profile} />
         ) : (
@@ -125,11 +125,11 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
         )}
         <div className="flex-1 text-center sm:text-left space-y-1">
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-            <h1 className="font-display text-xl text-content">
+            <h1 className="font-display text-title text-content">
               {profile.username}
             </h1>
             {isOwnProfile && (
-              <span className="text-xs font-medium px-2 py-0.5 rounded-pill bg-accent-subtle/60 text-accent-subtle-text border border-accent-subtle-border">
+              <span className="text-micro font-medium px-2 py-0.5 rounded-pill bg-accent-subtle/60 text-accent-subtle-text border border-accent-subtle-border">
                 You
               </span>
             )}
@@ -144,7 +144,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
               <a
                 href={EXPORT_REVIEWS_PATH}
                 download
-                className="text-xs font-medium text-content-muted hover:text-accent-subtle-text transition-colors duration-theme"
+                className="text-micro font-medium text-content-muted hover:text-accent-subtle-text transition-colors duration-theme"
               >
                 Export as zip
               </a>
@@ -156,29 +156,29 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
 
           <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 pt-2">
             <div className="text-center">
-              <p className="font-display text-lg text-content">
+              <p className="font-display text-title text-content">
                 {profile.reviewCount}
               </p>
-              <p className="text-xs text-content-subtle">
+              <p className="text-micro text-content-subtle">
                 {profile.reviewCount === 1 ? "review" : "reviews"}
               </p>
             </div>
             {profile.averageRating != null && (
               <div className="text-center">
                 <p
-                  className={`text-lg font-bold ${ratingColor(profile.averageRating)}`}
+                  className={`text-title font-bold ${ratingColor(profile.averageRating)}`}
                 >
                   {formatRating(Math.round(profile.averageRating * 10) / 10)}
                 </p>
-                <p className="text-xs text-content-subtle">avg score</p>
+                <p className="text-micro text-content-subtle">avg score</p>
               </div>
             )}
             {totalHours > 0 && (
               <div className="text-center">
-                <p className="font-display text-lg text-content">
+                <p className="font-display text-title text-content">
                   {formatHours(Math.round(totalHours))}
                 </p>
-                <p className="text-xs text-content-subtle">played</p>
+                <p className="text-micro text-content-subtle">played</p>
               </div>
             )}
           </div>
@@ -194,7 +194,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
               key={entry.tab}
               to={userPath(profile, entry.path)}
               aria-current={active ? "page" : undefined}
-              className={`px-3 py-2 text-sm font-medium -mb-px border-b-2 transition-colors duration-theme ${
+              className={`px-3 py-2 text-meta font-medium -mb-px border-b-2 transition-colors duration-theme ${
                 active
                   ? "border-accent-hover text-accent-subtle-text"
                   : "border-transparent text-content-subtle hover:text-content-body"

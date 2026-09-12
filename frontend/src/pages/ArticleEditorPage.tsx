@@ -63,7 +63,7 @@ export function ArticleEditorPage() {
 
   if (!user) {
     return (
-      <p className="text-sm text-content-subtle text-center py-12">
+      <p className="text-meta text-content-subtle text-center py-12">
         <button
           onClick={() => signIn()}
           className="text-accent-subtle-text hover:text-accent-subtle-text font-medium"
@@ -87,7 +87,7 @@ export function ArticleEditorPage() {
         </p>
         <Link
           to="/articles"
-          className="text-sm text-accent-subtle-text hover:text-accent-subtle-text"
+          className="text-meta text-accent-subtle-text hover:text-accent-subtle-text"
         >
           Back to the articles
         </Link>
@@ -110,7 +110,7 @@ export function ArticleEditorPage() {
         </p>
         <Link
           to={articlePath(existing)}
-          className="text-sm text-accent-subtle-text hover:text-accent-subtle-text"
+          className="text-meta text-accent-subtle-text hover:text-accent-subtle-text"
         >
           Read it instead
         </Link>
@@ -135,12 +135,12 @@ export function ArticleEditorPage() {
 
   return (
     <form onSubmit={handleSubmit} className="page-column space-y-4">
-      <h1 className="section-head text-xl">
+      <h1 className="section-head text-title">
         {editing ? "Edit article" : "Write an article"}
       </h1>
 
       <div>
-        <label htmlFor={titleId} className="field-label text-base">
+        <label htmlFor={titleId} className="field-label text-body">
           Title
         </label>
         <input
@@ -158,7 +158,7 @@ export function ArticleEditorPage() {
         <div className="flex items-baseline justify-between mb-1.5">
           <label
             htmlFor={bodyId}
-            className="block text-base font-medium text-content-muted"
+            className="block text-body font-medium text-content-muted"
           >
             Body
           </label>
@@ -166,7 +166,7 @@ export function ArticleEditorPage() {
             type="button"
             onClick={() => setPreviewing((p) => !p)}
             disabled={!content.trim()}
-            className="text-sm text-accent-subtle-text hover:text-accent-subtle-text disabled:text-content-faint disabled:cursor-not-allowed transition-colors duration-theme"
+            className="text-meta text-accent-subtle-text hover:text-accent-subtle-text disabled:text-content-faint disabled:cursor-not-allowed transition-colors duration-theme"
           >
             {previewing ? "Write" : "Preview"}
           </button>
@@ -192,16 +192,16 @@ export function ArticleEditorPage() {
         )}
 
         <div className="flex items-baseline justify-between mt-1">
-          <p className="text-sm text-content-subtle">
+          <p className="text-meta text-content-subtle">
             Markdown: **bold**, *italic*, - lists, &gt; quotes
           </p>
-          <p className="text-sm text-content-subtle">
+          <p className="text-meta text-content-subtle">
             {content.length}/{CONTENT_MAX}
           </p>
         </div>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-content-muted">
+      <label className="flex items-center gap-2 text-meta text-content-muted">
         <input
           type="checkbox"
           checked={published}
@@ -212,7 +212,7 @@ export function ArticleEditorPage() {
       </label>
 
       {error && (
-        <p className="text-danger-text text-sm bg-danger-subtle/20 border border-danger-subtle-border rounded-control px-3 py-2">
+        <p className="text-danger-text text-meta bg-danger-subtle/20 border border-danger-subtle-border rounded-control px-3 py-2">
           {error.graphQLErrors[0]?.message ?? error.message}
         </p>
       )}
@@ -227,7 +227,7 @@ export function ArticleEditorPage() {
         </button>
         <Link
           to={editing && existing ? articlePath(existing) : "/articles"}
-          className="text-sm text-content-subtle hover:text-content-body"
+          className="text-meta text-content-subtle hover:text-content-body"
         >
           Cancel
         </Link>

@@ -95,7 +95,7 @@ export function MarkdownEditor({
   };
 
   // .btn-quiet draws its own selected state from aria-selected.
-  const TAB_CLASS = "btn-quiet text-sm px-3 py-1.5";
+  const TAB_CLASS = "btn-quiet text-meta px-3 py-1.5";
 
   return (
     <div>
@@ -136,7 +136,7 @@ export function MarkdownEditor({
                 // selection the command is about to act on with it.
                 onMouseDown={(e) => e.preventDefault()}
                 onClick={() => run(tool.name)}
-                className={`btn-quiet w-8 h-8 px-0 text-sm ${tool.className ?? ""}`}
+                className={`btn-quiet w-8 h-8 px-0 text-meta ${tool.className ?? ""}`}
               >
                 {tool.label}
               </button>
@@ -147,7 +147,7 @@ export function MarkdownEditor({
 
       {previewing ? (
         <div
-          className={`input-field ${bodyHeight} text-base text-content-body leading-relaxed overflow-y-auto`}
+          className={`input-field ${bodyHeight} text-body text-content-body overflow-y-auto`}
         >
           <Markdown>{value}</Markdown>
         </div>
@@ -155,7 +155,7 @@ export function MarkdownEditor({
         <textarea
           id={id}
           ref={textareaRef}
-          className={`input-field w-full resize-none text-base ${bodyHeight}`}
+          className={`input-field w-full resize-none text-body ${bodyHeight}`}
           rows={rows}
           placeholder={placeholder}
           value={value}
@@ -166,10 +166,10 @@ export function MarkdownEditor({
       )}
 
       <div className="flex items-baseline justify-between mt-1">
-        <p className="text-sm text-content-subtle">
+        <p className="text-meta text-content-subtle">
           Markdown supported, including ||spoilers||
         </p>
-        <p className="text-sm text-content-subtle">
+        <p className="text-meta text-content-subtle">
           {value.length}/{maxLength}
         </p>
       </div>

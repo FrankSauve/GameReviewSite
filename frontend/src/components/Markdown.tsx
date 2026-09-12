@@ -117,20 +117,26 @@ const components: Components = {
     </code>
   ),
   pre: ({ children }) => (
-    <pre className="bg-surface border border-line rounded-control p-3 mb-3 last:mb-0 overflow-x-auto text-xs font-mono">
+    <pre className="bg-surface border border-line rounded-control p-3 mb-3 last:mb-0 overflow-x-auto text-micro font-mono">
       {children}
     </pre>
   ),
   hr: () => <hr className="border-line my-4" />,
-  h1: heading("h3", "font-display text-content text-xl mt-5 mb-2 first:mt-0"),
-  h2: heading("h4", "font-display text-content text-lg mt-4 mb-2 first:mt-0"),
-  h3: heading("h5", "font-display text-content text-base mt-4 mb-2 first:mt-0"),
+  h1: heading(
+    "h3",
+    "font-display text-content text-title mt-5 mb-2 first:mt-0",
+  ),
+  h2: heading(
+    "h4",
+    "font-display text-content text-title mt-4 mb-2 first:mt-0",
+  ),
+  h3: heading("h5", "font-display text-content text-body mt-4 mb-2 first:mt-0"),
   h4: heading("h6", "font-semibold text-content mt-3 mb-1.5 first:mt-0"),
   h5: heading("h6", "font-semibold text-content-body mt-3 mb-1.5 first:mt-0"),
   h6: heading("h6", "font-semibold text-content-muted mt-3 mb-1.5 first:mt-0"),
   table: ({ children }) => (
     <div className="overflow-x-auto mb-3 last:mb-0">
-      <table className="text-xs border-collapse">{children}</table>
+      <table className="text-micro border-collapse">{children}</table>
     </div>
   ),
   th: ({ children }) => (
@@ -147,7 +153,7 @@ const components: Components = {
    * real `<img>` elsewhere would show as broken.
    */
   img: ({ alt }) => (
-    <span className="text-xs text-content-subtle italic">
+    <span className="text-micro text-content-subtle italic">
       {alt ? `[image: ${alt}]` : "[image]"}
     </span>
   ),

@@ -18,7 +18,7 @@ const MENU_ID = "primary-nav-menu";
 
 /** Callers match on the exact path, so /games/elden-ring leaves the link dark. */
 function navLink(active: boolean): string {
-  return `text-sm font-medium shrink-0 transition-colors duration-theme ${
+  return `text-meta font-medium shrink-0 transition-colors duration-theme ${
     active ? "text-accent-subtle-text" : "text-content-muted hover:text-content"
   }`;
 }
@@ -81,7 +81,7 @@ export function Navbar() {
               void apollo.refetchQueries({ include: "active" });
             }
           }}
-          className="flex items-center gap-2 font-display text-lg text-content hover:text-accent-subtle-text transition-colors duration-theme shrink-0"
+          className="flex items-center gap-2 font-display text-title text-content hover:text-accent-subtle-text transition-colors duration-theme shrink-0"
         >
           {/* The link needs a label at every width; the full name costs the
               search bar too much room on a phone. */}
@@ -115,13 +115,13 @@ export function Navbar() {
               className="flex items-center gap-2 bg-accent-subtle/40 border border-accent-subtle-border rounded-pill px-3 py-1.5 hover:bg-accent-subtle/70 hover:border-accent-border transition-colors duration-theme"
             >
               <Avatar user={user} size={5} />
-              <span className="text-sm font-medium text-accent-subtle-text hidden sm:block">
+              <span className="text-meta font-medium text-accent-subtle-text hidden sm:block">
                 {user.username}
               </span>
             </Link>
             <button
               onClick={() => signOut()}
-              className="text-sm text-content-subtle hover:text-content-body transition-colors duration-theme"
+              className="text-meta text-content-subtle hover:text-content-body transition-colors duration-theme"
             >
               Sign out
             </button>
@@ -130,7 +130,7 @@ export function Navbar() {
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={() => signIn()}
-              className="btn-primary text-sm py-1.5 px-3"
+              className="btn-primary text-meta py-1.5 px-3"
             >
               Sign in
             </button>

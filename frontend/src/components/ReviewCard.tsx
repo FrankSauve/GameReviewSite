@@ -91,7 +91,7 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
 
   return (
     <div
-      className="card card-interactive p-5 relative"
+      className="card card-interactive p-card-pad relative"
       onClick={() => void navigate(reviewPath(review))}
     >
       {/* Raised layer so interactive elements stay clickable */}
@@ -103,11 +103,11 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
             <div>
               <Link
                 to={userPath(review.user)}
-                className="font-semibold text-content hover:text-accent-subtle-text text-sm transition-colors duration-theme"
+                className="font-semibold text-content hover:text-accent-subtle-text text-meta transition-colors duration-theme"
               >
                 {review.user?.username ?? "Unknown"}
               </Link>
-              <p className="text-sm text-content-muted">
+              <p className="text-meta text-content-muted">
                 {timeAgo(review.createdAt)}
               </p>{" "}
             </div>
@@ -117,11 +117,11 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
             {!editing && (
               <div className="flex items-baseline gap-1">
                 <span
-                  className={`font-numeric text-lg font-extrabold ${ratingColor(review.rating)}`}
+                  className={`font-numeric text-title font-extrabold ${ratingColor(review.rating)}`}
                 >
                   {formatRating(review.rating)}
                 </span>
-                <span className="text-xs text-content-subtle">/ 10</span>
+                <span className="text-micro text-content-subtle">/ 10</span>
               </div>
             )}
             {isOwner && !editing && (
@@ -148,7 +148,7 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
         {/* Delete confirmation */}
         {confirmDelete && (
           <div className="flex items-center gap-3 bg-danger-subtle/40 border border-danger-subtle-border/50 rounded-control px-3 py-2.5">
-            <p className="text-sm text-danger-text flex-1">
+            <p className="text-meta text-danger-text flex-1">
               Delete this review?
             </p>
             <button
@@ -156,13 +156,13 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
                 void deleteReview({ variables: { id: review.id } })
               }
               disabled={deleting}
-              className="btn-danger text-xs px-3 py-1"
+              className="btn-danger text-micro px-3 py-1"
             >
               {deleting ? "Deleting…" : "Delete"}
             </button>
             <button
               onClick={() => setConfirmDelete(false)}
-              className="text-xs text-content-muted hover:text-content transition-colors duration-theme"
+              className="text-micro text-content-muted hover:text-content transition-colors duration-theme"
             >
               Cancel
             </button>
@@ -174,7 +174,7 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
           <div className="space-y-3">
             {/* Rating picker */}
             <div className="flex items-center gap-3">
-              <span className="text-xs text-content-muted w-14 shrink-0">
+              <span className="text-micro text-content-muted w-14 shrink-0">
                 Rating
               </span>
               <div className="flex-1">
@@ -205,28 +205,28 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
             <div className="flex items-center gap-2 justify-end">
               <button
                 onClick={handleCancelEdit}
-                className="btn-secondary text-sm py-1.5 px-3"
+                className="btn-secondary text-meta py-1.5 px-3"
               >
                 Cancel
               </button>
               <button
                 onClick={() => void handleSave()}
                 disabled={saving || !editContent.trim() || !editHoursValid}
-                className="btn-primary text-sm py-1.5 px-3 disabled:opacity-50"
+                className="btn-primary text-meta py-1.5 px-3 disabled:opacity-50"
               >
                 {saving ? "Saving…" : "Save"}
               </button>
             </div>
           </div>
         ) : (
-          <div className="text-content-body text-sm leading-relaxed">
+          <div className="text-content-body text-body">
             <Markdown>{review.content}</Markdown>
           </div>
         )}
 
         {/* Comment count and playtime */}
         {!editing && (
-          <div className="pt-2 border-t border-line flex items-center gap-3 text-sm text-content-subtle">
+          <div className="pt-2 border-t border-line flex items-center gap-3 text-meta text-content-subtle">
             <span className="flex items-center gap-1.5">
               <CommentIcon />
               {commentCount} {commentCount === 1 ? "comment" : "comments"}

@@ -36,7 +36,7 @@ export function ArticleDetailPage() {
 
   if (loading) {
     return (
-      <div className="card p-8 animate-pulse space-y-4 page-column">
+      <div className="card p-card-pad sm:p-8 animate-pulse space-y-4 page-column">
         <div className="h-6 skeleton-bar w-2/3" />
         <div className="h-3 skeleton-bar w-1/4" />
         <div className="h-3 skeleton-bar" />
@@ -53,12 +53,12 @@ export function ArticleDetailPage() {
         <p className="text-content-muted font-medium">
           This article is not here
         </p>
-        <p className="text-sm text-content-subtle">
+        <p className="text-meta text-content-subtle">
           It may have been deleted, or it may still be a draft.
         </p>
         <Link
           to="/articles"
-          className="text-sm text-accent-subtle-text hover:text-accent-subtle-text"
+          className="text-meta text-accent-subtle-text hover:text-accent-subtle-text"
         >
           Back to the articles
         </Link>
@@ -76,7 +76,7 @@ export function ArticleDetailPage() {
     <article className="page-column space-y-6">
       <header className="space-y-2">
         <div className="flex items-baseline gap-2 flex-wrap">
-          <h1 className="font-display text-2xl text-content">
+          <h1 className="font-display text-title text-content">
             {article.title}
           </h1>
           {!article.publishedAt && (
@@ -85,7 +85,7 @@ export function ArticleDetailPage() {
             </span>
           )}
         </div>
-        <p className="text-sm text-content-subtle">
+        <p className="text-meta text-content-subtle">
           <Link
             to={userPath(article.author)}
             className="text-accent-subtle-text hover:text-accent-subtle-text"
@@ -97,14 +97,16 @@ export function ArticleDetailPage() {
         </p>
       </header>
 
-      <div className="card p-6 sm:p-8 text-content-body leading-relaxed">
-        <Markdown>{article.content}</Markdown>
+      <div className="card p-card-pad sm:p-8 text-content-body">
+        <div className="prose-longform">
+          <Markdown>{article.content}</Markdown>
+        </div>
       </div>
 
       <div className="flex items-center justify-between">
         <Link
           to="/articles"
-          className="text-sm text-content-subtle hover:text-content-body"
+          className="text-meta text-content-subtle hover:text-content-body"
         >
           ← All articles
         </Link>
@@ -112,7 +114,7 @@ export function ArticleDetailPage() {
           <div className="flex items-center gap-4">
             <Link
               to={`/articles/${article.slug ?? article.id}/edit`}
-              className="text-sm text-accent-subtle-text hover:text-accent-subtle-text"
+              className="text-meta text-accent-subtle-text hover:text-accent-subtle-text"
             >
               Edit
             </Link>
@@ -122,7 +124,7 @@ export function ArticleDetailPage() {
                   void deleteArticle({ variables: { id: article.id } });
               }}
               disabled={deleting}
-              className="text-sm text-content-subtle hover:text-danger-text transition-colors duration-theme"
+              className="text-meta text-content-subtle hover:text-danger-text transition-colors duration-theme"
             >
               {deleting ? "Deleting…" : "Delete"}
             </button>
