@@ -169,7 +169,7 @@ export function ReactionBar({
               type="button"
               onClick={() => react(emoji)}
               aria-label={`React with ${emoji}`}
-              className="text-lg leading-none p-1 rounded hover:bg-surface-raised transition-colors duration-theme"
+              className="text-lg leading-none p-1 rounded-control hover:bg-surface-raised transition-colors duration-theme"
             >
               {emoji}
             </button>
@@ -178,7 +178,7 @@ export function ReactionBar({
             type="button"
             onClick={() => setMenu("all")}
             aria-label="More emoji"
-            className="text-sm leading-none px-2 py-1.5 rounded text-content-muted hover:text-content hover:bg-surface-raised transition-colors duration-theme"
+            className="text-sm leading-none px-2 py-1.5 rounded-control text-content-muted hover:text-content hover:bg-surface-raised transition-colors duration-theme"
           >
             +
           </button>

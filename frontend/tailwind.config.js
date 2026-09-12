@@ -70,11 +70,35 @@ export default {
         "card-hover": "var(--shadow-card-hover)",
         popover: "var(--shadow-popover)",
       },
-      // `font-display` and `font-numeric` are utilities in index.css, because
-      // each sets weight and tracking alongside the family.
+      // `font-display`, `font-numeric` and `font-meta` are utilities in
+      // index.css, because each sets weight or tracking alongside the family.
       fontFamily: {
         sans: "var(--font-body)",
         body: "var(--font-body)",
+      },
+      // The six type roles. A component names the role, never a size, so a
+      // theme owns both the sizes and the ratios between them. A `text-sm` in a
+      // component is a bug for the same reason a `violet-600` is.
+      fontSize: {
+        display: [
+          "var(--size-display)",
+          { lineHeight: "var(--leading-display)" },
+        ],
+        title: ["var(--size-title)", { lineHeight: "var(--leading-title)" }],
+        body: ["var(--size-body)", { lineHeight: "var(--leading-body)" }],
+        meta: ["var(--size-meta)", { lineHeight: "var(--leading-meta)" }],
+        micro: ["var(--size-micro)", { lineHeight: "var(--leading-micro)" }],
+        label: ["var(--size-label)", { lineHeight: "var(--leading-label)" }],
+      },
+      // Structural rhythm only. An incidental `gap-1` stays a literal.
+      spacing: {
+        "card-pad": "var(--space-card-pad)",
+        stack: "var(--space-stack)",
+        "row-gap": "var(--space-row-gap)",
+        "page-y": "var(--space-page-y)",
+      },
+      maxWidth: {
+        measure: "var(--measure)",
       },
       transitionDuration: {
         theme: "var(--motion-duration)",

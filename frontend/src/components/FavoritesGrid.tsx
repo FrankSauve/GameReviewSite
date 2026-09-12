@@ -47,7 +47,7 @@ export function FavoritesGrid({
         {FAVORITE_CATEGORIES.map((c) => (
           <div key={c.key} className="space-y-1.5">
             <div className="aspect-video rounded-control bg-surface-raised animate-pulse" />
-            <div className="h-3 rounded bg-surface-raised animate-pulse" />
+            <div className="h-3 rounded-chip bg-surface-raised animate-pulse" />
           </div>
         ))}
       </div>

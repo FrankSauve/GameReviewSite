@@ -89,6 +89,11 @@
     --control-pad-x: 1.125rem;
     --control-pad-y: 0.5rem;
 
+    /* Corner brackets that frame a panel without enclosing it. Zero-width in
+       every theme but the Console, which is why every card can carry them. */
+    --card-bracket-size: 12px;
+    --card-bracket-width: 2px;
+
     --shadow-card: none;
     --shadow-card-hover: inset 0 0 0 1px rgb(var(--accent) / 0.45);
     --shadow-button: none;
@@ -109,6 +114,9 @@
       "Archivo Narrow", "Roboto Condensed", "Liberation Sans Narrow",
       var(--font-body);
     --font-numeric: var(--font-display);
+    /* Labels and metadata, for a theme that wants them off the body face:
+       Editorial sets a sans here against its serif body. */
+    --font-meta: var(--font-display);
     /* Archivo Narrow's wght axis stops at 700; asking for more is clamped. */
     --weight-display: 700;
     --weight-button: 700;
@@ -117,6 +125,42 @@
     --case-button: uppercase;
     --case-section-head: uppercase;
     --numeric-variant: tabular-nums;
+
+    /* Set on <html>, so this one token rescales every rem-based utility on the
+       page together. It is how a theme varies overall density. */
+    --root-size: 15px;
+    --line-height-body: 1.45;
+    /* The line length prose is held to. */
+    --measure: 74ch;
+    /* initial-letter lines. 0 is off, and only Editorial turns it on. */
+    --dropcap-lines: 0;
+
+    /* The six type roles the components use. --root-size scales these together;
+       these are what let a theme change the ratios between them. */
+    --size-display: 2.25rem;
+    --leading-display: 1.1;
+    --size-title: 1.375rem;
+    --leading-title: 1.25;
+    --size-body: 1rem;
+    --leading-body: var(--line-height-body);
+    --size-meta: 0.875rem;
+    --leading-meta: 1.45;
+    --size-micro: 0.75rem;
+    --leading-micro: 1.35;
+    --size-label: 0.8125rem;
+    --leading-label: 1.4;
+
+    /* --- Space. Structural rhythm only; an incidental gap between an icon and
+           its label stays a literal in the component. --- */
+    --space-card-pad: 1rem;
+    --space-stack: 1rem;
+    --space-row-gap: 1rem;
+    --space-page-y: 2rem;
+
+    /* --- Texture. The one decorative layer a theme may paint over the whole
+           page, drawn by body::before. --- */
+    --texture-image: none;
+    --texture-opacity: 0;
 
     /* --- Motion --- */
     --motion-duration: 150ms;
@@ -418,12 +462,30 @@
     --hue-7-fg: 159 18 57;
   }
 
+  html {
+    font-size: var(--root-size);
+  }
+
   body {
     background-color: rgb(var(--bg));
     color: rgb(var(--text));
     font-family: var(--font-body);
+    line-height: var(--line-height-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* The theme's texture, if it has one. Negative z-index keeps it behind every
+     in-flow element while still sitting over the page background, which body
+     propagates to the canvas; pointer-events keeps it from eating clicks. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: var(--texture-image);
+    opacity: var(--texture-opacity);
   }
 
   ::-webkit-scrollbar {
@@ -468,6 +530,19 @@
     inset: 0 auto 0 0;
     width: var(--card-rail-width);
     background-color: rgb(var(--accent));
+    pointer-events: none;
+  }
+
+  /* Brackets that frame a panel without enclosing it. Zero-width in every
+     theme but the Console, which is why it costs nothing on every card. */
+  .card::after {
+    content: "";
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: var(--card-bracket-size);
+    height: var(--card-bracket-size);
+    border: 0 solid rgb(var(--accent));
+    border-width: var(--card-bracket-width) 0 0 var(--card-bracket-width);
     pointer-events: none;
   }
 
@@ -677,6 +752,24 @@
     background-color: rgb(var(--line));
   }
 
+  /* --- Prose --- */
+
+  /* An article or review body read end to end, as against an excerpt in a feed
+     row: held to a measure, and opened with a drop cap where the theme asks for
+     one. --dropcap-lines is 0 in every theme but Editorial, and initial-letter
+     is ignored outright at 0, so the rule costs nothing elsewhere. */
+  .prose-longform {
+    max-width: var(--measure);
+  }
+
+  .prose-longform > *:first-child::first-letter {
+    -webkit-initial-letter: var(--dropcap-lines);
+    initial-letter: var(--dropcap-lines);
+    font-family: var(--font-display);
+    font-weight: var(--weight-display);
+    margin-right: 0.0625em;
+  }
+
   /* --- Layout --- */
 
   /* The one desktop content width; every page-level container uses it. */
@@ -695,6 +788,12 @@
   .font-numeric {
     font-family: var(--font-numeric);
     font-variant-numeric: var(--numeric-variant);
+  }
+
+  /* Bylines, counts and labels. Only Editorial moves this off the body face,
+     which is the whole point of the token. */
+  .font-meta {
+    font-family: var(--font-meta);
   }
 
   /* Avatar, cover and chip colour. Whole class names, because Tailwind's

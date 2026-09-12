@@ -26,7 +26,7 @@ export function Spoiler({ children }: { children: ReactNode }) {
       onClick={toggle}
       onKeyDown={onKeyDown}
       className={
-        "rounded px-1 transition-colors duration-theme cursor-pointer " +
+        "rounded-chip px-1 transition-colors duration-theme cursor-pointer " +
         "focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-hover " +
         (revealed
           ? "bg-surface-raised/60 text-content"

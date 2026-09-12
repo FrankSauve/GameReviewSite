@@ -35,7 +35,7 @@ export function EmojiPicker({ onSelect }: EmojiPickerProps) {
               onClick={() => onSelect(emoji.char)}
               title={emoji.name}
               aria-label={emoji.name}
-              className="text-lg leading-none p-1 rounded hover:bg-surface-raised transition-colors duration-theme"
+              className="text-lg leading-none p-1 rounded-control hover:bg-surface-raised transition-colors duration-theme"
             >
               {emoji.char}
             </button>

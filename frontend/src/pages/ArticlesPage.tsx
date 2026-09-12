@@ -92,7 +92,7 @@ export function ArticlesPage() {
                       {article.title}
                     </h2>
                     {!article.publishedAt && (
-                      <span className="text-[0.65rem] uppercase tracking-wide font-semibold text-warning-text border border-warning-border rounded px-1.5 py-0.5">
+                      <span className="text-[0.65rem] uppercase tracking-wide font-semibold text-warning-text border border-warning-border rounded-chip px-1.5 py-0.5">
                         Draft
                       </span>
                     )}

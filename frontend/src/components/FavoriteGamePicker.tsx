@@ -87,7 +87,7 @@ export function FavoriteGamePicker({
                 onClick={() => pick(game.id)}
                 className="w-full flex items-center gap-3 px-3 py-2 hover:bg-surface-raised disabled:opacity-50 transition-colors duration-theme text-left"
               >
-                <div className="w-8 h-11 rounded overflow-hidden bg-surface-raised shrink-0">
+                <div className="w-8 h-11 rounded-chip overflow-hidden bg-surface-raised shrink-0">
                   <GameCover game={game} size="sm" decorative />
                 </div>
                 <span className="text-sm text-content truncate">

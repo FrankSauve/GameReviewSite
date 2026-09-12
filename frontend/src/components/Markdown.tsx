@@ -112,7 +112,7 @@ const components: Components = {
     </blockquote>
   ),
   code: ({ children }) => (
-    <code className="bg-surface-raised/80 text-warning-text rounded px-1 py-0.5 text-[0.9em] font-mono">
+    <code className="bg-surface-raised/80 text-warning-text rounded-chip px-1 py-0.5 text-[0.9em] font-mono">
       {children}
     </code>
   ),

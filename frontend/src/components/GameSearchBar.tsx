@@ -154,7 +154,7 @@ export function GameSearchBar() {
                         )}
                         {game.metacritic && (
                           <span
-                            className={`text-xs font-bold px-1.5 py-0.5 rounded ${
+                            className={`text-xs font-bold px-1.5 py-0.5 rounded-chip ${
                               game.metacritic >= 75
                                 ? "bg-rating-high/20 text-rating-high"
                                 : game.metacritic >= 50
