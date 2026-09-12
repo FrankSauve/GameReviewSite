@@ -4,10 +4,10 @@
  * The labels are British, the keys are not: a key is stored on every row, so
  * respelling one would orphan the picks already made under it.
  *
- * A copy of FAVORITE_CATEGORIES in backend/src/lib/favoriteCategories.ts, which
- * is authoritative and refuses anything off it — there is no package shared
- * between the two. Change that copy too, or the grid offers a category the
- * server rejects.
+ * A copy of FAVORITE_CATEGORIES and LABELS in
+ * backend/src/lib/favoriteCategories.ts, which is authoritative for both —
+ * there is no package shared between the two. Change that copy too, or the grid
+ * offers a category the server rejects, or labels a pick two ways.
  */
 export const FAVORITE_CATEGORIES = [
   { key: "favorite-game", label: "Favourite Game" },

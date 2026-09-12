@@ -2,24 +2,15 @@ import type { FavoriteGame, User } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
 import { serializeDates } from "../lib/serialize.js";
 import { requireAuth, type Context } from "../context.js";
-import { validateFavoriteCategory } from "../lib/favoriteCategories.js";
+import {
+  inGridOrder,
+  validateFavoriteCategory,
+} from "../lib/favoriteCategories.js";
 import { assertReviewedByUser } from "../lib/favorites.js";
-import { FAVORITE_CATEGORIES } from "../lib/favoriteCategories.js";
 
 interface SetFavoriteGameInput {
   category: string;
   gameId: string;
-}
-
-/** The grid draws them in this order, so the list is sorted to match. */
-const ORDER = new Map(FAVORITE_CATEGORIES.map((key, i) => [key as string, i]));
-
-function inGridOrder(favorites: FavoriteGame[]): FavoriteGame[] {
-  return [...favorites].sort(
-    (a, b) =>
-      (ORDER.get(a.category) ?? ORDER.size) -
-      (ORDER.get(b.category) ?? ORDER.size),
-  );
 }
 
 async function ownerOf(userId: string) {

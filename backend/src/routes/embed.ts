@@ -3,9 +3,12 @@ import { Router, type Request, type Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { byIdOrSlug } from "../lib/slug.js";
 import {
+  FAVORITES_TAB,
   PROFILE_EMBED,
   REVIEW_EMBED,
   embedDescription,
+  embedFavoritesDescription,
+  embedFavoritesTitle,
   embedProfileDescription,
   embedProfileTitle,
   embedTitle,
@@ -14,6 +17,7 @@ import {
   renderEmbed,
   type EmbedKind,
 } from "../lib/embed.js";
+import { inGridOrder } from "../lib/favoriteCategories.js";
 
 /**
  * Link previews for reviews and profiles, on the same paths the SPA serves: the
@@ -128,7 +132,8 @@ export function createEmbedRouter(): Router {
 /**
  * The same thing for `/users/<slug>`. Separate router because the paths below
  * it differ: a profile is one segment, optionally followed by the tab the SPA
- * renders (`/by-score`, `/recent`, `/by-year`), which unfurls as the profile.
+ * renders. `/by-score`, `/recent` and `/by-year` unfurl as the profile, being
+ * the same reviews in another order; `/favorites` unfurls as the picks.
  */
 export function createProfileEmbedRouter(): Router {
   const router = Router();
@@ -145,6 +150,7 @@ export function createProfileEmbedRouter(): Router {
       const user = await prisma.user.findFirst({
         where: byIdOrSlug(key),
         select: {
+          id: true,
           slug: true,
           username: true,
           bio: true,
@@ -162,6 +168,39 @@ export function createProfileEmbedRouter(): Router {
             ),
           );
         return;
+      }
+
+      if (req.params["tab"] === FAVORITES_TAB) {
+        // Its own query, so the other tabs do not pay for rows they never render.
+        const picks = inGridOrder(
+          await prisma.favoriteGame.findMany({
+            where: { userId: user.id },
+            select: {
+              category: true,
+              game: { select: { title: true, coverUrl: true } },
+            },
+          }),
+        );
+
+        // An empty grid falls through: nothing should unfurl to advertise that
+        // there is nothing there.
+        if (picks.length > 0) {
+          res.send(
+            renderEmbed(PROFILE_EMBED, {
+              title: embedFavoritesTitle(user.username, picks.length),
+              description: embedFavoritesDescription(
+                picks.map((p) => ({
+                  category: p.category,
+                  gameTitle: p.game.title,
+                })),
+              ),
+              url: `${origin}/users/${user.slug}/${FAVORITES_TAB}`,
+              imageUrl:
+                picks.find((p) => p.game.coverUrl)?.game.coverUrl ?? null,
+            }),
+          );
+          return;
+        }
       }
 
       res.send(
