@@ -47,6 +47,7 @@ export function AppearancePicker() {
             options={PALETTES}
             current={palette}
             onPick={setPalette}
+            swatch
           />
         </div>
       )}
@@ -59,6 +60,8 @@ interface GroupProps<K extends string> {
   options: readonly { key: K; label: string }[];
   current: K;
   onPick: (key: K) => void;
+  /** Colour is worth showing rather than naming; shape is not. */
+  swatch?: boolean;
 }
 
 function Group<K extends string>({
@@ -66,6 +69,7 @@ function Group<K extends string>({
   options,
   current,
   onPick,
+  swatch = false,
 }: GroupProps<K>) {
   return (
     <div>
@@ -78,8 +82,25 @@ function Group<K extends string>({
             onClick={() => onPick(option.key)}
             aria-pressed={option.key === current}
             data-active={option.key === current}
-            className="btn-quiet text-micro px-2 py-1.5"
+            className={
+              swatch
+                ? "btn-quiet flex-col items-start gap-1 text-micro px-2 py-1.5"
+                : "btn-quiet text-micro px-2 py-1.5"
+            }
           >
+            {swatch && (
+              /* The swatch stamps the palette it names on itself, so the token
+                 blocks repaint it; nothing here knows any colour. */
+              <span
+                data-palette={option.key}
+                className="palette-swatch"
+                aria-hidden="true"
+              >
+                <span className="bg-bg" />
+                <span className="bg-surface-raised" />
+                <span className="bg-accent" />
+              </span>
+            )}
             {option.label}
           </button>
         ))}

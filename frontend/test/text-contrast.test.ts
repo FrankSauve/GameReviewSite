@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { DEFAULT_PALETTE, PALETTES as PALETTE_KEYS } from "../src/lib/theme";
 
 /**
  * The token layer in index.css is the only place these colours exist, so this
@@ -56,11 +57,18 @@ function contrast(a: Rgb, b: Rgb): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-/** midnight is :root; ember overrides accent only, so it inherits this ramp. */
-const PALETTES = {
-  midnight: block(":root {"),
-  paper: block('[data-palette="paper"] {'),
-};
+/**
+ * Derived from the key list rather than spelled out, so a palette cannot be
+ * added without coming under this check. Midnight is the set in :root. `token`
+ * throws on a token a block never states, which is what holds every palette to
+ * restating the whole ramp instead of inheriting half of Midnight's.
+ */
+const PALETTES = Object.fromEntries(
+  PALETTE_KEYS.map(({ key }) => [
+    key,
+    block(key === DEFAULT_PALETTE ? ":root {" : `[data-palette="${key}"] {`),
+  ]),
+);
 
 describe("the text colour ramp", () => {
   for (const [palette, source] of Object.entries(PALETTES)) {

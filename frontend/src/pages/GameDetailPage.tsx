@@ -63,7 +63,7 @@ export function GameDetailPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-scrim via-scrim/40 to-transparent" />
             {/* Title overlaid on cover */}
             <div className="absolute bottom-0 left-0 p-6">
-              <h1 className="font-display text-display text-accent-contrast drop-shadow-lg">
+              <h1 className="font-display text-display text-content-on-art drop-shadow-lg">
                 {game.title}
               </h1>
             </div>

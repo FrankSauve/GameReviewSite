@@ -226,7 +226,7 @@ export function ReviewDetailPage() {
               <GameCover game={game} size="lg" eager />
               <div className="absolute inset-0 bg-gradient-to-t from-scrim/90 via-scrim/40 to-transparent" />
               <div className="absolute bottom-4 left-4">
-                <h2 className="text-title font-bold text-accent-contrast group-hover:text-accent-subtle-text transition-colors duration-theme">
+                <h2 className="text-title font-bold text-content-on-art group-hover:text-accent-subtle-text transition-colors duration-theme">
                   {game.title}
                 </h2>
                 <div className="flex items-center gap-2 mt-0.5">
@@ -297,7 +297,7 @@ export function ReviewDetailPage() {
                 onClick={() =>
                   void deleteReview({ variables: { id: review.id } })
                 }
-                className="text-micro font-semibold bg-danger hover:bg-danger-hover text-accent-contrast px-3 py-1 rounded-control transition-colors duration-theme disabled:opacity-50"
+                className="text-micro font-semibold bg-danger hover:bg-danger-hover text-danger-contrast px-3 py-1 rounded-control transition-colors duration-theme disabled:opacity-50"
               >
                 {deleting ? "Deleting…" : "Delete"}
               </Link>

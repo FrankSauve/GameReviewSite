@@ -50,6 +50,13 @@
         var p = localStorage.getItem("gr-palette");
         if (t) d.setAttribute("data-theme", t);
         if (p) d.setAttribute("data-palette", p);
+        // The chrome colour cannot read a CSS variable, so it is pushed across
+        // by hand here as well as in applyAppearance. Without this the browser
+        // paints the default accent until React mounts, which with six
+        // palettes is a visible flash rather than a shade.
+        var m = document.querySelector('meta[name="theme-color"]');
+        var a = getComputedStyle(d).getPropertyValue("--accent").trim();
+        if (m && a) m.setAttribute("content", "rgb(" + a + ")");
       } catch (e) {}
     </script>
     <script type="module" src="/src/main.tsx"></script>

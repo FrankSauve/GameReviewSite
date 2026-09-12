@@ -26,6 +26,9 @@ export default {
           muted: palette("text-muted"),
           subtle: palette("text-subtle"),
           faint: palette("text-faint"),
+          /* Text over a cover image or an avatar gradient — always light, and
+             never the page ground, which is why it is not a rung. */
+          "on-art": palette("text-on-art"),
         },
         accent: {
           DEFAULT: palette("accent"),
