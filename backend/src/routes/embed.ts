@@ -175,6 +175,10 @@ export function createProfileEmbedRouter(): Router {
         const picks = inGridOrder(
           await prisma.favoriteGame.findMany({
             where: { userId: user.id },
+            // A category a release retires sorts past every known one, so the
+            // tie has to break on something stable: the cover and the tail of
+            // the description are picked off this order.
+            orderBy: { category: "asc" },
             select: {
               category: true,
               game: { select: { title: true, coverUrl: true } },

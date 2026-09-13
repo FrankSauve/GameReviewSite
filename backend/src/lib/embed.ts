@@ -71,7 +71,8 @@ export function embedDescription(
 
 function truncate(text: string, limit: number): string {
   if (text.length <= limit) return text;
-  const cut = text.slice(0, limit);
+  // One short of the limit: the ellipsis below has to fit inside it too.
+  const cut = text.slice(0, limit - 1);
   const lastSpace = cut.lastIndexOf(" ");
   return (
     (lastSpace > limit * 0.6 ? cut.slice(0, lastSpace) : cut).trimEnd() + "…"
@@ -118,12 +119,16 @@ export function embedFavoritesTitle(username: string, picks: number): string {
 }
 
 /** Plain text, not markdown: embedDescription would strip the emphasis out of a
- *  title like `*Hack`. Escaping happens once, in renderEmbed. */
+ *  title like `*Hack`. Escaping happens once, in renderEmbed. A title is still
+ *  flattened to one line, because `og:description` is one line everywhere. */
 export function embedFavoritesDescription(
   picks: readonly FavoritePick[],
   limit = DESCRIPTION_MAX,
 ): string {
-  const entries = picks.map((p) => `${labelFor(p.category)}: ${p.gameTitle}`);
+  const entries = picks.map(
+    (p) =>
+      `${labelFor(p.category)}: ${p.gameTitle.replace(/\s+/g, " ").trim()}`,
+  );
   const joined = entries.join(" · ");
   if (joined.length <= limit) return joined;
 

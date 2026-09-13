@@ -383,14 +383,14 @@ describe("embedProfileDescription", () => {
     // The cap the previous change raised; the description budget is unchanged,
     // so the longest bio still has to come back as one short line.
     const text = embedProfileDescription("alice", "word ".repeat(600));
-    expect(text.length).toBeLessThanOrEqual(301);
+    expect(text.length).toBeLessThanOrEqual(300);
     expect(text.endsWith("…")).toBe(true);
     expect(text).not.toContain("wor…");
   });
 
   it("truncates a bio with no spaces in it", () => {
     const text = embedProfileDescription("alice", "x".repeat(3000));
-    expect(text.length).toBe(301);
+    expect(text.length).toBe(300);
     expect(text.endsWith("…")).toBe(true);
   });
 });
@@ -428,6 +428,15 @@ describe("embedFavoritesDescription", () => {
     ).toBe("Favourite Game: *Hack · Best Story: _transistor_");
   });
 
+  it("flattens a title written over more than one line", () => {
+    expect(
+      embedFavoritesDescription([
+        pick("favorite-game", "Nier:\nAutomata"),
+        pick("best-story", "Disco   Elysium"),
+      ]),
+    ).toBe("Favourite Game: Nier: Automata · Best Story: Disco Elysium");
+  });
+
   it("drops whole picks rather than cutting a game title in half", () => {
     const picks = Array.from({ length: 20 }, (_, n) =>
       pick("favorite-game", `A Game With Quite A Long Title ${n}`),
@@ -450,7 +459,7 @@ describe("embedFavoritesDescription", () => {
       pick("best-story", "Disco Elysium"),
     ]);
 
-    expect(text.length).toBeLessThanOrEqual(301);
+    expect(text.length).toBeLessThanOrEqual(300);
     expect(text.endsWith("…")).toBe(true);
     expect(text).not.toContain("Disco Elysium");
   });
