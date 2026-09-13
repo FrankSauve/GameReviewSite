@@ -79,7 +79,7 @@ export default {
         sans: "var(--font-body)",
         body: "var(--font-body)",
       },
-      // The six type roles. A component names the role, never a size, so a
+      // The seven type roles. A component names the role, never a size, so a
       // theme owns both the sizes and the ratios between them. A `text-sm` in a
       // component is a bug for the same reason a `violet-600` is.
       fontSize: {
@@ -88,6 +88,10 @@ export default {
           { lineHeight: "var(--leading-display)" },
         ],
         title: ["var(--size-title)", { lineHeight: "var(--leading-title)" }],
+        subtitle: [
+          "var(--size-subtitle)",
+          { lineHeight: "var(--leading-subtitle)" },
+        ],
         body: ["var(--size-body)", { lineHeight: "var(--leading-body)" }],
         meta: ["var(--size-meta)", { lineHeight: "var(--leading-meta)" }],
         micro: ["var(--size-micro)", { lineHeight: "var(--leading-micro)" }],
@@ -96,12 +100,7 @@ export default {
       // Structural rhythm only. An incidental `gap-1` stays a literal.
       spacing: {
         "card-pad": "var(--space-card-pad)",
-        stack: "var(--space-stack)",
-        "row-gap": "var(--space-row-gap)",
         "page-y": "var(--space-page-y)",
-      },
-      maxWidth: {
-        measure: "var(--measure)",
       },
       transitionDuration: {
         theme: "var(--motion-duration)",

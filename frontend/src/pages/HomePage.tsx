@@ -182,7 +182,7 @@ function ReviewFeedCard({ review }: { review: Review }) {
                       <span className="text-micro text-content-subtle ml-2">
                         {timeAgo(comment.createdAt)}
                       </span>
-                      <p className="text-micro text-content-muted mt-0.5">
+                      <p className="text-meta text-content-muted mt-0.5">
                         {comment.content}
                       </p>
                     </div>

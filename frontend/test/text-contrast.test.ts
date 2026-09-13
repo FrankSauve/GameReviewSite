@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { DEFAULT_PALETTE, PALETTES as PALETTE_KEYS } from "../src/lib/theme";
+import { PALETTES as PALETTE_KEYS } from "../src/lib/theme";
 
 /**
  * The token layer in index.css is the only place these colours exist, so this
@@ -59,15 +59,13 @@ function contrast(a: Rgb, b: Rgb): number {
 
 /**
  * Derived from the key list rather than spelled out, so a palette cannot be
- * added without coming under this check. Midnight is the set in :root. `token`
- * throws on a token a block never states, which is what holds every palette to
- * restating the whole ramp instead of inheriting half of Midnight's.
+ * added without coming under this check. Every palette including Midnight is
+ * reached by its own selector, Midnight's being the one that doubles as :root.
+ * `token` throws on a token a block never states, which is what holds every
+ * palette to restating the whole ramp instead of inheriting half of Midnight's.
  */
 const PALETTES = Object.fromEntries(
-  PALETTE_KEYS.map(({ key }) => [
-    key,
-    block(key === DEFAULT_PALETTE ? ":root {" : `[data-palette="${key}"] {`),
-  ]),
+  PALETTE_KEYS.map(({ key }) => [key, block(`[data-palette="${key}"]`)]),
 );
 
 describe("the text colour ramp", () => {

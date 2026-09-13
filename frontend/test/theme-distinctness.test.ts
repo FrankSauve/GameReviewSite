@@ -65,9 +65,10 @@ const themeBlocks = THEMES.filter((t) => t.key !== "hud").map((t) => ({
   ...t,
   source: block(`[data-theme="${t.key}"] {`),
 }));
-const paletteBlocks = PALETTES.filter((p) => p.key !== "midnight").map((p) => ({
+const paletteBlocks = PALETTES.map((p) => ({
   ...p,
-  source: block(`[data-palette="${p.key}"] {`),
+  // Midnight's selector doubles as :root, so the brace is left off the search.
+  source: block(`[data-palette="${p.key}"]`),
 }));
 
 describe("the theme and palette axes stay independent", () => {
@@ -100,6 +101,14 @@ describe("the themes differ below the display face", () => {
       expect(new Set(values).size).toBeGreaterThan(2);
     });
   }
+
+  it("every theme decides its own texture rather than inheriting one", () => {
+    // :root's texture is the HUD's, and body::before draws whatever it
+    // inherits, so a theme that says nothing ships the HUD's scanlines.
+    for (const theme of themeBlocks) {
+      expect(declared(theme.source)).toContain("texture-image");
+    }
+  });
 
   it("at least one theme lifts a card on hover", () => {
     const lifts = sources

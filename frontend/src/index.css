@@ -217,7 +217,8 @@
     --control-pad-y: 0.5rem;
 
     /* Corner brackets that frame a panel without enclosing it. Zero-width in
-       every theme but the Console, which is why every card can carry them. */
+       every theme but the Console, which is why every card can carry them.
+       Drawn top right, clear of the corner --card-clip removes. */
     --card-bracket-size: 12px;
     --card-bracket-width: 2px;
 
@@ -255,14 +256,15 @@
 
     /* Set on <html>, so this one token rescales every rem-based utility on the
        page together. It is how a theme varies overall density. */
-    --root-size: 15px;
+    /* A factor, never a px: an absolute root size overrides the base size the
+       reader set in their browser, and every rem on the page keys off it. */
+    --root-size: 93.75%;
     --line-height-body: 1.45;
     /* The line length prose is held to. */
     --measure: 74ch;
     /* initial-letter lines. 0 is off, and only Editorial turns it on. */
-    --dropcap-lines: 0;
 
-    /* The six type roles the components use. --root-size scales these together;
+    /* The seven type roles the components use. --root-size scales these together;
        these are what let a theme change the ratios between them. The Console
        keeps the jumps small, because a readout is meant to read as one dense
        surface rather than as a page with a headline. */
@@ -270,11 +272,13 @@
     --leading-display: 1.12;
     --size-title: 1.25rem;
     --leading-title: 1.25;
+    --size-subtitle: 1.125rem;
+    --leading-subtitle: 1.25;
     --size-body: 1rem;
     --leading-body: var(--line-height-body);
     --size-meta: 0.8125rem;
     --leading-meta: 1.4;
-    --size-micro: 0.6875rem;
+    --size-micro: 0.75rem;
     --leading-micro: 1.3;
     --size-label: 0.6875rem;
     --leading-label: 1.3;
@@ -282,8 +286,6 @@
     /* --- Space. Structural rhythm only; an incidental gap between an icon and
            its label stays a literal in the component. --- */
     --space-card-pad: 1rem;
-    --space-stack: 1rem;
-    --space-row-gap: 0.75rem;
     --space-page-y: 1.75rem;
 
     /* --- Texture. The one decorative layer a theme may paint over the whole
@@ -304,10 +306,17 @@
     --section-tick-height: 1.125rem;
     --section-tick-radius: 0;
     --section-rule-width: 0px;
+  }
 
-    /* --- Colour (palette-owned). RGB channel triplets so Tailwind's
-           <alpha-value> works. These are the Midnight palette; every other
-           palette restates this whole set rather than inheriting part of it. --- */
+  /*
+   * Midnight, the default palette. Named as well as defaulted: :root is what
+   * paints a page before <html> is stamped, and the [data-palette] half is what
+   * lets a swatch re-scope the ramp onto itself, as every other palette's block
+   * does. RGB channel triplets so Tailwind's <alpha-value> works; every other
+   * palette restates this whole set rather than inheriting part of it.
+   */
+  [data-palette="midnight"],
+  :root {
     --bg: 8 12 22;
     --surface: 20 25 35;
     --surface-raised: 31 37 48;
@@ -403,6 +412,10 @@
      shadow, no lift, no decoration — so the headline has to carry it, and the
      display-to-body jump is the largest of the four. */
   [data-theme="swiss"] {
+    /* The texture in :root is the HUD's. A theme that wants a bare page has to
+       turn it off, because body::before reads whatever it inherits. */
+    --texture-image: none;
+
     --radius-card: 2px;
     --radius-control: 2px;
     --radius-chip: 2px;
@@ -432,7 +445,7 @@
     --case-section-head: none;
     --numeric-variant: tabular-nums;
 
-    --root-size: 16px;
+    --root-size: 100%;
     --line-height-body: 1.6;
     --measure: 66ch;
 
@@ -440,6 +453,8 @@
     --leading-display: 1.05;
     --size-title: 1.5rem;
     --leading-title: 1.2;
+    --size-subtitle: 1.25rem;
+    --leading-subtitle: 1.2;
     --size-meta: 0.875rem;
     --leading-meta: 1.5;
     --size-micro: 0.75rem;
@@ -448,8 +463,6 @@
 
     /* The whitespace is the decoration. */
     --space-card-pad: 1.5rem;
-    --space-stack: 1.5rem;
-    --space-row-gap: 1rem;
     --space-page-y: 3rem;
 
     --motion-duration: 120ms;
@@ -502,7 +515,7 @@
     --case-section-head: uppercase;
     --numeric-variant: oldstyle-nums;
 
-    --root-size: 17px;
+    --root-size: 106.25%;
     --line-height-body: 1.75;
     --measure: 68ch;
     /* Three lines is the editorial classic. Only this theme sets it. */
@@ -512,6 +525,8 @@
     --leading-display: 1.15;
     --size-title: 1.5rem;
     --leading-title: 1.3;
+    --size-subtitle: 1.25rem;
+    --leading-subtitle: 1.3;
     --size-meta: 0.8125rem;
     --leading-meta: 1.5;
     --size-micro: 0.75rem;
@@ -519,8 +534,6 @@
     --size-label: 0.75rem;
 
     --space-card-pad: 1.25rem;
-    --space-stack: 1.5rem;
-    --space-row-gap: 1.5rem;
     --space-page-y: 3rem;
 
     /* Paper grain. Greyscale noise, so it sits on a light or a dark palette
@@ -537,6 +550,9 @@
   /* Terminal brutalism: mono throughout — body included — hard edges, offset
      shadows a press pushes the control into, and no motion at all. */
   [data-theme="brutalist"] {
+    /* As in Swiss: inherited, so it has to be refused. */
+    --texture-image: none;
+
     --radius-card: 0px;
     --radius-control: 0px;
     --radius-chip: 0px;
@@ -578,7 +594,7 @@
     --case-section-head: uppercase;
     --numeric-variant: tabular-nums;
 
-    --root-size: 15px;
+    --root-size: 93.75%;
     --line-height-body: 1.5;
     /* A mono sets far wider per character, so the same ch count is a much
        longer line. 62ch here is about the measure 68ch is in the serif. */
@@ -588,16 +604,16 @@
     --leading-display: 1.15;
     --size-title: 1.1875rem;
     --leading-title: 1.3;
+    --size-subtitle: 1.0625rem;
+    --leading-subtitle: 1.3;
     --size-body: 0.9375rem;
     --size-meta: 0.8125rem;
     --leading-meta: 1.45;
-    --size-micro: 0.6875rem;
+    --size-micro: 0.75rem;
     --leading-micro: 1.35;
     --size-label: 0.6875rem;
 
     --space-card-pad: 1rem;
-    --space-stack: 1rem;
-    --space-row-gap: 0.75rem;
     --space-page-y: 2rem;
 
     --motion-duration: 0s;
@@ -1026,15 +1042,17 @@
   }
 
   /* Brackets that frame a panel without enclosing it. Zero-width in every
-     theme but the Console, which is why it costs nothing on every card. */
+     theme but the Console, which is why it costs nothing on every card. Top
+     right, not top left: --card-clip cuts the left corner off, and a clip-path
+     takes the pseudo-element with it. */
   .card::after {
     content: "";
     position: absolute;
-    inset: 0 auto auto 0;
+    inset: 0 0 auto auto;
     width: var(--card-bracket-size);
     height: var(--card-bracket-size);
     border: 0 solid rgb(var(--accent));
-    border-width: var(--card-bracket-width) 0 0 var(--card-bracket-width);
+    border-width: var(--card-bracket-width) var(--card-bracket-width) 0 0;
     pointer-events: none;
   }
 
@@ -1262,16 +1280,20 @@
 
   /* An article or review body read end to end, as against an excerpt in a feed
      row: held to a measure, and opened with a drop cap where the theme asks for
-     one. --dropcap-lines is 0 in every theme but Editorial, and initial-letter
-     is ignored outright at 0, so the rule costs nothing elsewhere. */
+     one. */
   .prose-longform {
     max-width: var(--measure);
   }
 
-  /* The Markdown renderer wraps its output in one div, so the opening
+  /* Scoped to the one theme that asks for a cap rather than guarded by
+     --dropcap-lines — at 0 only initial-letter drops as out of range, and the
+     face and weight beside it would still land, opening every body in every
+     other theme on one stray display-face letter.
+
+     The Markdown renderer wraps its output in one div, so the opening
      paragraph is a grandchild. Only a body that actually opens on a paragraph
      gets the cap — an article starting on a heading would look wrong with one. */
-  .prose-longform > * > p:first-child::first-letter {
+  [data-theme="editorial"] .prose-longform > * > p:first-child::first-letter {
     -webkit-initial-letter: var(--dropcap-lines);
     initial-letter: var(--dropcap-lines);
     font-family: var(--font-display);

@@ -128,7 +128,7 @@ const components: Components = {
   ),
   h2: heading(
     "h4",
-    "font-display text-content text-title mt-4 mb-2 first:mt-0",
+    "font-display text-content text-subtitle mt-4 mb-2 first:mt-0",
   ),
   h3: heading("h5", "font-display text-content text-body mt-4 mb-2 first:mt-0"),
   h4: heading("h6", "font-semibold text-content mt-3 mb-1.5 first:mt-0"),

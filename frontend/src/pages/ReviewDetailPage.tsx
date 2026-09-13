@@ -231,12 +231,12 @@ export function ReviewDetailPage() {
                 </h2>
                 <div className="flex items-center gap-2 mt-0.5">
                   {game.releaseYear && (
-                    <span className="text-micro text-content-muted">
+                    <span className="text-micro text-content-on-art/80">
                       {game.releaseYear}
                     </span>
                   )}
                   {game.genres && game.genres.length > 0 && (
-                    <span className="text-micro text-content-subtle">
+                    <span className="text-micro text-content-on-art/65">
                       · {game.genres.join(", ")}
                     </span>
                   )}
@@ -261,7 +261,7 @@ export function ReviewDetailPage() {
                 >
                   {review.user?.username ?? "Unknown"}
                 </Link>
-                <p className="text-meta text-content-subtle">
+                <p className="font-meta text-meta text-content-subtle">
                   {timeAgo(review.createdAt)}
                   {playtime && <span> · played {playtime}</span>}
                 </p>

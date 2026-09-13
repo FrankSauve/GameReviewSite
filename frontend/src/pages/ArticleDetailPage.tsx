@@ -80,12 +80,12 @@ export function ArticleDetailPage() {
             {article.title}
           </h1>
           {!article.publishedAt && (
-            <span className="text-[0.65rem] uppercase tracking-wide font-semibold text-warning-text border border-warning-border rounded-chip px-1.5 py-0.5">
+            <span className="text-label uppercase tracking-wide font-semibold text-warning-text border border-warning-border rounded-chip px-1.5 py-0.5">
               Draft
             </span>
           )}
         </div>
-        <p className="text-meta text-content-subtle">
+        <p className="font-meta text-meta text-content-subtle">
           <Link
             to={userPath(article.author)}
             className="text-accent-subtle-text hover:text-accent-subtle-text"
