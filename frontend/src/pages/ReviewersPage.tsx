@@ -26,9 +26,9 @@ export function ReviewersPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
-        <h1 className="section-head text-2xl">Reviewers</h1>
+        <h1 className="section-head text-title">Reviewers</h1>
         {!loading && (
-          <span className="text-xs text-content-subtle">
+          <span className="text-micro text-content-subtle">
             {users.length} {users.length === 1 ? "member" : "members"}
           </span>
         )}
@@ -39,7 +39,7 @@ export function ReviewersPage() {
           {Array.from({ length: 6 }).map((_, i) => (
             <div
               key={i}
-              className="card p-5 flex items-center gap-4 animate-pulse"
+              className="card p-card-pad flex items-center gap-4 animate-pulse"
             >
               <div className="w-12 h-12 rounded-pill bg-surface-raised shrink-0" />
               <div className="space-y-2 flex-1">
@@ -67,31 +67,33 @@ export function ReviewersPage() {
 
             return (
               <Link key={u.id} to={userPath(u)} className="group block">
-                <div className="card card-interactive p-5 flex items-center gap-4">
+                <div className="card card-interactive p-card-pad flex items-center gap-4">
                   {/* Avatar */}
                   <Avatar user={u} size={11} />
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="font-semibold text-content group-hover:text-accent-subtle-text transition-colors duration-theme truncate text-sm">
+                      <span className="font-semibold text-content group-hover:text-accent-subtle-text transition-colors duration-theme truncate text-meta">
                         {u.username}
                       </span>
                       {isMe && (
-                        <span className="text-xs px-1.5 py-0.5 rounded-pill bg-accent-subtle/60 text-accent-subtle-text border border-accent-subtle-border shrink-0">
+                        <span className="text-micro px-1.5 py-0.5 rounded-pill bg-accent-subtle/60 text-accent-subtle-text border border-accent-subtle-border shrink-0">
                           You
                         </span>
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-xs text-content-subtle">
+                      <span className="text-micro text-content-subtle">
                         {reviewCount} {reviewCount === 1 ? "review" : "reviews"}
                       </span>
                       {avgRating !== null && (
                         <>
-                          <span className="text-content-faint text-xs">·</span>
+                          <span className="text-content-faint text-micro">
+                            ·
+                          </span>
                           <span
-                            className={`text-xs font-semibold ${ratingColor(avgRating)}`}
+                            className={`text-micro font-semibold ${ratingColor(avgRating)}`}
                           >
                             avg {formatRating(avgRating)}
                           </span>

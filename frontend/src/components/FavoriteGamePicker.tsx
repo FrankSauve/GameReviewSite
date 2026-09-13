@@ -64,17 +64,17 @@ export function FavoriteGamePicker({
           onChange={(e) => setFilter(e.target.value)}
           placeholder="Filter your reviewed games…"
           aria-label={`Filter games for ${label}`}
-          className="w-full bg-surface-raised/70 border border-line-strong rounded-control px-3 py-1.5 text-sm text-content placeholder-content-subtle focus:outline-none focus:ring-2 focus:ring-accent-hover"
+          className="w-full bg-surface-raised/70 border border-line-strong rounded-control px-3 py-1.5 text-meta text-content placeholder-content-subtle focus:outline-none focus:ring-2 focus:ring-accent-hover"
         />
       </div>
 
       {games.length === 0 ? (
-        <p className="px-3 py-6 text-center text-sm text-content-subtle">
+        <p className="px-3 py-6 text-center text-meta text-content-subtle">
           Review a game first — favourites are picked from games you have
           reviewed.
         </p>
       ) : matches.length === 0 ? (
-        <p className="px-3 py-6 text-center text-sm text-content-subtle">
+        <p className="px-3 py-6 text-center text-meta text-content-subtle">
           No match for "{filter}"
         </p>
       ) : (
@@ -87,10 +87,10 @@ export function FavoriteGamePicker({
                 onClick={() => pick(game.id)}
                 className="w-full flex items-center gap-3 px-3 py-2 hover:bg-surface-raised disabled:opacity-50 transition-colors duration-theme text-left"
               >
-                <div className="w-8 h-11 rounded overflow-hidden bg-surface-raised shrink-0">
+                <div className="w-8 h-11 rounded-chip overflow-hidden bg-surface-raised shrink-0">
                   <GameCover game={game} size="sm" decorative />
                 </div>
-                <span className="text-sm text-content truncate">
+                <span className="text-meta text-content truncate">
                   {game.title}
                 </span>
               </button>
@@ -105,7 +105,7 @@ export function FavoriteGamePicker({
             type="button"
             disabled={clearing}
             onClick={() => void clearFavorite({ variables: { category } })}
-            className="w-full text-xs text-content-subtle hover:text-danger-text disabled:opacity-50 py-1 transition-colors duration-theme"
+            className="w-full text-micro text-content-subtle hover:text-danger-text disabled:opacity-50 py-1 transition-colors duration-theme"
           >
             Clear {label}
           </button>

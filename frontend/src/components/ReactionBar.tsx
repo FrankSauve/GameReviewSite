@@ -128,21 +128,21 @@ export function ReactionBar({
             aria-pressed={chip.reacted}
             aria-label={`React with ${chip.emoji}`}
             aria-describedby={named === chip.emoji ? tooltipId : undefined}
-            className={`flex items-center gap-1 rounded-pill border px-2 py-0.5 text-sm transition-colors duration-theme ${
+            className={`flex items-center gap-1 rounded-pill border px-2 py-0.5 text-meta transition-colors duration-theme ${
               chip.reacted
                 ? "border-accent-border bg-accent/20 text-accent-subtle-text"
                 : "border-line-strong bg-surface-raised/60 text-content-body hover:border-line-strong"
             }`}
           >
             <span>{chip.emoji}</span>
-            <span className="text-xs tabular-nums">{chip.count}</span>
+            <span className="text-micro tabular-nums">{chip.count}</span>
           </button>
 
           {named === chip.emoji && (
             <span
               id={tooltipId}
               role="tooltip"
-              className="pointer-events-none absolute bottom-full left-0 z-30 mb-1 max-w-64 popover px-2 py-1 text-xs text-content"
+              className="pointer-events-none absolute bottom-full left-0 z-30 mb-1 max-w-64 popover px-2 py-1 text-micro text-content"
             >
               {describeReactors(reactors?.reactionUsers ?? [], chip.count)}{" "}
               reacted with {chip.emoji}
@@ -169,7 +169,7 @@ export function ReactionBar({
               type="button"
               onClick={() => react(emoji)}
               aria-label={`React with ${emoji}`}
-              className="text-lg leading-none p-1 rounded hover:bg-surface-raised transition-colors duration-theme"
+              className="text-lg leading-none p-1 rounded-control hover:bg-surface-raised transition-colors duration-theme"
             >
               {emoji}
             </button>
@@ -178,7 +178,7 @@ export function ReactionBar({
             type="button"
             onClick={() => setMenu("all")}
             aria-label="More emoji"
-            className="text-sm leading-none px-2 py-1.5 rounded text-content-muted hover:text-content hover:bg-surface-raised transition-colors duration-theme"
+            className="text-meta leading-none px-2 py-1.5 rounded-control text-content-muted hover:text-content hover:bg-surface-raised transition-colors duration-theme"
           >
             +
           </button>

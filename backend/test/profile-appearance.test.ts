@@ -125,6 +125,6 @@ describe("the appearance an account has picked", () => {
 
   it("offers both axes to the picker", () => {
     expect(THEMES.length).toBe(4);
-    expect(PALETTES.length).toBe(3);
+    expect(PALETTES.length).toBe(6);
   });
 });

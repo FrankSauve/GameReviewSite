@@ -47,7 +47,7 @@ export function FavoritesGrid({
         {FAVORITE_CATEGORIES.map((c) => (
           <div key={c.key} className="space-y-1.5">
             <div className="aspect-video rounded-control bg-surface-raised animate-pulse" />
-            <div className="h-3 rounded bg-surface-raised animate-pulse" />
+            <div className="h-3 rounded-chip bg-surface-raised animate-pulse" />
           </div>
         ))}
       </div>
@@ -72,7 +72,7 @@ export function FavoritesGrid({
                 </div>
               </>
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-xs text-content-subtle">
+              <div className="w-full h-full flex items-center justify-center text-micro text-content-subtle">
                 {isOwnProfile ? "Select" : "—"}
               </div>
             )}
@@ -107,7 +107,9 @@ export function FavoritesGrid({
               tile
             )}
 
-            <p className="text-xs text-content-muted leading-tight">{label}</p>
+            <p className="text-micro text-content-muted leading-tight">
+              {label}
+            </p>
 
             {isOwnProfile && openCategory === key && (
               <FavoriteGamePicker

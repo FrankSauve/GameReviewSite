@@ -8,9 +8,10 @@
  * handed every visitor's IP address and Referer to Google before the page had
  * rendered, on a site whose whole point is being self-hosted.
  *
- * All three are variable, so one file covers every weight a theme asks for, and
- * the `font-weight` range below is the face's real axis — a request outside it
- * is clamped rather than faked. Subset to latin, latin-ext and Vietnamese.
+ * All of them are variable, so one file covers every weight a theme asks for,
+ * and each `font-weight` range below is that face's real axis — a request
+ * outside it is clamped rather than faked. Subset to latin, latin-ext and
+ * Vietnamese throughout.
  *
  * A face is only downloaded once a rule actually uses it, so a visitor who
  * stays on the default theme never fetches the serif.
@@ -48,6 +49,132 @@
   font-weight: 200 900;
   font-style: normal;
   font-display: swap;
+}
+
+/*
+ * The two faces added for the Terminal and Quiet themes. These arrive split by
+ * subset with a `unicode-range` apiece, rather than as the one file the four
+ * above use: a reader who never types outside latin fetches 40KB of the mono
+ * instead of 63KB, and the body face is the one place that is worth the extra
+ * declarations. Terminal sets the mono as its *body* face, so it needs the
+ * italic too — a review's `_emphasis_` would otherwise be synthesised.
+ */
+
+@font-face {
+  font-family: "Inter Tight";
+  src: url("./assets/fonts/inter-tight/InterTight-latin-Variable.woff2")
+    format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Inter Tight";
+  src: url("./assets/fonts/inter-tight/InterTight-latin-ext-Variable.woff2")
+    format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Inter Tight";
+  src: url("./assets/fonts/inter-tight/InterTight-vietnamese-Variable.woff2")
+    format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1,
+    U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329,
+    U+1EA0-1EF9, U+20AB;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("./assets/fonts/jetbrains-mono/JetBrainsMono-latin-Variable.woff2")
+    format("woff2");
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("./assets/fonts/jetbrains-mono/JetBrainsMono-latin-Italic-Variable.woff2")
+    format("woff2");
+  font-weight: 100 800;
+  font-style: italic;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212,
+    U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("./assets/fonts/jetbrains-mono/JetBrainsMono-latin-ext-Variable.woff2")
+    format("woff2");
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("./assets/fonts/jetbrains-mono/JetBrainsMono-latin-ext-Italic-Variable.woff2")
+    format("woff2");
+  font-weight: 100 800;
+  font-style: italic;
+  font-display: swap;
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304,
+    U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB,
+    U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("./assets/fonts/jetbrains-mono/JetBrainsMono-vietnamese-Variable.woff2")
+    format("woff2");
+  font-weight: 100 800;
+  font-style: normal;
+  font-display: swap;
+  unicode-range:
+    U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1,
+    U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329,
+    U+1EA0-1EF9, U+20AB;
+}
+
+@font-face {
+  font-family: "JetBrains Mono";
+  src: url("./assets/fonts/jetbrains-mono/JetBrainsMono-vietnamese-Italic-Variable.woff2")
+    format("woff2");
+  font-weight: 100 800;
+  font-style: italic;
+  font-display: swap;
+  unicode-range:
+    U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1,
+    U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329,
+    U+1EA0-1EF9, U+20AB;
 }
 
 /*
@@ -89,6 +216,12 @@
     --control-pad-x: 1.125rem;
     --control-pad-y: 0.5rem;
 
+    /* Corner brackets that frame a panel without enclosing it. Zero-width in
+       every theme but the Console, which is why every card can carry them.
+       Drawn top right, clear of the corner --card-clip removes. */
+    --card-bracket-size: 12px;
+    --card-bracket-width: 2px;
+
     --shadow-card: none;
     --shadow-card-hover: inset 0 0 0 1px rgb(var(--accent) / 0.45);
     --shadow-button: none;
@@ -109,6 +242,9 @@
       "Archivo Narrow", "Roboto Condensed", "Liberation Sans Narrow",
       var(--font-body);
     --font-numeric: var(--font-display);
+    /* Labels and metadata, for a theme that wants them off the body face:
+       Editorial sets a sans here against its serif body. */
+    --font-meta: var(--font-display);
     /* Archivo Narrow's wght axis stops at 700; asking for more is clamped. */
     --weight-display: 700;
     --weight-button: 700;
@@ -118,6 +254,50 @@
     --case-section-head: uppercase;
     --numeric-variant: tabular-nums;
 
+    /* Set on <html>, so this one token rescales every rem-based utility on the
+       page together. It is how a theme varies overall density. */
+    /* A factor, never a px: an absolute root size overrides the base size the
+       reader set in their browser, and every rem on the page keys off it. */
+    --root-size: 93.75%;
+    --line-height-body: 1.45;
+    /* The line length prose is held to. */
+    --measure: 74ch;
+    /* initial-letter lines. 0 is off, and only Editorial turns it on. */
+
+    /* The seven type roles the components use. --root-size scales these together;
+       these are what let a theme change the ratios between them. The Console
+       keeps the jumps small, because a readout is meant to read as one dense
+       surface rather than as a page with a headline. */
+    --size-display: 2rem;
+    --leading-display: 1.12;
+    --size-title: 1.25rem;
+    --leading-title: 1.25;
+    --size-subtitle: 1.125rem;
+    --leading-subtitle: 1.25;
+    --size-body: 1rem;
+    --leading-body: var(--line-height-body);
+    --size-meta: 0.8125rem;
+    --leading-meta: 1.4;
+    --size-micro: 0.75rem;
+    --leading-micro: 1.3;
+    --size-label: 0.6875rem;
+    --leading-label: 1.3;
+
+    /* --- Space. Structural rhythm only; an incidental gap between an icon and
+           its label stays a literal in the component. --- */
+    --space-card-pad: 1rem;
+    --space-page-y: 1.75rem;
+
+    /* --- Texture. The one decorative layer a theme may paint over the whole
+           page, drawn by body::before. Scanlines here; the rule names a token
+           rather than a hue, so the palette still decides the colour. --- */
+    --texture-image: repeating-linear-gradient(
+      to bottom,
+      rgb(var(--text)) 0 1px,
+      transparent 1px 3px
+    );
+    --texture-opacity: 0.04;
+
     /* --- Motion --- */
     --motion-duration: 150ms;
 
@@ -126,56 +306,60 @@
     --section-tick-height: 1.125rem;
     --section-tick-radius: 0;
     --section-rule-width: 0px;
+  }
 
-    /* --- Colour (palette-owned). RGB channel triplets so Tailwind's
-           <alpha-value> works. These defaults are the site as it was. --- */
-    --bg: 3 7 18;
-    --surface: 17 24 39;
-    --surface-raised: 31 41 55;
-    --line: 31 41 55;
-    --line-strong: 55 65 81;
+  /*
+   * Midnight, the default palette. Named as well as defaulted: :root is what
+   * paints a page before <html> is stamped, and the [data-palette] half is what
+   * lets a swatch re-scope the ramp onto itself, as every other palette's block
+   * does. RGB channel triplets so Tailwind's <alpha-value> works; every other
+   * palette restates this whole set rather than inheriting part of it.
+   */
+  [data-palette="midnight"],
+  :root {
+    --bg: 8 12 22;
+    --surface: 20 25 35;
+    --surface-raised: 31 37 48;
+    --line: 32 38 49;
+    --line-strong: 51 57 69;
 
-    /* Four text rungs, each >=4.5:1 on --surface. --text-faint is not one of
-       them: separators, disabled states and decoration only. */
-    --text: 243 244 246;
-    --text-body: 209 213 219;
-    --text-muted: 156 163 175;
-    --text-subtle: 139 146 158;
-    --text-faint: 113 120 133;
+    --text: 243 247 255;
+    --text-body: 213 217 225;
+    --text-muted: 178 182 190;
+    --text-subtle: 159 163 171;
+    --text-faint: 126 130 137;
 
-    --accent: 124 58 237;
-    --accent-hover: 139 92 246;
-    --accent-active: 109 40 217;
+    --accent: 115 95 233;
+    --accent-hover: 138 123 254;
+    --accent-active: 94 69 205;
     --accent-contrast: 255 255 255;
-    --accent-border: 109 40 217;
-    --accent-subtle-bg: 76 29 149;
-    --accent-subtle-border: 91 33 182;
-    --accent-subtle-text: 196 181 253;
-    --ring: 139 92 246;
+    --accent-border: 99 76 212;
+    --accent-subtle-bg: 43 32 97;
+    --accent-subtle-border: 62 53 126;
+    --accent-subtle-text: 183 181 252;
+    --ring: 138 123 254;
 
-    --danger: 220 38 38;
-    --danger-hover: 239 68 68;
+    --danger: 201 48 45;
+    --danger-hover: 226 73 66;
     --danger-contrast: 255 255 255;
-    --danger-text: 248 113 113;
-    --danger-subtle-bg: 127 29 29;
-    --danger-subtle-border: 153 27 27;
+    --danger-text: 239 127 116;
+    --danger-subtle-bg: 82 22 19;
+    --danger-subtle-border: 114 36 32;
 
-    --warning-text: 251 191 36;
-    --warning-border: 146 64 14;
+    --warning-text: 238 177 84;
+    --warning-border: 105 69 1;
 
-    --rating-high: 52 211 153;
-    --rating-mid: 251 191 36;
-    --rating-low: 248 113 113;
+    --rating-high: 99 209 143;
+    --rating-mid: 238 177 84;
+    --rating-low: 244 124 112;
 
-    /* The dark end every cover scrim and placeholder fades into. A token so a
-       light palette does not have to fade art into near-black. */
-    --scrim: 3 7 18;
+    --scrim: 8 12 22;
+    --text-on-art: 255 255 255;
 
-    /* Decorative identity colour: avatar and cover gradients, and the chip
-       hues genres are assigned. Held as gradient stop lists rather than channel
-       triplets, so a rule can drop one straight into linear-gradient(). A
-       palette may override any of these but need not: leaving them alone
-       inherits this set. */
+    /* Identity colour, not palette colour: an account picks one of these by
+       name, and the picker labels it by that name, so no palette may make
+       --avatar-violet orange. They stay dark in every palette because the
+       initial drawn on them is always --text-on-art. */
     --avatar-violet: #7c3aed, #4338ca;
     --avatar-indigo: #4f46e5, #1d4ed8;
     --avatar-blue: #2563eb, #0e7490;
@@ -189,29 +373,33 @@
     --avatar-pink: #db2777, #a21caf;
     --avatar-fuchsia: #c026d3, #7e22ce;
 
-    --cover-0: #4c1d95, #312e81;
-    --cover-1: #881337, #831843;
-    --cover-2: #064e3b, #134e4a;
-    --cover-3: #1e3a8a, #164e63;
-    --cover-4: #78350f, #7c2d12;
-    --cover-5: #701a75, #581c87;
+    /* Decorative, and unnamed, so a palette is free to retint them: the cover
+       placeholder is picked by hashing a title, not chosen by anyone. Held as
+       gradient stop lists rather than channel triplets, so a rule can drop one
+       straight into linear-gradient(). */
+    --cover-0: #342d69, #331047;
+    --cover-1: #5a1e44, #480219;
+    --cover-2: #5f2300, #351e00;
+    --cover-3: #3e3a00, #182a00;
+    --cover-4: #01432f, #002b29;
+    --cover-5: #013e51, #002546;
 
     /* Chip hues, as a background triplet and a foreground triplet: the
        background is drawn at an alpha the theme sets, so both are channels. */
-    --hue-1-bg: 76 29 149;
-    --hue-1-fg: 196 181 253;
-    --hue-2-bg: 127 29 29;
-    --hue-2-fg: 252 165 165;
-    --hue-3-bg: 6 78 59;
-    --hue-3-fg: 110 231 183;
-    --hue-4-bg: 30 58 138;
-    --hue-4-fg: 147 197 253;
-    --hue-5-bg: 124 45 18;
-    --hue-5-fg: 253 186 116;
-    --hue-6-bg: 22 78 99;
-    --hue-6-fg: 103 232 249;
-    --hue-7-bg: 136 19 55;
-    --hue-7-fg: 253 164 175;
+    --hue-1-bg: 43 36 88;
+    --hue-1-fg: 189 188 255;
+    --hue-2-bg: 72 24 63;
+    --hue-2-fg: 242 169 223;
+    --hue-3-bg: 82 22 19;
+    --hue-3-fg: 255 171 161;
+    --hue-4-bg: 63 41 0;
+    --hue-4-fg: 235 187 110;
+    --hue-5-bg: 33 53 0;
+    --hue-5-fg: 174 210 133;
+    --hue-6-bg: 1 54 47;
+    --hue-6-fg: 104 220 199;
+    --hue-7-bg: 0 51 70;
+    --hue-7-fg: 115 209 254;
   }
 
   /*
@@ -221,8 +409,13 @@
    */
 
   /* Quiet, Swiss-adjacent: hierarchy from size, weight and space alone. No
-     shadow, no lift, no decoration. */
+     shadow, no lift, no decoration — so the headline has to carry it, and the
+     display-to-body jump is the largest of the four. */
   [data-theme="swiss"] {
+    /* The texture in :root is the HUD's. A theme that wants a bare page has to
+       turn it off, because body::before reads whatever it inherits. */
+    --texture-image: none;
+
     --radius-card: 2px;
     --radius-control: 2px;
     --radius-chip: 2px;
@@ -231,22 +424,46 @@
 
     --card-clip: none;
     --card-rail-width: 0px;
+    --card-bracket-width: 0px;
     --card-hover-lift: none;
     --shadow-card: none;
     --shadow-card-hover: none;
     --shadow-popover: 0 8px 24px -8px rgb(var(--scrim) / 0.5);
     --chip-border-width: 1px;
     --chip-bg-alpha: 0;
+    --control-pad-x: 1rem;
+    --control-pad-y: 0.5rem;
 
     --font-display: "Inter Tight", var(--font-body);
+    --font-meta: var(--font-body);
     --font-numeric: var(--font-body);
     --weight-display: 700;
     --weight-button: 600;
-    --tracking-display: -0.02em;
+    --tracking-display: -0.03em;
     --tracking-button: 0;
     --case-button: none;
     --case-section-head: none;
     --numeric-variant: tabular-nums;
+
+    --root-size: 100%;
+    --line-height-body: 1.6;
+    --measure: 66ch;
+
+    --size-display: 3rem;
+    --leading-display: 1.05;
+    --size-title: 1.5rem;
+    --leading-title: 1.2;
+    --size-subtitle: 1.25rem;
+    --leading-subtitle: 1.2;
+    --size-meta: 0.875rem;
+    --leading-meta: 1.5;
+    --size-micro: 0.75rem;
+    --leading-micro: 1.4;
+    --size-label: 0.75rem;
+
+    /* The whitespace is the decoration. */
+    --space-card-pad: 1.5rem;
+    --space-page-y: 3rem;
 
     --motion-duration: 120ms;
 
@@ -256,7 +473,8 @@
   }
 
   /* Print editorial: cards stop being boxes and become ruled rows, and the
-     display face is a serif. */
+     serif is the *body* face, not just the display one. That, the measure and
+     the leading are what make it read as a page rather than a feed. */
   [data-theme="editorial"] {
     --radius-card: 0px;
     --radius-control: 0px;
@@ -271,16 +489,24 @@
     --card-border-bottom-width: 1px;
     --card-clip: none;
     --card-rail-width: 0px;
+    --card-bracket-width: 0px;
     --card-hover-lift: none;
     --shadow-card: none;
     --shadow-card-hover: none;
     --shadow-popover: 0 12px 32px -12px rgb(var(--scrim) / 0.5);
     --chip-border-width: 0px;
     --chip-bg-alpha: 0;
+    --control-pad-x: 1.25rem;
+    --control-pad-y: 0.5rem;
 
-    --font-display:
+    --font-body:
       "Source Serif 4", Newsreader, Georgia, "Times New Roman", serif;
-    --font-numeric: var(--font-display);
+    --font-display: var(--font-body);
+    /* The one theme that moves labels off the body face: a sans byline against
+       serif copy is how the form has always signalled which is which. */
+    --font-meta:
+      Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    --font-numeric: var(--font-body);
     --weight-display: 700;
     --weight-button: 600;
     --tracking-display: 0;
@@ -289,15 +515,44 @@
     --case-section-head: uppercase;
     --numeric-variant: oldstyle-nums;
 
+    --root-size: 106.25%;
+    --line-height-body: 1.75;
+    --measure: 68ch;
+    /* Three lines is the editorial classic. Only this theme sets it. */
+    --dropcap-lines: 3;
+
+    --size-display: 2.5rem;
+    --leading-display: 1.15;
+    --size-title: 1.5rem;
+    --leading-title: 1.3;
+    --size-subtitle: 1.25rem;
+    --leading-subtitle: 1.3;
+    --size-meta: 0.8125rem;
+    --leading-meta: 1.5;
+    --size-micro: 0.75rem;
+    --leading-micro: 1.4;
+    --size-label: 0.75rem;
+
+    --space-card-pad: 1.25rem;
+    --space-page-y: 3rem;
+
+    /* Paper grain. Greyscale noise, so it sits on a light or a dark palette
+       without carrying a hue of its own into either. */
+    --texture-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    --texture-opacity: 0.04;
+
     --motion-duration: 160ms;
 
     --section-tick-width: 0px;
     --section-rule-width: 1px;
   }
 
-  /* Terminal brutalism: hard edges, offset shadows a press pushes the control
-     into, and no motion at all. */
+  /* Terminal brutalism: mono throughout — body included — hard edges, offset
+     shadows a press pushes the control into, and no motion at all. */
   [data-theme="brutalist"] {
+    /* As in Swiss: inherited, so it has to be refused. */
+    --texture-image: none;
+
     --radius-card: 0px;
     --radius-control: 0px;
     --radius-chip: 0px;
@@ -308,9 +563,12 @@
     --card-border-bottom-width: 2px;
     --card-clip: none;
     --card-rail-width: 0px;
-    --card-hover-lift: none;
+    --card-bracket-width: 0px;
     --shadow-card: 4px 4px 0 rgb(var(--line-strong));
-    --shadow-card-hover: 4px 4px 0 rgb(var(--accent));
+    --shadow-card-hover: 6px 6px 0 rgb(var(--accent));
+    /* The only theme that lifts. A hard shadow is the one kind that reads as
+       depth without a blur, so the lift has somewhere to move off. */
+    --card-hover-lift: translate(-2px, -2px);
     --shadow-button: 3px 3px 0 rgb(var(--line-strong));
     /* The press moves the control onto its own shadow, which is why the two
        tokens have to change together. */
@@ -319,11 +577,15 @@
     --shadow-popover: 4px 4px 0 rgb(var(--line-strong));
     --chip-border-width: 2px;
     --chip-bg-alpha: 0;
+    --control-pad-x: 1rem;
+    --control-pad-y: 0.4375rem;
 
-    --font-numeric:
-      ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
-      "Liberation Mono", monospace;
-    --font-display: var(--font-numeric);
+    --font-body:
+      "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo,
+      Consolas, "Liberation Mono", monospace;
+    --font-display: var(--font-body);
+    --font-meta: var(--font-body);
+    --font-numeric: var(--font-body);
     --weight-display: 700;
     --weight-button: 700;
     --tracking-display: 0;
@@ -331,6 +593,28 @@
     --case-button: uppercase;
     --case-section-head: uppercase;
     --numeric-variant: tabular-nums;
+
+    --root-size: 93.75%;
+    --line-height-body: 1.5;
+    /* A mono sets far wider per character, so the same ch count is a much
+       longer line. 62ch here is about the measure 68ch is in the serif. */
+    --measure: 62ch;
+
+    --size-display: 1.875rem;
+    --leading-display: 1.15;
+    --size-title: 1.1875rem;
+    --leading-title: 1.3;
+    --size-subtitle: 1.0625rem;
+    --leading-subtitle: 1.3;
+    --size-body: 0.9375rem;
+    --size-meta: 0.8125rem;
+    --leading-meta: 1.45;
+    --size-micro: 0.75rem;
+    --leading-micro: 1.35;
+    --size-label: 0.6875rem;
+
+    --space-card-pad: 1rem;
+    --space-page-y: 2rem;
 
     --motion-duration: 0s;
 
@@ -342,88 +626,374 @@
 
   /*
    * Palettes. Colour only: a palette never sets a radius, a face or a duration,
-   * which is what lets any palette pair with any theme. The set in :root is the
-   * default. A palette must restate the core tokens; the decorative sets
-   * (--avatar-*, --cover-*, --hue-*) it may leave alone and inherit.
+   * which is what lets any palette pair with any theme. Midnight is the set in
+   * :root above.
+   *
+   * Each one restates the whole set, including the chip hues and the cover
+   * stops. Inheriting most of it is what made the old Ember invisible: it
+   * overrode nine accent tokens and left the ground identical to Midnight's.
+   * The neutrals carry the palette's own hue; that is the point.
    */
 
+  /* Ember. Warm and low: the ground is umber rather than the shared
+     near-black, which is the whole difference between a palette and an accent. */
   [data-palette="ember"] {
-    --accent: 234 88 12;
-    --accent-hover: 249 115 22;
-    --accent-active: 194 65 12;
+    --bg: 22 8 3;
+    --surface: 36 20 12;
+    --surface-raised: 49 32 24;
+    --line: 50 34 25;
+    --line-strong: 71 53 44;
+
+    --text: 254 245 240;
+    --text-body: 224 215 210;
+    --text-muted: 189 180 175;
+    --text-subtle: 170 161 157;
+    --text-faint: 136 128 124;
+
+    --accent: 193 86 4;
+    --accent-hover: 226 107 27;
+    --accent-active: 158 69 0;
     --accent-contrast: 255 255 255;
-    --accent-border: 194 65 12;
-    --accent-subtle-bg: 124 45 18;
-    --accent-subtle-border: 154 52 18;
-    --accent-subtle-text: 253 186 116;
-    --ring: 249 115 22;
+    --accent-border: 167 73 1;
+    --accent-subtle-bg: 77 30 0;
+    --accent-subtle-border: 108 45 2;
+    --accent-subtle-text: 236 174 142;
+    --ring: 226 107 27;
+
+    --danger: 201 48 45;
+    --danger-hover: 226 73 66;
+    --danger-contrast: 255 255 255;
+    --danger-text: 239 127 116;
+    --danger-subtle-bg: 82 22 19;
+    --danger-subtle-border: 114 36 32;
+
+    --warning-text: 238 177 84;
+    --warning-border: 105 69 1;
+
+    --rating-high: 99 209 143;
+    --rating-mid: 238 177 84;
+    --rating-low: 244 124 112;
+
+    --scrim: 22 8 3;
+    --text-on-art: 255 255 255;
+
+    --cover-0: #5c2501, #341f00;
+    --cover-1: #3c3a00, #152b00;
+    --cover-2: #004331, #012b2a;
+    --cover-3: #013e53, #002449;
+    --cover-4: #372c68, #340f45;
+    --cover-5: #5b1d41, #490216;
+
+    --hue-1-bg: 77 30 0;
+    --hue-1-fg: 255 174 133;
+    --hue-2-bg: 54 46 0;
+    --hue-2-fg: 214 197 110;
+    --hue-3-bg: 0 57 21;
+    --hue-3-fg: 143 216 158;
+    --hue-4-bg: 1 53 56;
+    --hue-4-fg: 93 217 225;
+    --hue-5-bg: 0 46 89;
+    --hue-5-fg: 152 200 255;
+    --hue-6-bg: 55 32 82;
+    --hue-6-fg: 210 179 255;
+    --hue-7-bg: 78 22 49;
+    --hue-7-fg: 253 166 201;
   }
 
-  /* The light palette, and the reason the scrim and surface tokens exist: with
-     the cover fades reading from them, art stops fading into near-black. */
-  [data-palette="paper"] {
-    --bg: 250 250 249;
-    --surface: 255 255 255;
-    --surface-raised: 245 245 244;
-    --line: 231 229 228;
-    --line-strong: 214 211 209;
+  /* Phosphor. A green CRT. Sits naturally under the Terminal theme,
+     though nothing couples the two. */
+  [data-palette="phosphor"] {
+    --bg: 4 15 6;
+    --surface: 15 28 18;
+    --surface-raised: 27 41 30;
+    --line: 28 42 31;
+    --line-strong: 47 61 50;
 
-    --text: 28 25 23;
-    --text-body: 68 64 60;
-    --text-muted: 87 83 78;
-    --text-subtle: 114 107 102;
-    --text-faint: 146 139 133;
+    --text: 241 249 243;
+    --text-body: 212 219 213;
+    --text-muted: 177 184 178;
+    --text-subtle: 158 165 159;
+    --text-faint: 125 132 126;
 
-    --accent: 109 40 217;
-    --accent-hover: 124 58 237;
-    --accent-active: 76 29 149;
+    --accent: 1 138 35;
+    --accent-hover: 40 164 58;
+    --accent-active: 0 111 27;
     --accent-contrast: 255 255 255;
-    --accent-border: 139 92 246;
-    --accent-subtle-bg: 237 233 254;
-    --accent-subtle-border: 196 181 253;
-    --accent-subtle-text: 91 33 182;
-    --ring: 139 92 246;
+    --accent-border: 3 117 29;
+    --accent-subtle-bg: 0 57 9;
+    --accent-subtle-border: 15 80 24;
+    --accent-subtle-text: 153 206 154;
+    --ring: 40 164 58;
 
-    --danger: 220 38 38;
-    --danger-hover: 185 28 28;
+    --danger: 201 48 45;
+    --danger-hover: 226 73 66;
     --danger-contrast: 255 255 255;
-    --danger-text: 185 28 28;
-    --danger-subtle-bg: 254 226 226;
-    --danger-subtle-border: 252 165 165;
+    --danger-text: 239 127 116;
+    --danger-subtle-bg: 82 22 19;
+    --danger-subtle-border: 114 36 32;
 
-    --warning-text: 180 83 9;
-    --warning-border: 253 230 138;
+    --warning-text: 238 177 84;
+    --warning-border: 105 69 1;
 
-    --rating-high: 4 120 87;
-    --rating-mid: 180 83 9;
-    --rating-low: 185 28 28;
+    --rating-high: 99 209 143;
+    --rating-mid: 238 177 84;
+    --rating-low: 244 124 112;
 
-    --scrim: 28 25 23;
+    --scrim: 4 15 6;
+    --text-on-art: 255 255 255;
 
-    /* Chip hues have to be restated: a dark hue laid over white at the theme's
-       alpha reads as mud, so the light palette supplies tints and dark text. */
-    --hue-1-bg: 237 233 254;
-    --hue-1-fg: 91 33 182;
-    --hue-2-bg: 254 226 226;
-    --hue-2-fg: 153 27 27;
-    --hue-3-bg: 209 250 229;
-    --hue-3-fg: 6 95 70;
-    --hue-4-bg: 219 234 254;
-    --hue-4-fg: 30 64 175;
-    --hue-5-bg: 255 237 213;
-    --hue-5-fg: 154 52 18;
-    --hue-6-bg: 207 250 254;
-    --hue-6-fg: 21 94 117;
-    --hue-7-bg: 255 228 230;
-    --hue-7-fg: 159 18 57;
+    --cover-0: #084511, #012c20;
+    --cover-1: #004046, #002838;
+    --cover-2: #1e346b, #261650;
+    --cover-3: #512254, #44052b;
+    --cover-4: #621d1c, #3d1800;
+    --cover-5: #483401, #262600;
+
+    --hue-1-bg: 4 57 12;
+    --hue-1-fg: 150 215 152;
+    --hue-2-bg: 0 54 54;
+    --hue-2-fg: 94 218 219;
+    --hue-3-bg: 0 48 83;
+    --hue-3-fg: 146 202 255;
+    --hue-4-bg: 52 33 84;
+    --hue-4-fg: 204 182 255;
+    --hue-5-bg: 77 22 53;
+    --hue-5-fg: 250 167 207;
+    --hue-6-bg: 81 25 3;
+    --hue-6-fg: 255 173 144;
+    --hue-7-bg: 57 44 0;
+    --hue-7-fg: 223 194 109;
+  }
+
+  /* Cobalt. Deep navy under a cyan accent; the readout palette. */
+  [data-palette="cobalt"] {
+    --bg: 2 13 26;
+    --surface: 12 26 40;
+    --surface-raised: 24 38 53;
+    --line: 25 39 54;
+    --line-strong: 44 59 74;
+
+    --text: 241 248 255;
+    --text-body: 211 218 225;
+    --text-muted: 176 183 189;
+    --text-subtle: 158 164 170;
+    --text-faint: 124 130 137;
+
+    --accent: 8 130 152;
+    --accent-hover: 4 157 183;
+    --accent-active: 3 105 123;
+    --accent-contrast: 255 255 255;
+    --accent-border: 6 111 130;
+    --accent-subtle-bg: 0 52 62;
+    --accent-subtle-border: 1 75 88;
+    --accent-subtle-text: 132 203 220;
+    --ring: 4 157 183;
+
+    --danger: 201 48 45;
+    --danger-hover: 226 73 66;
+    --danger-contrast: 255 255 255;
+    --danger-text: 239 127 116;
+    --danger-subtle-bg: 82 22 19;
+    --danger-subtle-border: 114 36 32;
+
+    --warning-text: 238 177 84;
+    --warning-border: 105 69 1;
+
+    --rating-high: 99 209 143;
+    --rating-mid: 238 177 84;
+    --rating-low: 244 124 112;
+
+    --scrim: 2 13 26;
+    --text-on-art: 255 255 255;
+
+    --cover-0: #003f4b, #00273d;
+    --cover-1: #2a316b, #2d134c;
+    --cover-2: #56204c, #460322;
+    --cover-3: #611f0e, #391b00;
+    --cover-4: #433700, #202800;
+    --cover-5: #004424, #002b25;
+
+    --hue-1-bg: 0 52 62;
+    --hue-1-fg: 99 214 241;
+    --hue-2-bg: 24 42 90;
+    --hue-2-fg: 169 195 255;
+    --hue-3-bg: 63 28 75;
+    --hue-3-fg: 225 174 243;
+    --hue-4-bg: 81 21 37;
+    --hue-4-fg: 255 168 183;
+    --hue-5-bg: 71 35 0;
+    --hue-5-fg: 249 179 122;
+    --hue-6-bg: 48 48 0;
+    --hue-6-fg: 200 203 116;
+    --hue-7-bg: 0 56 35;
+    --hue-7-fg: 127 218 173;
+  }
+
+  /* Paper. The light palette, and the reason the scrim and surface
+     tokens exist: with the cover fades reading from them, art stops fading
+     into near-black. */
+  [data-palette="paper"] {
+    --bg: 252 248 245;
+    --surface: 255 255 255;
+    --surface-raised: 245 242 238;
+    --line: 229 225 222;
+    --line-strong: 210 207 203;
+
+    --text: 31 27 22;
+    --text-body: 72 67 61;
+    --text-muted: 91 86 80;
+    --text-subtle: 111 105 99;
+    --text-faint: 150 144 137;
+
+    --accent: 99 81 202;
+    --accent-hover: 121 106 229;
+    --accent-active: 78 56 175;
+    --accent-contrast: 255 255 255;
+    --accent-border: 126 112 236;
+    --accent-subtle-bg: 233 233 255;
+    --accent-subtle-border: 203 203 255;
+    --accent-subtle-text: 89 86 142;
+    --ring: 121 106 229;
+
+    --danger: 190 35 35;
+    --danger-hover: 163 2 15;
+    --danger-contrast: 255 255 255;
+    --danger-text: 164 59 53;
+    --danger-subtle-bg: 255 228 224;
+    --danger-subtle-border: 248 189 181;
+
+    --warning-text: 151 101 4;
+    --warning-border: 248 200 133;
+
+    --rating-high: 4 126 71;
+    --rating-mid: 151 101 4;
+    --rating-low: 168 54 48;
+
+    --scrim: 31 27 22;
+    --text-on-art: 255 255 255;
+
+    --cover-0: #7471b3, #6f4c87;
+    --cover-1: #a46188, #8c4351;
+    --cover-2: #ab6646, #81520a;
+    --cover-3: #837d2f, #4a6826;
+    --cover-4: #338d6b, #046c68;
+    --cover-5: #2286a7, #2c6194;
+
+    --hue-1-bg: 229 229 255;
+    --hue-1-fg: 83 77 146;
+    --hue-2-bg: 254 220 245;
+    --hue-2-fg: 125 61 111;
+    --hue-3-bg: 255 224 219;
+    --hue-3-fg: 139 60 53;
+    --hue-4-bg: 251 229 195;
+    --hue-4-fg: 117 80 0;
+    --hue-5-bg: 222 239 204;
+    --hue-5-fg: 68 99 20;
+    --hue-6-bg: 197 243 233;
+    --hue-6-fg: 3 103 90;
+    --hue-7-bg: 205 238 255;
+    --hue-7-fg: 1 96 130;
+  }
+
+  /* Newsprint. Warm cream, near-black ink and a press red. The light
+     palette for reading rather than for working. */
+  [data-palette="newsprint"] {
+    --bg: 253 248 240;
+    --surface: 255 255 255;
+    --surface-raised: 247 242 234;
+    --line: 230 225 217;
+    --line-strong: 211 207 199;
+
+    --text: 31 27 21;
+    --text-body: 71 67 61;
+    --text-muted: 90 86 79;
+    --text-subtle: 110 106 99;
+    --text-faint: 149 144 137;
+
+    --accent: 190 35 35;
+    --accent-hover: 219 66 60;
+    --accent-active: 158 1 14;
+    --accent-contrast: 255 255 255;
+    --accent-border: 226 73 66;
+    --accent-subtle-bg: 255 228 224;
+    --accent-subtle-border: 255 191 183;
+    --accent-subtle-text: 139 70 64;
+    --ring: 219 66 60;
+
+    --danger: 190 35 35;
+    --danger-hover: 163 2 15;
+    --danger-contrast: 255 255 255;
+    --danger-text: 164 59 53;
+    --danger-subtle-bg: 255 228 224;
+    --danger-subtle-border: 248 189 181;
+
+    --warning-text: 151 101 4;
+    --warning-border: 248 200 133;
+
+    --rating-high: 4 126 71;
+    --rating-mid: 151 101 4;
+    --rating-low: 168 54 48;
+
+    --scrim: 31 27 21;
+    --text-on-art: 255 255 255;
+
+    --cover-0: #ae625a, #894b21;
+    --cover-1: #94762a, #5f630f;
+    --cover-2: #4f8a57, #006e58;
+    --cover-3: #038a98, #00668b;
+    --cover-4: #6078b6, #5f5291;
+    --cover-5: #9a6499, #874463;
+
+    --hue-1-bg: 255 224 219;
+    --hue-1-fg: 139 60 53;
+    --hue-2-bg: 251 229 195;
+    --hue-2-fg: 117 80 0;
+    --hue-3-bg: 222 239 204;
+    --hue-3-fg: 68 99 20;
+    --hue-4-bg: 197 243 233;
+    --hue-4-fg: 3 103 90;
+    --hue-5-bg: 205 238 255;
+    --hue-5-fg: 1 96 130;
+    --hue-6-bg: 228 230 255;
+    --hue-6-fg: 79 78 147;
+    --hue-7-bg: 253 220 246;
+    --hue-7-fg: 123 62 114;
+  }
+
+  /* Placed after the theme blocks on purpose: :root and [data-theme] have the
+     same specificity, so source order is what makes this win. */
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --motion-duration: 0s;
+      --card-hover-lift: none;
+      --button-press: none;
+    }
+  }
+
+  html {
+    font-size: var(--root-size);
   }
 
   body {
     background-color: rgb(var(--bg));
     color: rgb(var(--text));
     font-family: var(--font-body);
+    line-height: var(--line-height-body);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* The theme's texture, if it has one. Negative z-index keeps it behind every
+     in-flow element while still sitting over the page background, which body
+     propagates to the canvas; pointer-events keeps it from eating clicks. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: var(--texture-image);
+    opacity: var(--texture-opacity);
   }
 
   ::-webkit-scrollbar {
@@ -468,6 +1038,21 @@
     inset: 0 auto 0 0;
     width: var(--card-rail-width);
     background-color: rgb(var(--accent));
+    pointer-events: none;
+  }
+
+  /* Brackets that frame a panel without enclosing it. Zero-width in every
+     theme but the Console, which is why it costs nothing on every card. Top
+     right, not top left: --card-clip cuts the left corner off, and a clip-path
+     takes the pseudo-element with it. */
+  .card::after {
+    content: "";
+    position: absolute;
+    inset: 0 0 auto auto;
+    width: var(--card-bracket-size);
+    height: var(--card-bracket-size);
+    border: 0 solid rgb(var(--accent));
+    border-width: var(--card-bracket-width) var(--card-bracket-width) 0 0;
     pointer-events: none;
   }
 
@@ -677,6 +1262,45 @@
     background-color: rgb(var(--line));
   }
 
+  /* Three bands of a palette, shown in the picker. The element carries its
+     own data-palette, so the [data-palette] blocks above redefine the tokens
+     for this subtree and the swatch paints the palette it names rather than
+     the one in use. No colour is restated to draw it. */
+  .palette-swatch {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    width: 2.25rem;
+    height: 0.875rem;
+    border: 1px solid rgb(var(--line-strong));
+    border-radius: var(--radius-chip);
+    overflow: hidden;
+  }
+
+  /* --- Prose --- */
+
+  /* An article or review body read end to end, as against an excerpt in a feed
+     row: held to a measure, and opened with a drop cap where the theme asks for
+     one. */
+  .prose-longform {
+    max-width: var(--measure);
+  }
+
+  /* Scoped to the one theme that asks for a cap rather than guarded by
+     --dropcap-lines — at 0 only initial-letter drops as out of range, and the
+     face and weight beside it would still land, opening every body in every
+     other theme on one stray display-face letter.
+
+     The Markdown renderer wraps its output in one div, so the opening
+     paragraph is a grandchild. Only a body that actually opens on a paragraph
+     gets the cap — an article starting on a heading would look wrong with one. */
+  [data-theme="editorial"] .prose-longform > * > p:first-child::first-letter {
+    -webkit-initial-letter: var(--dropcap-lines);
+    initial-letter: var(--dropcap-lines);
+    font-family: var(--font-display);
+    font-weight: var(--weight-display);
+    margin-right: 0.0625em;
+  }
+
   /* --- Layout --- */
 
   /* The one desktop content width; every page-level container uses it. */
@@ -695,6 +1319,12 @@
   .font-numeric {
     font-family: var(--font-numeric);
     font-variant-numeric: var(--numeric-variant);
+  }
+
+  /* Bylines, counts and labels. Only Editorial moves this off the body face,
+     which is the whole point of the token. */
+  .font-meta {
+    font-family: var(--font-meta);
   }
 
   /* Avatar, cover and chip colour. Whole class names, because Tailwind's

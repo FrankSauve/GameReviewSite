@@ -17,10 +17,10 @@ function ReviewRow({ item }: { item: ReviewGroup["items"][number] }) {
 
         <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="font-semibold text-content group-hover:text-accent-subtle-text transition-colors duration-theme truncate text-sm">
+            <p className="font-semibold text-content group-hover:text-accent-subtle-text transition-colors duration-theme truncate text-meta">
               {game?.title ?? "Unknown game"}
             </p>
-            <p className="text-sm text-content-subtle truncate">
+            <p className="text-meta text-content-subtle truncate">
               {[
                 game?.releaseYear ? `Released ${game.releaseYear}` : null,
                 item.hoursPlayed != null ? formatHours(item.hoursPlayed) : null,
@@ -35,11 +35,11 @@ function ReviewRow({ item }: { item: ReviewGroup["items"][number] }) {
 
           <div className="flex items-baseline gap-0.5 shrink-0">
             <span
-              className={`font-numeric text-lg font-extrabold ${ratingColor(item.rating)}`}
+              className={`font-numeric text-title font-extrabold ${ratingColor(item.rating)}`}
             >
               {formatRating(item.rating)}
             </span>
-            <span className="text-xs text-content-subtle">/10</span>
+            <span className="text-micro text-content-subtle">/10</span>
           </div>
         </div>
       </article>
@@ -63,22 +63,22 @@ export function GroupedReviewList({
         <section key={group.key}>
           {group.label && (
             <div className="flex items-baseline gap-2 mb-2 pb-1 border-b border-line">
-              <h3 className="font-display text-lg text-content">
+              <h3 className="font-display text-title text-content">
                 {group.label}
               </h3>
-              <span className="text-xs text-content-subtle">
+              <span className="text-micro text-content-subtle">
                 {group.items.length}
                 {group.items.length === 1 ? " game" : " games"}
               </span>
               {showGroupAverage && (
                 <span
-                  className={`text-xs font-semibold ${ratingColor(group.average)}`}
+                  className={`text-micro font-semibold ${ratingColor(group.average)}`}
                 >
                   avg {formatRating(Math.round(group.average * 10) / 10)}
                 </span>
               )}
               {group.hours != null && (
-                <span className="text-xs text-content-subtle ml-auto">
+                <span className="text-micro text-content-subtle ml-auto">
                   {formatHours(Math.round(group.hours * 10) / 10)}
                 </span>
               )}

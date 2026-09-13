@@ -92,7 +92,7 @@ export function GameSearchBar() {
         <SearchIcon />
         <input
           ref={inputRef}
-          className="input-field rounded-card pl-9 pr-4 text-sm"
+          className="input-field rounded-card pl-9 pr-4 text-meta"
           placeholder="Search games to review…"
           value={query}
           onChange={handleInput}
@@ -112,13 +112,13 @@ export function GameSearchBar() {
         // panel under it with static insets instead of measuring the input.
         <div className="absolute top-full mt-2 left-0 right-0 max-sm:fixed max-sm:top-16 max-sm:left-2 max-sm:right-2 popover z-50 overflow-hidden">
           {searching && results.length === 0 && (
-            <div className="flex items-center justify-center gap-2 py-6 text-sm text-content-subtle">
+            <div className="flex items-center justify-center gap-2 py-6 text-meta text-content-subtle">
               <Spinner /> Searching RAWG…
             </div>
           )}
 
           {!searching && results.length === 0 && (
-            <div className="py-6 text-center text-sm text-content-subtle">
+            <div className="py-6 text-center text-meta text-content-subtle">
               No games found for "{query}"
             </div>
           )}
@@ -138,23 +138,23 @@ export function GameSearchBar() {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-content truncate">
+                      <p className="text-meta font-semibold text-content truncate">
                         {game.title}
                       </p>
                       <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                         {game.releaseYear && (
-                          <span className="text-xs text-content-subtle">
+                          <span className="text-micro text-content-subtle">
                             {game.releaseYear}
                           </span>
                         )}
                         {game.genres?.[0] && (
-                          <span className="text-xs bg-accent-subtle/50 text-accent-subtle-text px-1.5 py-0.5 rounded-pill">
+                          <span className="text-micro bg-accent-subtle/50 text-accent-subtle-text px-1.5 py-0.5 rounded-pill">
                             {game.genres[0]}
                           </span>
                         )}
                         {game.metacritic && (
                           <span
-                            className={`text-xs font-bold px-1.5 py-0.5 rounded ${
+                            className={`text-micro font-bold px-1.5 py-0.5 rounded-chip ${
                               game.metacritic >= 75
                                 ? "bg-rating-high/20 text-rating-high"
                                 : game.metacritic >= 50
@@ -169,7 +169,7 @@ export function GameSearchBar() {
                     </div>
 
                     {/* Action hint */}
-                    <span className="text-xs text-content-subtle shrink-0">
+                    <span className="text-micro text-content-subtle shrink-0">
                       {user ? "Review →" : "Sign in →"}
                     </span>
                   </button>
@@ -180,12 +180,12 @@ export function GameSearchBar() {
 
           {/* RAWG attribution */}
           <div className="px-3 py-2 border-t border-line flex items-center justify-end gap-1">
-            <span className="text-xs text-content-subtle">Powered by</span>
+            <span className="text-micro text-content-subtle">Powered by</span>
             <a
               href="https://rawg.io"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-content-subtle hover:text-content-muted"
+              className="text-micro text-content-subtle hover:text-content-muted"
             >
               RAWG
             </a>

@@ -11,7 +11,14 @@ import { validateChoice } from "./validate.js";
  */
 export const THEMES = ["hud", "swiss", "editorial", "brutalist"] as const;
 
-export const PALETTES = ["midnight", "ember", "paper"] as const;
+export const PALETTES = [
+  "midnight",
+  "ember",
+  "phosphor",
+  "cobalt",
+  "paper",
+  "newsprint",
+] as const;
 
 const KNOWN_THEMES = new Set<string>(THEMES);
 const KNOWN_PALETTES = new Set<string>(PALETTES);

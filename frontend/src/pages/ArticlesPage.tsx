@@ -49,9 +49,12 @@ export function ArticlesPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="section-head text-xl">Articles</h1>
+        <h1 className="section-head text-title">Articles</h1>
         {user && (
-          <Link to="/articles/new" className="btn-primary text-sm py-1.5 px-3">
+          <Link
+            to="/articles/new"
+            className="btn-primary text-meta py-1.5 px-3"
+          >
             Write an article
           </Link>
         )}
@@ -60,7 +63,7 @@ export function ArticlesPage() {
       {loading && (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="card p-5 animate-pulse space-y-3">
+            <div key={i} className="card p-card-pad animate-pulse space-y-3">
               <div className="h-4 skeleton-bar w-1/2" />
               <div className="h-3 skeleton-bar w-1/4" />
             </div>
@@ -72,7 +75,7 @@ export function ArticlesPage() {
         <div className="empty-state space-y-3">
           <p className="text-4xl">📜</p>
           <p className="text-content-muted font-medium">Nothing written yet</p>
-          <p className="text-sm text-content-subtle">
+          <p className="text-meta text-content-subtle">
             Manifestos, essays, anything that is not a review goes here.
           </p>
         </div>
@@ -84,7 +87,7 @@ export function ArticlesPage() {
             {articles.map((article) => (
               <li
                 key={article.id}
-                className="card p-5 hover:border-accent-subtle-border transition-colors duration-theme"
+                className="card p-card-pad hover:border-accent-subtle-border transition-colors duration-theme"
               >
                 <Link to={articlePath(article)} className="block space-y-1">
                   <div className="flex items-baseline gap-2">
@@ -92,12 +95,12 @@ export function ArticlesPage() {
                       {article.title}
                     </h2>
                     {!article.publishedAt && (
-                      <span className="text-[0.65rem] uppercase tracking-wide font-semibold text-warning-text border border-warning-border rounded px-1.5 py-0.5">
+                      <span className="text-label uppercase tracking-wide font-semibold text-warning-text border border-warning-border rounded-chip px-1.5 py-0.5">
                         Draft
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-content-subtle">
+                  <p className="font-meta text-micro text-content-subtle">
                     {article.author?.username ?? "unknown"} ·{" "}
                     {dateLine(article)}
                   </p>

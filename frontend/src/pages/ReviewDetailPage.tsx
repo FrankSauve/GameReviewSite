@@ -120,7 +120,7 @@ export function ReviewDetailPage() {
       <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] px-4 sm:px-6 lg:px-10">
         <div className="page-column space-y-4 animate-pulse">
           <div className="h-52 bg-surface-raised rounded-card" />
-          <div className="card p-6 space-y-3">
+          <div className="card p-card-pad space-y-3">
             <div className="h-5 skeleton-bar w-1/3" />
             <div className="h-3 skeleton-bar w-1/5" />
             <div className="h-24 skeleton-bar" />
@@ -137,7 +137,7 @@ export function ReviewDetailPage() {
         <p className="text-content-body font-medium">Review not found</p>
         <Link
           to="/"
-          className="text-accent-subtle-text hover:text-accent-subtle-text text-sm transition-colors duration-theme"
+          className="text-accent-subtle-text hover:text-accent-subtle-text text-meta transition-colors duration-theme"
         >
           Back to home
         </Link>
@@ -197,7 +197,7 @@ export function ReviewDetailPage() {
     <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] px-4 sm:px-6 lg:px-10">
       <div className="page-column space-y-5">
         {/* ── Back breadcrumb ── */}
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex items-center gap-2 text-meta">
           <Link
             to="/"
             className="text-content-subtle hover:text-content-body transition-colors duration-theme"
@@ -226,17 +226,17 @@ export function ReviewDetailPage() {
               <GameCover game={game} size="lg" eager />
               <div className="absolute inset-0 bg-gradient-to-t from-scrim/90 via-scrim/40 to-transparent" />
               <div className="absolute bottom-4 left-4">
-                <h2 className="text-xl font-bold text-accent-contrast group-hover:text-accent-subtle-text transition-colors duration-theme">
+                <h2 className="text-title font-bold text-content-on-art group-hover:text-accent-subtle-text transition-colors duration-theme">
                   {game.title}
                 </h2>
                 <div className="flex items-center gap-2 mt-0.5">
                   {game.releaseYear && (
-                    <span className="text-xs text-content-muted">
+                    <span className="text-micro text-content-on-art/80">
                       {game.releaseYear}
                     </span>
                   )}
                   {game.genres && game.genres.length > 0 && (
-                    <span className="text-xs text-content-subtle">
+                    <span className="text-micro text-content-on-art/65">
                       · {game.genres.join(", ")}
                     </span>
                   )}
@@ -247,7 +247,7 @@ export function ReviewDetailPage() {
         )}
 
         {/* ── Review body ── */}
-        <div className="card p-6 space-y-4">
+        <div className="card p-card-pad space-y-4">
           {/* Header: avatar + name + rating + actions */}
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -261,12 +261,12 @@ export function ReviewDetailPage() {
                 >
                   {review.user?.username ?? "Unknown"}
                 </Link>
-                <p className="text-sm text-content-subtle">
+                <p className="font-meta text-meta text-content-subtle">
                   {timeAgo(review.createdAt)}
                   {playtime && <span> · played {playtime}</span>}
                 </p>
                 {review.platform && (
-                  <span className="inline-block mt-1 text-xs font-medium bg-surface-raised text-content-body px-2 py-0.5 rounded-pill border border-line-strong">
+                  <span className="inline-block mt-1 text-micro font-medium bg-surface-raised text-content-body px-2 py-0.5 rounded-pill border border-line-strong">
                     {review.platform}
                   </span>
                 )}
@@ -277,11 +277,11 @@ export function ReviewDetailPage() {
             {!editing && (
               <div className="flex items-baseline gap-1 shrink-0">
                 <span
-                  className={`text-3xl font-black ${ratingColor(review.rating)}`}
+                  className={`text-display font-black ${ratingColor(review.rating)}`}
                 >
                   {formatRating(review.rating)}
                 </span>
-                <span className="text-sm text-content-subtle">/ 10</span>
+                <span className="text-meta text-content-subtle">/ 10</span>
               </div>
             )}
           </div>
@@ -289,7 +289,7 @@ export function ReviewDetailPage() {
           {/* Delete confirmation */}
           {confirmDelete && (
             <div className="flex items-center gap-3 bg-danger-subtle/40 border border-danger-subtle-border/50 rounded-control px-3 py-2.5">
-              <p className="text-sm text-danger-text flex-1">
+              <p className="text-meta text-danger-text flex-1">
                 Delete this review?
               </p>
               <Link
@@ -297,13 +297,13 @@ export function ReviewDetailPage() {
                 onClick={() =>
                   void deleteReview({ variables: { id: review.id } })
                 }
-                className="text-xs font-semibold bg-danger hover:bg-danger-hover text-accent-contrast px-3 py-1 rounded-control transition-colors duration-theme disabled:opacity-50"
+                className="text-micro font-semibold bg-danger hover:bg-danger-hover text-danger-contrast px-3 py-1 rounded-control transition-colors duration-theme disabled:opacity-50"
               >
                 {deleting ? "Deleting…" : "Delete"}
               </Link>
               <button
                 onClick={() => setConfirmDelete(false)}
-                className="text-xs text-content-muted hover:text-content transition-colors duration-theme"
+                className="text-micro text-content-muted hover:text-content transition-colors duration-theme"
               >
                 Cancel
               </button>
@@ -314,7 +314,7 @@ export function ReviewDetailPage() {
           {editing ? (
             <div className="space-y-3">
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-xs text-content-muted w-14 shrink-0">
+                <span className="text-micro text-content-muted w-14 shrink-0">
                   Rating
                 </span>
                 <div className="flex-1 min-w-[16rem]">
@@ -346,14 +346,14 @@ export function ReviewDetailPage() {
               <div className="flex items-center gap-2 justify-end">
                 <button
                   onClick={() => setEditing(false)}
-                  className="btn-secondary text-sm py-1.5 px-3"
+                  className="btn-secondary text-meta py-1.5 px-3"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={() => void handleSave()}
                   disabled={saving || !editContent.trim() || !editHoursValid}
-                  className="btn-primary text-sm py-1.5 px-3 disabled:opacity-50"
+                  className="btn-primary text-meta py-1.5 px-3 disabled:opacity-50"
                 >
                   {saving ? "Saving…" : "Save"}
                 </button>
@@ -361,7 +361,7 @@ export function ReviewDetailPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="text-content leading-relaxed">
+              <div className="prose-longform text-content">
                 <Markdown>{review.content}</Markdown>
               </div>
               <ReactionBar reviewId={review.id} reactions={review.reactions} />
@@ -373,13 +373,13 @@ export function ReviewDetailPage() {
             <div className="flex items-center gap-3 pt-1 border-t border-line">
               <button
                 onClick={startEdit}
-                className="flex items-center gap-1 text-xs text-content-muted hover:text-accent-subtle-text transition-colors duration-theme"
+                className="flex items-center gap-1 text-micro text-content-muted hover:text-accent-subtle-text transition-colors duration-theme"
               >
                 <PencilIcon /> Edit
               </button>
               <button
                 onClick={() => setConfirmDelete(true)}
-                className="flex items-center gap-1 text-xs text-content-muted hover:text-danger-text transition-colors duration-theme"
+                className="flex items-center gap-1 text-micro text-content-muted hover:text-danger-text transition-colors duration-theme"
               >
                 <TrashIcon /> Delete
               </button>
@@ -388,8 +388,8 @@ export function ReviewDetailPage() {
         </div>
 
         {/* ── Comments ── */}
-        <div className="card p-6 space-y-4">
-          <h3 className="font-semibold text-content-body text-sm">
+        <div className="card p-card-pad space-y-4">
+          <h3 className="font-semibold text-content-body text-meta">
             {comments.length} {comments.length === 1 ? "Comment" : "Comments"}
           </h3>
 
@@ -404,12 +404,12 @@ export function ReviewDetailPage() {
                     <div className="flex items-baseline justify-between gap-2">
                       <Link
                         to={userPath(comment.user)}
-                        className="text-sm font-semibold text-content hover:text-accent-subtle-text transition-colors duration-theme"
+                        className="text-meta font-semibold text-content hover:text-accent-subtle-text transition-colors duration-theme"
                       >
                         {comment.user?.username ?? "Unknown"}
                       </Link>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-xs text-content-subtle">
+                        <span className="text-micro text-content-subtle">
                           {timeAgo(comment.createdAt)}
                         </span>
                         {user?.id === comment.user?.id && (
@@ -427,7 +427,7 @@ export function ReviewDetailPage() {
                         )}
                       </div>
                     </div>
-                    <p className="text-sm text-content-body mt-1">
+                    <p className="text-body text-content-body mt-1">
                       {comment.content}
                     </p>
                     <div className="mt-2">
@@ -456,18 +456,18 @@ export function ReviewDetailPage() {
                 placeholder="Add a comment…"
                 maxLength={500}
                 disabled={submitting}
-                className="flex-1 bg-surface-raised/60 border border-line-strong rounded-pill px-4 py-2 text-sm text-content placeholder-content-subtle focus:outline-none focus:border-accent-border disabled:opacity-50 transition-colors duration-theme"
+                className="flex-1 bg-surface-raised/60 border border-line-strong rounded-pill px-4 py-2 text-body text-content placeholder-content-subtle focus:outline-none focus:border-accent-border disabled:opacity-50 transition-colors duration-theme"
               />
               <button
                 type="submit"
                 disabled={!newComment.trim() || submitting}
-                className="px-4 py-2 bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed text-accent-contrast text-sm font-semibold rounded-pill transition-colors duration-theme"
+                className="px-4 py-2 bg-accent hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed text-accent-contrast text-meta font-semibold rounded-pill transition-colors duration-theme"
               >
                 {submitting ? "…" : "Post"}
               </button>
             </form>
           ) : (
-            <p className="text-sm text-content-subtle pt-2 border-t border-line">
+            <p className="text-meta text-content-subtle pt-2 border-t border-line">
               <button
                 onClick={() => signIn()}
                 className="text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"

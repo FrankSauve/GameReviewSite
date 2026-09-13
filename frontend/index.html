@@ -35,7 +35,10 @@
       content="Game reviews, scores and playtime from a small group of friends."
     />
     <meta name="twitter:card" content="summary" />
-    <meta name="theme-color" content="#7c3aed" />
+    <!-- Midnight's --accent, the default palette. The inline script below
+         replaces it with the remembered palette's; this is what a browser
+         paints before that runs, and all it paints in a dev build. -->
+    <meta name="theme-color" content="#735fe9" />
   </head>
   <body>
     <div id="root"></div>
@@ -50,6 +53,13 @@
         var p = localStorage.getItem("gr-palette");
         if (t) d.setAttribute("data-theme", t);
         if (p) d.setAttribute("data-palette", p);
+        // The chrome colour cannot read a CSS variable, so it is pushed across
+        // by hand here as well as in applyAppearance. Without this the browser
+        // paints the default accent until React mounts, which with six
+        // palettes is a visible flash rather than a shade.
+        var m = document.querySelector('meta[name="theme-color"]');
+        var a = getComputedStyle(d).getPropertyValue("--accent").trim();
+        if (m && a) m.setAttribute("content", "rgb(" + a + ")");
       } catch (e) {}
     </script>
     <script type="module" src="/src/main.tsx"></script>

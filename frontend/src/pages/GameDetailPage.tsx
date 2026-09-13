@@ -49,7 +49,7 @@ export function GameDetailPage() {
     <div className="space-y-8 page-column">
       <Link
         to="/"
-        className="inline-flex items-center gap-1.5 text-sm text-content-subtle hover:text-content-body transition-colors duration-theme"
+        className="inline-flex items-center gap-1.5 text-meta text-content-subtle hover:text-content-body transition-colors duration-theme"
       >
         <BackIcon /> All Games
       </Link>
@@ -63,7 +63,7 @@ export function GameDetailPage() {
             <div className="absolute inset-0 bg-gradient-to-t from-scrim via-scrim/40 to-transparent" />
             {/* Title overlaid on cover */}
             <div className="absolute bottom-0 left-0 p-6">
-              <h1 className="font-display text-3xl text-accent-contrast drop-shadow-lg">
+              <h1 className="font-display text-display text-content-on-art drop-shadow-lg">
                 {game.title}
               </h1>
             </div>
@@ -72,17 +72,19 @@ export function GameDetailPage() {
 
         <div className="p-6 space-y-4">
           {!game.coverUrl && (
-            <h1 className="font-display text-3xl text-content">{game.title}</h1>
+            <h1 className="font-display text-display text-content">
+              {game.title}
+            </h1>
           )}
 
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex flex-wrap items-center gap-2">
               <LabelChips
                 labels={game.genres}
-                className="text-xs font-medium bg-accent-subtle/50 text-accent-subtle-text px-2.5 py-1 rounded-pill border border-accent-subtle-border"
+                className="text-micro font-medium bg-accent-subtle/50 text-accent-subtle-text px-2.5 py-1 rounded-pill border border-accent-subtle-border"
               />
               {game.releaseYear && (
-                <span className="text-sm text-content-subtle">
+                <span className="text-meta text-content-subtle">
                   {game.releaseYear}
                 </span>
               )}
@@ -91,12 +93,12 @@ export function GameDetailPage() {
             {game.averageRating != null && (
               <div className="card px-5 py-4 text-center shrink-0">
                 <p
-                  className={`font-numeric text-4xl font-extrabold ${ratingColor(game.averageRating)}`}
+                  className={`font-numeric text-display font-extrabold ${ratingColor(game.averageRating)}`}
                 >
                   {formatRating(game.averageRating)}
                 </p>
-                <p className="text-xs text-content-subtle mt-1">out of 10</p>
-                <p className="text-xs text-content-subtle mt-1">
+                <p className="text-micro text-content-subtle mt-1">out of 10</p>
+                <p className="text-micro text-content-subtle mt-1">
                   {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
                 </p>
               </div>
@@ -112,9 +114,9 @@ export function GameDetailPage() {
       {/* Reviews section */}
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="font-display text-xl text-content">
+          <h2 className="font-display text-title text-content">
             Reviews{" "}
-            <span className="text-content-subtle font-normal text-base">
+            <span className="text-content-subtle font-normal text-body">
               ({reviews.length})
             </span>
           </h2>
@@ -122,7 +124,7 @@ export function GameDetailPage() {
           {user && !hasReviewed && !showReviewForm && (
             <button
               onClick={() => setShowReviewForm(true)}
-              className="btn-primary flex items-center gap-2 text-sm"
+              className="btn-primary flex items-center gap-2 text-meta"
             >
               <PenIcon /> Write a Review
             </button>
@@ -131,7 +133,7 @@ export function GameDetailPage() {
 
         {/* Review form */}
         {showReviewForm && user && (
-          <div className="card p-5 mb-4">
+          <div className="card p-card-pad mb-4">
             <h3 className="font-semibold text-content mb-4">Your Review</h3>
             <AddReviewForm
               gameId={game.id}
@@ -144,7 +146,7 @@ export function GameDetailPage() {
         {!user && (
           <div className="card p-4 mb-4 flex items-center gap-3 border-dashed">
             <span className="text-2xl">🔐</span>
-            <p className="text-sm text-content-subtle">
+            <p className="text-meta text-content-subtle">
               <button
                 onClick={() => signIn(gamePath(game))}
                 className="text-accent-subtle-text hover:text-accent-subtle-text font-medium transition-colors duration-theme"
@@ -160,7 +162,7 @@ export function GameDetailPage() {
         {user && hasReviewed && !showReviewForm && (
           <div className="card p-4 mb-4 flex items-center gap-3 border-dashed border-line-strong">
             <span className="text-lg">✅</span>
-            <p className="text-sm text-content-subtle">
+            <p className="text-meta text-content-subtle">
               You've already reviewed this game.
             </p>
           </div>
@@ -197,14 +199,12 @@ function GameDescription({ description }: { description: string }) {
   return (
     <div className="border-t border-line pt-4 space-y-2">
       <div ref={ref}>
-        <p className="text-content-muted text-sm leading-relaxed">
-          {displayed}
-        </p>
+        <p className="text-content-muted text-body">{displayed}</p>
       </div>
       {isLong && (
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="text-xs text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
+          className="text-micro text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
         >
           {expanded ? "Show less ↑" : "Show more ↓"}
         </button>
@@ -217,13 +217,13 @@ function DetailSkeleton() {
   return (
     <div className="space-y-6 page-column animate-pulse">
       <div className="h-4 skeleton-bar w-24" />
-      <div className="card p-6 space-y-4">
+      <div className="card p-card-pad space-y-4">
         <div className="h-8 skeleton-bar w-2/3" />
         <div className="h-4 skeleton-bar w-1/3" />
         <div className="h-16 skeleton-bar" />
       </div>
       {[0, 1].map((i) => (
-        <div key={i} className="card p-5 space-y-3">
+        <div key={i} className="card p-card-pad space-y-3">
           <div className="flex gap-3">
             <div className="w-9 h-9 rounded-pill bg-surface-raised" />
             <div className="space-y-1.5 flex-1">

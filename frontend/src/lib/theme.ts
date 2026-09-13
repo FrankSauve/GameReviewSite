@@ -15,7 +15,10 @@ export const THEMES = [
 export const PALETTES = [
   { key: "midnight", label: "Midnight" },
   { key: "ember", label: "Ember" },
+  { key: "phosphor", label: "Phosphor" },
+  { key: "cobalt", label: "Cobalt" },
   { key: "paper", label: "Paper" },
+  { key: "newsprint", label: "Newsprint" },
 ] as const;
 
 export type ThemeKey = (typeof THEMES)[number]["key"];
