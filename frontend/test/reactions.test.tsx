@@ -335,6 +335,44 @@ describe("the emoji picker", () => {
     );
   });
 
+  /**
+   * The bug this pins: a .card clips its descendants in the Console theme and
+   * paints them in its own stacking context in Terminal, so a menu left inside
+   * one was cut to a sliver. It has to leave the card altogether.
+   */
+  it("opens outside the card it was triggered from", () => {
+    const { container } = render(
+      <MockedProvider mocks={[meMock]}>
+        <AuthProvider>
+          <article className="card">
+            <ReactionBar reviewId="r1" reactions={[]} />
+          </article>
+        </AuthProvider>
+      </MockedProvider>,
+    );
+    openPicker();
+    const card = container.querySelector("article");
+    expect(card).toBeTruthy();
+    expect(card?.contains(screen.getByLabelText("Search emoji"))).toBe(false);
+  });
+
+  /** The dismiss listener is a DOM one, and the menu is no longer inside the bar. */
+  it("survives a press on its own panel", () => {
+    renderBar([]);
+    openPicker();
+    fireEvent.mouseDown(screen.getByLabelText("Search emoji"));
+    expect(screen.getByLabelText("Search emoji")).toBeTruthy();
+  });
+
+  it("closes on a press outside it", async () => {
+    renderBar([]);
+    openPicker();
+    fireEvent.mouseDown(document.body);
+    await waitFor(() =>
+      expect(screen.queryByLabelText("Search emoji")).toBeNull(),
+    );
+  });
+
   it("filters to the emoji whose names match the search", () => {
     renderBar([]);
     openPicker();

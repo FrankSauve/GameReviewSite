@@ -7,6 +7,7 @@ import { useDismiss } from "../hooks/useDismiss";
 import { DEFAULT_REACTIONS } from "../lib/emoji";
 import { describeReactors } from "../lib/reactors";
 import { EmojiPicker } from "./EmojiPicker";
+import { AnchoredOverlay } from "./AnchoredOverlay";
 import type { ReactionSummary } from "../types";
 
 interface ReactionBarProps {
@@ -42,6 +43,8 @@ export function ReactionBar({
   // The emoji whose reactors are named, if any: hovered, focused, or held.
   const [named, setNamed] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  // The menus are portaled out of the card, so the bar is only their anchor.
+  const menuRef = useRef<HTMLDivElement>(null);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   // A long press names the reactors; the click it also fires must not toggle.
   const held = useRef(false);
@@ -63,7 +66,7 @@ export function ReactionBar({
     setMenu("none");
     setNamed(null);
   }, []);
-  useDismiss(containerRef, dismiss);
+  useDismiss(containerRef, dismiss, menuRef);
 
   const endPress = useCallback(() => {
     if (pressTimer.current !== null) clearTimeout(pressTimer.current);
@@ -162,7 +165,11 @@ export function ReactionBar({
       </button>
 
       {menu === "quick" && (
-        <div className="absolute z-20 top-full mt-2 left-0 popover p-1 flex items-center gap-0.5">
+        <AnchoredOverlay
+          anchorRef={containerRef}
+          panelRef={menuRef}
+          className="popover p-1 flex items-center gap-0.5"
+        >
           {DEFAULT_REACTIONS.map((emoji) => (
             <button
               key={emoji}
@@ -182,10 +189,18 @@ export function ReactionBar({
           >
             +
           </button>
-        </div>
+        </AnchoredOverlay>
       )}
 
-      {menu === "all" && <EmojiPicker onSelect={react} />}
+      {menu === "all" && (
+        <AnchoredOverlay
+          anchorRef={containerRef}
+          panelRef={menuRef}
+          className="w-64 sm:w-72"
+        >
+          <EmojiPicker onSelect={react} />
+        </AnchoredOverlay>
+      )}
     </div>
   );
 }
