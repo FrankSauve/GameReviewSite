@@ -1,8 +1,9 @@
-import { useMemo, useRef, useState, useCallback } from "react";
+import { useMemo, useRef, useState, useCallback, type RefObject } from "react";
 import { useMutation } from "@apollo/client";
 import { CLEAR_FAVORITE_GAME, SET_FAVORITE_GAME } from "../graphql/mutations";
 import { useDismiss } from "../hooks/useDismiss";
 import { GameCover } from "./GameCover";
+import { AnchoredOverlay } from "./AnchoredOverlay";
 import type { PickableGame } from "../lib/favorites";
 
 interface FavoriteGamePickerProps {
@@ -11,6 +12,8 @@ interface FavoriteGamePickerProps {
   games: PickableGame[];
   /** Set when the category already holds a pick, which adds the clear action. */
   filled: boolean;
+  /** The tile it opens under: it is portaled out of the grid, not nested in it. */
+  anchorRef: RefObject<HTMLElement>;
   onClose: () => void;
 }
 
@@ -19,11 +22,12 @@ export function FavoriteGamePicker({
   label,
   games,
   filled,
+  anchorRef,
   onClose,
 }: FavoriteGamePickerProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const [filter, setFilter] = useState("");
-  useDismiss(containerRef, onClose);
+  useDismiss(panelRef, onClose);
 
   const [setFavorite, { loading: saving }] = useMutation(SET_FAVORITE_GAME, {
     onCompleted: onClose,
@@ -51,66 +55,67 @@ export function FavoriteGamePicker({
   );
 
   return (
-    <div
-      ref={containerRef}
-      role="dialog"
-      aria-label={`Pick a game for ${label}`}
-      className="absolute z-40 top-full mt-1 left-0 right-0 min-w-[16rem] popover overflow-hidden"
-    >
-      <div className="p-2 border-b border-line">
-        <input
-          autoFocus
-          value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          placeholder="Filter your reviewed games…"
-          aria-label={`Filter games for ${label}`}
-          className="w-full bg-surface-raised/70 border border-line-strong rounded-control px-3 py-1.5 text-meta text-content placeholder-content-subtle focus:outline-none focus:ring-2 focus:ring-accent-hover"
-        />
-      </div>
-
-      {games.length === 0 ? (
-        <p className="px-3 py-6 text-center text-meta text-content-subtle">
-          Review a game first — favourites are picked from games you have
-          reviewed.
-        </p>
-      ) : matches.length === 0 ? (
-        <p className="px-3 py-6 text-center text-meta text-content-subtle">
-          No match for "{filter}"
-        </p>
-      ) : (
-        <ul className="max-h-72 overflow-y-auto divide-y divide-line">
-          {matches.map((game) => (
-            <li key={game.id}>
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => pick(game.id)}
-                className="w-full flex items-center gap-3 px-3 py-2 hover:bg-surface-raised disabled:opacity-50 transition-colors duration-theme text-left"
-              >
-                <div className="w-8 h-11 rounded-chip overflow-hidden bg-surface-raised shrink-0">
-                  <GameCover game={game} size="sm" decorative />
-                </div>
-                <span className="text-meta text-content truncate">
-                  {game.title}
-                </span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      {filled && (
-        <div className="border-t border-line p-2">
-          <button
-            type="button"
-            disabled={clearing}
-            onClick={() => void clearFavorite({ variables: { category } })}
-            className="w-full text-micro text-content-subtle hover:text-danger-text disabled:opacity-50 py-1 transition-colors duration-theme"
-          >
-            Clear {label}
-          </button>
+    <AnchoredOverlay anchorRef={anchorRef} panelRef={panelRef} matchAnchorWidth>
+      <div
+        role="dialog"
+        aria-label={`Pick a game for ${label}`}
+        className="w-full min-w-[16rem] popover overflow-hidden"
+      >
+        <div className="p-2 border-b border-line">
+          <input
+            autoFocus
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+            placeholder="Filter your reviewed games…"
+            aria-label={`Filter games for ${label}`}
+            className="w-full bg-surface-raised/70 border border-line-strong rounded-control px-3 py-1.5 text-meta text-content placeholder-content-subtle focus:outline-none focus:ring-2 focus:ring-accent-hover"
+          />
         </div>
-      )}
-    </div>
+
+        {games.length === 0 ? (
+          <p className="px-3 py-6 text-center text-meta text-content-subtle">
+            Review a game first — favourites are picked from games you have
+            reviewed.
+          </p>
+        ) : matches.length === 0 ? (
+          <p className="px-3 py-6 text-center text-meta text-content-subtle">
+            No match for "{filter}"
+          </p>
+        ) : (
+          <ul className="max-h-72 overflow-y-auto divide-y divide-line">
+            {matches.map((game) => (
+              <li key={game.id}>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => pick(game.id)}
+                  className="w-full flex items-center gap-3 px-3 py-2 hover:bg-surface-raised disabled:opacity-50 transition-colors duration-theme text-left"
+                >
+                  <div className="w-8 h-11 rounded-chip overflow-hidden bg-surface-raised shrink-0">
+                    <GameCover game={game} size="sm" decorative />
+                  </div>
+                  <span className="text-meta text-content truncate">
+                    {game.title}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        {filled && (
+          <div className="border-t border-line p-2">
+            <button
+              type="button"
+              disabled={clearing}
+              onClick={() => void clearFavorite({ variables: { category } })}
+              className="w-full text-micro text-content-subtle hover:text-danger-text disabled:opacity-50 py-1 transition-colors duration-theme"
+            >
+              Clear {label}
+            </button>
+          </div>
+        )}
+      </div>
+    </AnchoredOverlay>
   );
 }

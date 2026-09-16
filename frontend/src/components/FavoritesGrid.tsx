@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { useQuery } from "@apollo/client";
 import { GET_USER_FAVORITES } from "../graphql/queries";
@@ -33,6 +33,8 @@ export function FavoritesGrid({
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   // Stable, because useDismiss takes it as a listener dependency.
   const close = useCallback(() => setOpenCategory(null), []);
+  // One ref for the grid: the open tile claims it, and only one is ever open.
+  const anchorRef = useRef<HTMLDivElement>(null);
   const { data, loading } = useQuery<FavoritesData>(GET_USER_FAVORITES, {
     variables: { id: userId },
   });
@@ -80,7 +82,11 @@ export function FavoritesGrid({
         );
 
         return (
-          <div key={key} className="relative space-y-1.5">
+          <div
+            key={key}
+            ref={openCategory === key ? anchorRef : null}
+            className="space-y-1.5"
+          >
             {isOwnProfile ? (
               <button
                 type="button"
@@ -117,6 +123,7 @@ export function FavoritesGrid({
                 label={label}
                 games={pickable}
                 filled={pick != null}
+                anchorRef={anchorRef}
                 onClose={close}
               />
             )}

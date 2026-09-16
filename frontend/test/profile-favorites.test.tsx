@@ -212,6 +212,25 @@ describe("the profile favorites grid", () => {
     });
   });
 
+  /**
+   * The bug this pins: a .card clips its descendants in the Console theme and
+   * paints them in its own stacking context in Terminal, so a picker left
+   * inside the favourites card was cut off. It has to leave the card.
+   */
+  it("opens the picker outside the card the grid sits in", async () => {
+    const { container } = renderFavorites([
+      meMock(ME),
+      summariesMock(),
+      favoritesMock([]),
+    ]);
+
+    fireEvent.click(await screen.findByLabelText("Select Favourite Game"));
+    const dialog = await screen.findByRole("dialog");
+    const cards = [...container.querySelectorAll(".card")];
+    expect(cards.length).toBeGreaterThan(0);
+    expect(cards.some((card) => card.contains(dialog))).toBe(false);
+  });
+
   /** Picks come from the account's own reviews, not from a search of everything. */
   it("offers only the games the account has reviewed", async () => {
     renderFavorites([meMock(ME), summariesMock(), favoritesMock([])]);

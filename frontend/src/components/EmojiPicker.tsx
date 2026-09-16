@@ -8,13 +8,16 @@ interface EmojiPickerProps {
 /**
  * Renders emoji as text, never as images: the CSP allows no remote sprite
  * sheet, and the search index is bundled. See lib/emojiData.ts.
+ *
+ * Its width and where it sits are the caller's: it opens inside an
+ * AnchoredOverlay, which owns the position.
  */
 export function EmojiPicker({ onSelect }: EmojiPickerProps) {
   const [query, setQuery] = useState("");
   const results = useMemo(() => searchEmoji(query), [query]);
 
   return (
-    <div className="absolute z-20 top-full mt-2 left-0 w-64 sm:w-72 popover p-2 space-y-2">
+    <div className="popover p-2 space-y-2">
       <input
         type="text"
         value={query}

@@ -63,9 +63,9 @@ function ReviewFeedCard({ review }: { review: Review }) {
   const summary = excerpt(review.content, 220);
 
   return (
-    // No overflow-hidden on the card: it would clip the reaction menu, which
-    // opens below a bar that sits on the bottom edge. The cover art rounds
-    // its own corners instead.
+    // No overflow-hidden on the card: the cover art rounds its own corners
+    // instead. What opens below the bar on the bottom edge escapes the card
+    // entirely — see AnchoredOverlay.
     <article className="card card-interactive flex flex-col">
       {/* Main clickable row */}
       <button

@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useMutation } from "@apollo/client";
 import { UPDATE_PROFILE } from "../graphql/mutations";
 import { useDismiss } from "../hooks/useDismiss";
@@ -9,13 +9,17 @@ import {
   type AvatarColor,
 } from "../lib/avatarColor";
 import { Avatar, type AvatarUser } from "./Avatar";
+import { AnchoredOverlay } from "./AnchoredOverlay";
 
 /** The owner's avatar, doubling as the swatch picker. Saves on pick. */
 export function AvatarColorPicker({ user }: { user: AvatarUser }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  // The swatches are portaled out of the card, so this is only their anchor.
+  const panelRef = useRef<HTMLDivElement>(null);
   const close = useCallback(() => setOpen(false), []);
-  useDismiss(ref, close);
+  useDismiss(ref, close, panelRef);
+  const narrow = useNarrowHeader();
 
   const [updateProfile, { loading, error }] = useMutation(UPDATE_PROFILE, {
     onCompleted: close,
@@ -42,7 +46,12 @@ export function AvatarColorPicker({ user }: { user: AvatarUser }) {
       </button>
 
       {open && (
-        <div className="absolute z-20 mt-2 w-max left-1/2 -translate-x-1/2 sm:left-0 sm:translate-x-0 popover p-3">
+        <AnchoredOverlay
+          anchorRef={ref}
+          panelRef={panelRef}
+          align={narrow ? "center" : "start"}
+          className="w-max popover p-3"
+        >
           <div className="grid grid-cols-6 gap-2">
             {AVATAR_COLOR_KEYS.map((key) => (
               <button
@@ -65,8 +74,24 @@ export function AvatarColorPicker({ user }: { user: AvatarUser }) {
               {error.graphQLErrors[0]?.message ?? error.message}
             </p>
           )}
-        </div>
+        </AnchoredOverlay>
       )}
     </div>
   );
+}
+
+/**
+ * Tailwind's `sm`, spelled out because the alignment is decided in JS now: the
+ * profile header centres the avatar below that width and the picker follows it.
+ */
+const WIDE_HEADER = 640;
+
+function useNarrowHeader(): boolean {
+  const [narrow, setNarrow] = useState(() => window.innerWidth < WIDE_HEADER);
+  useEffect(() => {
+    const update = () => setNarrow(window.innerWidth < WIDE_HEADER);
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+  return narrow;
 }

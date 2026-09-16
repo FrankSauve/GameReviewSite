@@ -127,6 +127,35 @@ describe("AvatarColorPicker", () => {
     );
   }
 
+  /**
+   * The bug this pins: a .card clips its descendants in the Console theme and
+   * paints them in its own stacking context in Terminal, so swatches left
+   * inside the profile header were cut off. They have to leave the card.
+   */
+  it("opens the swatches outside the card the avatar sits in", () => {
+    const { container } = render(
+      <MockedProvider mocks={[]}>
+        <div className="card">
+          <AvatarColorPicker user={user} />
+        </div>
+      </MockedProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /change avatar/i }));
+    const card = container.querySelector(".card");
+    expect(card).toBeTruthy();
+    expect(card?.contains(screen.getByRole("button", { name: "teal" }))).toBe(
+      false,
+    );
+  });
+
+  /** The dismiss listener is a DOM one, and the swatches are no longer inside. */
+  it("survives a press on the swatches themselves", () => {
+    renderPicker();
+    fireEvent.click(screen.getByRole("button", { name: /change avatar/i }));
+    fireEvent.mouseDown(screen.getByRole("button", { name: "teal" }));
+    expect(screen.getByRole("button", { name: "teal" })).toBeTruthy();
+  });
+
   it("keeps the swatches closed until the avatar is clicked", () => {
     renderPicker();
     expect(screen.queryByRole("button", { name: "teal" })).toBeNull();
