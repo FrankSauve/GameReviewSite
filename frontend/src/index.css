@@ -260,8 +260,6 @@
        reader set in their browser, and every rem on the page keys off it. */
     --root-size: 93.75%;
     --line-height-body: 1.45;
-    /* The line length prose is held to. */
-    --measure: 74ch;
     /* initial-letter lines. 0 is off, and only Editorial turns it on. */
 
     /* The seven type roles the components use. --root-size scales these together;
@@ -447,7 +445,6 @@
 
     --root-size: 100%;
     --line-height-body: 1.6;
-    --measure: 66ch;
 
     --size-display: 3rem;
     --leading-display: 1.05;
@@ -473,8 +470,8 @@
   }
 
   /* Print editorial: cards stop being boxes and become ruled rows, and the
-     serif is the *body* face, not just the display one. That, the measure and
-     the leading are what make it read as a page rather than a feed. */
+     serif is the *body* face, not just the display one. That and the leading
+     are what make it read as a page rather than a feed. */
   [data-theme="editorial"] {
     --radius-card: 0px;
     --radius-control: 0px;
@@ -517,7 +514,6 @@
 
     --root-size: 106.25%;
     --line-height-body: 1.75;
-    --measure: 68ch;
     /* Three lines is the editorial classic. Only this theme sets it. */
     --dropcap-lines: 3;
 
@@ -596,9 +592,6 @@
 
     --root-size: 93.75%;
     --line-height-body: 1.5;
-    /* A mono sets far wider per character, so the same ch count is a much
-       longer line. 62ch here is about the measure 68ch is in the serif. */
-    --measure: 62ch;
 
     --size-display: 1.875rem;
     --leading-display: 1.15;
@@ -1279,11 +1272,9 @@
   /* --- Prose --- */
 
   /* An article or review body read end to end, as against an excerpt in a feed
-     row: held to a measure, and opened with a drop cap where the theme asks for
-     one. */
-  .prose-longform {
-    max-width: var(--measure);
-  }
+     row: opened with a drop cap where the theme asks for one. Width is the
+     card's business — a body held narrower than the card around it leaves a
+     gutter inside the card. */
 
   /* Scoped to the one theme that asks for a cap rather than guarded by
      --dropcap-lines — at 0 only initial-letter drops as out of range, and the
