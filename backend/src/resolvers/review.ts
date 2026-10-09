@@ -13,6 +13,7 @@ import { byIdOrSlug, reviewSlugBase, uniqueSlug } from "../lib/slug.js";
 import { validateString } from "../lib/validate.js";
 import { badInput } from "../lib/badInput.js";
 import { validatePlatform } from "../lib/platforms.js";
+import { notifyReviewPosted } from "../lib/discord.js";
 
 interface CreateReviewInput {
   gameId: string;
@@ -222,6 +223,11 @@ export const reviewResolvers = {
           platform: input.platform ? validatePlatform(input.platform) : null,
         },
       });
+      // Not awaited: a slow Discord must not hold up the review.
+      void notifyReviewPosted(
+        { ...review, game, user: authUser },
+        context.origin,
+      );
       return serializeDates(review);
     },
 

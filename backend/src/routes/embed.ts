@@ -18,6 +18,7 @@ import {
   type EmbedKind,
 } from "../lib/embed.js";
 import { inGridOrder } from "../lib/favoriteCategories.js";
+import { publicOrigin } from "../lib/origin.js";
 
 /**
  * Link previews for reviews and profiles, on the same paths the SPA serves: the
@@ -28,12 +29,12 @@ import { inGridOrder } from "../lib/favoriteCategories.js";
  * Anonymous by design — nothing here reads a session.
  */
 
-/** Public origin for the canonical URL. Derived from the forwarded headers SWAG
- *  sets; PUBLIC_ORIGIN pins it where they are absent or not trusted. */
-function publicOrigin(req: Request): string {
-  const configured = process.env["PUBLIC_ORIGIN"];
-  if (configured) return configured.replace(/\/+$/, "");
-  return `${req.protocol}://${req.get("host") ?? "localhost"}`;
+function originOf(req: Request): string {
+  return publicOrigin(
+    process.env["PUBLIC_ORIGIN"],
+    req.protocol,
+    req.get("host"),
+  );
 }
 
 function encodePath(key: string): string {
@@ -47,9 +48,7 @@ function notFound(kind: EmbedKind) {
     res.type("text/html; charset=utf-8");
     res.setHeader("Cache-Control", "public, max-age=300");
     const path = `${req.baseUrl}${req.path}`.replace(/\/+$/, "");
-    res
-      .status(404)
-      .send(renderMissingEmbed(kind, `${publicOrigin(req)}${path}`));
+    res.status(404).send(renderMissingEmbed(kind, `${originOf(req)}${path}`));
   };
 }
 
@@ -63,7 +62,7 @@ export function createEmbedRouter(): Router {
     };
     const game = one("game");
     const key = game ? `${one("user")}/${game}` : one("key");
-    const origin = publicOrigin(req);
+    const origin = originOf(req);
 
     res.type("text/html; charset=utf-8");
     res.setHeader("Cache-Control", "public, max-age=300");
@@ -141,7 +140,7 @@ export function createProfileEmbedRouter(): Router {
   const handler = async (req: Request, res: Response) => {
     const raw = req.params["key"];
     const key = typeof raw === "string" ? raw : "";
-    const origin = publicOrigin(req);
+    const origin = originOf(req);
 
     res.type("text/html; charset=utf-8");
     res.setHeader("Cache-Control", "public, max-age=300");
