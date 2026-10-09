@@ -226,7 +226,7 @@ export const reviewResolvers = {
       // Not awaited: a slow Discord must not hold up the review.
       void notifyReviewPosted(
         { ...review, game, user: authUser },
-        context.origin,
+        context.origin(),
       );
       return serializeDates(review);
     },

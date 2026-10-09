@@ -33,22 +33,17 @@ interface Call {
 
 function stubFetch(respond: () => Promise<Response>) {
   const calls: Call[] = [];
-  const original = globalThis.fetch;
-  globalThis.fetch = vi.fn(
-    async (input: RequestInfo | URL, init?: RequestInit) => {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       calls.push({
         url: String(input),
         body: JSON.parse(typeof init?.body === "string" ? init.body : "null"),
       });
       return respond();
-    },
-  ) as unknown as typeof globalThis.fetch;
-  return {
-    calls,
-    restore: () => {
-      globalThis.fetch = original;
-    },
-  };
+    }),
+  );
+  return { calls };
 }
 
 const ok = () => Promise.resolve(new Response(null, { status: 204 }));
@@ -79,8 +74,8 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-  stub?.restore();
   stub = undefined;
+  vi.unstubAllGlobals();
   vi.restoreAllMocks();
   delete process.env["DISCORD_WEBHOOK_URL"];
   delete process.env["PUBLIC_ORIGIN"];
@@ -115,13 +110,16 @@ describe("Discord notification for a posted review", () => {
   });
 
   it("still creates the review when Discord answers with an error", async () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
+    const error = vi.spyOn(console, "error").mockImplementation(() => {});
     stub = stubFetch(() =>
       Promise.resolve(new Response(null, { status: 500 })),
     );
     const res = await createReview(await seedGame());
     expect(res.errors).toBeUndefined();
     expect(res.data?.createReview.id).toBeTruthy();
+    await vi.waitFor(() =>
+      expect(error).toHaveBeenCalledWith("Discord webhook returned 500"),
+    );
   });
 
   it("still creates the review when Discord is unreachable", async () => {

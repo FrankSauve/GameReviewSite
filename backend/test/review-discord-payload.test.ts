@@ -36,12 +36,10 @@ describe("Discord webhook payload for a posted review", () => {
           color: 0x8b5cf6,
           image: { url: "https://media.rawg.io/cover.jpg" },
           fields: [
-            { name: "Score", value: "9.5/10", inline: true },
             { name: "Played", value: "2024", inline: true },
             { name: "Hours", value: "120", inline: true },
             { name: "Platform", value: "PC", inline: true },
           ],
-          footer: { text: "GameReviews" },
           timestamp: "2026-10-01T12:00:00.000Z",
         },
       ],
@@ -59,9 +57,15 @@ describe("Discord webhook payload for a posted review", () => {
       ORIGIN,
     ).embeds;
     expect(embed).not.toHaveProperty("image");
-    expect(embed?.fields).toEqual([
-      { name: "Score", value: "9.5/10", inline: true },
-    ]);
+    expect(embed?.fields).toEqual([]);
+  });
+
+  it("leaves out a description the body reduces to nothing", () => {
+    const [embed] = reviewWebhookPayload(
+      review({ content: "![](https://example.com/shot.png)" }),
+      ORIGIN,
+    ).embeds;
+    expect(embed).not.toHaveProperty("description");
   });
 
   it("redacts spoilers, as the link preview does", () => {

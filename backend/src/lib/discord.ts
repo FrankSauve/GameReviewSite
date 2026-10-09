@@ -5,8 +5,8 @@ import {
   THEME_COLOR,
   embedDescription,
   embedTitle,
+  truncate,
 } from "./embed.js";
-import { formatScore } from "./exportMarkdown.js";
 
 /** Discord rejects the whole message, not just the field, past this. */
 export const TITLE_MAX = 256;
@@ -36,11 +36,10 @@ export interface WebhookPayload {
     author: { name: string; url: string };
     title: string;
     url: string;
-    description: string;
+    description?: string;
     color: number;
     image?: { url: string };
     fields: EmbedField[];
-    footer: { text: string };
     timestamp: string;
   }[];
 }
@@ -49,9 +48,7 @@ export function reviewWebhookPayload(
   review: PostedReview,
   origin: string,
 ): WebhookPayload {
-  const fields: EmbedField[] = [
-    { name: "Score", value: `${formatScore(review.rating)}/10`, inline: true },
-  ];
+  const fields: EmbedField[] = [];
   if (review.yearPlayed !== null)
     fields.push({
       name: "Played",
@@ -67,11 +64,8 @@ export function reviewWebhookPayload(
   if (review.platform)
     fields.push({ name: "Platform", value: review.platform, inline: true });
 
-  const title = embedTitle(
-    review.game.title,
-    review.rating,
-    review.user.username,
-  );
+  // Discord refuses an empty description, which a body of only an image yields.
+  const description = embedDescription(review.content);
 
   return {
     username: SITE_NAME,
@@ -83,18 +77,17 @@ export function reviewWebhookPayload(
           name: review.user.username,
           url: `${origin}/users/${review.user.slug}`,
         },
-        title:
-          title.length > TITLE_MAX
-            ? title.slice(0, TITLE_MAX - 1) + "…"
-            : title,
+        title: truncate(
+          embedTitle(review.game.title, review.rating, review.user.username),
+          TITLE_MAX,
+        ),
         url: `${origin}/reviews/${review.slug}`,
-        description: embedDescription(review.content),
+        ...(description ? { description } : {}),
         color: parseInt(THEME_COLOR.slice(1), 16),
         ...(review.game.coverUrl
           ? { image: { url: review.game.coverUrl } }
           : {}),
         fields,
-        footer: { text: SITE_NAME },
         timestamp: review.createdAt.toISOString(),
       },
     ],
@@ -119,6 +112,8 @@ export async function notifyReviewPosted(
       body: JSON.stringify(reviewWebhookPayload(review, origin)),
       signal: AbortSignal.timeout(5000),
     });
+    // Unread, the body holds the connection until it is garbage collected.
+    await res.body?.cancel();
     if (!res.ok) console.error(`Discord webhook returned ${res.status}`);
   } catch (err: unknown) {
     console.error(

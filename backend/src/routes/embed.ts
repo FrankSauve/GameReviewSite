@@ -29,14 +29,6 @@ import { publicOrigin } from "../lib/origin.js";
  * Anonymous by design — nothing here reads a session.
  */
 
-function originOf(req: Request): string {
-  return publicOrigin(
-    process.env["PUBLIC_ORIGIN"],
-    req.protocol,
-    req.get("host"),
-  );
-}
-
 function encodePath(key: string): string {
   return key.split("/").map(encodeURIComponent).join("/");
 }
@@ -48,7 +40,9 @@ function notFound(kind: EmbedKind) {
     res.type("text/html; charset=utf-8");
     res.setHeader("Cache-Control", "public, max-age=300");
     const path = `${req.baseUrl}${req.path}`.replace(/\/+$/, "");
-    res.status(404).send(renderMissingEmbed(kind, `${originOf(req)}${path}`));
+    res
+      .status(404)
+      .send(renderMissingEmbed(kind, `${publicOrigin(req)}${path}`));
   };
 }
 
@@ -62,7 +56,7 @@ export function createEmbedRouter(): Router {
     };
     const game = one("game");
     const key = game ? `${one("user")}/${game}` : one("key");
-    const origin = originOf(req);
+    const origin = publicOrigin(req);
 
     res.type("text/html; charset=utf-8");
     res.setHeader("Cache-Control", "public, max-age=300");
@@ -140,7 +134,7 @@ export function createProfileEmbedRouter(): Router {
   const handler = async (req: Request, res: Response) => {
     const raw = req.params["key"];
     const key = typeof raw === "string" ? raw : "";
-    const origin = originOf(req);
+    const origin = publicOrigin(req);
 
     res.type("text/html; charset=utf-8");
     res.setHeader("Cache-Control", "public, max-age=300");

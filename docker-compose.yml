@@ -45,6 +45,8 @@ services:
       AUTH_DEV_IDENTITY: ${AUTH_DEV_IDENTITY:-dev-uid:devuser:dev@example.com}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
       DISCORD_WEBHOOK_URL: ${DISCORD_WEBHOOK_URL:-}
+      # The SPA, not this API: a GraphQL request's Host is localhost:4000 here.
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:-http://localhost:3000}
       # Ports are published straight to the host here, so no proxy hops.
       TRUST_PROXY_HOPS: ${TRUST_PROXY_HOPS:-0}
     ports:

@@ -20,7 +20,7 @@ export interface Context {
   /** Per-request ceiling on total list rows returned. See lib/budget.ts. */
   budget: RowBudget;
   /** For links that leave the site, such as the Discord notification. */
-  origin: string;
+  origin: () => string;
 }
 
 interface BuildContextArgs {
@@ -41,11 +41,7 @@ export async function buildContext({
     // After the user, never before: `reacted` is per-viewer. See lib/loaders.ts.
     loaders: createLoaders(user?.id ?? null),
     budget: new RowBudget(),
-    origin: publicOrigin(
-      process.env["PUBLIC_ORIGIN"],
-      req.protocol,
-      req.get("host"),
-    ),
+    origin: () => publicOrigin(req),
   };
 }
 
