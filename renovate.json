@@ -73,8 +73,9 @@
       "automerge": true
     },
     {
-      "description": "esbuild is pinned exactly on purpose. Surface the update but never merge it unread.",
+      "description": "esbuild is pinned exactly on purpose. Surface the update but never merge it unread. Its own group: a group automerges only if every update in it may, so inside \"npm minor and patch\" it would hold the whole group back.",
       "matchPackageNames": ["esbuild"],
+      "groupName": "esbuild",
       "rangeStrategy": "pin",
       "automerge": false,
       "addLabels": ["needs-review"]
