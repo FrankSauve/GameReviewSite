@@ -63,6 +63,16 @@ GAMEREVIEWS_OIDC_REDIRECT_URI=https://reviews.example.com/auth/callback
 The four `OIDC_` values come from step 5, so you will come back to this file. All
 four are required; the backend refuses to start in production without them.
 
+Optionally, to announce every new review in a Discord channel, create a webhook
+under the channel's **Edit Channel → Integrations → Webhooks**, copy its URL, and
+add:
+
+```env
+GAMEREVIEWS_DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+```
+
+Treat it as a secret: anyone holding the URL can post to that channel.
+
 ## 4. Add the services
 
 Copy the three services from [deploy/gamereviews.yml](../deploy/gamereviews.yml)

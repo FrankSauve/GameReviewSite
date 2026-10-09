@@ -69,7 +69,7 @@ export function embedDescription(
   return truncate(text, limit);
 }
 
-function truncate(text: string, limit: number): string {
+export function truncate(text: string, limit: number): string {
   if (text.length <= limit) return text;
   // One short of the limit: the ellipsis below has to fit inside it too.
   const cut = text.slice(0, limit - 1);

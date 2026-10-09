@@ -31,6 +31,10 @@
 #   GAMEREVIEWS_OIDC_CLIENT_SECRET=   # from the authentik provider
 #   GAMEREVIEWS_OIDC_REDIRECT_URI=    # https://<site>/auth/callback
 #
+# And one optional value:
+#
+#   GAMEREVIEWS_DISCORD_WEBHOOK_URL=  # announces each new review in a channel
+#
 # Nothing here is duplicated into the proxy configuration: the proxy holds no
 # secret and takes no part in authentication.
 #
@@ -118,6 +122,8 @@ services:
       TRUST_PROXY_HOPS: 1
       # Empty: everything is same-origin behind the proxy.
       CORS_ORIGINS: ""
+      # Optional. Empty turns the new-review announcement off.
+      DISCORD_WEBHOOK_URL: ${GAMEREVIEWS_DISCORD_WEBHOOK_URL:-}
     # PORT=4000 and NODE_ENV=production are baked into the image.
     read_only: true
     tmpfs:

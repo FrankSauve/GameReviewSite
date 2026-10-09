@@ -17,6 +17,7 @@ reviews, and comment on other people's. Sign-in is delegated to your own
 - Reviewers leaderboard and a paginated recent-reviews feed
 - Review links unfurl in Discord and elsewhere, with the game's cover, score
   and the first lines of the review (spoilers redacted)
+- New reviews announced in a Discord channel through a webhook, as the same card
 - Reviews readable without an account; writing needs one
 - OIDC sign-in with 2FA, handled entirely by authentik
 
@@ -66,6 +67,7 @@ anonymous visitor. It is ignored whenever `NODE_ENV=production`.
 | `CORS_ORIGINS`                  | no         | allowed browser origins, empty in production   |
 | `TRUST_PROXY_HOPS`              | no         | proxies in front of the backend, must be exact |
 | `AUTH_RATE_LIMIT_MAX`           | no         | sign-in attempts per minute per IP, default 20 |
+| `DISCORD_WEBHOOK_URL`           | no         | announces each new review in a channel         |
 
 All values are documented inline in [`.env.example`](.env.example).
 
