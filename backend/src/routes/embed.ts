@@ -18,6 +18,7 @@ import {
   type EmbedKind,
 } from "../lib/embed.js";
 import { inGridOrder } from "../lib/favoriteCategories.js";
+import { publicOrigin } from "../lib/origin.js";
 
 /**
  * Link previews for reviews and profiles, on the same paths the SPA serves: the
@@ -27,14 +28,6 @@ import { inGridOrder } from "../lib/favoriteCategories.js";
  *
  * Anonymous by design — nothing here reads a session.
  */
-
-/** Public origin for the canonical URL. Derived from the forwarded headers SWAG
- *  sets; PUBLIC_ORIGIN pins it where they are absent or not trusted. */
-function publicOrigin(req: Request): string {
-  const configured = process.env["PUBLIC_ORIGIN"];
-  if (configured) return configured.replace(/\/+$/, "");
-  return `${req.protocol}://${req.get("host") ?? "localhost"}`;
-}
 
 function encodePath(key: string): string {
   return key.split("/").map(encodeURIComponent).join("/");

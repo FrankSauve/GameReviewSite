@@ -4,6 +4,7 @@ import { devIdentity, provisionUser } from "./lib/identity.js";
 import { readSession } from "./lib/session.js";
 import { createLoaders, type Loaders } from "./lib/loaders.js";
 import { RowBudget } from "./lib/budget.js";
+import { publicOrigin } from "./lib/origin.js";
 
 export interface AuthUser {
   id: string;
@@ -18,6 +19,8 @@ export interface Context {
   loaders: Loaders;
   /** Per-request ceiling on total list rows returned. See lib/budget.ts. */
   budget: RowBudget;
+  /** For links that leave the site, such as the Discord notification. */
+  origin: () => string;
 }
 
 interface BuildContextArgs {
@@ -38,6 +41,7 @@ export async function buildContext({
     // After the user, never before: `reacted` is per-viewer. See lib/loaders.ts.
     loaders: createLoaders(user?.id ?? null),
     budget: new RowBudget(),
+    origin: () => publicOrigin(req),
   };
 }
 

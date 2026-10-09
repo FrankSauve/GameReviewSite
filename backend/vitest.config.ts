@@ -12,6 +12,8 @@ export default defineConfig({
       NODE_ENV: "test",
       // Must stay unset: it would make every request authenticate as one user.
       AUTH_DEV_IDENTITY: "",
+      // Must stay unset too: every review a test creates would post to it.
+      DISCORD_WEBHOOK_URL: "",
       // High enough that the functional tests never trip it; the rate limit
       // test lowers it for itself.
       RATE_LIMIT_MAX: "100000",
