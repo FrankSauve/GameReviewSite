@@ -19,15 +19,27 @@
     "automerge": true
   },
 
+  "docker-compose": {
+    "managerFilePatterns": ["/^deploy/gamereviews\\.yml$/"]
+  },
+
   "packageRules": [
     {
-      "description": "Patch and minor npm updates land unattended once CI is green. CI runs the full backend suite against a real Postgres, so a broken bump does not merge.",
-      "matchManagers": ["npm"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "npm minor and patch",
+      "description": "Everything that may land unattended rides in one PR; CI is the gate.",
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "all non-major",
       "automerge": true,
       "automergeType": "pr",
       "platformAutomerge": true
+    },
+    {
+      "description": "An action's SHA pin is only worth something if a moved tag is read before it lands. Never automerged.",
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["action", "workflow"],
+      "matchUpdateTypes": ["digest"],
+      "groupName": "github actions digests",
+      "automerge": false,
+      "addLabels": ["needs-review"]
     },
     {
       "description": "Majors are read by a human. They are where renames, dropped Node versions and changed defaults live.",
@@ -44,13 +56,6 @@
       "enabled": false
     },
     {
-      "description": "Postgres patch releases are safe and worth taking promptly.",
-      "matchDatasources": ["docker"],
-      "matchPackageNames": ["postgres"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "automerge": true
-    },
-    {
       "description": "A Node major changes the runtime under the app and the base image at once. Manual, and it must be paired with the CI node-version.",
       "matchDatasources": ["docker", "node-version"],
       "matchPackageNames": ["node", "nginxinc/nginx-unprivileged"],
@@ -59,21 +64,7 @@
       "addLabels": ["needs-review"]
     },
     {
-      "description": "Base image patch and minor updates are the point of running Renovate here: they are how CVEs in the OS layer get picked up.",
-      "matchManagers": ["dockerfile", "docker-compose"],
-      "matchUpdateTypes": ["minor", "patch", "digest"],
-      "groupName": "container base images",
-      "automerge": true
-    },
-    {
-      "description": "GitHub Actions pinned by major tag; minor moves are noise.",
-      "matchManagers": ["github-actions"],
-      "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "github actions",
-      "automerge": true
-    },
-    {
-      "description": "esbuild is pinned exactly on purpose. Surface the update but never merge it unread. Its own group: a group automerges only if every update in it may, so inside \"npm minor and patch\" it would hold the whole group back.",
+      "description": "esbuild is pinned exactly on purpose. Surface the update but never merge it unread. Its own group: a group automerges only if every update in it may, so inside \"all non-major\" it would hold the whole group back.",
       "matchPackageNames": ["esbuild"],
       "groupName": "esbuild",
       "rangeStrategy": "pin",
