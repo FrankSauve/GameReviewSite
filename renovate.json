@@ -20,20 +20,26 @@
   },
 
   "docker-compose": {
-    "managerFilePatterns": [
-      "/(^|/)(?:docker-)?compose[^/]*\\.ya?ml$/",
-      "/^deploy/gamereviews\\.yml$/"
-    ]
+    "managerFilePatterns": ["/^deploy/gamereviews\\.yml$/"]
   },
 
   "packageRules": [
     {
-      "description": "Everything that may land unattended rides in one PR. CI runs the full backend suite against a real Postgres, so a broken bump does not merge. Base image digests are how CVEs in the OS layer get picked up.",
+      "description": "Everything that may land unattended rides in one PR; CI is the gate.",
       "matchUpdateTypes": ["minor", "patch", "digest"],
       "groupName": "all non-major",
       "automerge": true,
       "automergeType": "pr",
       "platformAutomerge": true
+    },
+    {
+      "description": "An action's SHA pin is only worth something if a moved tag is read before it lands. Never automerged.",
+      "matchManagers": ["github-actions"],
+      "matchDepTypes": ["action", "workflow"],
+      "matchUpdateTypes": ["digest"],
+      "groupName": "github actions digests",
+      "automerge": false,
+      "addLabels": ["needs-review"]
     },
     {
       "description": "Majors are read by a human. They are where renames, dropped Node versions and changed defaults live.",
