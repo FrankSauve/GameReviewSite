@@ -53,6 +53,27 @@ export const SEARCH_GAMES_EXTERNAL = gql`
       releaseYear
       genres
       metacritic
+      game {
+        id
+        slug
+        reviewCount
+      }
+    }
+  }
+`;
+
+/** Reviewed games only; anything else is found through "Add game". */
+export const SEARCH_GAMES = gql`
+  query SearchGames($query: String!) {
+    searchGames(query: $query) {
+      id
+      slug
+      title
+      genres
+      coverUrl
+      releaseYear
+      averageRating
+      reviewCount
     }
   }
 `;

@@ -29,6 +29,13 @@ export function ratingColor(rating: number): string {
   return "text-rating-low";
 }
 
+/** Metacritic's own 0–100 bands (75 and 50), not this site's 1–10 scale. */
+export function metacriticColor(score: number): string {
+  if (score >= 75) return "bg-rating-high/20 text-rating-high";
+  if (score >= 50) return "bg-rating-mid/20 text-rating-mid";
+  return "bg-rating-low/20 text-rating-low";
+}
+
 /** Snaps to the nearest half point and clamps to the scale. */
 export function snapRating(rating: number): number {
   const clamped = Math.min(Math.max(rating, RATING_MIN), RATING_MAX);

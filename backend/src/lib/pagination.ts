@@ -32,6 +32,8 @@ export const LIST_BOUNDS = {
   recentReviews: { def: 10, max: 50 },
   users: { def: 100, max: 200 },
   games: { def: 100, max: 200 },
+  /** A dropdown, not a page: enough to find the game, never the catalogue. */
+  gameSearch: { def: 8, max: 20 },
   nested: { def: 50, max: 100 },
   /**
    * Higher than `reviews` because a summary carries no `content`: 500 summaries

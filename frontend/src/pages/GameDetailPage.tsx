@@ -20,12 +20,15 @@ export function GameDetailPage() {
   const { data, loading, error } = useQuery<{ game: Game | null }>(GET_GAME, {
     variables: { id },
     skip: !id,
+    // Reviews land from other people's sessions, so a cached copy goes stale.
+    fetchPolicy: "cache-and-network",
   });
 
   useCanonicalPath(data?.game ? gamePath(data.game) : null);
 
-  if (loading) return <DetailSkeleton />;
-  if (error)
+  if (loading && !data) return <DetailSkeleton />;
+  // A failed background refresh keeps the cached page rather than replacing it.
+  if (error && !data)
     return (
       <div className="text-center py-20">
         <p className="text-danger-text">{error.message}</p>

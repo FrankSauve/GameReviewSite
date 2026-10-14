@@ -72,6 +72,8 @@ export const typeDefs = `#graphql
     releaseYear: Int
     genres: [String!]
     metacritic: Int
+    # The game already imported under this rawgId, if any.
+    game: Game
   }
 
   # A review without its body.
@@ -286,6 +288,8 @@ export const typeDefs = `#graphql
     # Distinct genres across the catalogue, for the filter menu.
     gameFacets: GameFacets!
     game(id: ID!): Game
+    # Reviewed games whose title contains the query, most-reviewed first.
+    searchGames(query: String!, limit: Int): [Game!]!
     searchGamesExternal(query: String!): [ExternalGame!]!
 
     reviews(limit: Int, offset: Int): [Review!]!

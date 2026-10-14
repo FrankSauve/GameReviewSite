@@ -85,8 +85,10 @@ export function GameLibraryPage() {
         sort,
         ...filters,
       },
+      fetchPolicy: "cache-and-network",
     },
   );
+  const pending = loading && !data;
   const { data: facetData } = useQuery<{
     gameFacets: { genres: string[] };
   }>(GET_GAME_FACETS);
@@ -192,9 +194,9 @@ export function GameLibraryPage() {
         )}
       </div>
 
-      {loading && <GameGridSkeleton />}
+      {pending && <GameGridSkeleton />}
 
-      {!loading && games.length === 0 && (
+      {!pending && games.length === 0 && (
         <div className="empty-state space-y-3">
           <p className="text-4xl">🎮</p>
           <p className="text-content-muted font-medium">
@@ -214,7 +216,7 @@ export function GameLibraryPage() {
         </div>
       )}
 
-      {!loading && games.length > 0 && (
+      {!pending && games.length > 0 && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {games.map((game) => (

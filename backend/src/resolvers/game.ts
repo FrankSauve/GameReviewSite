@@ -16,9 +16,12 @@ import { badInput } from "../lib/badInput.js";
 import { validateLabels } from "../lib/labels.js";
 import {
   GAME_SORTS,
+  TITLE_MAX,
   catalogueCount,
   catalogueIds,
   genreValues,
+  searchableTitle,
+  titleSearchIds,
   type GameFilter,
   type GameSort,
 } from "../lib/gameCatalogue.js";
@@ -106,6 +109,16 @@ function gameFilter({
   return { reviewedOnly, genre, reviewedBy };
 }
 
+/** findMany does not preserve the order of an `in` list; the SQL decided it. */
+async function gamesInOrder(ordered: { id: string }[]): Promise<Game[]> {
+  const ids = ordered.map((row) => row.id);
+  const rows = await prisma.game.findMany({ where: { id: { in: ids } } });
+  const byId = new Map(rows.map((game) => [game.id, game]));
+  return ids
+    .map((id) => byId.get(id))
+    .filter((game): game is Game => game !== undefined);
+}
+
 export const gameResolvers = {
   Query: {
     games: async (_parent: unknown, args: GamesArgs, { budget }: Context) => {
@@ -113,15 +126,21 @@ export const gameResolvers = {
       const ordered = await prisma.$queryRaw<{ id: string }[]>(
         catalogueIds(gameFilter(args), gameSort(args.sort), take, skip),
       );
-      const ids = ordered.map((row) => row.id);
-      const rows = await prisma.game.findMany({ where: { id: { in: ids } } });
-      // findMany does not preserve the order of an `in` list; the SQL above is
-      // what decided it.
-      const byId = new Map(rows.map((game) => [game.id, game]));
-      const games = ids
-        .map((id) => byId.get(id))
-        .filter((game): game is Game => game !== undefined);
-      return budget.charge(games).map(serializeDates);
+      return budget.charge(await gamesInOrder(ordered)).map(serializeDates);
+    },
+
+    searchGames: async (
+      _parent: unknown,
+      args: PageArgs & { query: string },
+      { budget }: Context,
+    ) => {
+      const query = searchableTitle(args.query);
+      if (!query) return [];
+      const { take } = clampWindow(args, LIST_BOUNDS.gameSearch);
+      const ordered = await prisma.$queryRaw<{ id: string }[]>(
+        titleSearchIds(query, take),
+      );
+      return budget.charge(await gamesInOrder(ordered)).map(serializeDates);
     },
 
     gamesCount: async (_parent: unknown, args: GamesArgs) => {
@@ -147,14 +166,22 @@ export const gameResolvers = {
     ) => {
       if (!query.trim()) return [];
       const results = await searchRawg(query.trim());
-      return results.map((g) => ({
-        rawgId: String(g.id),
-        title: g.name,
-        coverUrl: g.background_image ?? null,
-        releaseYear: releaseYear(g.released),
-        genres: (g.genres ?? []).map((genre) => genre.name),
-        metacritic: g.metacritic ?? null,
-      }));
+      const imported = await prisma.game.findMany({
+        where: { rawgId: { in: results.map((g) => String(g.id)) } },
+      });
+      const byRawgId = new Map(imported.map((game) => [game.rawgId, game]));
+      return results.map((g) => {
+        const game = byRawgId.get(String(g.id));
+        return {
+          rawgId: String(g.id),
+          title: g.name,
+          coverUrl: g.background_image ?? null,
+          releaseYear: releaseYear(g.released),
+          genres: (g.genres ?? []).map((genre) => genre.name),
+          metacritic: g.metacritic ?? null,
+          game: game ? serializeDates(game) : null,
+        };
+      });
     },
   },
 
@@ -168,7 +195,7 @@ export const gameResolvers = {
 
       // These arrive from the client, not from RAWG, and so need re-validation.
       const rawgId = validateRawgId(input.rawgId);
-      const title = validateString(input.title, "title", 200);
+      const title = validateString(input.title, "title", TITLE_MAX);
       const coverUrl = input.coverUrl ? validateCoverUrl(input.coverUrl) : null;
       const genres = validateLabels(input.genres ?? [], "genre");
       const releaseYear =
@@ -215,7 +242,7 @@ export const gameResolvers = {
       context: Context,
     ) => {
       const authUser = requireAuth(context);
-      const title = validateString(input.title, "title", 200);
+      const title = validateString(input.title, "title", TITLE_MAX);
 
       const game = await prisma.game.create({
         data: {
@@ -244,7 +271,7 @@ export const gameResolvers = {
       await requireGameOwnership(id, authUser.id);
       const data: Partial<Omit<Game, "id" | "createdAt" | "updatedAt">> = {};
       if (input.title !== undefined)
-        data.title = validateString(input.title, "title", 200);
+        data.title = validateString(input.title, "title", TITLE_MAX);
       if (input.genres !== undefined)
         data.genres = validateLabels(input.genres, "genre");
       if (input.description !== undefined)
