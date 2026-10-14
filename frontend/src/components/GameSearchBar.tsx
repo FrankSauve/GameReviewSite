@@ -22,6 +22,7 @@ export function GameSearchBar() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [focused, setFocused] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -52,35 +53,59 @@ export function GameSearchBar() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setOpen(false);
     setQuery("");
+    inputRef.current?.blur();
     void navigate(gamePath(game));
   };
 
   const results = data?.searchGames ?? [];
   const trimmed = query.trim();
   const showDropdown = open && trimmed.length >= 2;
+  // Stays expanded under an open dropdown, so a blur that doesn't dismiss
+  // (a tap on a result, the keyboard's Done) doesn't hide the query it shows.
+  const expanded = focused || showDropdown;
   // Still debouncing counts as searching, or "no match" flashes before the request.
   const searching =
     trimmed.length >= 2 && (loading || variables?.query !== trimmed);
 
   return (
-    <div className="relative flex-1 max-w-md" ref={containerRef}>
-      {/* Input */}
-      <div className="relative">
-        <SearchIcon />
-        <input
-          ref={inputRef}
-          className="input-field rounded-card pl-9 pr-4 text-meta"
-          placeholder="Search reviewed games…"
-          value={query}
-          onChange={handleInput}
-          onFocus={() => query.trim().length >= 2 && setOpen(true)}
-          autoComplete="off"
-        />
-        {searching && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2">
-            <Spinner />
-          </div>
-        )}
+    <div className="relative flex-1 min-w-12 max-w-md" ref={containerRef}>
+      {/* Input. On a phone it rests as just the icon; expanded, it covers the
+          header's fixed h-16, the same assumption the dropdown makes. */}
+      <div
+        className={
+          expanded
+            ? "max-sm:fixed max-sm:inset-x-0 max-sm:top-0 max-sm:h-16 max-sm:px-4 max-sm:flex max-sm:items-center max-sm:bg-bg max-sm:z-50"
+            : ""
+        }
+      >
+        <div className="relative w-full">
+          <SearchIcon />
+          <input
+            ref={inputRef}
+            aria-label="Search reviewed games"
+            className={`input-field rounded-card pl-9 pr-4 text-meta ${
+              expanded
+                ? ""
+                : "max-sm:text-transparent max-sm:placeholder:text-transparent"
+            }`}
+            placeholder="Search reviewed games…"
+            value={query}
+            onChange={handleInput}
+            onFocus={() => {
+              setFocused(true);
+              if (query.trim().length >= 2) setOpen(true);
+            }}
+            onBlur={() => setFocused(false)}
+            autoComplete="off"
+          />
+          {searching && (
+            <div
+              className={`absolute right-3 top-1/2 -translate-y-1/2 ${expanded ? "" : "max-sm:hidden"}`}
+            >
+              <Spinner />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Dropdown */}
