@@ -1,45 +1,36 @@
 import { useState, useRef, useCallback } from "react";
-import { useLazyQuery, useMutation } from "@apollo/client";
+import { useLazyQuery } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
-import { SEARCH_GAMES_EXTERNAL } from "../graphql/queries";
-import { IMPORT_GAME } from "../graphql/mutations";
-import { useAuth } from "../contexts/AuthContext";
-import type { ExternalGame } from "../types";
+import { SEARCH_GAMES } from "../graphql/queries";
+import type { Game } from "../types";
 import { gamePath } from "../lib/links";
 import { useDismiss } from "../hooks/useDismiss";
-import { GameCover } from "./GameCover";
+import { formatRating, ratingColor } from "../lib/rating";
+import {
+  GameResultRow,
+  ReviewCountMeta,
+  SearchIcon,
+  Spinner,
+} from "./GameResultRow";
 
 interface SearchResult {
-  searchGamesExternal: ExternalGame[];
-}
-interface ImportResult {
-  importGame: { id: string; slug?: string | null };
+  searchGames: Game[];
 }
 
+/** Searches the games already reviewed here. New games come in through AddGameButton. */
 export function GameSearchBar() {
   const navigate = useNavigate();
-  const { user, signIn } = useAuth();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [search, { data, loading: searching }] = useLazyQuery<SearchResult>(
-    SEARCH_GAMES_EXTERNAL,
-    { fetchPolicy: "network-only" },
-  );
+  const [search, { data, loading, variables }] = useLazyQuery<
+    SearchResult,
+    { query: string }
+  >(SEARCH_GAMES, { fetchPolicy: "network-only" });
 
-  const [importGame, { loading: importing }] = useMutation<ImportResult>(
-    IMPORT_GAME,
-    {
-      // By name, not by document: GET_GAMES takes paging and filter variables
-      // now, and the object form would only match a call with none of them.
-      refetchQueries: ["GetGames"],
-    },
-  );
-
-  // Debounced search
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuery(value);
@@ -48,7 +39,7 @@ export function GameSearchBar() {
     if (value.trim().length < 2) return;
     debounceRef.current = setTimeout(() => {
       void search({ variables: { query: value.trim() } });
-    }, 400);
+    }, 150);
   };
 
   const dismiss = useCallback(() => {
@@ -57,33 +48,19 @@ export function GameSearchBar() {
   }, []);
   useDismiss(containerRef, dismiss);
 
-  const handleSelect = useCallback(
-    async (game: ExternalGame) => {
-      setOpen(false);
-      setQuery("");
-      if (!user) {
-        signIn("/");
-        return;
-      }
-      const result = await importGame({
-        variables: {
-          input: {
-            rawgId: game.rawgId,
-            title: game.title,
-            coverUrl: game.coverUrl ?? null,
-            genres: game.genres ?? [],
-            releaseYear: game.releaseYear ?? null,
-          },
-        },
-      });
-      const imported = result.data?.importGame;
-      if (imported) void navigate(gamePath(imported));
-    },
-    [user, signIn, importGame, navigate],
-  );
+  const openGame = (game: Game) => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setOpen(false);
+    setQuery("");
+    void navigate(gamePath(game));
+  };
 
-  const results = data?.searchGamesExternal ?? [];
-  const showDropdown = open && query.trim().length >= 2;
+  const results = data?.searchGames ?? [];
+  const trimmed = query.trim();
+  const showDropdown = open && trimmed.length >= 2;
+  // Still debouncing counts as searching, or "no match" flashes before the request.
+  const searching =
+    trimmed.length >= 2 && (loading || variables?.query !== trimmed);
 
   return (
     <div className="relative flex-1 max-w-md" ref={containerRef}>
@@ -93,13 +70,13 @@ export function GameSearchBar() {
         <input
           ref={inputRef}
           className="input-field rounded-card pl-9 pr-4 text-meta"
-          placeholder="Search games to review…"
+          placeholder="Search reviewed games…"
           value={query}
           onChange={handleInput}
           onFocus={() => query.trim().length >= 2 && setOpen(true)}
           autoComplete="off"
         />
-        {(searching || importing) && (
+        {searching && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2">
             <Spinner />
           </div>
@@ -113,127 +90,45 @@ export function GameSearchBar() {
         <div className="absolute top-full mt-2 left-0 right-0 max-sm:fixed max-sm:top-16 max-sm:left-2 max-sm:right-2 popover z-50 overflow-hidden">
           {searching && results.length === 0 && (
             <div className="flex items-center justify-center gap-2 py-6 text-meta text-content-subtle">
-              <Spinner /> Searching RAWG…
+              <Spinner /> Searching…
             </div>
           )}
 
           {!searching && results.length === 0 && (
             <div className="py-6 text-center text-meta text-content-subtle">
-              No games found for "{query}"
+              No reviewed games match "{query}"
             </div>
           )}
 
           {results.length > 0 && (
             <ul className="max-h-[420px] overflow-y-auto divide-y divide-line">
               {results.map((game) => (
-                <li key={game.rawgId}>
-                  <button
-                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-surface-raised transition-colors duration-theme text-left"
-                    onClick={() => void handleSelect(game)}
+                <li key={game.id}>
+                  <GameResultRow
+                    game={game}
+                    hint="View →"
+                    onClick={() => openGame(game)}
                   >
-                    {/* Cover thumbnail */}
-                    <div className="w-10 h-14 rounded-control overflow-hidden bg-surface-raised shrink-0">
-                      <GameCover game={game} size="sm" />
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-meta font-semibold text-content truncate">
-                        {game.title}
-                      </p>
-                      <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                        {game.releaseYear && (
-                          <span className="text-micro text-content-subtle">
-                            {game.releaseYear}
-                          </span>
-                        )}
-                        {game.genres?.[0] && (
-                          <span className="text-micro bg-accent-subtle/50 text-accent-subtle-text px-1.5 py-0.5 rounded-pill">
-                            {game.genres[0]}
-                          </span>
-                        )}
-                        {game.metacritic && (
-                          <span
-                            className={`text-micro font-bold px-1.5 py-0.5 rounded-chip ${
-                              game.metacritic >= 75
-                                ? "bg-rating-high/20 text-rating-high"
-                                : game.metacritic >= 50
-                                  ? "bg-rating-mid/20 text-rating-mid"
-                                  : "bg-rating-low/20 text-rating-low"
-                            }`}
-                          >
-                            {game.metacritic}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Action hint */}
-                    <span className="text-micro text-content-subtle shrink-0">
-                      {user ? "Review →" : "Sign in →"}
-                    </span>
-                  </button>
+                    {game.releaseYear && (
+                      <span className="text-micro text-content-subtle">
+                        {game.releaseYear}
+                      </span>
+                    )}
+                    {game.averageRating != null && (
+                      <span
+                        className={`font-numeric text-micro font-bold ${ratingColor(game.averageRating)}`}
+                      >
+                        {formatRating(game.averageRating)}
+                      </span>
+                    )}
+                    <ReviewCountMeta count={game.reviewCount ?? 0} />
+                  </GameResultRow>
                 </li>
               ))}
             </ul>
           )}
-
-          {/* RAWG attribution */}
-          <div className="px-3 py-2 border-t border-line flex items-center justify-end gap-1">
-            <span className="text-micro text-content-subtle">Powered by</span>
-            <a
-              href="https://rawg.io"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-micro text-content-subtle hover:text-content-muted"
-            >
-              RAWG
-            </a>
-          </div>
         </div>
       )}
     </div>
-  );
-}
-
-function SearchIcon() {
-  return (
-    <svg
-      className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-content-subtle pointer-events-none"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-      />
-    </svg>
-  );
-}
-
-function Spinner() {
-  return (
-    <svg
-      className="w-4 h-4 animate-spin text-content-subtle"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      />
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8v8H4z"
-      />
-    </svg>
   );
 }

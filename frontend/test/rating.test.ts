@@ -4,6 +4,7 @@ import {
   RATING_MIN,
   RATING_VALUES,
   formatRating,
+  metacriticColor,
   ratingColor,
   snapRating,
 } from "../src/lib/rating";
@@ -72,5 +73,14 @@ describe("snapRating", () => {
     expect(snapRating(0)).toBe(RATING_MIN);
     expect(snapRating(-4)).toBe(RATING_MIN);
     expect(snapRating(99)).toBe(RATING_MAX);
+  });
+});
+
+describe("metacriticColor", () => {
+  it("bands at Metacritic's 75 and 50, not at this site's 8 and 6", () => {
+    expect(metacriticColor(75)).toContain("text-rating-high");
+    expect(metacriticColor(74)).toContain("text-rating-mid");
+    expect(metacriticColor(50)).toContain("text-rating-mid");
+    expect(metacriticColor(49)).toContain("text-rating-low");
   });
 });

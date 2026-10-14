@@ -67,6 +67,12 @@ export interface ExternalGame {
   releaseYear?: number | null;
   genres?: string[];
   metacritic?: number | null;
+  /** The game already imported under this rawgId, if any. */
+  game?: {
+    id: string;
+    slug?: string | null;
+    reviewCount?: number | null;
+  } | null;
 }
 
 export interface CurrentUser {

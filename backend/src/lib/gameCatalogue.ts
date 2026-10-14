@@ -103,3 +103,33 @@ export function genreValues(): Prisma.Sql {
     SELECT DISTINCT unnest(genres) AS value FROM "Game" ORDER BY value ASC
   `;
 }
+
+/** Enforced on every write of `Game.title`; search reads it to refuse longer queries. */
+export const TITLE_MAX = 200;
+
+/** The trimmed query, or null when it cannot usefully match. */
+export function searchableTitle(query: string): string | null {
+  const trimmed = query.trim();
+  return trimmed.length >= 2 && trimmed.length <= TITLE_MAX ? trimmed : null;
+}
+
+/** Escapes the LIKE metacharacters so a title search matches them literally. */
+export function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (char) => `\\${char}`);
+}
+
+/**
+ * Reviewed games only, most-reviewed first. The inner join is the filter: a game
+ * imported and never reviewed is reached through "Add game", not here.
+ */
+export function titleSearchIds(query: string, take: number): Prisma.Sql {
+  const pattern = `%${escapeLike(query)}%`;
+  return Prisma.sql`
+    SELECT g.id FROM "Game" g
+    JOIN "Review" r ON r."gameId" = g.id
+    WHERE g.title ILIKE ${pattern}
+    GROUP BY g.id
+    ORDER BY COUNT(r.id) DESC, LOWER(g.title) ASC, g.id ASC
+    LIMIT ${take}
+  `;
+}

@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useApolloClient } from "@apollo/client";
 import { useAuth } from "../contexts/AuthContext";
 import { GameSearchBar } from "./GameSearchBar";
+import { AddGameButton } from "./AddGameButton";
 import { useDismiss } from "../hooks/useDismiss";
 import { userPath } from "../lib/links";
 import { Avatar } from "./Avatar";
@@ -104,6 +105,7 @@ export function Navbar() {
 
         {/* Search bar (fills available space) */}
         <GameSearchBar />
+        {user && <AddGameButton />}
 
         <AppearancePicker />
 
