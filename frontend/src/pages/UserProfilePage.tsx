@@ -216,6 +216,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
         </div>
       ) : (
         <GroupedReviewList
+          key={grouping}
           groups={groups}
           showGroupAverage={grouping === "year" || grouping === "genre"}
         />
