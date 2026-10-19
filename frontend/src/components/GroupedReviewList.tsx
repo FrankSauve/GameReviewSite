@@ -1,3 +1,4 @@
+import { useId, useState } from "react";
 import { Link } from "react-router-dom";
 import { formatRating, ratingColor } from "../lib/rating";
 import { formatHours } from "../lib/playtime";
@@ -57,40 +58,97 @@ export function GroupedReviewList({
   groups,
   showGroupAverage,
 }: GroupedReviewListProps) {
+  const idPrefix = useId();
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+
+  // An unlabelled group (Recent's single list) has no header to reopen it by.
+  const collapsible = groups.filter((g) => g.label).map((g) => g.key);
+  const allCollapsed =
+    collapsible.length > 0 && collapsible.every((k) => collapsed.has(k));
+
+  const toggle = (key: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(key)) next.add(key);
+      return next;
+    });
+
   return (
     <div className="space-y-6">
-      {groups.map((group) => (
-        <section key={group.key}>
-          {group.label && (
-            <div className="flex items-baseline gap-2 mb-2 pb-1 border-b border-line">
-              <h3 className="font-display text-title text-content">
-                {group.label}
-              </h3>
-              <span className="text-micro text-content-subtle">
-                {group.items.length}
-                {group.items.length === 1 ? " game" : " games"}
-              </span>
-              {showGroupAverage && (
-                <span
-                  className={`text-micro font-semibold ${ratingColor(group.average)}`}
-                >
-                  avg {formatRating(Math.round(group.average * 10) / 10)}
+      {collapsible.length > 0 && (
+        <div className="flex justify-end -mb-3">
+          <button
+            type="button"
+            onClick={() =>
+              setCollapsed(allCollapsed ? new Set() : new Set(collapsible))
+            }
+            className="text-micro font-medium text-content-muted hover:text-accent-subtle-text transition-colors duration-theme"
+          >
+            {allCollapsed ? "Show all" : "Collapse all"}
+          </button>
+        </div>
+      )}
+      {groups.map((group, i) => {
+        const open = !group.label || !collapsed.has(group.key);
+        const listId = `${idPrefix}-${i}`;
+        return (
+          <section key={group.key}>
+            {group.label && (
+              // The button's ::after covers the row, so the whole header
+              // toggles while the heading keeps only the label as its text.
+              <div className="relative flex items-baseline gap-2 mb-2 pb-1 border-b border-line">
+                <h3 className="font-display text-title text-content">
+                  <button
+                    type="button"
+                    aria-expanded={open}
+                    aria-controls={listId}
+                    onClick={() => toggle(group.key)}
+                    className="flex items-baseline gap-2 hover:text-accent-subtle-text transition-colors duration-theme after:absolute after:inset-0"
+                  >
+                    <svg
+                      aria-hidden="true"
+                      className={`w-4 h-4 self-center shrink-0 text-content-subtle transition-transform duration-theme ${open ? "" : "-rotate-90"}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 9l-7 7-7-7"
+                      />
+                    </svg>
+                    {group.label}
+                  </button>
+                </h3>
+                <span className="text-micro text-content-subtle">
+                  {group.items.length}
+                  {group.items.length === 1 ? " game" : " games"}
                 </span>
-              )}
-              {group.hours != null && (
-                <span className="text-micro text-content-subtle ml-auto">
-                  {formatHours(Math.round(group.hours * 10) / 10)}
-                </span>
-              )}
+                {showGroupAverage && (
+                  <span
+                    className={`text-micro font-semibold ${ratingColor(group.average)}`}
+                  >
+                    avg {formatRating(Math.round(group.average * 10) / 10)}
+                  </span>
+                )}
+                {group.hours != null && (
+                  <span className="text-micro text-content-subtle ml-auto">
+                    {formatHours(group.hours)}
+                  </span>
+                )}
+              </div>
+            )}
+            <div id={listId} className="space-y-2">
+              {open &&
+                group.items.map((item) => (
+                  <ReviewRow key={item.id} item={item} />
+                ))}
             </div>
-          )}
-          <div className="space-y-2">
-            {group.items.map((item) => (
-              <ReviewRow key={item.id} item={item} />
-            ))}
-          </div>
-        </section>
-      ))}
+          </section>
+        );
+      })}
     </div>
   );
 }
