@@ -15,12 +15,13 @@ export const PROFILE_TAB_PATH: Record<ProfileTab, string> = {
   favorites: "favorites",
 };
 
-/** The orderings of the review list, in Sort by menu order. */
-export const PROFILE_VIEWS: { grouping: Grouping; label: string }[] = [
-  { grouping: "year", label: "By year" },
-  { grouping: "score", label: "By score" },
-  { grouping: "genre", label: "By genre" },
-  { grouping: "recent", label: "Recent" },
+/** The profile's tab strip, in order. */
+export const PROFILE_TABS: { tab: ProfileTab; label: string }[] = [
+  { tab: "year", label: "Year" },
+  { tab: "score", label: "Score" },
+  { tab: "genre", label: "Genre" },
+  { tab: "recent", label: "Recent" },
+  { tab: "favorites", label: "Favourites" },
 ];
 
 const routeFor = (sub: string) => (sub ? `/users/:id/${sub}` : "/users/:id");
@@ -30,10 +31,9 @@ const routeFor = (sub: string) => (sub ? `/users/:id/${sub}` : "/users/:id");
  * link to it survives the default changing.
  */
 export const PROFILE_ROUTES: { path: string; tab: ProfileTab }[] = [
-  ...PROFILE_VIEWS.map((v) => ({
-    path: routeFor(PROFILE_TAB_PATH[v.grouping]),
-    tab: v.grouping,
+  ...PROFILE_TABS.map(({ tab }) => ({
+    path: routeFor(PROFILE_TAB_PATH[tab]),
+    tab,
   })),
-  { path: routeFor(PROFILE_TAB_PATH.favorites), tab: "favorites" },
   { path: routeFor("by-year"), tab: "year" },
 ];

@@ -3,14 +3,6 @@ interface Slugged {
   slug?: string | null;
 }
 
-/**
- * Whether a route's `:id` names this record. It may be either the slug or the
- * UUID, since a link shared before slugs existed still resolves.
- */
-export function isKeyOf(record: Slugged, key?: string | null): boolean {
-  return key != null && (record.id === key || record.slug === key);
-}
-
 /** `/games/elden-ring`, or the home page when there is no game to link to. */
 export function gamePath(game?: Slugged | null): string {
   return game ? `/games/${game.slug ?? game.id}` : "/";
