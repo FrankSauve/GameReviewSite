@@ -135,12 +135,12 @@ export function GroupedReviewList({
                 )}
                 {group.hours != null && (
                   <span className="text-micro text-content-subtle ml-auto">
-                    {formatHours(Math.round(group.hours * 10) / 10)}
+                    {formatHours(group.hours)}
                   </span>
                 )}
               </div>
             )}
-            <div id={listId} hidden={!open} className="space-y-2">
+            <div id={listId} className="space-y-2">
               {open &&
                 group.items.map((item) => (
                   <ReviewRow key={item.id} item={item} />

@@ -238,6 +238,29 @@ describe("profile grouped views", () => {
     });
   });
 
+  /** Score and Genre share a cache entry, so the list is not remounted by a load. */
+  it("opens every group again after a round trip through another view", async () => {
+    renderAt(`/users/${USER_SLUG}/by-score`);
+    expect(await headings()).toEqual(["10", "8.5"]);
+    fireEvent.click(screen.getByRole("button", { name: "10" }));
+    expect(
+      screen.getByRole("button", { name: "10" }).getAttribute("aria-expanded"),
+    ).toBe("false");
+
+    fireEvent.click(screen.getByRole("link", { name: "Genre" }));
+    await eventually(() =>
+      expect(pathname()).toBe(`/users/${USER_SLUG}/by-genre`),
+    );
+    fireEvent.click(screen.getByRole("link", { name: "Score" }));
+    await eventually(() =>
+      expect(
+        screen
+          .getByRole("button", { name: "10" })
+          .getAttribute("aria-expanded"),
+      ).toBe("true"),
+    );
+  });
+
   /**
    * A profile link shared before slugs existed still resolves, and does not stay
    * a UUID once it has: the page rewrites the address bar in place, keeping

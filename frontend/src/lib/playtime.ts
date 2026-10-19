@@ -20,12 +20,16 @@ export function yearOptions(now: Date = new Date()): number[] {
   return Array.from({ length: max - YEAR_PLAYED_MIN + 1 }, (_, i) => max - i);
 }
 
+const HOURS_FORMAT = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 1,
+});
+
 /**
  * `42h`, `47.5h`, `10,000h`, never `42.0h`. The locale is pinned so the
  * separator is a comma whatever the browser's language.
  */
 export function formatHours(hours: number): string {
-  return `${hours.toLocaleString("en-US", { maximumFractionDigits: 1 })}h`;
+  return `${HOURS_FORMAT.format(hours)}h`;
 }
 
 /**
