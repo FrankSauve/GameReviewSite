@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { gamePath, reviewPath, userPath } from "../src/lib/links";
+import { gamePath, isKeyOf, reviewPath, userPath } from "../src/lib/links";
 
 /**
  * These helpers exist because the fallback is easy to get wrong in twenty
@@ -65,6 +65,25 @@ describe("link helpers", () => {
     it("does not link anywhere for a missing user", () => {
       expect(userPath(null)).toBe("#");
       expect(userPath(undefined)).toBe("#");
+    });
+  });
+
+  describe("isKeyOf", () => {
+    const alice = { id: "uuid-3", slug: "alice" };
+
+    it("matches by slug or by UUID", () => {
+      expect(isKeyOf(alice, "alice")).toBe(true);
+      expect(isKeyOf(alice, "uuid-3")).toBe(true);
+    });
+
+    it("does not match another record's key", () => {
+      expect(isKeyOf(alice, "bob")).toBe(false);
+    });
+
+    /** Neither side's absence may count as a match: null === null is true. */
+    it("does not match a missing key against a missing slug", () => {
+      expect(isKeyOf({ id: "uuid-4", slug: null }, null)).toBe(false);
+      expect(isKeyOf({ id: "uuid-4" }, undefined)).toBe(false);
     });
   });
 });

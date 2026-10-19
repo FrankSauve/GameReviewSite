@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@apollo/client";
 import { GET_USER_REVIEW_SUMMARIES } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
@@ -16,8 +16,13 @@ import { pickableGames } from "../lib/favorites";
 import { ProfileBio } from "../components/ProfileBio";
 import { Avatar } from "../components/Avatar";
 import { AvatarColorPicker } from "../components/AvatarColorPicker";
-import { EXPORT_REVIEWS_PATH, userPath } from "../lib/links";
+import { EXPORT_REVIEWS_PATH, isKeyOf, userPath } from "../lib/links";
 import { useCanonicalPath } from "../hooks/useCanonicalPath";
+import {
+  PROFILE_TAB_PATH,
+  PROFILE_VIEWS,
+  type ProfileTab,
+} from "../lib/profileViews";
 
 interface ProfileUser {
   id: string;
@@ -34,45 +39,49 @@ interface ProfileData {
   reviewSummariesByUser: ReviewSummary[];
 }
 
-/** Favorites is the one tab that is not a view of the review list. */
-export type ProfileTab = Grouping | "favorites";
-
-const TABS: { tab: ProfileTab; label: string; path: string }[] = [
-  { tab: "year", label: "By year", path: "" },
-  { tab: "score", label: "By score", path: "by-score" },
-  { tab: "recent", label: "Recent", path: "recent" },
-  { tab: "favorites", label: "Favourites", path: "favorites" },
-];
+const tabClass = (active: boolean) =>
+  `px-3 py-2 text-meta font-medium -mb-px border-b-2 transition-colors duration-theme ${
+    active
+      ? "border-accent-hover text-accent-subtle-text"
+      : "border-transparent text-content-subtle hover:text-content-body"
+  }`;
 
 interface UserProfilePageProps {
-  /**
-   * Which view this route renders. By year is the default, per the brief — a
-   * profile reads as a playing history rather than a posting log.
-   */
+  /** Which view this route renders; see PROFILE_ROUTES. */
   tab?: ProfileTab;
 }
 
 export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
   const { id } = useParams<{ id: string }>();
   const { user: me } = useAuth();
+  const navigate = useNavigate();
 
   // Favorites still needs the summaries: the header's totals come from them,
   // and the picker offers exactly the games they name. Borrowing the default
   // tab's ordering shares its cache entry rather than adding a fourth.
   const grouping: Grouping = tab === "favorites" ? "year" : tab;
 
-  const { data, loading, error } = useQuery<ProfileData>(
-    GET_USER_REVIEW_SUMMARIES,
-    {
-      variables: { id, order: ORDER_FOR[grouping] },
-      skip: !id,
-    },
-  );
+  const {
+    data: fresh,
+    previousData,
+    loading,
+    error,
+  } = useQuery<ProfileData>(GET_USER_REVIEW_SUMMARIES, {
+    variables: { id, order: ORDER_FOR[grouping] },
+    skip: !id,
+  });
 
-  const tabPath = TABS.find((t) => t.tab === tab)?.path ?? "";
-  useCanonicalPath(data?.user ? userPath(data.user, tabPath) : null);
+  // While another view of the same profile loads, keep the last one on screen:
+  // the skeleton would unmount the Sort by menu and drop keyboard focus.
+  const prevUser = previousData?.user;
+  const stale =
+    !fresh && prevUser && isKeyOf(prevUser, id) ? previousData : undefined;
+  const data = fresh ?? stale;
 
-  if (loading) {
+  const tabPath = PROFILE_TAB_PATH[tab];
+  useCanonicalPath(fresh?.user ? userPath(fresh.user, tabPath) : null);
+
+  if (loading && !data) {
     return (
       <div className="space-y-6 page-column">
         <div className="card p-card-pad flex items-center gap-5 animate-pulse">
@@ -185,28 +194,51 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
         </div>
       </div>
 
-      {/* ── View tabs ── */}
+      {/* ── Section tabs ── */}
       <nav className="flex gap-1 border-b border-line">
-        {TABS.map((entry) => {
-          const active = entry.tab === tab;
-          return (
-            <Link
-              key={entry.tab}
-              to={userPath(profile, entry.path)}
-              aria-current={active ? "page" : undefined}
-              className={`px-3 py-2 text-meta font-medium -mb-px border-b-2 transition-colors duration-theme ${
-                active
-                  ? "border-accent-hover text-accent-subtle-text"
-                  : "border-transparent text-content-subtle hover:text-content-body"
-              }`}
-            >
-              {entry.label}
-            </Link>
-          );
-        })}
+        <Link
+          to={userPath(profile, PROFILE_TAB_PATH[grouping])}
+          aria-current={tab !== "favorites" ? "page" : undefined}
+          className={tabClass(tab !== "favorites")}
+        >
+          Reviews
+        </Link>
+        <Link
+          to={userPath(profile, PROFILE_TAB_PATH.favorites)}
+          aria-current={tab === "favorites" ? "page" : undefined}
+          className={tabClass(tab === "favorites")}
+        >
+          Favourites
+        </Link>
       </nav>
 
-      {/* ── Favorites, or the reviews every other tab shows ── */}
+      {tab !== "favorites" && reviews.length > 0 && (
+        <label className="flex items-center gap-2 text-micro text-content-subtle">
+          Sort by
+          <select
+            aria-label="Sort by"
+            value={grouping}
+            onChange={(e) => {
+              const view = PROFILE_VIEWS.find(
+                (v) => v.grouping === e.target.value,
+              );
+              if (view)
+                void navigate(
+                  userPath(profile, PROFILE_TAB_PATH[view.grouping]),
+                );
+            }}
+            className="input-field w-auto text-meta px-2 py-1.5"
+          >
+            {PROFILE_VIEWS.map((view) => (
+              <option key={view.grouping} value={view.grouping}>
+                {view.label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+
+      {/* ── Favorites, or the review list in the chosen view ── */}
       {tab === "favorites" ? (
         <FavoritesGrid
           userId={profile.id}
@@ -223,7 +255,15 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
           </p>
         </div>
       ) : (
-        <GroupedReviewList groups={groups} showGroupAverage={tab === "year"} />
+        <div
+          aria-busy={stale ? true : undefined}
+          className={stale ? "opacity-60 transition-opacity" : undefined}
+        >
+          <GroupedReviewList
+            groups={groups}
+            showGroupAverage={grouping === "year" || grouping === "genre"}
+          />
+        </div>
       )}
     </div>
   );
