@@ -8,6 +8,7 @@ import { HomePage } from "./pages/HomePage";
 import { GameLibraryPage } from "./pages/GameLibraryPage";
 import { GameDetailPage } from "./pages/GameDetailPage";
 import { UserProfilePage } from "./pages/UserProfilePage";
+import { PROFILE_ROUTES } from "./lib/profileViews";
 import { ReviewDetailPage } from "./pages/ReviewDetailPage";
 import { ReviewersPage } from "./pages/ReviewersPage";
 import { ArticlesPage } from "./pages/ArticlesPage";
@@ -27,30 +28,13 @@ function App() {
                   <Route path="/" element={<HomePage />} />
                   <Route path="/games" element={<GameLibraryPage />} />
                   <Route path="/games/:id" element={<GameDetailPage />} />
-                  {/* By year is the default view: a profile reads as a playing
-                    history rather than a posting log. */}
-                  <Route
-                    path="/users/:id"
-                    element={<UserProfilePage tab="year" />}
-                  />
-                  <Route
-                    path="/users/:id/by-score"
-                    element={<UserProfilePage tab="score" />}
-                  />
-                  <Route
-                    path="/users/:id/recent"
-                    element={<UserProfilePage tab="recent" />}
-                  />
-                  <Route
-                    path="/users/:id/favorites"
-                    element={<UserProfilePage tab="favorites" />}
-                  />
-                  {/* The by-year view is reachable at its own path too, so a link
-                    to it survives the default changing. */}
-                  <Route
-                    path="/users/:id/by-year"
-                    element={<UserProfilePage tab="year" />}
-                  />
+                  {PROFILE_ROUTES.map(({ path, tab }) => (
+                    <Route
+                      key={path}
+                      path={path}
+                      element={<UserProfilePage tab={tab} />}
+                    />
+                  ))}
                   {/* A splat, because a review is at /reviews/<user>/<game>. */}
                   <Route path="/reviews/*" element={<ReviewDetailPage />} />
                   <Route path="/reviewers" element={<ReviewersPage />} />

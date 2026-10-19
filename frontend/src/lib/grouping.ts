@@ -101,7 +101,69 @@ export function groupByScore(reviews: ReviewSummary[]): ReviewGroup[] {
     );
 }
 
-export type Grouping = "year" | "score" | "recent";
+/** Ties go to the lowest code point, which puts "RPG" ahead of "rpg". */
+function commonestSpelling(spellings: Map<string, number>): string {
+  let best = "";
+  let bestCount = 0;
+  for (const [spelling, count] of spellings) {
+    if (count > bestCount || (count === bestCount && spelling < best)) {
+      best = spelling;
+      bestCount = count;
+    }
+  }
+  return best;
+}
+
+/**
+ * Groups by genre, most games first, ties by name, with "No genre" last. A
+ * review is listed under each of its game's genres, so counts can sum past the total.
+ */
+export function groupByGenre(reviews: ReviewSummary[]): ReviewGroup[] {
+  // Case-insensitive, because labels are free text: "RPG" and "rpg" are one
+  // group. Its name is the commonest spelling, so re-scoring a game cannot rename it.
+  const byGenre = new Map<
+    string,
+    { spellings: Map<string, number>; items: ReviewSummary[] }
+  >();
+  const none: ReviewSummary[] = [];
+
+  for (const review of reviews) {
+    const genres = review.game?.genres ?? [];
+    if (!genres.length) {
+      none.push(review);
+      continue;
+    }
+    // Once per game per genre, or a repeated label repeats a React key in its group.
+    const seen = new Set<string>();
+    for (const genre of genres) {
+      const key = genre.toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      let bucket = byGenre.get(key);
+      if (!bucket) {
+        bucket = { spellings: new Map(), items: [] };
+        byGenre.set(key, bucket);
+      }
+      bucket.items.push(review);
+      bucket.spellings.set(genre, (bucket.spellings.get(genre) ?? 0) + 1);
+    }
+  }
+
+  // Keyed with a prefix so a genre named "unknown" cannot collide with UNKNOWN_KEY.
+  const groups = [...byGenre.entries()]
+    .map(([key, { spellings, items }]) =>
+      toGroup(`genre:${key}`, commonestSpelling(spellings), items),
+    )
+    .sort(
+      (a, b) =>
+        b.items.length - a.items.length || a.label.localeCompare(b.label),
+    );
+
+  if (none.length) groups.push(toGroup(UNKNOWN_KEY, "No genre", none));
+  return groups;
+}
+
+export type Grouping = "year" | "score" | "genre" | "recent";
 
 export function groupReviews(
   reviews: ReviewSummary[],
@@ -109,6 +171,7 @@ export function groupReviews(
 ): ReviewGroup[] {
   if (grouping === "year") return groupByYear(reviews);
   if (grouping === "score") return groupByScore(reviews);
+  if (grouping === "genre") return groupByGenre(reviews);
   // Recent is one undivided list; the server has already ordered it.
   return reviews.length ? [toGroup("recent", "", reviews)] : [];
 }
@@ -121,4 +184,6 @@ export const ORDER_FOR: Record<
   recent: "RECENT",
   year: "YEAR_DESC",
   score: "RATING_DESC",
+  // Highest score first within each genre; shares the by-score cache entry.
+  genre: "RATING_DESC",
 };

@@ -125,8 +125,9 @@ export function createEmbedRouter(): Router {
 /**
  * The same thing for `/users/<slug>`. Separate router because the paths below
  * it differ: a profile is one segment, optionally followed by the tab the SPA
- * renders. `/by-score`, `/recent` and `/by-year` unfurl as the profile, being
- * the same reviews in another order; `/favorites` unfurls as the picks.
+ * renders. `/by-score`, `/by-genre`, `/recent` and `/by-year` unfurl as the
+ * profile, being the same reviews in another order; `/favorites` unfurls as
+ * the picks.
  */
 export function createProfileEmbedRouter(): Router {
   const router = Router();

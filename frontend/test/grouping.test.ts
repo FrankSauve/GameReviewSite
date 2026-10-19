@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ORDER_FOR,
+  groupByGenre,
   groupByScore,
   groupByYear,
   groupReviews,
@@ -114,6 +115,109 @@ describe("groupByScore", () => {
   });
 });
 
+function withGenres(
+  rating: number,
+  genres: string[] | undefined,
+): ReviewSummary {
+  const base = review(rating, 2020);
+  return {
+    ...base,
+    game: {
+      id: `g-${base.id}`,
+      title: base.id,
+      ...(genres ? { genres } : {}),
+    },
+  };
+}
+
+describe("groupByGenre", () => {
+  it("lists a multi-genre review under each of its genres", () => {
+    const rpgAction = withGenres(9, ["RPG", "Action"]);
+    const groups = groupByGenre([rpgAction]);
+    expect(groups.map((g) => [g.label, g.items.map((i) => i.id)])).toEqual([
+      ["Action", [rpgAction.id]],
+      ["RPG", [rpgAction.id]],
+    ]);
+  });
+
+  it("orders genres by game count, then by name", () => {
+    const groups = groupByGenre([
+      withGenres(8, ["Puzzle"]),
+      withGenres(7, ["Strategy", "RPG"]),
+      withGenres(6, ["RPG"]),
+      withGenres(5, ["Adventure"]),
+    ]);
+    expect(groups.map((g) => g.label)).toEqual([
+      "RPG",
+      "Adventure",
+      "Puzzle",
+      "Strategy",
+    ]);
+  });
+
+  it("keeps the server's order within a genre", () => {
+    const rows = [withGenres(10, ["RPG"]), withGenres(6, ["RPG"])];
+    expect(groupByGenre(rows)[0]?.items.map((i) => i.id)).toEqual(
+      rows.map((r) => r.id),
+    );
+  });
+
+  it("puts reviews with no genre in a trailing group", () => {
+    const groups = groupByGenre([
+      withGenres(8, []),
+      withGenres(7, undefined),
+      { ...review(6, 2020), game: null },
+      withGenres(9, ["RPG"]),
+    ]);
+    expect(groups.map((g) => [g.label, g.items.length])).toEqual([
+      ["RPG", 1],
+      ["No genre", 3],
+    ]);
+  });
+
+  it("keeps a genre called unknown apart from the no-genre group", () => {
+    const keys = groupByGenre([
+      withGenres(8, ["unknown"]),
+      withGenres(7, []),
+    ]).map((g) => g.key);
+    expect(new Set(keys).size).toBe(2);
+  });
+
+  it("treats genres differing only in case as one group", () => {
+    const groups = groupByGenre([
+      withGenres(9, ["RPG"]),
+      withGenres(8, ["rpg"]),
+    ]);
+    expect(groups.map((g) => [g.label, g.items.length])).toEqual([["RPG", 2]]);
+  });
+
+  /** Server order is by score, so naming by first-seen would rename on a re-score. */
+  it("names a genre by its commonest spelling, whatever the order", () => {
+    const rows = [
+      withGenres(10, ["rpg"]),
+      withGenres(9, ["RPG"]),
+      withGenres(8, ["RPG"]),
+    ];
+    expect(groupByGenre(rows)[0]?.label).toBe("RPG");
+    expect(groupByGenre([...rows].reverse())[0]?.label).toBe("RPG");
+  });
+
+  it("breaks a spelling tie towards capitals, whatever the order", () => {
+    const rows = [withGenres(10, ["action"]), withGenres(9, ["Action"])];
+    expect(groupByGenre(rows)[0]?.label).toBe("Action");
+    expect(groupByGenre([...rows].reverse())[0]?.label).toBe("Action");
+  });
+
+  it("lists a game once under a genre it names twice", () => {
+    const groups = groupByGenre([withGenres(9, ["RPG", "RPG", "rpg"])]);
+    expect(groups.map((g) => [g.label, g.items.length])).toEqual([["RPG", 1]]);
+  });
+
+  it("returns nothing for no reviews", () => {
+    expect(groupByGenre([])).toEqual([]);
+  });
+});
+
 describe("group totals", () => {
   it("averages the scores within a year", () => {
     const groups = groupByYear([review(8, 2020), review(9, 2020)]);
@@ -149,6 +253,12 @@ describe("groupReviews", () => {
     expect(groupReviews([], "recent")).toEqual([]);
   });
 
+  it("dispatches to the genre grouping", () => {
+    expect(
+      groupReviews([withGenres(8, ["RPG"])], "genre").map((g) => g.label),
+    ).toEqual(["RPG"]);
+  });
+
   it("dispatches to the year and score groupings", () => {
     const rows = [review(8, 2015), review(10, 2024)];
     expect(groupReviews(rows, "year").map((g) => g.label)).toEqual([
@@ -171,5 +281,6 @@ describe("ORDER_FOR", () => {
     expect(ORDER_FOR.year).toBe("YEAR_DESC");
     expect(ORDER_FOR.score).toBe("RATING_DESC");
     expect(ORDER_FOR.recent).toBe("RECENT");
+    expect(ORDER_FOR.genre).toBe("RATING_DESC");
   });
 });

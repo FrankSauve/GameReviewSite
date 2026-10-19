@@ -342,7 +342,7 @@ describe("profile link previews", () => {
       { category: "favorite-game", title: "Elden Ring" },
     ]);
 
-    for (const tab of ["by-score", "recent", "by-year"]) {
+    for (const tab of ["by-score", "by-genre", "recent", "by-year"]) {
       const res = await request(app).get(`/users/${slug}/${tab}`);
       expect(meta(res.text, "og:title")).toBe("alice — 1 review");
     }
