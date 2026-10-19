@@ -29,7 +29,7 @@ RUN npm run build
 # 3.21, whose OpenSSL packages carry two fixable CRITICAL advisories. 1.29-alpine
 # is on Alpine 3.23 and measured zero. The digest is what Renovate updates; the
 # tag alone would have let the base drift silently under a running deployment.
-FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:884e0b7f42f303641b0f4e78755aea647521dca0b89ca3be7992ad78b5c07434
+FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:378d0c32f6562f7fd9629170797f57d2b953aa09be983b3daaf4809bb039ca00
 
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
