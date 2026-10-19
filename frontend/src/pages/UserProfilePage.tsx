@@ -16,7 +16,7 @@ import { pickableGames } from "../lib/favorites";
 import { ProfileBio } from "../components/ProfileBio";
 import { Avatar } from "../components/Avatar";
 import { AvatarColorPicker } from "../components/AvatarColorPicker";
-import { EXPORT_REVIEWS_PATH, userPath } from "../lib/links";
+import { EXPORT_REVIEWS_PATH, isKeyOf, userPath } from "../lib/links";
 import { useCanonicalPath } from "../hooks/useCanonicalPath";
 import {
   PROFILE_TAB_PATH,
@@ -53,18 +53,27 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
   // tab's ordering shares its cache entry rather than adding a fourth.
   const grouping: Grouping = tab === "favorites" ? "year" : tab;
 
-  const { data, loading, error } = useQuery<ProfileData>(
-    GET_USER_REVIEW_SUMMARIES,
-    {
-      variables: { id, order: ORDER_FOR[grouping] },
-      skip: !id,
-    },
-  );
+  const {
+    data: fresh,
+    previousData,
+    loading,
+    error,
+  } = useQuery<ProfileData>(GET_USER_REVIEW_SUMMARIES, {
+    variables: { id, order: ORDER_FOR[grouping] },
+    skip: !id,
+  });
+
+  // While another view of the same profile loads, the header and tabs stay up
+  // from the last result, so focus and a bio draft survive; only the list
+  // waits. The header's totals don't depend on the ordering.
+  const prevUser = previousData?.user;
+  const data =
+    fresh ?? (prevUser && isKeyOf(prevUser, id) ? previousData : undefined);
 
   const tabPath = PROFILE_TAB_PATH[tab];
-  useCanonicalPath(data?.user ? userPath(data.user, tabPath) : null);
+  useCanonicalPath(fresh?.user ? userPath(fresh.user, tabPath) : null);
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="space-y-6 page-column">
         <div className="card p-card-pad flex items-center gap-5 animate-pulse">
@@ -199,7 +208,13 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
       </nav>
 
       {/* ── Favorites, or the review list in the chosen view ── */}
-      {tab === "favorites" ? (
+      {!fresh ? (
+        <div aria-busy="true" className="space-y-2">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="card h-16 animate-pulse" />
+          ))}
+        </div>
+      ) : tab === "favorites" ? (
         <FavoritesGrid
           userId={profile.id}
           isOwnProfile={isOwnProfile}

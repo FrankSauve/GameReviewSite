@@ -61,8 +61,9 @@ const ROWS = [
   summary("r3", 10, 2019, "Another Great One", ["Puzzle"]),
 ];
 
-function mockFor(order: string, id: string = USER_ID) {
+function mockFor(order: string, id: string = USER_ID, delay = 0) {
   return {
+    delay,
     request: {
       query: GET_USER_REVIEW_SUMMARIES,
       variables: { id, order },
@@ -96,7 +97,8 @@ function pathname(): string {
   return screen.getByTestId("pathname").textContent ?? "";
 }
 
-function renderAt(path: string) {
+/** `slowScore` holds the by-score response back, to watch the page mid-load. */
+function renderAt(path: string, { slowScore = false } = {}) {
   // No AuthContext.Provider: the context's own default is an anonymous viewer,
   // which is what these tests want.
   return render(
@@ -108,7 +110,7 @@ function renderAt(path: string) {
         // The same three again under the slug, for after the canonical redirect
         // has swapped the UUID out of the URL.
         mockFor("YEAR_DESC", USER_SLUG),
-        mockFor("RATING_DESC", USER_SLUG),
+        mockFor("RATING_DESC", USER_SLUG, slowScore ? 100 : 0),
         mockFor("RECENT", USER_SLUG),
       ]}
     >
@@ -259,6 +261,39 @@ describe("profile grouped views", () => {
           .getAttribute("aria-expanded"),
       ).toBe("true"),
     );
+  });
+
+  /**
+   * Swapping the whole page for its skeleton would unmount the tab just
+   * activated, dropping keyboard focus to the body, and a bio being edited.
+   */
+  it("keeps the header and tabs while the next view loads", async () => {
+    renderAt(`/users/${USER_SLUG}`, { slowScore: true });
+    expect(await headings()).toEqual(["2024", "2019"]);
+    const scoreTab = screen.getByRole("link", { name: "Score" });
+    scoreTab.focus();
+
+    fireEvent.click(scoreTab);
+
+    await eventually(() => {
+      expect(pathname()).toBe(`/users/${USER_SLUG}/by-score`);
+      expect(document.querySelector('[aria-busy="true"]')).not.toBeNull();
+    });
+    // The list is a skeleton, not the previous view's rows regrouped.
+    expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(0);
+    expect(screen.getByRole("heading", { name: "simon" })).toBeTruthy();
+    expect(screen.getByRole("link", { name: "Score" })).toBe(scoreTab);
+    expect(document.activeElement).toBe(scoreTab);
+
+    await eventually(() => {
+      expect(
+        screen
+          .queryAllByRole("heading", { level: 3 })
+          .map((h) => h.textContent),
+      ).toEqual(["10", "8.5"]);
+      expect(document.querySelector('[aria-busy="true"]')).toBeNull();
+    });
+    expect(document.activeElement).toBe(scoreTab);
   });
 
   /**
