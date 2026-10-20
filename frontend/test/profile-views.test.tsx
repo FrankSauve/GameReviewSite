@@ -185,9 +185,10 @@ describe("profile grouped views", () => {
 
   it("puts two reviews sharing a year under one heading", async () => {
     renderAt(`/users/${USER_ID}/by-year`);
-    await headings();
-    expect(screen.getByText("Older Game")).toBeTruthy();
-    expect(screen.getByText("Another Great One")).toBeTruthy();
+    await eventually(() => {
+      expect(screen.getByText("Older Game")).toBeTruthy();
+      expect(screen.getByText("Another Great One")).toBeTruthy();
+    });
   });
 
   it("groups by genre at the by-genre route, most games first", async () => {
@@ -315,10 +316,11 @@ describe("profile grouped views", () => {
 
   it("renders no body text, because the query does not fetch one", async () => {
     renderAt(`/users/${USER_ID}/by-year`);
-    await headings();
     // Each row links to the review rather than showing an excerpt of it.
-    expect(
-      screen.getByText("Best Game").closest("a")?.getAttribute("href"),
-    ).toBe(`/reviews/${USER_SLUG}/best-game`);
+    await eventually(() =>
+      expect(
+        screen.getByText("Best Game").closest("a")?.getAttribute("href"),
+      ).toBe(`/reviews/${USER_SLUG}/best-game`),
+    );
   });
 });
