@@ -91,6 +91,9 @@ model Review {
   /// The one platform this reviewer played on, from lib/platforms.ts. Null for a
   /// review whose game recorded no platform we can offer.
   platform    String?
+  /// Free text the reviewer chose, one per review. Null when unset, and the
+  /// profile's genre view then falls back to the game's genres.
+  genre       String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   userId    String

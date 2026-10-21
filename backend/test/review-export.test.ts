@@ -82,6 +82,7 @@ interface SeedReview {
   hoursPlayed?: number | null;
   yearPlayed?: number | null;
   platform?: string | null;
+  genre?: string | null;
   content?: string;
   createdAt?: Date;
 }
@@ -106,6 +107,7 @@ async function seedReview(
       yearPlayed: review.yearPlayed === undefined ? 2024 : review.yearPlayed,
       hoursPlayed: review.hoursPlayed === undefined ? 12 : review.hoursPlayed,
       platform: review.platform ?? null,
+      genre: review.genre ?? null,
       slug: `${user.username}/${game.slug}`,
       gameId: game.id,
       userId: user.id,
@@ -227,6 +229,24 @@ describe("exporting reviews as a zip of markdown files", () => {
 
     const entries = await readArchive(await bodyOf(getExport(app, cookie)));
     expect(entries.get("reviews-alice/hades.md")).not.toContain("Platform");
+  });
+
+  it("names the genre the reviewer filed it under", async () => {
+    const cookie = await sessionFor(ALICE);
+    await seedReview(ALICE, { title: "Hades", genre: "Roguelike" });
+
+    const entries = await readArchive(await bodyOf(getExport(app, cookie)));
+    expect(entries.get("reviews-alice/hades.md")).toContain(
+      "**Genre:** Roguelike\n",
+    );
+  });
+
+  it("leaves the genre line out when the review records none", async () => {
+    const cookie = await sessionFor(ALICE);
+    await seedReview(ALICE, { title: "Hades" });
+
+    const entries = await readArchive(await bodyOf(getExport(app, cookie)));
+    expect(entries.get("reviews-alice/hades.md")).not.toContain("Genre");
   });
 
   it("leaves the playtime line out when there are no hours recorded", async () => {

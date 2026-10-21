@@ -14,6 +14,7 @@ export interface ExportableReview {
   hoursPlayed?: number | null;
   yearPlayed?: number | null;
   platform?: string | null;
+  genre?: string | null;
   content: string;
 }
 
@@ -24,6 +25,9 @@ export function formatReview(review: ExportableReview): string {
   ];
   if (review.platform) {
     lines.push(`**Platform:** ${review.platform}`);
+  }
+  if (review.genre) {
+    lines.push(`**Genre:** ${review.genre}`);
   }
   if (review.hoursPlayed != null) {
     lines.push(`**Playtime:** ${formatHoursPlayed(review.hoursPlayed)} hrs`);

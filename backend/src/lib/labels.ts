@@ -10,6 +10,7 @@ import { badInput } from "./badInput.js";
  */
 export const MAX_LABELS = 5;
 
+/** Duplicated as GENRE_MAX_LENGTH in frontend/src/components/GenreInput.tsx; this copy is authoritative. */
 const LABEL_MAX_LENGTH = 100;
 
 /** Past the cap is dropped, not refused: being on many platforms is not a
@@ -34,4 +35,19 @@ export function validateLabels(values: string[], field: string): string[] {
   }
 
   return kept;
+}
+
+/**
+ * A review's own genre: optional free text, so null or "" clears it rather than
+ * being refused. One line, because it is written into the export's metadata block
+ * and a Discord field, where a newline forges a line of its own.
+ */
+export function validateGenre(value: string | null): string | null {
+  const trimmed = value?.replace(/\s+/g, " ").trim();
+  if (!trimmed) return null;
+  if (/\p{Cc}/u.test(trimmed))
+    throw badInput("genre must not contain control characters.");
+  if (trimmed.length > LABEL_MAX_LENGTH)
+    throw badInput(`genre must be at most ${LABEL_MAX_LENGTH} characters.`);
+  return trimmed;
 }

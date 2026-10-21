@@ -91,6 +91,8 @@ export const typeDefs = `#graphql
     hoursPlayed: Float
     # The platform the reviewer played on. Null for a review that has none.
     platform: String
+    # The genre the reviewer filed it under. Null for a review that has none.
+    genre: String
     createdAt: String
     commentCount: Int!
     game: Game
@@ -121,6 +123,9 @@ export const typeDefs = `#graphql
     # The one platform the reviewer played on, from the fixed list in
     # backend/src/lib/platforms.ts. Null for a review that has none.
     platform: String
+    # The one genre the reviewer filed it under, in their own words. Null for a
+    # review that has none; the profile then falls back to the game's genres.
+    genre: String
     createdAt: String
     updatedAt: String
     user: User
@@ -206,15 +211,17 @@ export const typeDefs = `#graphql
     yearPlayed: Int!
     hoursPlayed: Float!
     platform: String
+    genre: String
   }
 
-  # An explicit null on platform clears it; omitting it leaves it alone.
+  # An explicit null on platform or genre clears it; omitting it leaves it alone.
   input UpdateReviewInput {
     rating: Float
     content: String
     yearPlayed: Int
     hoursPlayed: Float
     platform: String
+    genre: String
   }
 
   # authorId is taken from the session — not supplied by the client.

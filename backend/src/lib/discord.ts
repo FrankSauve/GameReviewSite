@@ -18,6 +18,7 @@ export interface PostedReview {
   yearPlayed: number | null;
   hoursPlayed: number | null;
   platform: string | null;
+  genre: string | null;
   createdAt: Date;
   game: { title: string; coverUrl: string | null };
   user: { username: string; slug: string };
@@ -63,6 +64,8 @@ export function reviewWebhookPayload(
     });
   if (review.platform)
     fields.push({ name: "Platform", value: review.platform, inline: true });
+  if (review.genre)
+    fields.push({ name: "Genre", value: review.genre, inline: true });
 
   // Discord refuses an empty description, which a body of only an image yields.
   const description = embedDescription(review.content);
