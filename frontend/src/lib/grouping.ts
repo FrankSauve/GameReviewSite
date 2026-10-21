@@ -8,6 +8,8 @@ export interface ReviewSummary {
   hoursPlayed?: number | null;
   createdAt: string;
   commentCount: number;
+  /** The reviewer's own choice of genre, which wins over the game's. */
+  genre?: string | null;
   game?: {
     id: string;
     slug?: string | null;
@@ -114,13 +116,85 @@ function commonestSpelling(spellings: Map<string, number>): string {
   return best;
 }
 
+/** Counts each genre once per review, ignoring case. */
+function tallyInto(tally: Map<string, number>, genres: string[]): void {
+  for (const key of new Set(genres.map((genre) => genre.toLowerCase())))
+    tally.set(key, (tally.get(key) ?? 0) + 1);
+}
+
+/** A fallback must be among this many games' genres, which keeps most headings off a single row. */
+const MIN_FALLBACK_GROUP = 2;
+
 /**
- * Groups by genre, most games first, ties by name, with "No genre" last. A
- * review is listed under each of its game's genres, so counts can sum past the total.
+ * Picks the one genre each review is filed under. Only games the reviewer has
+ * not filed themselves count towards a fallback's rarity.
+ */
+function genrePicker(
+  reviews: ReviewSummary[],
+): (review: ReviewSummary) => string | null {
+  const chosen = new Map<string, number>();
+  const unfiled = new Map<string, number>();
+  for (const review of reviews) {
+    const own = review.genre?.trim();
+    if (own) tallyInto(chosen, [own]);
+    else tallyInto(unfiled, review.game?.genres ?? []);
+  }
+
+  return (review) => {
+    const own = review.genre?.trim();
+    if (own) return own;
+    const genres = review.game?.genres ?? [];
+    return (
+      mostFiled(genres, chosen) ??
+      rarestShared(genres, unfiled) ??
+      genres[0] ??
+      null
+    );
+  };
+}
+
+/** The game's genre the reviewer files most games under; ties go to the game's order. */
+function mostFiled(
+  genres: string[],
+  chosen: Map<string, number>,
+): string | null {
+  let best: string | null = null;
+  let bestCount = 0;
+  for (const genre of genres) {
+    const count = chosen.get(genre.toLowerCase()) ?? 0;
+    if (count > bestCount) {
+      best = genre;
+      bestCount = count;
+    }
+  }
+  return best;
+}
+
+/** Rarest rather than commonest, so Action does not swallow the library; ties go to the game's order. */
+function rarestShared(
+  genres: string[],
+  unfiled: Map<string, number>,
+): string | null {
+  let best: string | null = null;
+  let bestCount = Infinity;
+  for (const genre of genres) {
+    const count = unfiled.get(genre.toLowerCase()) ?? 0;
+    if (count >= MIN_FALLBACK_GROUP && count < bestCount) {
+      best = genre;
+      bestCount = count;
+    }
+  }
+  return best;
+}
+
+/**
+ * Groups by genre, one group per review, most games first, ties by name, with
+ * "No genre" last.
  */
 export function groupByGenre(reviews: ReviewSummary[]): ReviewGroup[] {
-  // Case-insensitive, because labels are free text: "RPG" and "rpg" are one
+  // Case-insensitive, because genres are free text: "RPG" and "rpg" are one
   // group. Its name is the commonest spelling, so re-scoring a game cannot rename it.
+  const genreFor = genrePicker(reviews);
   const byGenre = new Map<
     string,
     { spellings: Map<string, number>; items: ReviewSummary[] }
@@ -128,25 +202,19 @@ export function groupByGenre(reviews: ReviewSummary[]): ReviewGroup[] {
   const none: ReviewSummary[] = [];
 
   for (const review of reviews) {
-    const genres = review.game?.genres ?? [];
-    if (!genres.length) {
+    const genre = genreFor(review);
+    if (genre == null) {
       none.push(review);
       continue;
     }
-    // Once per game per genre, or a repeated label repeats a React key in its group.
-    const seen = new Set<string>();
-    for (const genre of genres) {
-      const key = genre.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      let bucket = byGenre.get(key);
-      if (!bucket) {
-        bucket = { spellings: new Map(), items: [] };
-        byGenre.set(key, bucket);
-      }
-      bucket.items.push(review);
-      bucket.spellings.set(genre, (bucket.spellings.get(genre) ?? 0) + 1);
+    const key = genre.toLowerCase();
+    let bucket = byGenre.get(key);
+    if (!bucket) {
+      bucket = { spellings: new Map(), items: [] };
+      byGenre.set(key, bucket);
     }
+    bucket.items.push(review);
+    bucket.spellings.set(genre, (bucket.spellings.get(genre) ?? 0) + 1);
   }
 
   // Keyed with a prefix so a genre named "unknown" cannot collide with UNKNOWN_KEY.
@@ -161,6 +229,27 @@ export function groupByGenre(reviews: ReviewSummary[]): ReviewGroup[] {
 
   if (none.length) groups.push(toGroup(UNKNOWN_KEY, "No genre", none));
   return groups;
+}
+
+/**
+ * What the review form offers: the reviewer's genre headings, biggest first,
+ * spelled as the profile spells them, then the game's genres not among them.
+ */
+export function genreSuggestions(
+  reviews: ReviewSummary[],
+  gameGenres: string[],
+): string[] {
+  const headings = groupByGenre(reviews)
+    .filter((group) => group.key !== UNKNOWN_KEY)
+    .map((group) => group.label);
+  // Once per genre ignoring case: a game's genres can repeat, and the datalist keys on them.
+  const taken = new Set<string>();
+  return [...headings, ...gameGenres].filter((genre) => {
+    const key = genre.toLowerCase();
+    if (taken.has(key)) return false;
+    taken.add(key);
+    return true;
+  });
 }
 
 export type Grouping = "year" | "score" | "genre" | "recent";

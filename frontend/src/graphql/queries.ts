@@ -254,6 +254,7 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
       id
       slug
       rating
+      genre
       yearPlayed
       hoursPlayed
       createdAt

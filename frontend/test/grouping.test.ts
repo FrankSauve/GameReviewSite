@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   ORDER_FOR,
   groupByGenre,
+  genreSuggestions,
   groupByScore,
   groupByYear,
   groupReviews,
@@ -131,28 +132,121 @@ function withGenres(
 }
 
 describe("groupByGenre", () => {
-  it("lists a multi-genre review under each of its genres", () => {
-    const rpgAction = withGenres(9, ["RPG", "Action"]);
-    const groups = groupByGenre([rpgAction]);
-    expect(groups.map((g) => [g.label, g.items.map((i) => i.id)])).toEqual([
-      ["Action", [rpgAction.id]],
-      ["RPG", [rpgAction.id]],
+  it("files a review under its reviewer's genre over the game's", () => {
+    const hollowKnight = {
+      ...withGenres(9, ["Action", "Platformer"]),
+      genre: "Metroidvania",
+    };
+    expect(groupByGenre([hollowKnight]).map((g) => g.label)).toEqual([
+      "Metroidvania",
     ]);
+  });
+
+  /** The heading a game lands under, among the groups of a library. */
+  function filed(rows: ReviewSummary[], target: ReviewSummary) {
+    return groupByGenre(rows).find((g) =>
+      g.items.some((i) => i.id === target.id),
+    )?.label;
+  }
+
+  it("falls back to the game's genre rarest in the library", () => {
+    const hollowKnight = withGenres(9, ["Action", "Indie", "Platformer"]);
+    const rows = [
+      hollowKnight,
+      withGenres(8, ["Action", "Platformer"]),
+      withGenres(7, ["Action", "Indie"]),
+      withGenres(6, ["Action", "Indie"]),
+    ];
+    expect(filed(rows, hollowKnight)).toBe("Platformer");
+  });
+
+  it("breaks a rarity tie towards the game's own order", () => {
+    const rows = [
+      withGenres(9, ["RPG", "Action"]),
+      withGenres(8, ["RPG", "Action"]),
+    ];
+    expect(groupByGenre(rows).map((g) => g.label)).toEqual(["RPG"]);
+  });
+
+  /** Otherwise a library of Action-plus-something games is a heading per row. */
+  it("passes over a genre no other game shares", () => {
+    const rows = [
+      withGenres(9, ["Action", "Shooter"]),
+      withGenres(8, ["Action", "Racing"]),
+      withGenres(7, ["Action", "Sports"]),
+    ];
+    expect(groupByGenre(rows).map((g) => [g.label, g.items.length])).toEqual([
+      ["Action", 3],
+    ]);
+  });
+
+  it("files a lone game under its first genre", () => {
+    expect(
+      groupByGenre([withGenres(9, ["Shooter", "Action"])]).map((g) => g.label),
+    ).toEqual(["Shooter"]);
+  });
+
+  it("prefers a genre of the game's the reviewer already files under", () => {
+    const witcher = withGenres(9, ["Action", "Adventure", "RPG"]);
+    const rows = [
+      witcher,
+      { ...withGenres(8, ["Action"]), genre: "rpg" },
+      withGenres(7, ["Action", "Adventure"]),
+      withGenres(6, ["Action", "Adventure"]),
+    ];
+    expect(filed(rows, witcher)?.toLowerCase()).toBe("rpg");
+  });
+
+  it("leaves games the reviewer filed out of a fallback's rarity", () => {
+    const celeste = withGenres(9, ["Indie", "Platformer"]);
+    const unfiled = [
+      celeste,
+      withGenres(8, ["Indie", "Platformer"]),
+      withGenres(7, ["Indie", "Platformer"]),
+    ];
+    const before = filed(unfiled, celeste);
+    const filedAway = [
+      { ...withGenres(6, ["Indie"]), genre: "Roguelike" },
+      { ...withGenres(5, ["Indie"]), genre: "Roguelike" },
+    ];
+    expect(filed([...unfiled, ...filedAway], celeste)).toBe(before);
+  });
+
+  it("lists every review exactly once", () => {
+    const rows = [
+      withGenres(9, ["Action", "RPG"]),
+      withGenres(8, ["Action", "Shooter"]),
+      withGenres(7, ["Action", "Adventure", "RPG"]),
+      { ...withGenres(6, ["Action"]), genre: "Roguelike" },
+      withGenres(5, []),
+    ];
+    const ids = groupByGenre(rows).flatMap((g) => g.items.map((i) => i.id));
+    expect(ids.sort()).toEqual(rows.map((r) => r.id).sort());
+  });
+
+  it("merges reviewers' genres differing only in case", () => {
+    const groups = groupByGenre([
+      { ...withGenres(9, []), genre: "Metroidvania" },
+      { ...withGenres(8, ["Action"]), genre: "metroidvania" },
+    ]);
+    expect(groups.map((g) => [g.label, g.items.length])).toEqual([
+      ["Metroidvania", 2],
+    ]);
+  });
+
+  it("ignores a blank genre of the reviewer's own", () => {
+    const groups = groupByGenre([{ ...withGenres(9, ["RPG"]), genre: "  " }]);
+    expect(groups.map((g) => g.label)).toEqual(["RPG"]);
   });
 
   it("orders genres by game count, then by name", () => {
     const groups = groupByGenre([
       withGenres(8, ["Puzzle"]),
-      withGenres(7, ["Strategy", "RPG"]),
+      { ...withGenres(7, ["Strategy"]), genre: "RPG" },
       withGenres(6, ["RPG"]),
       withGenres(5, ["Adventure"]),
     ]);
-    expect(groups.map((g) => g.label)).toEqual([
-      "RPG",
-      "Adventure",
-      "Puzzle",
-      "Strategy",
-    ]);
+    expect(groups.map((g) => g.label)).toEqual(["RPG", "Adventure", "Puzzle"]);
   });
 
   it("keeps the server's order within a genre", () => {
@@ -208,13 +302,29 @@ describe("groupByGenre", () => {
     expect(groupByGenre([...rows].reverse())[0]?.label).toBe("Action");
   });
 
-  it("lists a game once under a genre it names twice", () => {
+  it("files a game that names one genre twice under it once", () => {
     const groups = groupByGenre([withGenres(9, ["RPG", "RPG", "rpg"])]);
     expect(groups.map((g) => [g.label, g.items.length])).toEqual([["RPG", 1]]);
   });
 
   it("returns nothing for no reviews", () => {
     expect(groupByGenre([])).toEqual([]);
+  });
+});
+
+describe("genreSuggestions", () => {
+  it("offers the profile's headings biggest first, then the game's genres", () => {
+    const rows = [
+      { ...withGenres(9, []), genre: "Metroidvania" },
+      { ...withGenres(8, []), genre: "metroidvania" },
+      { ...withGenres(7, []), genre: "RPG" },
+      withGenres(6, []),
+    ];
+    expect(genreSuggestions(rows, ["Action", "rpg", "Action"])).toEqual([
+      "Metroidvania",
+      "RPG",
+      "Action",
+    ]);
   });
 });
 
