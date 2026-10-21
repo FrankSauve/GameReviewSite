@@ -7,17 +7,23 @@ import { currentYear, snapHours } from "../lib/playtime";
 import { RatingInput } from "./RatingInput";
 import { PlaytimeInput } from "./PlaytimeInput";
 import { PlatformSelect } from "./PlatformSelect";
+import { GenreInput } from "./GenreInput";
 import { DEFAULT_PLATFORM } from "../lib/platforms";
 import { MarkdownEditor } from "./MarkdownEditor";
 
 interface AddReviewFormProps {
   gameId: string;
+  gameGenres?: string[] | undefined;
   onSuccess?: () => void;
 }
 
 const DEFAULT_RATING = 8;
 
-export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
+export function AddReviewForm({
+  gameId,
+  gameGenres,
+  onSuccess,
+}: AddReviewFormProps) {
   const { user, signIn } = useAuth();
   const bodyId = useId();
   const [content, setContent] = useState("");
@@ -25,15 +31,23 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
   const [yearPlayed, setYearPlayed] = useState<number>(currentYear());
   const [hoursPlayed, setHoursPlayed] = useState("");
   const [platform, setPlatform] = useState(DEFAULT_PLATFORM);
+  const [genre, setGenre] = useState("");
 
   const [createReview, { loading, error }] = useMutation(CREATE_REVIEW, {
     refetchQueries: [{ query: GET_GAME, variables: { id: gameId } }],
+    // The profile reads these as ReviewSummary, a separate cache entity this write does not touch.
+    update: (cache) =>
+      void cache.evict({
+        id: "ROOT_QUERY",
+        fieldName: "reviewSummariesByUser",
+      }),
     onCompleted: () => {
       setContent("");
       setRating(DEFAULT_RATING);
       setYearPlayed(currentYear());
       setHoursPlayed("");
       setPlatform(DEFAULT_PLATFORM);
+      setGenre("");
       onSuccess?.();
     },
   });
@@ -69,6 +83,7 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
           yearPlayed,
           hoursPlayed: snapHours(hours),
           platform: platform || null,
+          genre: genre.trim() || null,
         },
       },
     });
@@ -91,6 +106,8 @@ export function AddReviewForm({ gameId, onSuccess }: AddReviewFormProps) {
       />
 
       <PlatformSelect value={platform} onChange={setPlatform} />
+
+      <GenreInput value={genre} onChange={setGenre} gameGenres={gameGenres} />
 
       <div>
         <label htmlFor={bodyId} className="field-label text-body">

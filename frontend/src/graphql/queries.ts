@@ -181,6 +181,7 @@ export const GET_REVIEW = gql`
       yearPlayed
       hoursPlayed
       platform
+      genre
       createdAt
       user {
         id

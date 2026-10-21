@@ -14,6 +14,7 @@ import { currentYear, formatPlaytime, snapHours } from "../lib/playtime";
 import { RatingInput } from "../components/RatingInput";
 import { PlaytimeInput } from "../components/PlaytimeInput";
 import { PlatformSelect } from "../components/PlatformSelect";
+import { GenreInput } from "../components/GenreInput";
 import { Markdown } from "../components/Markdown";
 import { ReactionBar } from "../components/ReactionBar";
 import type { ReactionSummary } from "../types";
@@ -53,11 +54,15 @@ interface ReviewDetail {
   yearPlayed?: number | null;
   hoursPlayed?: number | null;
   platform?: string | null;
+  genre?: string | null;
   user?: CommentUser | null;
   game?: ReviewGame | null;
   comments?: ReviewComment[];
   reactions?: ReactionSummary[] | null;
 }
+
+const TAG =
+  "text-micro font-medium bg-surface-raised text-content-body px-2 py-0.5 rounded-pill border border-line-strong";
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -96,10 +101,15 @@ export function ReviewDetailPage() {
     DELETE_REVIEW,
     refetchOpts,
   );
-  const [updateReview, { loading: saving }] = useMutation(
-    UPDATE_REVIEW,
-    refetchOpts,
-  );
+  const [updateReview, { loading: saving }] = useMutation(UPDATE_REVIEW, {
+    ...refetchOpts,
+    // The profile reads these as ReviewSummary, a separate cache entity this write does not touch.
+    update: (cache) =>
+      void cache.evict({
+        id: "ROOT_QUERY",
+        fieldName: "reviewSummariesByUser",
+      }),
+  });
   const [deleteComment] = useMutation(DELETE_COMMENT, refetchOpts);
   const [createComment, { loading: submitting }] = useMutation(
     CREATE_COMMENT,
@@ -113,6 +123,7 @@ export function ReviewDetailPage() {
   const [editYear, setEditYear] = useState(currentYear());
   const [editHours, setEditHours] = useState("");
   const [editPlatform, setEditPlatform] = useState("");
+  const [editGenre, setEditGenre] = useState("");
   const [newComment, setNewComment] = useState("");
 
   if (loading) {
@@ -157,6 +168,7 @@ export function ReviewDetailPage() {
     setEditYear(review.yearPlayed ?? currentYear());
     setEditHours(review.hoursPlayed != null ? String(review.hoursPlayed) : "");
     setEditPlatform(review.platform ?? "");
+    setEditGenre(review.genre ?? "");
     setEditing(true);
   };
 
@@ -177,6 +189,7 @@ export function ReviewDetailPage() {
           yearPlayed: editYear,
           hoursPlayed: snapHours(editHoursNum),
           platform: editPlatform || null,
+          genre: editGenre.trim() || null,
         },
       },
     });
@@ -265,10 +278,15 @@ export function ReviewDetailPage() {
                   {timeAgo(review.createdAt)}
                   {playtime && <span> · played {playtime}</span>}
                 </p>
-                {review.platform && (
-                  <span className="inline-block mt-1 text-micro font-medium bg-surface-raised text-content-body px-2 py-0.5 rounded-pill border border-line-strong">
-                    {review.platform}
-                  </span>
+                {(review.platform || review.genre) && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {review.platform && (
+                      <span className={TAG}>{review.platform}</span>
+                    )}
+                    {review.genre && (
+                      <span className={TAG}>{review.genre}</span>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -336,6 +354,12 @@ export function ReviewDetailPage() {
               <PlatformSelect
                 value={editPlatform}
                 onChange={setEditPlatform}
+                size="sm"
+              />
+              <GenreInput
+                value={editGenre}
+                onChange={setEditGenre}
+                gameGenres={game?.genres}
                 size="sm"
               />
               <MarkdownEditor

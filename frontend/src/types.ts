@@ -39,6 +39,8 @@ export interface Review {
   hoursPlayed?: number | null;
   /** One of lib/platforms.ts; null for a review that records none. */
   platform?: string | null;
+  /** The reviewer's own choice; null falls back to the game's genres. */
+  genre?: string | null;
   createdAt: string;
   user?: User | null;
   game?: GameSnippet | null;
