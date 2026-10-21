@@ -46,6 +46,7 @@ function createMock(platform: string | null) {
           yearPlayed: new Date().getFullYear(),
           hoursPlayed: 12,
           platform,
+          genre: null,
         },
       },
     },
@@ -60,6 +61,7 @@ function createMock(platform: string | null) {
           yearPlayed: new Date().getFullYear(),
           hoursPlayed: 12,
           platform,
+          genre: null,
           createdAt: "2026-01-01T00:00:00.000Z",
           user: {
             __typename: "User",

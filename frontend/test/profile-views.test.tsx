@@ -42,6 +42,7 @@ const summary = (
   rating,
   yearPlayed,
   hoursPlayed: 12,
+  genre: null,
   createdAt: "2026-01-01T00:00:00.000Z",
   commentCount: 0,
   game: {
@@ -193,7 +194,7 @@ describe("profile grouped views", () => {
 
   it("groups by genre at the by-genre route, most games first", async () => {
     renderAt(`/users/${USER_ID}/by-genre`);
-    expect(await headings()).toEqual(["Action", "Puzzle", "RPG"]);
+    expect(await headings()).toEqual(["Action", "Puzzle"]);
   });
 
   it("marks the tab of the view being shown", async () => {

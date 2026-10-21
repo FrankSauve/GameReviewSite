@@ -13,6 +13,7 @@ import { byIdOrSlug, reviewSlugBase, uniqueSlug } from "../lib/slug.js";
 import { validateString } from "../lib/validate.js";
 import { badInput } from "../lib/badInput.js";
 import { validatePlatform } from "../lib/platforms.js";
+import { validateGenre } from "../lib/labels.js";
 import { notifyReviewPosted } from "../lib/discord.js";
 
 interface CreateReviewInput {
@@ -22,6 +23,7 @@ interface CreateReviewInput {
   yearPlayed: number;
   hoursPlayed: number;
   platform?: string | null;
+  genre?: string | null;
 }
 
 interface UpdateReviewInput {
@@ -30,6 +32,7 @@ interface UpdateReviewInput {
   yearPlayed?: number;
   hoursPlayed?: number;
   platform?: string | null;
+  genre?: string | null;
 }
 
 /** Generous because a decade of backlog includes long reviews. */
@@ -221,6 +224,7 @@ export const reviewResolvers = {
           yearPlayed: validateYearPlayed(input.yearPlayed),
           hoursPlayed: validateHoursPlayed(input.hoursPlayed),
           platform: input.platform ? validatePlatform(input.platform) : null,
+          genre: validateGenre(input.genre ?? null),
         },
       });
       // Not awaited: a slow Discord must not hold up the review.
@@ -241,7 +245,12 @@ export const reviewResolvers = {
       const data: Partial<
         Pick<
           Review,
-          "rating" | "content" | "yearPlayed" | "hoursPlayed" | "platform"
+          | "rating"
+          | "content"
+          | "yearPlayed"
+          | "hoursPlayed"
+          | "platform"
+          | "genre"
         >
       > = {};
       if (input.rating !== undefined)
@@ -261,6 +270,7 @@ export const reviewResolvers = {
         data.platform = input.platform
           ? validatePlatform(input.platform)
           : null;
+      if (input.genre !== undefined) data.genre = validateGenre(input.genre);
       const review = await prisma.review.update({
         where: { id: existing.id },
         data,

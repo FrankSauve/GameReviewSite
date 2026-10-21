@@ -23,6 +23,7 @@ export const CREATE_REVIEW = gql`
       yearPlayed
       hoursPlayed
       platform
+      genre
       createdAt
       user {
         id
@@ -88,6 +89,7 @@ export const UPDATE_REVIEW = gql`
       yearPlayed
       hoursPlayed
       platform
+      genre
     }
   }
 `;

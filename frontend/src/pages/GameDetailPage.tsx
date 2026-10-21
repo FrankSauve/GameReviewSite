@@ -140,6 +140,7 @@ export function GameDetailPage() {
             <h3 className="font-semibold text-content mb-4">Your Review</h3>
             <AddReviewForm
               gameId={game.id}
+              gameGenres={game.genres}
               onSuccess={() => setShowReviewForm(false)}
             />
           </div>
