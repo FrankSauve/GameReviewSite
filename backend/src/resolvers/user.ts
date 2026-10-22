@@ -1,5 +1,6 @@
 import type { User } from "@prisma/client";
 import { prisma } from "../lib/prisma.js";
+import { pruneUnreviewedGames } from "../lib/pruneGames.js";
 import { serializeDates } from "../lib/serialize.js";
 import {
   LIST_BOUNDS,
@@ -100,7 +101,17 @@ export const userResolvers = {
 
     deleteUser: async (_parent: unknown, _args: unknown, context: Context) => {
       const authUser = requireAuth(context);
-      await prisma.user.delete({ where: { id: authUser.id } });
+      await prisma.$transaction(async (tx) => {
+        const reviewed = await tx.review.findMany({
+          where: { userId: authUser.id },
+          select: { gameId: true },
+        });
+        await tx.user.delete({ where: { id: authUser.id } });
+        await pruneUnreviewedGames(
+          tx,
+          reviewed.map((r) => r.gameId),
+        );
+      });
       return true;
     },
   },

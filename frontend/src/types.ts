@@ -69,7 +69,9 @@ export interface ExternalGame {
   releaseYear?: number | null;
   genres?: string[];
   metacritic?: number | null;
-  /** The game already imported under this rawgId, if any. */
+  /** Only from the single-game preview; search results carry none. */
+  description?: string | null;
+  /** The game already in the library under this rawgId, if any. */
   game?: {
     id: string;
     slug?: string | null;

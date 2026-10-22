@@ -118,7 +118,7 @@ describe("session trust boundary", () => {
   it("refuses a mutation from a caller with no session", async () => {
     const res = await publicQuery(
       app,
-      'mutation { createGame(input: { title: "Smuggled" }) { id } }',
+      'mutation { createReview(input: { rawgId: "1", rating: 8, content: "x", yearPlayed: 2024, hoursPlayed: 1 }) { id } }',
     );
     expect(errorCodes(res)).toContain("UNAUTHENTICATED");
 

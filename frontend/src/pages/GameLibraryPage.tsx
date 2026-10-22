@@ -19,7 +19,7 @@ const SORTS = [
   ["OLDEST", "Oldest"],
   ["TITLE", "Title A–Z"],
   ["RELEASE_YEAR", "Release year"],
-  ["MOST_REVIEWED", "Most reviewed"],
+  ["POPULAR", "Popular"],
   ["HIGHEST_RATED", "Highest rated"],
   ["MOST_PLAYED", "Most played"],
 ] as const;
@@ -66,14 +66,12 @@ export function GameLibraryPage() {
 
   const genre = params.get("genre") ?? "";
   const reviewedBy = params.get("reviewedBy") ?? "";
-  const reviewedOnly = params.get("reviewed") === "1";
   const sortParam = params.get("sort") ?? "";
   const sort = SORT_VALUES.includes(sortParam) ? sortParam : "NEWEST";
 
   const filters = {
     genre: genre || undefined,
     reviewedBy: reviewedBy || undefined,
-    reviewedOnly: reviewedOnly || undefined,
   };
 
   const { data, loading } = useQuery<{ games: Game[]; gamesCount: number }>(
@@ -97,7 +95,7 @@ export function GameLibraryPage() {
   const games = data?.games ?? [];
   const total = data?.gamesCount ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE);
-  const filtered = Boolean(genre || reviewedBy || reviewedOnly);
+  const filtered = Boolean(genre || reviewedBy);
 
   /**
    * Changing a control returns to page one. The page number describes a window
@@ -174,19 +172,9 @@ export function GameLibraryPage() {
           </select>
         </Field>
 
-        <label className="flex items-center gap-1.5 text-micro text-content-subtle cursor-pointer">
-          <input
-            type="checkbox"
-            checked={reviewedOnly}
-            onChange={(e) => update({ reviewed: e.target.checked ? "1" : "" })}
-            className="accent-accent"
-          />
-          Reviewed only
-        </label>
-
         {filtered && (
           <button
-            onClick={() => update({ genre: "", reviewedBy: "", reviewed: "" })}
+            onClick={() => update({ genre: "", reviewedBy: "" })}
             className="ml-auto text-micro text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
           >
             Clear filters

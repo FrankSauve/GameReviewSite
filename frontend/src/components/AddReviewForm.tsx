@@ -12,15 +12,20 @@ import { DEFAULT_PLATFORM } from "../lib/platforms";
 import { MarkdownEditor } from "./MarkdownEditor";
 
 interface AddReviewFormProps {
-  gameId: string;
+  /** A game in the library, or a RAWG title its first review will add. */
+  target: { gameId: string } | { rawgId: string };
   gameGenres?: string[] | undefined;
-  onSuccess?: () => void;
+  onSuccess?: (game: { id: string; slug?: string | null }) => void;
+}
+
+interface CreateReviewResult {
+  createReview: { game: { id: string; slug?: string | null } };
 }
 
 const DEFAULT_RATING = 8;
 
 export function AddReviewForm({
-  gameId,
+  target,
   gameGenres,
   onSuccess,
 }: AddReviewFormProps) {
@@ -33,24 +38,34 @@ export function AddReviewForm({
   const [platform, setPlatform] = useState(DEFAULT_PLATFORM);
   const [genre, setGenre] = useState("");
 
-  const [createReview, { loading, error }] = useMutation(CREATE_REVIEW, {
-    refetchQueries: [{ query: GET_GAME, variables: { id: gameId } }],
-    // The profile reads these as ReviewSummary, a separate cache entity this write does not touch.
-    update: (cache) =>
-      void cache.evict({
-        id: "ROOT_QUERY",
-        fieldName: "reviewSummariesByUser",
-      }),
-    onCompleted: () => {
-      setContent("");
-      setRating(DEFAULT_RATING);
-      setYearPlayed(currentYear());
-      setHoursPlayed("");
-      setPlatform(DEFAULT_PLATFORM);
-      setGenre("");
-      onSuccess?.();
+  const [createReview, { loading, error }] = useMutation<CreateReviewResult>(
+    CREATE_REVIEW,
+    {
+      refetchQueries:
+        "gameId" in target
+          ? [{ query: GET_GAME, variables: { id: target.gameId } }]
+          : [],
+      // The profile reads these as ReviewSummary, a separate cache entity this write does not touch.
+      // Evicted rather than refetched: the library is not mounted while this form is.
+      update: (cache) => {
+        for (const fieldName of [
+          "reviewSummariesByUser",
+          "games",
+          "gamesCount",
+        ])
+          cache.evict({ id: "ROOT_QUERY", fieldName });
+      },
+      onCompleted: (data) => {
+        setContent("");
+        setRating(DEFAULT_RATING);
+        setYearPlayed(currentYear());
+        setHoursPlayed("");
+        setPlatform(DEFAULT_PLATFORM);
+        setGenre("");
+        onSuccess?.(data.createReview.game);
+      },
     },
-  });
+  );
 
   if (!user) {
     return (
@@ -77,7 +92,7 @@ export function AddReviewForm({
     void createReview({
       variables: {
         input: {
-          gameId,
+          ...target,
           rating,
           content: content.trim(),
           yearPlayed,

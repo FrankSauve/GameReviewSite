@@ -9,15 +9,19 @@ import {
   type PageArgs,
 } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
-import { byIdOrSlug, reviewSlugBase, uniqueSlug } from "../lib/slug.js";
+import { byIdOrSlug } from "../lib/slug.js";
+import { validateRawgId } from "../lib/rawgGame.js";
+import { createReview } from "../lib/createReview.js";
 import { validateString } from "../lib/validate.js";
 import { badInput } from "../lib/badInput.js";
 import { validatePlatform } from "../lib/platforms.js";
 import { validateGenre } from "../lib/labels.js";
 import { notifyReviewPosted } from "../lib/discord.js";
+import { pruneUnreviewedGames } from "../lib/pruneGames.js";
 
 interface CreateReviewInput {
-  gameId: string;
+  gameId?: string | null;
+  rawgId?: string | null;
   rating: number;
   content: string;
   yearPlayed: number;
@@ -196,43 +200,32 @@ export const reviewResolvers = {
       context: Context,
     ) => {
       const authUser = requireAuth(context);
+      if ((input.gameId == null) === (input.rawgId == null))
+        throw badInput("Give exactly one of gameId and rawgId.");
 
-      const game = await prisma.game.findUnique({
-        where: { id: input.gameId },
-      });
-      if (!game)
-        throw new GraphQLError("Game not found.", {
-          extensions: { code: "NOT_FOUND" },
-        });
+      const fields = {
+        rating: validateRating(input.rating),
+        content: validateString(input.content, "content", REVIEW_CONTENT_MAX),
+        yearPlayed: validateYearPlayed(input.yearPlayed),
+        hoursPlayed: validateHoursPlayed(input.hoursPlayed),
+        platform: input.platform ? validatePlatform(input.platform) : null,
+        genre: validateGenre(input.genre ?? null),
+      };
 
-      const existing = await prisma.review.findFirst({
-        where: { userId: authUser.id, gameId: input.gameId },
-      });
-      if (existing) throw badInput("You have already reviewed this game.");
+      const created = await createReview(
+        input.gameId != null
+          ? { gameId: input.gameId }
+          : { rawgId: validateRawgId(input.rawgId ?? "") },
+        fields,
+        authUser,
+      );
 
-      const review = await prisma.review.create({
-        data: {
-          slug: await uniqueSlug(
-            reviewSlugBase(game.slug, authUser.slug),
-            async (candidate) =>
-              (await prisma.review.count({ where: { slug: candidate } })) > 0,
-          ),
-          userId: authUser.id,
-          gameId: input.gameId,
-          rating: validateRating(input.rating),
-          content: validateString(input.content, "content", REVIEW_CONTENT_MAX),
-          yearPlayed: validateYearPlayed(input.yearPlayed),
-          hoursPlayed: validateHoursPlayed(input.hoursPlayed),
-          platform: input.platform ? validatePlatform(input.platform) : null,
-          genre: validateGenre(input.genre ?? null),
-        },
-      });
       // Not awaited: a slow Discord must not hold up the review.
       void notifyReviewPosted(
-        { ...review, game, user: authUser },
+        { ...created.review, game: created.game, user: authUser },
         context.origin(),
       );
-      return serializeDates(review);
+      return serializeDates(created.review);
     },
 
     updateReview: async (
@@ -284,8 +277,12 @@ export const reviewResolvers = {
       context: Context,
     ) => {
       const authUser = requireAuth(context);
-      await requireOwnership(id, authUser.id);
-      await prisma.review.delete({ where: { id } });
+      const review = await requireOwnership(id, authUser.id);
+      // A game exists only while it has a review, so its last one takes it along.
+      await prisma.$transaction(async (tx) => {
+        await tx.review.delete({ where: { id } });
+        await pruneUnreviewedGames(tx, [review.gameId]);
+      });
       return true;
     },
   },

@@ -36,7 +36,7 @@ export function allowedOrigins(): string[] | false {
 }
 
 /** Field names that cause an outbound call to the RAWG API. */
-const RAWG_FIELDS = ["searchGamesExternal", "importGame"];
+const RAWG_FIELDS = ["searchGamesExternal", "rawgGame", "createReview"];
 
 /**
  * Refuses browser requests from another site: identity is a cookie, and

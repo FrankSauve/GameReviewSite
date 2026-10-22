@@ -16,6 +16,11 @@ export function gamePath(game?: Slugged | null): string {
   return game ? `/games/${game.slug ?? game.id}` : "/";
 }
 
+/** A RAWG title not yet in the library: the page that writes its first review. */
+export function newGamePath(rawgId: string): string {
+  return `/games/new/${encodeURIComponent(rawgId)}`;
+}
+
 /** `/reviews/alice/elden-ring`. The two segments live in the slug itself. */
 export function reviewPath(review: Slugged): string {
   return `/reviews/${review.slug ?? review.id}`;

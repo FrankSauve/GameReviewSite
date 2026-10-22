@@ -11,7 +11,7 @@ import { badInput } from "./badInput.js";
 export const MAX_LABELS = 5;
 
 /** Duplicated as GENRE_MAX_LENGTH in frontend/src/components/GenreInput.tsx; this copy is authoritative. */
-const LABEL_MAX_LENGTH = 100;
+export const LABEL_MAX_LENGTH = 100;
 
 /** Past the cap is dropped, not refused: being on many platforms is not a
  *  malformed request, and refusing it is what made Terraria unaddable. */

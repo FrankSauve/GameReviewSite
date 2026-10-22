@@ -17,6 +17,8 @@ import { Avatar } from "./Avatar";
 interface ReviewCardProps {
   review: Review;
   gameId: string;
+  /** The game's only review: deleting it deletes the game too. */
+  last?: boolean;
 }
 
 function timeAgo(dateStr: string): string {
@@ -30,7 +32,7 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString();
 }
 
-export function ReviewCard({ review, gameId }: ReviewCardProps) {
+export function ReviewCard({ review, gameId, last = false }: ReviewCardProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
@@ -56,7 +58,16 @@ export function ReviewCard({ review, gameId }: ReviewCardProps) {
   );
   const [deleteReview, { loading: deleting }] = useMutation(
     DELETE_REVIEW,
-    refetch,
+    last
+      ? {
+          // Evicted rather than refetched: the library is not mounted until we navigate.
+          update: (cache) => {
+            cache.evict({ id: "ROOT_QUERY", fieldName: "games" });
+            cache.evict({ id: "ROOT_QUERY", fieldName: "gamesCount" });
+          },
+          onCompleted: () => void navigate("/games", { replace: true }),
+        }
+      : refetch,
   );
 
   const editHoursNum = Number(editHours);

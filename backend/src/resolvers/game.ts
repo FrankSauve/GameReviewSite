@@ -9,8 +9,10 @@ import {
   type PageArgs,
 } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
-import { searchRawg, getRawgGame, releaseYear } from "../lib/rawg.js";
-import { byIdOrSlug, slugify, uniqueSlug } from "../lib/slug.js";
+import { searchRawg, releaseYear } from "../lib/rawg.js";
+import { validateRawgId } from "../lib/rawgGame.js";
+import { rawgGameFields } from "../lib/createReview.js";
+import { byIdOrSlug } from "../lib/slug.js";
 import { validateString } from "../lib/validate.js";
 import { badInput } from "../lib/badInput.js";
 import { validateLabels } from "../lib/labels.js";
@@ -26,25 +28,10 @@ import {
   type GameSort,
 } from "../lib/gameCatalogue.js";
 
-interface CreateGameInput {
-  title: string;
-  genres?: string[];
-  description?: string;
-  releaseYear?: number;
-}
-
 interface UpdateGameInput {
   title?: string;
   genres?: string[];
   description?: string;
-  releaseYear?: number;
-}
-
-interface ImportGameInput {
-  rawgId: string;
-  title: string;
-  coverUrl?: string;
-  genres?: string[];
   releaseYear?: number;
 }
 
@@ -53,42 +40,6 @@ function validateYear(year: number): number {
   if (num < 1950 || num > new Date().getFullYear() + 5)
     throw badInput("releaseYear must be a valid game release year.");
   return num;
-}
-
-/**
- * Cover images end up in an <img src> on every visitor's page, so the scheme is
- * not a free choice: without this an authenticated caller could point it at any
- * URL and have every reader's browser fetch it.
- */
-function validateCoverUrl(value: string): string {
-  const trimmed = value.trim();
-  if (trimmed.length > 2000)
-    throw badInput("coverUrl must be at most 2000 characters.");
-
-  let parsed: URL;
-  try {
-    parsed = new URL(trimmed);
-  } catch {
-    throw badInput("coverUrl must be an absolute URL.");
-  }
-  if (parsed.protocol !== "https:") throw badInput("coverUrl must use https.");
-  return parsed.toString();
-}
-
-async function newGameSlug(title: string): Promise<string> {
-  return uniqueSlug(
-    slugify(title, "game"),
-    async (candidate) =>
-      (await prisma.game.count({ where: { slug: candidate } })) > 0,
-  );
-}
-
-/** RAWG identifiers are integers; this is also what gets parsed for the detail fetch. */
-function validateRawgId(value: string): string {
-  const trimmed = value.trim();
-  if (!/^\d{1,12}$/.test(trimmed))
-    throw badInput("rawgId must be a positive integer.");
-  return trimmed;
 }
 
 interface GamesArgs extends PageArgs, GameFilter {
@@ -101,12 +52,8 @@ function gameSort(value?: string | null): GameSort {
     : "NEWEST";
 }
 
-function gameFilter({
-  reviewedOnly,
-  genre,
-  reviewedBy,
-}: GamesArgs): GameFilter {
-  return { reviewedOnly, genre, reviewedBy };
+function gameFilter({ genre, reviewedBy }: GamesArgs): GameFilter {
+  return { genre, reviewedBy };
 }
 
 /** findMany does not preserve the order of an `in` list; the SQL decided it. */
@@ -183,85 +130,24 @@ export const gameResolvers = {
         };
       });
     },
+
+    /** What the first review of a game will create, without creating it. */
+    rawgGame: async (_parent: unknown, { rawgId }: { rawgId: string }) => {
+      const id = validateRawgId(rawgId);
+      const game = await prisma.game.findUnique({ where: { rawgId: id } });
+      if (game)
+        return {
+          ...serializeDates(game),
+          rawgId: id,
+          game: serializeDates(game),
+        };
+
+      const fields = await rawgGameFields(id);
+      return fields && { ...fields, rawgId: id, metacritic: null, game: null };
+    },
   },
 
   Mutation: {
-    importGame: async (
-      _parent: unknown,
-      { input }: { input: ImportGameInput },
-      context: Context,
-    ) => {
-      const authUser = requireAuth(context);
-
-      // These arrive from the client, not from RAWG, and so need re-validation.
-      const rawgId = validateRawgId(input.rawgId);
-      const title = validateString(input.title, "title", TITLE_MAX);
-      const coverUrl = input.coverUrl ? validateCoverUrl(input.coverUrl) : null;
-      const genres = validateLabels(input.genres ?? [], "genre");
-      const releaseYear =
-        input.releaseYear != null ? validateYear(input.releaseYear) : null;
-
-      const existing = await prisma.game.findUnique({ where: { rawgId } });
-      if (existing?.description) return serializeDates(existing);
-
-      let description: string | null = null;
-      try {
-        const detail = await getRawgGame(parseInt(rawgId, 10));
-        description = detail.description_raw?.trim().slice(0, 20_000) || null;
-      } catch {
-        // Non-fatal — continue without description
-      }
-
-      if (existing) {
-        if (!description) return serializeDates(existing);
-        const backfilled = await prisma.game.update({
-          where: { id: existing.id },
-          data: { description },
-        });
-        return serializeDates(backfilled);
-      }
-
-      const game = await prisma.game.create({
-        data: {
-          rawgId,
-          slug: await newGameSlug(title),
-          title,
-          coverUrl,
-          genres,
-          releaseYear,
-          description,
-          createdById: authUser.id,
-        },
-      });
-      return serializeDates(game);
-    },
-
-    createGame: async (
-      _parent: unknown,
-      { input }: { input: CreateGameInput },
-      context: Context,
-    ) => {
-      const authUser = requireAuth(context);
-      const title = validateString(input.title, "title", TITLE_MAX);
-
-      const game = await prisma.game.create({
-        data: {
-          rawgId: null,
-          slug: await newGameSlug(title),
-          title,
-          genres: validateLabels(input.genres ?? [], "genre"),
-          description: input.description
-            ? validateString(input.description, "description", 2000)
-            : null,
-          coverUrl: null,
-          releaseYear:
-            input.releaseYear != null ? validateYear(input.releaseYear) : null,
-          createdById: authUser.id,
-        },
-      });
-      return serializeDates(game);
-    },
-
     updateGame: async (
       _parent: unknown,
       { id, input }: { id: string; input: UpdateGameInput },

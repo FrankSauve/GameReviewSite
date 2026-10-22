@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Express } from "express";
 import { ALICE, authedQuery, resetDatabase } from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
@@ -36,62 +36,50 @@ async function appFor(
  * the real message is forwarded deliberately, which is why a test that does not
  * force NODE_ENV cannot see this at all.
  *
- * importGame validates everything client-supplied before it calls RAWG.
+ * A rawgId is validated before RAWG is called. Game fields are checked on
+ * updateGame, the one path that still takes them from the client.
  */
-const imp = (fields: string) =>
-  `mutation { importGame(input: { ${fields} }) { id } }`;
-const create = (fields: string) =>
-  `mutation { createGame(input: { ${fields} }) { id } }`;
+const fromRawg = (rawgId: string) =>
+  `mutation { createReview(input: { rawgId: "${rawgId}", rating: 8, content: "ok", yearPlayed: 2024, hoursPlayed: 10 }) { id } }`;
+const update = (fields: string) => (gameId: string) =>
+  `mutation { updateGame(id: "${gameId}", input: { ${fields} }) { id } }`;
 
-const CASES: Array<[string, string, string]> = [
+const CASES: Array<[string, (gameId: string) => string, string]> = [
+  ["rawgId", () => fromRawg("abc"), "rawgId must be a positive integer."],
   [
-    "rawgId",
-    imp('rawgId: "abc", title: "X"'),
-    "rawgId must be a positive integer.",
-  ],
-  [
-    "coverUrl not absolute",
-    imp('rawgId: "1", title: "X", coverUrl: "notaurl"'),
-    "coverUrl must be an absolute URL.",
-  ],
-  [
-    "coverUrl scheme",
-    imp('rawgId: "1", title: "X", coverUrl: "http://x.test/a.png"'),
-    "coverUrl must use https.",
-  ],
-  [
-    "coverUrl length",
-    imp(
-      `rawgId: "1", title: "X", coverUrl: "https://x.test/${"a".repeat(2100)}"`,
-    ),
-    "coverUrl must be at most 2000 characters.",
+    "neither gameId nor rawgId",
+    () =>
+      'mutation { createReview(input: { rating: 8, content: "ok", yearPlayed: 2024, hoursPlayed: 10 }) { id } }',
+    "Give exactly one of gameId and rawgId.",
   ],
   [
     "label length",
-    create(`title: "X", genres: ["${"g".repeat(120)}"]`),
+    update(`genres: ["${"g".repeat(120)}"]`),
     "Each genre must be at most 100 characters.",
   ],
   [
     "releaseYear",
-    create('title: "X", releaseYear: 1000'),
+    update("releaseYear: 1000"),
     "releaseYear must be a valid game release year.",
   ],
   [
     "title empty (hoisted validateString)",
-    create('title: "   "'),
+    update('title: "   "'),
     "title must not be empty.",
   ],
 ];
 
 describe("validation messages carry a code, so they survive production", () => {
-  afterEach(async () => {
-    await resetDatabase();
-  });
+  beforeEach(resetDatabase);
 
   it.each(CASES)("%s", async (_name, query, expected) => {
     const { app, stop } = await appFor("production");
     try {
-      const res = await authedQuery(app, query, ALICE);
+      const owner = await provisionUser(ALICE);
+      const game = await prisma.game.create({
+        data: { title: "Hades", slug: "hades", createdById: owner.id },
+      });
+      const res = await authedQuery(app, query(game.id), ALICE);
       expect(res.errors?.[0]?.message).toBe(expected);
       expect(res.errors?.[0]?.extensions?.code).toBe("BAD_USER_INPUT");
     } finally {

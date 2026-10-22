@@ -5,7 +5,6 @@ export const GET_GAMES = gql`
   query GetGames(
     $limit: Int
     $offset: Int
-    $reviewedOnly: Boolean
     $genre: String
     $reviewedBy: ID
     $sort: GameSort
@@ -13,7 +12,6 @@ export const GET_GAMES = gql`
     games(
       limit: $limit
       offset: $offset
-      reviewedOnly: $reviewedOnly
       genre: $genre
       reviewedBy: $reviewedBy
       sort: $sort
@@ -27,11 +25,7 @@ export const GET_GAMES = gql`
       averageRating
       reviewCount
     }
-    gamesCount(
-      reviewedOnly: $reviewedOnly
-      genre: $genre
-      reviewedBy: $reviewedBy
-    )
+    gamesCount(genre: $genre, reviewedBy: $reviewedBy)
   }
 `;
 
@@ -57,6 +51,24 @@ export const SEARCH_GAMES_EXTERNAL = gql`
         id
         slug
         reviewCount
+      }
+    }
+  }
+`;
+
+/** A RAWG title as its first review will add it; nothing is written yet. */
+export const GET_RAWG_GAME = gql`
+  query GetRawgGame($rawgId: ID!) {
+    rawgGame(rawgId: $rawgId) {
+      rawgId
+      title
+      coverUrl
+      releaseYear
+      genres
+      description
+      game {
+        id
+        slug
       }
     }
   }
@@ -193,6 +205,7 @@ export const GET_REVIEW = gql`
         id
         slug
         title
+        reviewCount
         coverUrl
         releaseYear
         genres

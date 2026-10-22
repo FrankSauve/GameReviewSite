@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@apollo/client";
 import { GET_GAME } from "../graphql/queries";
@@ -8,8 +8,7 @@ import { useAuth } from "../contexts/AuthContext";
 import type { Game } from "../types";
 import { formatRating, ratingColor } from "../lib/rating";
 import { gamePath } from "../lib/links";
-import { GameCover } from "../components/GameCover";
-import { LabelChips } from "../components/LabelChips";
+import { GameHeader } from "../components/GameHeader";
 import { useCanonicalPath } from "../hooks/useCanonicalPath";
 
 export function GameDetailPage() {
@@ -57,62 +56,21 @@ export function GameDetailPage() {
         <BackIcon /> All Games
       </Link>
 
-      {/* Game header */}
-      <div className="card overflow-hidden">
-        {/* Cover hero */}
-        {game.coverUrl ? (
-          <div className="relative h-56 sm:h-72 overflow-hidden">
-            <GameCover game={game} size="lg" eager />
-            <div className="absolute inset-0 bg-gradient-to-t from-scrim via-scrim/40 to-transparent" />
-            {/* Title overlaid on cover */}
-            <div className="absolute bottom-0 left-0 p-6">
-              <h1 className="font-display text-display text-content-on-art drop-shadow-lg">
-                {game.title}
-              </h1>
-            </div>
+      <GameHeader game={game}>
+        {game.averageRating != null && (
+          <div className="card px-5 py-4 text-center shrink-0">
+            <p
+              className={`font-numeric text-display font-extrabold ${ratingColor(game.averageRating)}`}
+            >
+              {formatRating(game.averageRating)}
+            </p>
+            <p className="text-micro text-content-subtle mt-1">out of 10</p>
+            <p className="text-micro text-content-subtle mt-1">
+              {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
+            </p>
           </div>
-        ) : null}
-
-        <div className="p-6 space-y-4">
-          {!game.coverUrl && (
-            <h1 className="font-display text-display text-content">
-              {game.title}
-            </h1>
-          )}
-
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <LabelChips
-                labels={game.genres}
-                className="text-micro font-medium bg-accent-subtle/50 text-accent-subtle-text px-2.5 py-1 rounded-pill border border-accent-subtle-border"
-              />
-              {game.releaseYear && (
-                <span className="text-meta text-content-subtle">
-                  {game.releaseYear}
-                </span>
-              )}
-            </div>
-
-            {game.averageRating != null && (
-              <div className="card px-5 py-4 text-center shrink-0">
-                <p
-                  className={`font-numeric text-display font-extrabold ${ratingColor(game.averageRating)}`}
-                >
-                  {formatRating(game.averageRating)}
-                </p>
-                <p className="text-micro text-content-subtle mt-1">out of 10</p>
-                <p className="text-micro text-content-subtle mt-1">
-                  {reviews.length} {reviews.length === 1 ? "review" : "reviews"}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {game.description && (
-            <GameDescription description={game.description} />
-          )}
-        </div>
-      </div>
+        )}
+      </GameHeader>
 
       {/* Reviews section */}
       <div>
@@ -139,7 +97,7 @@ export function GameDetailPage() {
           <div className="card p-card-pad mb-4">
             <h3 className="font-semibold text-content mb-4">Your Review</h3>
             <AddReviewForm
-              gameId={game.id}
+              target={{ gameId: game.id }}
               gameGenres={game.genres}
               onSuccess={() => setShowReviewForm(false)}
             />
@@ -172,47 +130,17 @@ export function GameDetailPage() {
           </div>
         )}
 
-        {reviews.length === 0 ? (
-          <div className="text-center py-12 card">
-            <p className="text-4xl mb-3">🎮</p>
-            <p className="text-content-subtle">No reviews yet. Be the first!</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {reviews.map((review) => (
-              <ReviewCard key={review.id} review={review} gameId={game.id} />
-            ))}
-          </div>
-        )}
+        <div className="space-y-4">
+          {reviews.map((review) => (
+            <ReviewCard
+              key={review.id}
+              review={review}
+              gameId={game.id}
+              last={reviews.length === 1}
+            />
+          ))}
+        </div>
       </div>
-    </div>
-  );
-}
-
-const DESCRIPTION_LIMIT = 400;
-
-function GameDescription({ description }: { description: string }) {
-  const [expanded, setExpanded] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const isLong = description.length > DESCRIPTION_LIMIT;
-  const displayed =
-    isLong && !expanded
-      ? description.slice(0, DESCRIPTION_LIMIT).trimEnd() + "…"
-      : description;
-
-  return (
-    <div className="border-t border-line pt-4 space-y-2">
-      <div ref={ref}>
-        <p className="text-content-muted text-body">{displayed}</p>
-      </div>
-      {isLong && (
-        <button
-          onClick={() => setExpanded((v) => !v)}
-          className="text-micro text-accent-subtle-text hover:text-accent-subtle-text transition-colors duration-theme"
-        >
-          {expanded ? "Show less ↑" : "Show more ↓"}
-        </button>
-      )}
     </div>
   );
 }

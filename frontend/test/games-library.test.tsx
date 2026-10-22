@@ -146,9 +146,10 @@ describe("the games library page", () => {
     await waitFor(() => expect(screen.getByText("Game 1")).toBeTruthy());
   });
 
-  it("sends each filter the URL carries", async () => {
+  /** `reviewed=1` is from links made while unreviewed games could exist. */
+  it("sends each filter the URL carries, and ignores the retired one", async () => {
     renderAt("/games?genre=RPG&reviewedBy=alice&reviewed=1", [
-      listMock({ genre: "RPG", reviewedBy: "alice", reviewedOnly: true }, 201),
+      listMock({ genre: "RPG", reviewedBy: "alice" }, 201),
     ]);
     await waitFor(() => expect(screen.getByText("Game 201")).toBeTruthy());
   });

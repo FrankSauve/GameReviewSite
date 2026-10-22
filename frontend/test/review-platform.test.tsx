@@ -71,6 +71,7 @@ function createMock(platform: string | null) {
             avatarColor: null,
           },
           comments: [],
+          game: { __typename: "Game", id: "g1", slug: "hades" },
         },
       },
     },
@@ -82,7 +83,7 @@ async function renderForm(mocks: readonly MockedResponse[] = [meMock]) {
   render(
     <MockedProvider mocks={mocks}>
       <AuthProvider>
-        <AddReviewForm gameId="g1" onSuccess={onSuccess} />
+        <AddReviewForm target={{ gameId: "g1" }} onSuccess={onSuccess} />
       </AuthProvider>
     </MockedProvider>,
   );

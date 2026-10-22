@@ -1,10 +1,9 @@
 import { useState, useRef, useCallback } from "react";
-import { useLazyQuery, useMutation } from "@apollo/client";
+import { useLazyQuery } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
 import { SEARCH_GAMES_EXTERNAL } from "../graphql/queries";
-import { IMPORT_GAME } from "../graphql/mutations";
 import type { ExternalGame } from "../types";
-import { gamePath } from "../lib/links";
+import { gamePath, newGamePath } from "../lib/links";
 import { useDismiss } from "../hooks/useDismiss";
 import { metacriticColor } from "../lib/rating";
 import {
@@ -17,13 +16,10 @@ import {
 interface SearchResult {
   searchGamesExternal: ExternalGame[];
 }
-interface ImportResult {
-  importGame: { id: string; slug?: string | null };
-}
 
 /**
- * Searches RAWG, in RAWG's own order, for a game to bring into the catalogue.
- * Signed-in only: importing is the only thing it does that search does not.
+ * Searches RAWG, in RAWG's own order, for a game to review. Picking one writes
+ * nothing: a game joins the catalogue with its first review.
  */
 export function AddGameButton() {
   const navigate = useNavigate();
@@ -36,15 +32,6 @@ export function AddGameButton() {
     SearchResult,
     { query: string }
   >(SEARCH_GAMES_EXTERNAL, { fetchPolicy: "network-only" });
-
-  const [importGame, { loading: importing, error: importError, reset }] =
-    useMutation<ImportResult>(IMPORT_GAME, {
-      // By name, not by document: GET_GAMES takes paging and filter variables
-      // now, and the object form would only match a call with none of them.
-      refetchQueries: ["GetGames"],
-      // Reported in the panel, so the promise must not also reject unhandled.
-      onError: () => undefined,
-    });
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -62,29 +49,12 @@ export function AddGameButton() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setOpen(false);
     setQuery("");
-    reset();
-  }, [reset]);
+  }, []);
   useDismiss(containerRef, close);
 
-  const handleSelect = async (game: ExternalGame) => {
-    if (importing) return;
-    // Imported again even when it exists: that is what backfills a description
-    // the first import failed to fetch, and it lands on the same row.
-    const result = await importGame({
-      variables: {
-        input: {
-          rawgId: game.rawgId,
-          title: game.title,
-          coverUrl: game.coverUrl ?? null,
-          genres: game.genres ?? [],
-          releaseYear: game.releaseYear ?? null,
-        },
-      },
-    });
-    const imported = result.data?.importGame ?? game.game;
-    if (!imported) return;
+  const handleSelect = (game: ExternalGame) => {
     close();
-    void navigate(gamePath(imported));
+    void navigate(game.game ? gamePath(game.game) : newGamePath(game.rawgId));
   };
 
   const results = data?.searchGamesExternal ?? [];
@@ -99,9 +69,8 @@ export function AddGameButton() {
         onClick={() => (open ? close() : setOpen(true))}
         className="btn-secondary text-meta py-1.5 px-3 flex items-center gap-1.5"
         aria-expanded={open}
-        disabled={importing}
       >
-        {importing ? <Spinner /> : <span aria-hidden="true">+</span>}
+        <span aria-hidden="true">+</span>
         <span className="hidden sm:inline">Add game</span>
         <span className="sr-only sm:hidden">Add game</span>
       </button>
@@ -138,12 +107,6 @@ export function AddGameButton() {
             </div>
           )}
 
-          {importError && (
-            <p className="px-3 pt-2 text-danger-text text-micro">
-              {importError.graphQLErrors[0]?.message ?? importError.message}
-            </p>
-          )}
-
           {searched && results.length > 0 && (
             <ul className="max-h-[420px] overflow-y-auto divide-y divide-line">
               {results.map((game) => (
@@ -151,7 +114,7 @@ export function AddGameButton() {
                   <GameResultRow
                     game={game}
                     hint={game.game ? "View →" : "Add →"}
-                    onClick={() => void handleSelect(game)}
+                    onClick={() => handleSelect(game)}
                   >
                     {game.releaseYear && (
                       <span className="text-micro text-content-subtle">

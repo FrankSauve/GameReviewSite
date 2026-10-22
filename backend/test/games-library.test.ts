@@ -2,20 +2,13 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { Express } from "express";
 import { prisma } from "../src/lib/prisma.js";
 import { slugify } from "../src/lib/slug.js";
-import {
-  ALICE,
-  publicQuery,
-  resetDatabase,
-  sessionFor,
-  startApp,
-} from "./helpers.js";
+import { publicQuery, resetDatabase, startApp } from "./helpers.js";
 
-const LIST = `query List($limit: Int, $offset: Int, $reviewedOnly: Boolean,
-                         $genre: String, $reviewedBy: ID, $sort: GameSort) {
-  games(limit: $limit, offset: $offset, reviewedOnly: $reviewedOnly,
-        genre: $genre, reviewedBy: $reviewedBy, sort: $sort) { title }
-  gamesCount(reviewedOnly: $reviewedOnly, genre: $genre,
-             reviewedBy: $reviewedBy)
+const LIST = `query List($limit: Int, $offset: Int, $genre: String,
+                         $reviewedBy: ID, $sort: GameSort) {
+  games(limit: $limit, offset: $offset, genre: $genre,
+        reviewedBy: $reviewedBy, sort: $sort) { title }
+  gamesCount(genre: $genre, reviewedBy: $reviewedBy)
 }`;
 
 const FACETS = `query { gameFacets { genres } }`;
@@ -36,25 +29,6 @@ async function seedBatch(titles: string[], createdAt: Date): Promise<void> {
       data: { title, slug: slugify(title, "game"), createdAt },
     });
   }
-}
-
-async function reviewGame(title: string): Promise<void> {
-  await sessionFor(ALICE);
-  const [user, game] = await Promise.all([
-    prisma.user.findFirstOrThrow(),
-    prisma.game.findFirstOrThrow({ where: { title } }),
-  ]);
-  await prisma.review.create({
-    data: {
-      rating: 8,
-      content: "Played it.",
-      yearPlayed: 2024,
-      hoursPlayed: 12,
-      slug: `${user.username}/${game.slug}`,
-      gameId: game.id,
-      userId: user.id,
-    },
-  });
 }
 
 describe("the games listing", () => {
@@ -152,42 +126,6 @@ describe("the games listing", () => {
     });
   });
 
-  describe("the reviewedOnly filter", () => {
-    beforeEach(async () => {
-      await seedBatch(["Reviewed", "Untouched"], new Date("2026-01-01"));
-      await reviewGame("Reviewed");
-    });
-
-    it("drops games nobody has reviewed", async () => {
-      const res = await publicQuery<ListPayload>(
-        app,
-        LIST,
-        {},
-        {
-          reviewedOnly: true,
-        },
-      );
-      expect(res.data?.games.map((g) => g.title)).toEqual(["Reviewed"]);
-    });
-
-    it("returns the whole catalogue when it is not asked for", async () => {
-      const res = await publicQuery<ListPayload>(app, LIST, {});
-      expect(res.data?.games).toHaveLength(2);
-    });
-
-    it("counts what the same filter would list", async () => {
-      const res = await publicQuery<ListPayload>(
-        app,
-        LIST,
-        {},
-        {
-          reviewedOnly: true,
-        },
-      );
-      expect(res.data?.gamesCount).toBe(1);
-    });
-  });
-
   describe("sorting", () => {
     /**
      * Titles, years and ratings all differ, so a sort that silently fell back to
@@ -259,8 +197,14 @@ describe("the games listing", () => {
       ]);
     });
 
-    it("orders by review count", async () => {
-      expect((await order(app, "MOST_REVIEWED"))?.[0]).toBe("doom");
+    /** doom leads on count despite the lowest average; Zelda and Myst tie on count. */
+    it("orders by review count, then by score among equals", async () => {
+      expect(await order(app, "POPULAR")).toEqual([
+        "doom",
+        "Zelda",
+        "Myst",
+        "Unplayed",
+      ]);
     });
 
     it("orders by average rating, not by rating total", async () => {
@@ -403,7 +347,7 @@ describe("the games listing", () => {
     });
 
     it("combines filters rather than picking one", async () => {
-      expect(await titles({ genre: "FPS", reviewedOnly: true })).toEqual({
+      expect(await titles({ genre: "FPS", reviewedBy: "alice" })).toEqual({
         titles: ["Shooter"],
         count: 1,
       });
