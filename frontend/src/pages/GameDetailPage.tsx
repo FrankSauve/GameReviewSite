@@ -130,23 +130,16 @@ export function GameDetailPage() {
           </div>
         )}
 
-        {reviews.length === 0 ? (
-          <div className="text-center py-12 card">
-            <p className="text-4xl mb-3">🎮</p>
-            <p className="text-content-subtle">No reviews yet. Be the first!</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {reviews.map((review) => (
-              <ReviewCard
-                key={review.id}
-                review={review}
-                gameId={game.id}
-                last={reviews.length === 1}
-              />
-            ))}
-          </div>
-        )}
+        <div className="space-y-4">
+          {reviews.map((review) => (
+            <ReviewCard
+              key={review.id}
+              review={review}
+              gameId={game.id}
+              last={reviews.length === 1}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );

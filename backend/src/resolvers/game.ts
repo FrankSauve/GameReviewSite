@@ -52,12 +52,8 @@ function gameSort(value?: string | null): GameSort {
     : "NEWEST";
 }
 
-function gameFilter({
-  reviewedOnly,
-  genre,
-  reviewedBy,
-}: GamesArgs): GameFilter {
-  return { reviewedOnly, genre, reviewedBy };
+function gameFilter({ genre, reviewedBy }: GamesArgs): GameFilter {
+  return { genre, reviewedBy };
 }
 
 /** findMany does not preserve the order of an `in` list; the SQL decided it. */

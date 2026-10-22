@@ -22,7 +22,6 @@ export type GameSort =
   | "MOST_PLAYED";
 
 export interface GameFilter {
-  reviewedOnly?: boolean | null | undefined;
   genre?: string | null | undefined;
   /** A user id or slug; games that user has reviewed. */
   reviewedBy?: string | null | undefined;
@@ -31,11 +30,6 @@ export interface GameFilter {
 function whereFragment(filter: GameFilter): Prisma.Sql {
   const clauses: Prisma.Sql[] = [];
 
-  if (filter.reviewedOnly) {
-    clauses.push(
-      Prisma.sql`EXISTS (SELECT 1 FROM "Review" rf WHERE rf."gameId" = g.id)`,
-    );
-  }
   if (filter.genre) {
     clauses.push(Prisma.sql`${filter.genre} = ANY(g.genres)`);
   }

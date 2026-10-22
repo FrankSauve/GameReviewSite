@@ -270,7 +270,6 @@ export const typeDefs = `#graphql
     games(
       limit: Int
       offset: Int
-      reviewedOnly: Boolean
       genre: String
       # A user id or slug; games that user has reviewed.
       reviewedBy: ID
@@ -278,7 +277,6 @@ export const typeDefs = `#graphql
     ): [Game!]!
     # Total under the same filter, for paging controls.
     gamesCount(
-      reviewedOnly: Boolean
       genre: String
       reviewedBy: ID
     ): Int!
