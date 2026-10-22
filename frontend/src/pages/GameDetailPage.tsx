@@ -138,7 +138,12 @@ export function GameDetailPage() {
         ) : (
           <div className="space-y-4">
             {reviews.map((review) => (
-              <ReviewCard key={review.id} review={review} gameId={game.id} />
+              <ReviewCard
+                key={review.id}
+                review={review}
+                gameId={game.id}
+                last={reviews.length === 1}
+              />
             ))}
           </div>
         )}

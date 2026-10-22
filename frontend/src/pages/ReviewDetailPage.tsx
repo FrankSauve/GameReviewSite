@@ -44,6 +44,7 @@ interface ReviewGame {
   coverUrl?: string | null;
   releaseYear?: number | null;
   genres?: string[];
+  reviewCount?: number | null;
 }
 interface ReviewDetail {
   id: string;
@@ -97,10 +98,14 @@ export function ReviewDetailPage() {
     refetchQueries: [{ query: GET_REVIEW, variables: { id } }],
   };
 
-  const [deleteReview, { loading: deleting }] = useMutation(
-    DELETE_REVIEW,
-    refetchOpts,
-  );
+  const [deleteReview, { loading: deleting }] = useMutation(DELETE_REVIEW, {
+    ...refetchOpts,
+    // Evicted rather than refetched: the library is not mounted while this page is.
+    update: (cache) => {
+      cache.evict({ id: "ROOT_QUERY", fieldName: "games" });
+      cache.evict({ id: "ROOT_QUERY", fieldName: "gamesCount" });
+    },
+  });
   const [updateReview, { loading: saving }] = useMutation(UPDATE_REVIEW, {
     ...refetchOpts,
     // The profile reads these as ReviewSummary, a separate cache entity this write does not touch.
@@ -311,7 +316,8 @@ export function ReviewDetailPage() {
                 Delete this review?
               </p>
               <Link
-                to={gamePath(game)}
+                // The game's only review takes the game with it.
+                to={game?.reviewCount === 1 ? "/games" : gamePath(game)}
                 onClick={() =>
                   void deleteReview({ variables: { id: review.id } })
                 }

@@ -17,6 +17,7 @@ import { badInput } from "../lib/badInput.js";
 import { validatePlatform } from "../lib/platforms.js";
 import { validateGenre } from "../lib/labels.js";
 import { notifyReviewPosted } from "../lib/discord.js";
+import { pruneUnreviewedGames } from "../lib/pruneGames.js";
 
 interface CreateReviewInput {
   gameId?: string | null;
@@ -276,8 +277,12 @@ export const reviewResolvers = {
       context: Context,
     ) => {
       const authUser = requireAuth(context);
-      await requireOwnership(id, authUser.id);
-      await prisma.review.delete({ where: { id } });
+      const review = await requireOwnership(id, authUser.id);
+      // A game exists only while it has a review, so its last one takes it along.
+      await prisma.$transaction(async (tx) => {
+        await tx.review.delete({ where: { id } });
+        await pruneUnreviewedGames(tx, [review.gameId]);
+      });
       return true;
     },
   },

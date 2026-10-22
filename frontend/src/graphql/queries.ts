@@ -211,6 +211,7 @@ export const GET_REVIEW = gql`
         id
         slug
         title
+        reviewCount
         coverUrl
         releaseYear
         genres
