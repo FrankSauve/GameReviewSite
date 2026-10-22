@@ -17,7 +17,7 @@ export type GameSort =
   | "OLDEST"
   | "TITLE"
   | "RELEASE_YEAR"
-  | "MOST_REVIEWED"
+  | "POPULAR"
   | "HIGHEST_RATED"
   | "MOST_PLAYED";
 
@@ -55,7 +55,7 @@ const ORDER: Record<GameSort, Prisma.Sql> = {
   OLDEST: Prisma.sql`g."createdAt" ASC`,
   TITLE: Prisma.sql`LOWER(g.title) ASC`,
   RELEASE_YEAR: Prisma.sql`g."releaseYear" DESC NULLS LAST`,
-  MOST_REVIEWED: Prisma.sql`COUNT(r.id) DESC`,
+  POPULAR: Prisma.sql`COUNT(r.id) DESC, AVG(r.rating) DESC NULLS LAST`,
   HIGHEST_RATED: Prisma.sql`AVG(r.rating) DESC NULLS LAST`,
   MOST_PLAYED: Prisma.sql`SUM(r."hoursPlayed") DESC NULLS LAST`,
 };

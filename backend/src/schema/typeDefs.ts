@@ -54,7 +54,7 @@ export const typeDefs = `#graphql
     OLDEST
     TITLE
     RELEASE_YEAR
-    MOST_REVIEWED
+    POPULAR
     HIGHEST_RATED
     MOST_PLAYED
   }

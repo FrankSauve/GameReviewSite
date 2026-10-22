@@ -19,7 +19,7 @@ const SORTS = [
   ["OLDEST", "Oldest"],
   ["TITLE", "Title A–Z"],
   ["RELEASE_YEAR", "Release year"],
-  ["MOST_REVIEWED", "Most reviewed"],
+  ["POPULAR", "Popular"],
   ["HIGHEST_RATED", "Highest rated"],
   ["MOST_PLAYED", "Most played"],
 ] as const;

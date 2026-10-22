@@ -197,8 +197,14 @@ describe("the games listing", () => {
       ]);
     });
 
-    it("orders by review count", async () => {
-      expect((await order(app, "MOST_REVIEWED"))?.[0]).toBe("doom");
+    /** doom leads on count despite the lowest average; Zelda and Myst tie on count. */
+    it("orders by review count, then by score among equals", async () => {
+      expect(await order(app, "POPULAR")).toEqual([
+        "doom",
+        "Zelda",
+        "Myst",
+        "Unplayed",
+      ]);
     });
 
     it("orders by average rating, not by rating total", async () => {
