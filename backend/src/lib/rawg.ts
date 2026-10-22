@@ -36,10 +36,12 @@ export async function searchRawg(query: string): Promise<RawgGame[]> {
   return data.results ?? [];
 }
 
-export async function getRawgGame(rawgId: number): Promise<RawgGame> {
+/** Null when RAWG has no game under that id; any other failure throws. */
+export async function getRawgGame(rawgId: number): Promise<RawgGame | null> {
   const key = getApiKey();
   const params = new URLSearchParams({ key });
   const res = await fetch(`${RAWG_BASE}/games/${rawgId}?${params.toString()}`);
+  if (res.status === 404) return null;
   if (!res.ok) throw new Error(`RAWG API returned ${res.status}`);
   return (await res.json()) as RawgGame;
 }

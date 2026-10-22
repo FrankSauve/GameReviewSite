@@ -7,7 +7,10 @@ import {
   publicQuery,
   resetDatabase,
   startApp,
+  type GraphQLResponse,
 } from "./helpers.js";
+import { provisionUser } from "../src/lib/identity.js";
+import { slugify } from "../src/lib/slug.js";
 import { prisma } from "../src/lib/prisma.js";
 
 interface GamePayload {
@@ -33,13 +36,32 @@ const TERRARIA_GENRES = [
   "Massively Multiplayer",
 ];
 
-const IMPORT = `mutation Import($input: ImportGameInput!) {
-  importGame(input: $input) { id title genres }
+const SET = `mutation Set($id: ID!, $input: UpdateGameInput!) {
+  updateGame(id: $id, input: $input) { id title genres }
 }`;
 
-const CREATE = `mutation Create($input: CreateGameInput!) {
-  createGame(input: $input) { id title genres }
-}`;
+/** A game Alice owns, with its genres set the way her edit would set them. */
+async function addGame(
+  app: Express,
+  input: { title: string; genres?: string[] },
+): Promise<GraphQLResponse<{ updateGame: GamePayload }>> {
+  const owner = await provisionUser(ALICE);
+  const game = await prisma.game.create({
+    data: {
+      title: input.title,
+      slug: slugify(input.title, "game"),
+      createdById: owner.id,
+    },
+  });
+  const genres = input.genres === undefined ? {} : { genres: input.genres };
+  return authedQuery<{ updateGame: GamePayload }>(
+    app,
+    SET,
+    ALICE,
+    {},
+    { id: game.id, input: genres },
+  );
+}
 
 describe("genres", () => {
   let app: Express;
@@ -54,23 +76,14 @@ describe("genres", () => {
   beforeEach(resetDatabase);
 
   describe("the Terraria case", () => {
-    it("imports a game with more genres than the cap instead of refusing it", async () => {
-      const res = await authedQuery<{ importGame: GamePayload }>(
-        app,
-        IMPORT,
-        ALICE,
-        {},
-        {
-          input: {
-            rawgId: "1",
-            title: "Terraria",
-            genres: TERRARIA_GENRES,
-          },
-        },
-      );
+    it("takes a game with more genres than the cap instead of refusing it", async () => {
+      const res = await addGame(app, {
+        title: "Terraria",
+        genres: TERRARIA_GENRES,
+      });
 
       expect(res.errors).toBeUndefined();
-      expect(res.data?.importGame.title).toBe("Terraria");
+      expect(res.data?.updateGame.title).toBe("Terraria");
     });
 
     /**
@@ -78,21 +91,12 @@ describe("genres", () => {
      * labels is exactly the failure this replaces.
      */
     it("keeps the first few genres and discards the rest", async () => {
-      const res = await authedQuery<{ importGame: GamePayload }>(
-        app,
-        IMPORT,
-        ALICE,
-        {},
-        {
-          input: {
-            rawgId: "1",
-            title: "Terraria",
-            genres: TERRARIA_GENRES,
-          },
-        },
-      );
+      const res = await addGame(app, {
+        title: "Terraria",
+        genres: TERRARIA_GENRES,
+      });
 
-      expect(res.data?.importGame.genres).toEqual(
+      expect(res.data?.updateGame.genres).toEqual(
         TERRARIA_GENRES.slice(0, MAX_LABELS),
       );
     });
@@ -100,14 +104,11 @@ describe("genres", () => {
 
   describe("storing lists", () => {
     it("keeps several genres rather than only the first", async () => {
-      const res = await authedQuery<{ createGame: GamePayload }>(
-        app,
-        CREATE,
-        ALICE,
-        {},
-        { input: { title: "Hades", genres: ["Action", "Roguelike", "Indie"] } },
-      );
-      expect(res.data?.createGame.genres).toEqual([
+      const res = await addGame(app, {
+        title: "Hades",
+        genres: ["Action", "Roguelike", "Indie"],
+      });
+      expect(res.data?.updateGame.genres).toEqual([
         "Action",
         "Roguelike",
         "Indie",
@@ -115,35 +116,20 @@ describe("genres", () => {
     });
 
     it("preserves the order it was given", async () => {
-      const res = await authedQuery<{ createGame: GamePayload }>(
-        app,
-        CREATE,
-        ALICE,
-        {},
-        { input: { title: "Ordered", genres: ["Z", "A", "M"] } },
-      );
-      expect(res.data?.createGame.genres).toEqual(["Z", "A", "M"]);
+      const res = await addGame(app, {
+        title: "Ordered",
+        genres: ["Z", "A", "M"],
+      });
+      expect(res.data?.updateGame.genres).toEqual(["Z", "A", "M"]);
     });
 
     it("defaults to an empty list rather than null", async () => {
-      const res = await authedQuery<{ createGame: GamePayload }>(
-        app,
-        CREATE,
-        ALICE,
-        {},
-        { input: { title: "Bare" } },
-      );
-      expect(res.data?.createGame.genres).toEqual([]);
+      const res = await addGame(app, { title: "Bare" });
+      expect(res.data?.updateGame.genres).toEqual([]);
     });
 
     it("reads back on the public query", async () => {
-      await authedQuery(
-        app,
-        CREATE,
-        ALICE,
-        {},
-        { input: { title: "Hades", genres: ["Action", "Roguelike"] } },
-      );
+      await addGame(app, { title: "Hades", genres: ["Action", "Roguelike"] });
       const res = await publicQuery<{ games: GamePayload[] }>(
         app,
         // Bounded: the static row guard refuses an unbounded `games` query,
@@ -158,78 +144,55 @@ describe("genres", () => {
 
   describe("cleaning", () => {
     it("drops blank entries", async () => {
-      const res = await authedQuery<{ createGame: GamePayload }>(
-        app,
-        CREATE,
-        ALICE,
-        {},
-        { input: { title: "Blanks", genres: ["Action", "", "   ", "Indie"] } },
-      );
-      expect(res.data?.createGame.genres).toEqual(["Action", "Indie"]);
+      const res = await addGame(app, {
+        title: "Blanks",
+        genres: ["Action", "", "   ", "Indie"],
+      });
+      expect(res.data?.updateGame.genres).toEqual(["Action", "Indie"]);
     });
 
     it("trims each entry", async () => {
-      const res = await authedQuery<{ createGame: GamePayload }>(
-        app,
-        CREATE,
-        ALICE,
-        {},
-        { input: { title: "Padded", genres: ["  Action  "] } },
-      );
-      expect(res.data?.createGame.genres).toEqual(["Action"]);
+      const res = await addGame(app, {
+        title: "Padded",
+        genres: ["  Action  "],
+      });
+      expect(res.data?.updateGame.genres).toEqual(["Action"]);
     });
 
     /** RAWG writes "Indie", a hand-typed entry writes "indie". */
     it("removes case-insensitive duplicates, keeping the first spelling", async () => {
-      const res = await authedQuery<{ createGame: GamePayload }>(
-        app,
-        CREATE,
-        ALICE,
-        {},
-        { input: { title: "Dupes", genres: ["Indie", "indie", "INDIE"] } },
-      );
-      expect(res.data?.createGame.genres).toEqual(["Indie"]);
+      const res = await addGame(app, {
+        title: "Dupes",
+        genres: ["Indie", "indie", "INDIE"],
+      });
+      expect(res.data?.updateGame.genres).toEqual(["Indie"]);
     });
 
     it("counts the cap after cleaning, not before", async () => {
-      const res = await authedQuery<{ createGame: GamePayload }>(
-        app,
-        CREATE,
-        ALICE,
-        {},
-        {
-          input: {
-            title: "Messy",
-            genres: ["A", "", "A", "B", "  ", "C", "D", "E", "F"],
-          },
-        },
-      );
-      expect(res.data?.createGame.genres).toEqual(["A", "B", "C", "D", "E"]);
+      const res = await addGame(app, {
+        title: "Messy",
+        genres: ["A", "", "A", "B", "  ", "C", "D", "E", "F"],
+      });
+      expect(res.data?.updateGame.genres).toEqual(["A", "B", "C", "D", "E"]);
     });
 
     /** Many entries is a normal game; one enormous entry is a malformed request. */
     it("still refuses a single absurdly long entry", async () => {
-      const res = await authedQuery(
-        app,
-        CREATE,
-        ALICE,
-        {},
-        { input: { title: "Long", genres: ["x".repeat(101)] } },
-      );
+      const res = await addGame(app, {
+        title: "Long",
+        genres: ["x".repeat(101)],
+      });
       expect(res.errors?.[0]?.message).toMatch(/at most/);
     });
   });
 
   describe("editing", () => {
     it("replaces the list rather than merging into it", async () => {
-      const created = await authedQuery<{ createGame: GamePayload }>(
-        app,
-        CREATE,
-        ALICE,
-        {},
-        { input: { title: "Editable", genres: ["Action", "Puzzle"] } },
-      );
-      const id = created.data!.createGame.id;
+      const created = await addGame(app, {
+        title: "Editable",
+        genres: ["Action", "Puzzle"],
+      });
+      const id = created.data!.updateGame.id;
 
       const res = await authedQuery<{ updateGame: GamePayload }>(
         app,
@@ -244,14 +207,11 @@ describe("genres", () => {
     });
 
     it("leaves the lists alone when the input omits them", async () => {
-      const created = await authedQuery<{ createGame: GamePayload }>(
-        app,
-        CREATE,
-        ALICE,
-        {},
-        { input: { title: "Untouched", genres: ["Action"] } },
-      );
-      const id = created.data!.createGame.id;
+      const created = await addGame(app, {
+        title: "Untouched",
+        genres: ["Action"],
+      });
+      const id = created.data!.updateGame.id;
 
       const res = await authedQuery<{ updateGame: GamePayload }>(
         app,

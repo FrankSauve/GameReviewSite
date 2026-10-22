@@ -30,14 +30,6 @@ describe("authorization", () => {
   beforeEach(resetDatabase);
 
   describe("game mutations require authentication", () => {
-    it("rejects anonymous createGame", async () => {
-      const res = await authedQuery(
-        app,
-        'mutation { createGame(input: { title: "Anon" }) { id } }',
-      );
-      expect(errorCodes(res)).toContain("UNAUTHENTICATED");
-    });
-
     it("rejects anonymous updateGame", async () => {
       const gameId = await seedGame();
       const res = await authedQuery(
@@ -45,15 +37,6 @@ describe("authorization", () => {
         `mutation { updateGame(id: "${gameId}", input: { title: "Hijacked" }) { id } }`,
       );
       expect(errorCodes(res)).toContain("UNAUTHENTICATED");
-    });
-
-    it("allows createGame for a signed-in user", async () => {
-      const res = await authedQuery<{ createGame: { title: string } }>(
-        app,
-        'mutation { createGame(input: { title: "Legit" }) { id title } }',
-        ALICE,
-      );
-      expect(res.data?.createGame.title).toBe("Legit");
     });
   });
 

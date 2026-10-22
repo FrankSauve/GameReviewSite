@@ -62,6 +62,24 @@ export const SEARCH_GAMES_EXTERNAL = gql`
   }
 `;
 
+/** A RAWG title as its first review will add it; nothing is written yet. */
+export const GET_RAWG_GAME = gql`
+  query GetRawgGame($rawgId: ID!) {
+    rawgGame(rawgId: $rawgId) {
+      rawgId
+      title
+      coverUrl
+      releaseYear
+      genres
+      description
+      game {
+        id
+        slug
+      }
+    }
+  }
+`;
+
 /** Reviewed games only; anything else is found through "Add game". */
 export const SEARCH_GAMES = gql`
   query SearchGames($query: String!) {

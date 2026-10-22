@@ -1,18 +1,5 @@
 import { gql } from "@apollo/client";
 
-export const IMPORT_GAME = gql`
-  mutation ImportGame($input: ImportGameInput!) {
-    importGame(input: $input) {
-      id
-      slug
-      title
-      coverUrl
-      genres
-      releaseYear
-    }
-  }
-`;
-
 export const CREATE_REVIEW = gql`
   mutation CreateReview($input: CreateReviewInput!) {
     createReview(input: $input) {
@@ -33,6 +20,10 @@ export const CREATE_REVIEW = gql`
       }
       comments {
         id
+      }
+      game {
+        id
+        slug
       }
     }
   }

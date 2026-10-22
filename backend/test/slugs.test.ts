@@ -1,7 +1,16 @@
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+  afterAll,
+  beforeAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import type { Express } from "express";
 import { provisionUser } from "../src/lib/identity.js";
 import { slugify } from "../src/lib/slug.js";
+import { prisma } from "../src/lib/prisma.js";
 import {
   ALICE,
   BOB,
@@ -24,17 +33,43 @@ interface ReviewPayload {
 }
 
 async function addGameAs(
-  app: Express,
   identity: typeof ALICE,
   title: string,
 ): Promise<GamePayload> {
-  const res = await authedQuery<{ createGame: GamePayload }>(
-    app,
-    `mutation { createGame(input: { title: "${title}" }) { id slug title } }`,
-    identity,
-  );
-  expect(res.errors).toBeUndefined();
-  return res.data!.createGame;
+  const owner = await provisionUser(identity);
+  return prisma.game.create({
+    data: { title, slug: slugify(title, "game"), createdById: owner.id },
+  });
+}
+
+/** A game as the app names it: created by its first review, from RAWG. */
+async function firstReviewOf(
+  app: Express,
+  identity: typeof ALICE,
+  rawgId: number,
+  title: string,
+): Promise<GamePayload> {
+  const original = globalThis.fetch;
+  globalThis.fetch = vi.fn(
+    async () => new Response(JSON.stringify({ id: rawgId, name: title })),
+  ) as unknown as typeof globalThis.fetch;
+  process.env["RAWG_API_KEY"] = "test-key";
+  try {
+    const res = await authedQuery<{ createReview: { game: GamePayload } }>(
+      app,
+      `mutation {
+         createReview(input: {
+           rawgId: "${rawgId}", rating: 8, content: "Good", ${PLAYTIME_INPUT}
+         }) { game { id slug title } }
+       }`,
+      identity,
+    );
+    expect(res.errors).toBeUndefined();
+    return res.data!.createReview.game;
+  } finally {
+    globalThis.fetch = original;
+    delete process.env["RAWG_API_KEY"];
+  }
 }
 
 async function reviewAs(
@@ -111,12 +146,12 @@ describe("readable URLs", () => {
 
   describe("games", () => {
     it("gives a new game a slug derived from its title", async () => {
-      const game = await addGameAs(app, ALICE, "Elden Ring");
+      const game = await firstReviewOf(app, ALICE, 1, "Elden Ring");
       expect(game.slug).toBe("elden-ring");
     });
 
     it("resolves a game by its slug", async () => {
-      const game = await addGameAs(app, ALICE, "Elden Ring");
+      const game = await addGameAs(ALICE, "Elden Ring");
       const res = await publicQuery<{ game: GamePayload | null }>(
         app,
         `{ game(id: "elden-ring") { id title } }`,
@@ -126,7 +161,7 @@ describe("readable URLs", () => {
 
     /** The whole point of accepting both: links shared before slugs existed. */
     it("still resolves a game by its UUID", async () => {
-      const game = await addGameAs(app, ALICE, "Elden Ring");
+      const game = await addGameAs(ALICE, "Elden Ring");
       const res = await publicQuery<{ game: GamePayload | null }>(
         app,
         `{ game(id: "${game.id}") { slug } }`,
@@ -144,8 +179,8 @@ describe("readable URLs", () => {
     });
 
     it("disambiguates a second game sharing a title", async () => {
-      const first = await addGameAs(app, ALICE, "Hades");
-      const second = await addGameAs(app, BOB, "Hades");
+      const first = await firstReviewOf(app, ALICE, 1, "Hades");
+      const second = await firstReviewOf(app, BOB, 2, "Hades");
       expect(first.slug).toBe("hades");
       expect(second.slug).toBe("hades-2");
     });
@@ -155,7 +190,7 @@ describe("readable URLs", () => {
      * the game the moment somebody corrected a typo in it.
      */
     it("keeps the original slug after the title is edited", async () => {
-      const game = await addGameAs(app, ALICE, "Elden Rng");
+      const game = await addGameAs(ALICE, "Elden Rng");
       const res = await authedQuery<{ updateGame: GamePayload }>(
         app,
         `mutation { updateGame(id: "${game.id}", input: { title: "Elden Ring" }) { slug title } }`,
@@ -235,7 +270,7 @@ describe("readable URLs", () => {
      * profile header with no reviews under it.
      */
     it("lists a user's review summaries by slug", async () => {
-      const game = await addGameAs(app, ALICE, "Elden Ring");
+      const game = await addGameAs(ALICE, "Elden Ring");
       await reviewAs(app, ALICE, game.id);
 
       const res = await publicQuery<{ reviewSummariesByUser: ReviewPayload[] }>(
@@ -250,13 +285,13 @@ describe("readable URLs", () => {
 
   describe("reviews", () => {
     it("names a review after its game and its author", async () => {
-      const game = await addGameAs(app, ALICE, "Elden Ring");
+      const game = await addGameAs(ALICE, "Elden Ring");
       const review = await reviewAs(app, ALICE, game.id);
       expect(review.slug).toBe("alice/elden-ring");
     });
 
     it("resolves a review by its slug", async () => {
-      const game = await addGameAs(app, ALICE, "Elden Ring");
+      const game = await addGameAs(ALICE, "Elden Ring");
       const review = await reviewAs(app, ALICE, game.id);
       const res = await publicQuery<{ review: ReviewPayload | null }>(
         app,
@@ -266,7 +301,7 @@ describe("readable URLs", () => {
     });
 
     it("still resolves a review by its UUID", async () => {
-      const game = await addGameAs(app, ALICE, "Elden Ring");
+      const game = await addGameAs(ALICE, "Elden Ring");
       const review = await reviewAs(app, ALICE, game.id);
       const res = await publicQuery<{ review: ReviewPayload | null }>(
         app,
@@ -276,7 +311,7 @@ describe("readable URLs", () => {
     });
 
     it("gives two people reviewing the same game distinct slugs", async () => {
-      const game = await addGameAs(app, ALICE, "Elden Ring");
+      const game = await addGameAs(ALICE, "Elden Ring");
       const byAlice = await reviewAs(app, ALICE, game.id);
       const byBob = await reviewAs(app, BOB, game.id);
       expect(byAlice.slug).toBe("alice/elden-ring");
@@ -284,7 +319,7 @@ describe("readable URLs", () => {
     });
 
     it("lists a game's reviews by the game's slug", async () => {
-      const game = await addGameAs(app, ALICE, "Elden Ring");
+      const game = await addGameAs(ALICE, "Elden Ring");
       await reviewAs(app, ALICE, game.id);
       const res = await publicQuery<{ reviewsByGame: ReviewPayload[] }>(
         app,

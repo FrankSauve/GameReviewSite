@@ -135,7 +135,7 @@ Writes are refused without one:
 ```bash
 curl -s https://reviews.example.com/graphql \
   -H 'content-type: application/json' \
-  -d '{"query":"mutation{createGame(input:{title:\"x\"}){id}}"}'
+  -d '{"query":"mutation{deleteReview(id:\"x\")}"}'
 # UNAUTHENTICATED
 ```
 

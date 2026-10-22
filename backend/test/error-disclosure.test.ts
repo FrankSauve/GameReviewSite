@@ -90,7 +90,7 @@ describe("error message disclosure", () => {
     // An authorization failure likewise.
     const anonWrite = await publicQuery(
       app,
-      'mutation { createGame(input: { title: "x" }) { id } }',
+      'mutation { createReview(input: { rawgId: "1", rating: 8, content: "x", yearPlayed: 2024, hoursPlayed: 1 }) { id } }',
     );
     expect(anonWrite.errors?.[0]?.extensions?.code).toBe("UNAUTHENTICATED");
     expect(anonWrite.errors?.[0]?.message).toMatch(/signed in/i);
@@ -110,7 +110,7 @@ describe("error message disclosure", () => {
 
     const res = await authedQuery(
       app,
-      'mutation { createGame(input: { title: "   " }) { id } }',
+      'mutation { createReview(input: { rawgId: "1", rating: 8, content: "   ", yearPlayed: 2024, hoursPlayed: 1 }) { id } }',
       ALICE,
     );
 

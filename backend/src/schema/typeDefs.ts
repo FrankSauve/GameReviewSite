@@ -72,7 +72,9 @@ export const typeDefs = `#graphql
     releaseYear: Int
     genres: [String!]
     metacritic: Int
-    # The game already imported under this rawgId, if any.
+    # Only from rawgGame; search results carry none.
+    description: String
+    # The game already in the library under this rawgId, if any.
     game: Game
   }
 
@@ -176,26 +178,10 @@ export const typeDefs = `#graphql
 
   # ── Inputs ───────────────────────────────────────────────────────────────────
 
-  input CreateGameInput {
-    title: String!
-    genres: [String!]
-    description: String
-    releaseYear: Int
-  }
-
   input UpdateGameInput {
     title: String
     genres: [String!]
     description: String
-    releaseYear: Int
-  }
-
-  input ImportGameInput {
-    rawgId: String!
-    title: String!
-    coverUrl: String
-    # Past the cap is dropped, not refused.
-    genres: [String!]
     releaseYear: Int
   }
 
@@ -204,8 +190,12 @@ export const typeDefs = `#graphql
   # yearPlayed and hoursPlayed are required here while both columns are nullable.
   # Every review written through the app carries them; the row that predates the
   # columns, and an importer that genuinely does not know a value, do not have to.
+  #
+  # Exactly one of gameId and rawgId. A rawgId not yet in the library creates the
+  # game along with the review: a game exists only while it has one.
   input CreateReviewInput {
-    gameId: ID!
+    gameId: ID
+    rawgId: ID
     rating: Float!
     content: String!
     yearPlayed: Int!
@@ -298,6 +288,7 @@ export const typeDefs = `#graphql
     # Reviewed games whose title contains the query, most-reviewed first.
     searchGames(query: String!, limit: Int): [Game!]!
     searchGamesExternal(query: String!): [ExternalGame!]!
+    rawgGame(rawgId: ID!): ExternalGame
 
     reviews(limit: Int, offset: Int): [Review!]!
     review(id: ID!): Review
@@ -348,8 +339,6 @@ export const typeDefs = `#graphql
     setFavoriteGame(input: SetFavoriteGameInput!): User!
     clearFavoriteGame(category: String!): User!
 
-    importGame(input: ImportGameInput!): Game!
-    createGame(input: CreateGameInput!): Game!
     updateGame(id: ID!, input: UpdateGameInput!): Game!
 
     createReview(input: CreateReviewInput!): Review!
