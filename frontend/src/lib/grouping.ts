@@ -144,44 +144,32 @@ function genrePicker(
     const own = review.genre?.trim();
     if (own) return own;
     const genres = review.game?.genres ?? [];
-    return (
-      mostFiled(genres, chosen) ??
-      rarestShared(genres, unfiled) ??
-      genres[0] ??
-      null
-    );
+    return rarestShared(genres, chosen, unfiled) ?? genres[0] ?? null;
   };
 }
 
-/** The game's genre the reviewer files most games under; ties go to the game's order. */
-function mostFiled(
-  genres: string[],
-  chosen: Map<string, number>,
-): string | null {
-  let best: string | null = null;
-  let bestCount = 0;
-  for (const genre of genres) {
-    const count = chosen.get(genre.toLowerCase()) ?? 0;
-    if (count > bestCount) {
-      best = genre;
-      bestCount = count;
-    }
-  }
-  return best;
-}
-
-/** Rarest rather than commonest, so Action does not swallow the library; ties go to the game's order. */
+/**
+ * Rarest rather than commonest, so Action does not swallow the library. A genre
+ * the reviewer files under skips the floor but not the rarity, or filing one game
+ * under Action pulls in every other. Ties go to a filed genre, then the game's order.
+ */
 function rarestShared(
   genres: string[],
+  chosen: Map<string, number>,
   unfiled: Map<string, number>,
 ): string | null {
   let best: string | null = null;
   let bestCount = Infinity;
+  let bestFiled = false;
   for (const genre of genres) {
-    const count = unfiled.get(genre.toLowerCase()) ?? 0;
-    if (count >= MIN_FALLBACK_GROUP && count < bestCount) {
+    const key = genre.toLowerCase();
+    const count = unfiled.get(key) ?? 0;
+    const filed = chosen.has(key);
+    if (!filed && count < MIN_FALLBACK_GROUP) continue;
+    if (count < bestCount || (count === bestCount && filed && !bestFiled)) {
       best = genre;
       bestCount = count;
+      bestFiled = filed;
     }
   }
   return best;
