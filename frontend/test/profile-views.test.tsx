@@ -147,40 +147,38 @@ async function eventually(assert: () => void): Promise<void> {
   await waitFor(assert);
 }
 
-/** Group headings, in the order they appear. */
-async function headings(): Promise<string[]> {
-  await waitFor(() => expect(screen.getByText("simon")).toBeTruthy());
-  await waitFor(() =>
+/** Waits until the group headings read `expected`, in order. */
+async function expectHeadings(expected: string[]): Promise<void> {
+  await eventually(() =>
     expect(
-      screen.queryAllByRole("heading", { level: 3 }).length,
-    ).toBeGreaterThan(0),
+      screen.queryAllByRole("heading", { level: 3 }).map((h) => h.textContent),
+    ).toEqual(expected),
   );
-  return screen
-    .queryAllByRole("heading", { level: 3 })
-    .map((h) => h.textContent ?? "");
 }
 
 describe("profile grouped views", () => {
   it("groups by year at the bare profile route", async () => {
     renderAt(`/users/${USER_ID}`);
-    expect(await headings()).toEqual(["2024", "2019"]);
+    await expectHeadings(["2024", "2019"]);
   });
 
   it("groups by year at the explicit by-year route", async () => {
     renderAt(`/users/${USER_ID}/by-year`);
-    expect(await headings()).toEqual(["2024", "2019"]);
+    await expectHeadings(["2024", "2019"]);
   });
 
   it("groups by score at the by-score route", async () => {
     renderAt(`/users/${USER_ID}/by-score`);
-    expect(await headings()).toEqual(["10", "8.5"]);
+    await expectHeadings(["10", "8.5"]);
   });
 
   /** The recent view is one undivided list, so it has no group headings at all. */
   it("shows no group headings on the recent route", async () => {
     renderAt(`/users/${USER_ID}/recent`);
-    await waitFor(() => expect(screen.getByText("simon")).toBeTruthy());
-    await waitFor(() => expect(screen.getByText("Best Game")).toBeTruthy());
+    await eventually(() => {
+      expect(pathname()).toBe(`/users/${USER_SLUG}/recent`);
+      expect(screen.getByText("Best Game")).toBeTruthy();
+    });
     expect(screen.queryAllByRole("heading", { level: 3 })).toHaveLength(0);
   });
 
@@ -194,7 +192,7 @@ describe("profile grouped views", () => {
 
   it("groups by genre at the by-genre route, most games first", async () => {
     renderAt(`/users/${USER_ID}/by-genre`);
-    expect(await headings()).toEqual(["Action", "Puzzle"]);
+    await expectHeadings(["Action", "Puzzle"]);
   });
 
   it("marks the tab of the view being shown", async () => {
@@ -208,7 +206,7 @@ describe("profile grouped views", () => {
 
   it("lays the tabs out in order, each linking to its own route", async () => {
     renderAt(`/users/${USER_SLUG}`);
-    await headings();
+    await expectHeadings(["2024", "2019"]);
     const tabs = screen
       .getAllByRole("link")
       .filter((a) => PROFILE_TABS.some((t) => t.label === a.textContent));
@@ -230,7 +228,7 @@ describe("profile grouped views", () => {
 
   it("switches view from a tab", async () => {
     renderAt(`/users/${USER_SLUG}`);
-    expect(await headings()).toEqual(["2024", "2019"]);
+    await expectHeadings(["2024", "2019"]);
     fireEvent.click(screen.getByRole("link", { name: "Score" }));
     await eventually(() => {
       expect(pathname()).toBe(`/users/${USER_SLUG}/by-score`);
@@ -245,7 +243,7 @@ describe("profile grouped views", () => {
   /** Score and Genre share a cache entry, so the list is not remounted by a load. */
   it("opens every group again after a round trip through another view", async () => {
     renderAt(`/users/${USER_SLUG}/by-score`);
-    expect(await headings()).toEqual(["10", "8.5"]);
+    await expectHeadings(["10", "8.5"]);
     fireEvent.click(screen.getByRole("button", { name: "10" }));
     expect(
       screen.getByRole("button", { name: "10" }).getAttribute("aria-expanded"),
@@ -271,7 +269,7 @@ describe("profile grouped views", () => {
    */
   it("keeps the header and tabs while the next view loads", async () => {
     renderAt(`/users/${USER_SLUG}`, { slowScore: true });
-    expect(await headings()).toEqual(["2024", "2019"]);
+    await expectHeadings(["2024", "2019"]);
     const scoreTab = screen.getByRole("link", { name: "Score" });
     scoreTab.focus();
 
