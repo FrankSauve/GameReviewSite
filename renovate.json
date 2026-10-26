@@ -72,6 +72,11 @@
       "addLabels": ["needs-review"]
     },
     {
+      "description": "The Prisma CLI, client and adapter are released in lockstep and must move together: a client a major ahead of the CLI cannot even be generated.",
+      "matchPackageNames": ["prisma", "@prisma/**"],
+      "groupName": "prisma"
+    },
+    {
       "description": "Renovate cannot regenerate a lock file after bumping an npm override (npm fails with EOVERRIDE). Overrides are caret ranges, so lock file maintenance moves them within range instead.",
       "matchManagers": ["npm"],
       "matchDepTypes": ["overrides"],
