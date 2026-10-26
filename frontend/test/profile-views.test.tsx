@@ -16,7 +16,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
  */
 afterEach(cleanup);
 
-import { MockedProvider } from "@apollo/client/testing";
+import { MockedProvider } from "@apollo/client/testing/react";
 import { GET_USER_REVIEW_SUMMARIES } from "../src/graphql/queries";
 import { UserProfilePage } from "../src/pages/UserProfilePage";
 import { PROFILE_ROUTES, PROFILE_TABS } from "../src/lib/profileViews";

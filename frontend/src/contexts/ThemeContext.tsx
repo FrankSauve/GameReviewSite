@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import { UPDATE_PROFILE } from "../graphql/mutations";
 import { useAuth } from "./AuthContext";
 import {

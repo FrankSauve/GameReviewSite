@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { GET_GAME } from "../graphql/queries";
 import { ReviewCard } from "../components/ReviewCard";
 import { AddReviewForm } from "../components/AddReviewForm";

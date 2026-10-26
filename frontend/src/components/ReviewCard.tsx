@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import type { Review } from "../types";
 import { UPDATE_REVIEW, DELETE_REVIEW } from "../graphql/mutations";
 import { GET_GAME } from "../graphql/queries";

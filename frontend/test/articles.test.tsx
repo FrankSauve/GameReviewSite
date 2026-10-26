@@ -8,7 +8,7 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { MockedProvider } from "@apollo/client/testing";
+import { MockedProvider } from "@apollo/client/testing/react";
 
 /** See profile-views.test.tsx: vitest runs without globals, so this is manual. */
 afterEach(cleanup);

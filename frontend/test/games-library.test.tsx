@@ -8,7 +8,8 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { MockedProvider, type MockedResponse } from "@apollo/client/testing";
+import type { MockLink } from "@apollo/client/testing";
+import { MockedProvider } from "@apollo/client/testing/react";
 
 /** See profile-views.test.tsx: vitest runs without globals, so this is manual. */
 afterEach(cleanup);
@@ -79,7 +80,7 @@ const usersMock = {
   },
 };
 
-function renderAt(path: string, extra: MockedResponse[] = []) {
+function renderAt(path: string, extra: MockLink.MockedResponse[] = []) {
   return render(
     <MockedProvider
       mocks={[

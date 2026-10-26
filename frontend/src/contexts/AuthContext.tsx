@@ -1,5 +1,5 @@
 import { createContext, useContext, type ReactNode } from "react";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { GET_ME } from "../graphql/mutations";
 import { startSignIn, startSignOut } from "../lib/auth";
 

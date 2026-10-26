@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useQuery, useMutation } from "@apollo/client";
+import { useQuery, useMutation } from "@apollo/client/react";
 import { GET_REVIEW } from "../graphql/queries";
 import {
   CREATE_COMMENT,
@@ -131,7 +131,7 @@ export function ReviewDetailPage() {
   const [editGenre, setEditGenre] = useState("");
   const [newComment, setNewComment] = useState("");
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="w-screen relative left-1/2 right-1/2 -mx-[50vw] px-4 sm:px-6 lg:px-10">
         <div className="page-column space-y-4 animate-pulse">

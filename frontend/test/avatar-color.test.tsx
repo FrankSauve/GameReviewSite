@@ -7,7 +7,8 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { MockedProvider, type MockedResponse } from "@apollo/client/testing";
+import type { MockLink } from "@apollo/client/testing";
+import { MockedProvider } from "@apollo/client/testing/react";
 import {
   AVATAR_COLORS,
   AVATAR_COLOR_KEYS,
@@ -98,7 +99,7 @@ describe("AvatarColorPicker", () => {
     avatarColor: null,
   };
 
-  function pickMock(color: string): MockedResponse {
+  function pickMock(color: string): MockLink.MockedResponse {
     return {
       request: {
         query: UPDATE_PROFILE,
@@ -119,7 +120,7 @@ describe("AvatarColorPicker", () => {
     };
   }
 
-  function renderPicker(mocks: readonly MockedResponse[] = []) {
+  function renderPicker(mocks: readonly MockLink.MockedResponse[] = []) {
     return render(
       <MockedProvider mocks={mocks}>
         <AvatarColorPicker user={user} />

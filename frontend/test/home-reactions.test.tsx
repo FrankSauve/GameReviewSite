@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { MockedProvider } from "@apollo/client/testing";
+import { MockedProvider } from "@apollo/client/testing/react";
 import { HomePage } from "../src/pages/HomePage";
 import { AuthProvider } from "../src/contexts/AuthContext";
 import { GET_RECENT_REVIEWS } from "../src/graphql/queries";

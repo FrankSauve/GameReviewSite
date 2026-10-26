@@ -1,5 +1,5 @@
 import { useId, useState } from "react";
-import { useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import { CREATE_REVIEW } from "../graphql/mutations";
 import { GET_GAME } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
@@ -10,6 +10,7 @@ import { PlatformSelect } from "./PlatformSelect";
 import { GenreInput } from "./GenreInput";
 import { DEFAULT_PLATFORM } from "../lib/platforms";
 import { MarkdownEditor } from "./MarkdownEditor";
+import { errorMessage } from "../lib/errorMessage";
 
 interface AddReviewFormProps {
   /** A game in the library, or a RAWG title its first review will add. */
@@ -139,7 +140,7 @@ export function AddReviewForm({
 
       {error && (
         <p className="text-danger-text text-meta bg-danger-subtle/20 border border-danger-subtle-border rounded-control px-3 py-2">
-          {error.graphQLErrors[0]?.message ?? error.message}
+          {errorMessage(error)}
         </p>
       )}
 

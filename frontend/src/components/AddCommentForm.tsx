@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import { CREATE_COMMENT } from "../graphql/mutations";
 import { GET_GAME } from "../graphql/queries";
+import { errorMessage } from "../lib/errorMessage";
 
 interface AddCommentFormProps {
   reviewId: string;
@@ -44,9 +45,7 @@ export function AddCommentForm({
         required
       />
       {error && (
-        <p className="text-danger-text text-micro">
-          {error.graphQLErrors[0]?.message ?? error.message}
-        </p>
+        <p className="text-danger-text text-micro">{errorMessage(error)}</p>
       )}
       <div className="flex gap-2">
         <button

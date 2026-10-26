@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from "react";
-import { useMutation, useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client/react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { GET_ARTICLE } from "../graphql/queries";
 import { CREATE_ARTICLE, UPDATE_ARTICLE } from "../graphql/mutations";
@@ -7,6 +7,7 @@ import type { Article } from "../types";
 import { useAuth } from "../contexts/AuthContext";
 import { articlePath } from "../lib/links";
 import { Markdown } from "../components/Markdown";
+import { errorMessage } from "../lib/errorMessage";
 
 /** Kept in step with ARTICLE_CONTENT_MAX in backend/src/resolvers/article.ts. */
 const CONTENT_MAX = 50000;
@@ -75,7 +76,7 @@ export function ArticleEditorPage() {
     );
   }
 
-  if (editing && loadingExisting) {
+  if (editing && loadingExisting && !data) {
     return <div className="card p-8 page-column h-64 animate-pulse" />;
   }
 
@@ -213,7 +214,7 @@ export function ArticleEditorPage() {
 
       {error && (
         <p className="text-danger-text text-meta bg-danger-subtle/20 border border-danger-subtle-border rounded-control px-3 py-2">
-          {error.graphQLErrors[0]?.message ?? error.message}
+          {errorMessage(error)}
         </p>
       )}
 

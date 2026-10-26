@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useQuery, useMutation } from "@apollo/client";
+import { useQuery, useMutation } from "@apollo/client/react";
 import {
   GET_RECENT_REVIEWS,
   RECENT_REVIEWS_PAGE_SIZE,
@@ -8,7 +8,7 @@ import {
 import { CREATE_COMMENT } from "../graphql/mutations";
 import { useAuth } from "../contexts/AuthContext";
 import { usePageParam } from "../hooks/usePageParam";
-import type { Review } from "../types";
+import type { Comment, Review } from "../types";
 import { formatRating, ratingColor } from "../lib/rating";
 import { excerpt } from "../lib/markdown";
 import { formatPlaytime } from "../lib/playtime";
@@ -44,7 +44,9 @@ function ReviewFeedCard({ review }: { review: Review }) {
   const [newComment, setNewComment] = useState("");
   const [localComments, setLocalComments] = useState(review.comments ?? []);
 
-  const [createComment, { loading: submitting }] = useMutation(CREATE_COMMENT, {
+  const [createComment, { loading: submitting }] = useMutation<{
+    createComment: Comment;
+  }>(CREATE_COMMENT, {
     onCompleted(data) {
       setLocalComments((prev) => [...prev, data.createComment]);
       setNewComment("");
@@ -265,6 +267,7 @@ export function HomePage() {
     variables: { offset: page * RECENT_REVIEWS_PAGE_SIZE },
     fetchPolicy: "network-only",
   });
+  const reviewsPending = reviewsLoading && !reviewsData;
 
   const reviews = reviewsData?.recentReviews ?? [];
   const totalReviews = reviewsData?.recentReviewsCount ?? 0;
@@ -283,9 +286,9 @@ export function HomePage() {
           )}
         </div>
 
-        {reviewsLoading && <ReviewFeedSkeleton />}
+        {reviewsPending && <ReviewFeedSkeleton />}
 
-        {!reviewsLoading && reviews.length === 0 && (
+        {!reviewsPending && reviews.length === 0 && (
           <div className="empty-state space-y-3">
             <p className="text-4xl">✍️</p>
             <p className="text-content-muted font-medium">
@@ -306,7 +309,7 @@ export function HomePage() {
           </div>
         )}
 
-        {!reviewsLoading && reviews.length > 0 && (
+        {!reviewsPending && reviews.length > 0 && (
           <>
             <div className="space-y-3">
               {reviews.map((review) => (

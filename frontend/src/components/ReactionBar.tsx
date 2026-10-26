@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import { useApolloClient, useMutation, useQuery } from "@apollo/client";
+import { useApolloClient, useMutation, useQuery } from "@apollo/client/react";
 import { TOGGLE_REACTION } from "../graphql/mutations";
 import { GET_REACTION_USERS } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";

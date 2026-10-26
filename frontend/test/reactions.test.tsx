@@ -8,7 +8,8 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { MockedProvider, type MockedResponse } from "@apollo/client/testing";
+import type { MockLink } from "@apollo/client/testing";
+import { MockedProvider } from "@apollo/client/testing/react";
 import { ReactionBar } from "../src/components/ReactionBar";
 import type { ReactionSummary } from "../src/types";
 import { AuthProvider } from "../src/contexts/AuthContext";
@@ -22,7 +23,8 @@ afterEach(cleanup);
 
 /**
  * The bar renders before AuthProvider's `me` query settles, and a click while it
- * is still loading goes to sign-in rather than to the mutation.
+ * is still loading goes to sign-in rather than to the mutation. One tick is
+ * enough only because renderBar turns off MockLink's default delay.
  */
 async function whenSignedIn(): Promise<void> {
   await act(async () => {
@@ -82,10 +84,10 @@ function reactorsMock(emoji: string, usernames: string[]) {
 
 function renderBar(
   reactions: ReactionSummary[] | null,
-  mocks: readonly MockedResponse[] = [meMock],
+  mocks: readonly MockLink.MockedResponse[] = [meMock],
 ) {
   return render(
-    <MockedProvider mocks={mocks}>
+    <MockedProvider mocks={mocks} mockLinkDefaultOptions={{ delay: 0 }}>
       <AuthProvider>
         <ReactionBar reviewId="r1" reactions={reactions} />
       </AuthProvider>
@@ -232,9 +234,8 @@ describe("naming who reacted", () => {
   it("asks for nobody's names until a chip is hovered", async () => {
     let asked = 0;
     // Matches whatever it is asked, so an eager fetch counts too.
-    const counted: MockedResponse = {
-      request: { query: GET_REACTION_USERS },
-      variableMatcher: () => true,
+    const counted: MockLink.MockedResponse = {
+      request: { query: GET_REACTION_USERS, variables: () => true },
       result: () => {
         asked += 1;
         return { data: { reactionUsers: ["alice", "bob"] } };
