@@ -197,6 +197,29 @@ describe("groupByGenre", () => {
     expect(filed(rows, witcher)?.toLowerCase()).toBe("rpg");
   });
 
+  /** One game filed under Action once moved 90 of a reviewer's games there. */
+  it("does not pull the library under a broad genre filed once", () => {
+    const doom = withGenres(9, ["Action", "Shooter"]);
+    const rows = [
+      doom,
+      withGenres(8, ["Action", "Shooter"]),
+      withGenres(7, ["Action", "RPG"]),
+      withGenres(6, ["Action", "RPG"]),
+      { ...withGenres(5, ["Action", "Adventure"]), genre: "Action" },
+    ];
+    expect(filed(rows, doom)).toBe("Shooter");
+  });
+
+  it("breaks a rarity tie towards a genre the reviewer files under", () => {
+    const portal = withGenres(9, ["Puzzle", "Platformer"]);
+    const rows = [
+      portal,
+      withGenres(8, ["Puzzle", "Platformer"]),
+      { ...withGenres(7, ["Indie"]), genre: "Platformer" },
+    ];
+    expect(filed(rows, portal)).toBe("Platformer");
+  });
+
   it("leaves games the reviewer filed out of a fallback's rarity", () => {
     const celeste = withGenres(9, ["Indie", "Platformer"]);
     const unfiled = [
