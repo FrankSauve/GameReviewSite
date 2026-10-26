@@ -70,6 +70,12 @@
       "rangeStrategy": "pin",
       "automerge": false,
       "addLabels": ["needs-review"]
+    },
+    {
+      "description": "Renovate cannot regenerate a lock file after bumping an npm override (npm fails with EOVERRIDE). Overrides are caret ranges, so lock file maintenance moves them within range instead.",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["overrides"],
+      "enabled": false
     }
   ]
 }
