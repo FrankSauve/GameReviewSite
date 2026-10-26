@@ -3,18 +3,15 @@ FROM node:22-alpine@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf
 
 WORKDIR /app
 
-# Prevent @prisma/client postinstall from auto-running prisma generate
-# (we call it explicitly below so the engine is only downloaded once)
-ENV PRISMA_SKIP_POSTINSTALL_GENERATE=true
-
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json prisma.config.ts ./
 COPY prisma ./prisma
 
 # npm ci installs exactly what the lockfile pins and fails if the two have
 # drifted, which is what makes the build reproducible and Renovate-friendly.
 RUN npm ci --no-audit --no-fund
 
-# Generate Prisma client + download query engine for this platform (once)
+# Writes the client into src/generated, which .dockerignore keeps the host's
+# copy out of, so the COPY below cannot overwrite it.
 RUN ./node_modules/.bin/prisma generate
 
 COPY tsconfig.json ./
@@ -38,6 +35,7 @@ ENV NODE_ENV=production
 COPY --from=builder --chown=node:node /app/node_modules ./node_modules
 COPY --from=builder --chown=node:node /app/dist         ./dist
 COPY --chown=node:node prisma        ./prisma
+COPY --chown=node:node prisma.config.ts ./
 COPY --chown=node:node entrypoint.sh ./
 # Declares the module type instead of leaving Node to infer it. This package is
 # ESM ("type": "module"), and dist/ is emitted as ESM. Node 22 would actually

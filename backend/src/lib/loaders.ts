@@ -1,5 +1,11 @@
 import DataLoader from "dataloader";
-import type { Comment, FavoriteGame, Game, Review, User } from "@prisma/client";
+import type {
+  Comment,
+  FavoriteGame,
+  Game,
+  Review,
+  User,
+} from "../generated/prisma/client.js";
 import { prisma } from "./prisma.js";
 import { FAVORITE_BOUNDS, LIST_BOUNDS, REACTION_BOUNDS } from "./pagination.js";
 

@@ -1,6 +1,6 @@
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import type { Request, Response } from "express";
-import type { User } from "@prisma/client";
+import type { User } from "../generated/prisma/client.js";
 import { prisma } from "./prisma.js";
 import { isProduction } from "../security.js";
 

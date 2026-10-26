@@ -1,10 +1,11 @@
 import { GraphQLError } from "graphql";
-import { Prisma, type Game, type Review } from "@prisma/client";
+import type { Game, Prisma, Review } from "../generated/prisma/client.js";
 import { prisma } from "./prisma.js";
 import { badInput } from "./badInput.js";
 import { getRawgGame } from "./rawg.js";
 import { gameFieldsFromRawg, type RawgGameFields } from "./rawgGame.js";
 import { reviewSlugBase, slugify, uniqueSlug } from "./slug.js";
+import { violatesUniqueOn } from "./uniqueViolation.js";
 
 export type ReviewFields = Pick<
   Review,
@@ -39,7 +40,7 @@ export async function createReview(
     return await write(resolved, fields, author);
   } catch (err) {
     // Someone else's first review created the game since we looked; review theirs.
-    if (!("create" in resolved) || !isUniqueViolation(err, "rawgId")) throw err;
+    if (!("create" in resolved) || !violatesUniqueOn(err, "rawgId")) throw err;
     return write(
       { game: await existingGame({ rawgId: resolved.create.rawgId }) },
       fields,
@@ -113,12 +114,4 @@ function write(
     });
     return { game, review };
   });
-}
-
-function isUniqueViolation(err: unknown, field: string): boolean {
-  return (
-    err instanceof Prisma.PrismaClientKnownRequestError &&
-    err.code === "P2002" &&
-    String(err.meta?.["target"]).includes(field)
-  );
 }

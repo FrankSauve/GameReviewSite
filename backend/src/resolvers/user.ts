@@ -1,4 +1,4 @@
-import type { User } from "@prisma/client";
+import type { User } from "../generated/prisma/client.js";
 import { prisma } from "../lib/prisma.js";
 import { pruneUnreviewedGames } from "../lib/pruneGames.js";
 import { serializeDates } from "../lib/serialize.js";

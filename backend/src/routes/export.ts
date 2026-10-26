@@ -1,7 +1,7 @@
 import { once } from "node:events";
 import type { Readable } from "node:stream";
 import { Router, type Request, type Response } from "express";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "../generated/prisma/client.js";
 import { ZipFile } from "yazl";
 
 import { prisma } from "../lib/prisma.js";
