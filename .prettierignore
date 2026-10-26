@@ -2,5 +2,6 @@ node_modules/
 dist/
 *.tsbuildinfo
 backend/prisma/migrations/
+backend/src/generated/
 package-lock.json
 .claude/

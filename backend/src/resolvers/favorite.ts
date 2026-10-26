@@ -1,4 +1,4 @@
-import type { FavoriteGame, User } from "@prisma/client";
+import type { FavoriteGame, User } from "../generated/prisma/client.js";
 import { prisma } from "../lib/prisma.js";
 import { serializeDates } from "../lib/serialize.js";
 import { requireAuth, type Context } from "../context.js";

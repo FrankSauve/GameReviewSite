@@ -93,6 +93,7 @@ docker run --rm -d --name gr-test-db -p 5440:5432 \
 
 cd backend
 export DATABASE_URL="postgresql://test:test@127.0.0.1:5440/test"
+npx prisma generate
 npx prisma migrate deploy
 npm test
 

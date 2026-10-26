@@ -1,5 +1,5 @@
 import { GraphQLError } from "graphql";
-import type { Article } from "@prisma/client";
+import type { Article } from "../generated/prisma/client.js";
 import { prisma } from "../lib/prisma.js";
 import { serializeDates } from "../lib/serialize.js";
 import { LIST_BOUNDS, clampWindow, type PageArgs } from "../lib/pagination.js";

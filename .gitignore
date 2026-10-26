@@ -16,7 +16,7 @@ frontend/dist/
 *.tsbuildinfo
 
 # Prisma generated client
-backend/node_modules/.prisma/
+backend/src/generated/
 
 # Stray SQLite databases (this project uses PostgreSQL)
 *.db

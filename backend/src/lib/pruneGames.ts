@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { Prisma } from "../generated/prisma/client.js";
 
 /**
  * Deletes those of `gameIds` left with no review. The rows are locked before the

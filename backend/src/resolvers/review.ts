@@ -1,5 +1,5 @@
 import { GraphQLError } from "graphql";
-import { Prisma, type Review } from "@prisma/client";
+import { Prisma, type Review } from "../generated/prisma/client.js";
 import { prisma } from "../lib/prisma.js";
 import { serializeDates } from "../lib/serialize.js";
 import {

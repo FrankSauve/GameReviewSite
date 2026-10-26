@@ -1,12 +1,13 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { Prisma } from "@prisma/client";
+import { getDMMF } from "@prisma/get-dmmf";
 import { prisma } from "../src/lib/prisma.js";
 
 /**
  * Asserts the migrated database matches schema.prisma where Prisma's own tools
  * do not look.
  *
- * `prisma migrate diff --to-schema-datamodel` — the drift check CI runs — emits
+ * `prisma migrate diff --to-schema` — the drift check CI runs — emits
  * and compares array columns as nullable even for a required String[], so a
  * migration that leaves Game.genres nullable reads as no drift. That is not
  * hypothetical: 20260830010000_labels_not_null existed to fix exactly it, and
@@ -36,8 +37,13 @@ describe("database constraints match schema.prisma", () => {
       ]),
     );
 
+    const dmmf = getDMMF({
+      datamodel: readFileSync("prisma/schema.prisma", "utf8"),
+    });
+    if ("error" in dmmf) throw dmmf.error;
+
     const mismatches: string[] = [];
-    for (const model of Prisma.dmmf.datamodel.models) {
+    for (const model of dmmf.datamodel.models) {
       const table = model.dbName ?? model.name;
       for (const field of model.fields) {
         // Relation fields are not columns; the scalar they read is checked on

@@ -1,7 +1,8 @@
-import type { User } from "@prisma/client";
+import type { User } from "../generated/prisma/client.js";
 import { prisma } from "./prisma.js";
 import { isProduction } from "../security.js";
 import { slugify, uniqueSlug } from "./slug.js";
+import { uniqueViolationTargets } from "./uniqueViolation.js";
 
 /**
  * Who a request is from. `uid` is the ID token's `sub` claim and the only field
@@ -36,17 +37,9 @@ function isUniqueViolation(err: unknown): boolean {
   return (err as { code?: string } | null)?.code === "P2002";
 }
 
-/**
- * Which unique field(s) a P2002 collided on. Postgres reports either the field
- * list or the index name, so match loosely.
- */
+/** Whether a P2002 collided on `field`. */
 function conflictsOn(err: unknown, field: string): boolean {
-  const target = (err as { meta?: { target?: unknown } } | null)?.meta?.target;
-  const names = Array.isArray(target)
-    ? target.map(String)
-    : typeof target === "string"
-      ? [target]
-      : [];
+  const names = uniqueViolationTargets(err) ?? [];
   // Nothing reported: assume every unique field is suspect, so the caller
   // applies both mitigations rather than retrying into the same failure.
   if (names.length === 0) return true;

@@ -1,5 +1,5 @@
 import { GraphQLError } from "graphql";
-import type { Game } from "@prisma/client";
+import type { Game } from "../generated/prisma/client.js";
 import { prisma } from "../lib/prisma.js";
 import { serializeDates } from "../lib/serialize.js";
 import {

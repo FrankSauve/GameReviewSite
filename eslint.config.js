@@ -13,6 +13,7 @@ export default tseslint.config(
       "**/dist/**",
       "**/node_modules/**",
       "backend/prisma/migrations/**",
+      "backend/src/generated/**",
       "frontend/tsconfig.tsbuildinfo",
     ],
   },

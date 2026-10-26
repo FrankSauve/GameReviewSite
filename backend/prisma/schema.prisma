@@ -1,13 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
-  // "native" resolves to the correct binary at generate time:
-  //   - macOS  → darwin-arm64 / darwin-x64  (local dev)
-  //   - Docker → linux-musl-openssl-3.0.x   (Alpine container)
+  provider            = "prisma-client"
+  output              = "../src/generated/prisma"
+  moduleFormat        = "esm"
+  importFileExtension = "js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model User {
