@@ -8,12 +8,13 @@
 
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["* 0-6 1 * *"],
+    "schedule": ["* 0-6 * * 0"],
     "automerge": true
   },
 
   "vulnerabilityAlerts": {
     "enabled": true,
+    "dependencyDashboardApproval": false,
     "labels": ["security"],
     "schedule": ["at any time"],
     "automerge": true
@@ -42,9 +43,10 @@
       "addLabels": ["needs-review"]
     },
     {
-      "description": "Majors are read by a human. They are where renames, dropped Node versions and changed defaults live.",
+      "description": "Majors are read by a human. They are where renames, dropped Node versions and changed defaults live. Each one is a migration, so it waits on the dependency dashboard until someone ticks it, rather than opening a PR that fails until the migration is written.",
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true,
       "automerge": false,
       "addLabels": ["needs-review"]
     },
