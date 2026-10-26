@@ -7,7 +7,8 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { MockedProvider, type MockedResponse } from "@apollo/client/testing";
+import type { MockLink } from "@apollo/client/testing";
+import { MockedProvider } from "@apollo/client/testing/react";
 import { ProfileBio } from "../src/components/ProfileBio";
 import { UPDATE_PROFILE } from "../src/graphql/mutations";
 
@@ -34,7 +35,7 @@ function updateMock(bio: string, result = bio) {
 
 function renderBio(
   props: { bio?: string | null; isOwnProfile: boolean },
-  mocks: readonly MockedResponse[] = [],
+  mocks: readonly MockLink.MockedResponse[] = [],
 ) {
   return render(
     <MockedProvider mocks={mocks}>

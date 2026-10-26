@@ -7,7 +7,8 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { MockedProvider, type MockedResponse } from "@apollo/client/testing";
+import type { MockLink } from "@apollo/client/testing";
+import { MockedProvider } from "@apollo/client/testing/react";
 import { AddReviewForm } from "../src/components/AddReviewForm";
 import { CREATE_REVIEW, GET_ME } from "../src/graphql/mutations";
 import { GET_USER_REVIEW_SUMMARIES } from "../src/graphql/queries";
@@ -126,7 +127,7 @@ function createMock(genre: string | null) {
   };
 }
 
-async function renderForm(extra: readonly MockedResponse[] = []) {
+async function renderForm(extra: readonly MockLink.MockedResponse[] = []) {
   const onSuccess = vi.fn();
   render(
     <MockedProvider mocks={[meMock, summariesMock, ...extra]}>

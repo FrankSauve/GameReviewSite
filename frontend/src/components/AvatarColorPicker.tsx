@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import { UPDATE_PROFILE } from "../graphql/mutations";
 import { useDismiss } from "../hooks/useDismiss";
 import {
@@ -10,6 +10,7 @@ import {
 } from "../lib/avatarColor";
 import { Avatar, type AvatarUser } from "./Avatar";
 import { AnchoredOverlay } from "./AnchoredOverlay";
+import { errorMessage } from "../lib/errorMessage";
 
 /** The owner's avatar, doubling as the swatch picker. Saves on pick. */
 export function AvatarColorPicker({ user }: { user: AvatarUser }) {
@@ -71,7 +72,7 @@ export function AvatarColorPicker({ user }: { user: AvatarUser }) {
           </div>
           {error && (
             <p className="text-danger-text text-micro mt-2 max-w-[12rem]">
-              {error.graphQLErrors[0]?.message ?? error.message}
+              {errorMessage(error)}
             </p>
           )}
         </AnchoredOverlay>

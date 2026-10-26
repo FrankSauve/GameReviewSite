@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { GET_USERS } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
 import { formatRating, ratingColor } from "../lib/rating";
@@ -18,6 +18,7 @@ interface ReviewerUser {
 export function ReviewersPage() {
   const { user: me } = useAuth();
   const { data, loading } = useQuery<{ users: ReviewerUser[] }>(GET_USERS);
+  const pending = loading && !data;
 
   const users = [...(data?.users ?? [])].sort(
     (a, b) => b.reviewCount - a.reviewCount,
@@ -27,14 +28,14 @@ export function ReviewersPage() {
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between">
         <h1 className="section-head text-title">Reviewers</h1>
-        {!loading && (
+        {!pending && (
           <span className="text-micro text-content-subtle">
             {users.length} {users.length === 1 ? "member" : "members"}
           </span>
         )}
       </div>
 
-      {loading && (
+      {pending && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <div
@@ -51,14 +52,14 @@ export function ReviewersPage() {
         </div>
       )}
 
-      {!loading && users.length === 0 && (
+      {!pending && users.length === 0 && (
         <div className="empty-state space-y-2">
           <p className="text-3xl">👥</p>
           <p className="text-content-muted">No users yet.</p>
         </div>
       )}
 
-      {!loading && users.length > 0 && (
+      {!pending && users.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {users.map((u) => {
             const reviewCount = u.reviewCount;

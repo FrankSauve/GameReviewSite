@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, useCallback, type RefObject } from "react";
-import { useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import { CLEAR_FAVORITE_GAME, SET_FAVORITE_GAME } from "../graphql/mutations";
 import { useDismiss } from "../hooks/useDismiss";
 import { GameCover } from "./GameCover";

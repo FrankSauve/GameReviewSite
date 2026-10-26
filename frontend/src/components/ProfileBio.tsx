@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import { UPDATE_PROFILE } from "../graphql/mutations";
 import { Markdown } from "./Markdown";
 import { MarkdownEditor } from "./MarkdownEditor";
+import { errorMessage } from "../lib/errorMessage";
 
 /** Matches `BIO_MAX` in `backend/src/resolvers/user.ts`, which enforces it. */
 export const BIO_MAX = 3000;
@@ -48,9 +49,7 @@ export function ProfileBio({ bio, isOwnProfile }: ProfileBioProps) {
           placeholder="How do you score games? What kind of player are you?"
         />
         {error && (
-          <p className="text-danger-text text-micro">
-            {error.graphQLErrors[0]?.message ?? error.message}
-          </p>
+          <p className="text-danger-text text-micro">{errorMessage(error)}</p>
         )}
         <div className="flex items-center gap-2">
           <button

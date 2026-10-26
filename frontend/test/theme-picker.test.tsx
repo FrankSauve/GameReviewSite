@@ -7,7 +7,8 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { MockedProvider, type MockedResponse } from "@apollo/client/testing";
+import type { MockLink } from "@apollo/client/testing";
+import { MockedProvider } from "@apollo/client/testing/react";
 import type { ReactNode } from "react";
 import { AuthProvider } from "../src/contexts/AuthContext";
 import { ThemeProvider } from "../src/contexts/ThemeContext";
@@ -25,11 +26,11 @@ afterEach(() => {
 
 function meMock(
   me: Record<string, unknown> | null,
-): MockedResponse<Record<string, unknown>> {
+): MockLink.MockedResponse<Record<string, unknown>> {
   return { request: { query: GET_ME }, result: { data: { me } } };
 }
 
-function renderPicker(mocks: MockedResponse[], children?: ReactNode) {
+function renderPicker(mocks: MockLink.MockedResponse[], children?: ReactNode) {
   return render(
     <MockedProvider mocks={mocks}>
       <AuthProvider>
@@ -126,7 +127,7 @@ describe("a signed-in account's look", () => {
   it("adopts the browser's choice when the account has none", async () => {
     localStorage.setItem(THEME_STORAGE_KEY, "editorial");
     let pushed: unknown = null;
-    const adopt: MockedResponse = {
+    const adopt: MockLink.MockedResponse = {
       request: {
         query: UPDATE_PROFILE,
         variables: { input: { theme: "editorial", palette: "midnight" } },

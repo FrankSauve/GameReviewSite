@@ -1,4 +1,4 @@
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { Link, useSearchParams } from "react-router-dom";
 import { GET_ARTICLES } from "../graphql/queries";
 import type { Article } from "../types";
@@ -37,6 +37,7 @@ export function ArticlesPage() {
   }>(GET_ARTICLES, {
     variables: { limit: PAGE_SIZE, offset: page * PAGE_SIZE },
   });
+  const pending = loading && !data;
 
   const articles = data?.articles ?? [];
   const total = data?.articlesCount ?? 0;
@@ -60,7 +61,7 @@ export function ArticlesPage() {
         )}
       </div>
 
-      {loading && (
+      {pending && (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="card p-card-pad animate-pulse space-y-3">
@@ -71,7 +72,7 @@ export function ArticlesPage() {
         </div>
       )}
 
-      {!loading && articles.length === 0 && (
+      {!pending && articles.length === 0 && (
         <div className="empty-state space-y-3">
           <p className="text-4xl">📜</p>
           <p className="text-content-muted font-medium">Nothing written yet</p>
@@ -81,7 +82,7 @@ export function ArticlesPage() {
         </div>
       )}
 
-      {!loading && articles.length > 0 && (
+      {!pending && articles.length > 0 && (
         <>
           <ul className="space-y-3">
             {articles.map((article) => (

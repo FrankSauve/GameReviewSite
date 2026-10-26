@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from "react";
-import { useLazyQuery } from "@apollo/client";
+import { useLazyQuery } from "@apollo/client/react";
 import { useNavigate } from "react-router-dom";
 import { SEARCH_GAMES } from "../graphql/queries";
 import type { Game } from "../types";

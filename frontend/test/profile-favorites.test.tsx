@@ -12,7 +12,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 /** See profile-views.test.tsx: vitest runs without globals, so RTL registers none. */
 afterEach(cleanup);
 
-import { MockedProvider } from "@apollo/client/testing";
+import { MockedProvider } from "@apollo/client/testing/react";
 import { AuthProvider } from "../src/contexts/AuthContext";
 import { GET_ME } from "../src/graphql/mutations";
 import {

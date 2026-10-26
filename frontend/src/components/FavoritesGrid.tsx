@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { GET_USER_FAVORITES } from "../graphql/queries";
 import { FAVORITE_CATEGORIES } from "../lib/favoriteCategories";
 import type { PickableGame } from "../lib/favorites";

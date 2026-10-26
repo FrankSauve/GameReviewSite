@@ -1,4 +1,4 @@
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { useSearchParams } from "react-router-dom";
 import { GET_GAMES, GET_GAME_FACETS, GET_USERS } from "../graphql/queries";
 import type { Game, User } from "../types";

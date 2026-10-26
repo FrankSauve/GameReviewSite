@@ -1,5 +1,5 @@
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { GET_RAWG_GAME } from "../graphql/queries";
 import type { ExternalGame } from "../types";
 import { gamePath } from "../lib/links";

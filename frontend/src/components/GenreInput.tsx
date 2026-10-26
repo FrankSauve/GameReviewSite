@@ -1,5 +1,5 @@
 import { useId } from "react";
-import { useQuery } from "@apollo/client";
+import { useQuery } from "@apollo/client/react";
 import { GET_USER_REVIEW_SUMMARIES } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
 import {

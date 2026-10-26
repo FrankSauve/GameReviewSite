@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { MockedProvider } from "@apollo/client/testing";
+import { MockedProvider } from "@apollo/client/testing/react";
 import { GET_RAWG_GAME } from "../src/graphql/queries";
 import { GET_ME } from "../src/graphql/mutations";
 import { AuthProvider } from "../src/contexts/AuthContext";

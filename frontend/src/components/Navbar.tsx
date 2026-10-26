@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useApolloClient } from "@apollo/client";
+import { useApolloClient } from "@apollo/client/react";
 import { useAuth } from "../contexts/AuthContext";
 import { GameSearchBar } from "./GameSearchBar";
 import { AddGameButton } from "./AddGameButton";

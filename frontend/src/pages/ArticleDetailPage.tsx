@@ -1,4 +1,4 @@
-import { useQuery, useMutation } from "@apollo/client";
+import { useQuery, useMutation } from "@apollo/client/react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { GET_ARTICLE } from "../graphql/queries";
 import { DELETE_ARTICLE } from "../graphql/mutations";
@@ -34,7 +34,7 @@ export function ArticleDetailPage() {
     onCompleted: () => void navigate("/articles"),
   });
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <div className="card p-card-pad sm:p-8 animate-pulse space-y-4 page-column">
         <div className="h-6 skeleton-bar w-2/3" />
