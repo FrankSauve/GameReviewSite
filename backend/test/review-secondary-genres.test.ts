@@ -133,10 +133,13 @@ describe("the secondary genres a reviewer adds to a review", () => {
       expect(res.data?.updateReview.secondaryGenres).toEqual(["Horror"]);
     });
 
-    it("clears them on an empty list", async () => {
-      const { id } = await review("Action", ["Horror"]);
-      const res = await update(id, { secondaryGenres: [] });
-      expect(res.data?.updateReview.secondaryGenres).toEqual([]);
+    it("clears them on an empty list or an explicit null", async () => {
+      for (const secondaryGenres of [[], null]) {
+        await resetDatabase();
+        const { id } = await review("Action", ["Horror"]);
+        const res = await update(id, { secondaryGenres });
+        expect(res.data?.updateReview.secondaryGenres).toEqual([]);
+      }
     });
 
     it("drops one the new genre now repeats", async () => {

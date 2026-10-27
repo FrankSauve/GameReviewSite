@@ -181,10 +181,12 @@ function rarestShared(
  * Groups by genre, one group per review, most games first, ties by name, with
  * "No genre" last.
  */
-export function groupByGenre(reviews: ReviewSummary[]): ReviewGroup[] {
+export function groupByGenre(
+  reviews: ReviewSummary[],
+  genreFor = genrePicker(reviews),
+): ReviewGroup[] {
   // Case-insensitive, because genres are free text: "RPG" and "rpg" are one
   // group. Its name is the commonest spelling, so re-scoring a game cannot rename it.
-  const genreFor = genrePicker(reviews);
   const byGenre = new Map<
     string,
     { spellings: Map<string, number>; items: ReviewSummary[] }
@@ -312,15 +314,19 @@ export function genreFilterOptions(reviews: ReviewSummary[]): string[] {
 
 export type Grouping = "year" | "score" | "genre" | "recent";
 
+/** Groups the reviews matching `genre` (all of them when blank). */
 export function groupReviews(
   reviews: ReviewSummary[],
   grouping: Grouping,
+  genre = "",
 ): ReviewGroup[] {
-  if (grouping === "year") return groupByYear(reviews);
-  if (grouping === "score") return groupByScore(reviews);
-  if (grouping === "genre") return groupByGenre(reviews);
+  const shown = filterByGenre(reviews, genre);
+  if (grouping === "year") return groupByYear(shown);
+  if (grouping === "score") return groupByScore(shown);
+  // Picked over every review, or a filtered one can change heading.
+  if (grouping === "genre") return groupByGenre(shown, genrePicker(reviews));
   // Recent is one undivided list; the server has already ordered it.
-  return reviews.length ? [toGroup("recent", "", reviews)] : [];
+  return shown.length ? [toGroup("recent", "", shown)] : [];
 }
 
 /** The server ordering each grouping needs. */

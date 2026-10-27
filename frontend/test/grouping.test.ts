@@ -413,6 +413,20 @@ describe("groupReviews", () => {
     ).toEqual(["RPG"]);
   });
 
+  it("keeps a filtered review under its unfiltered genre heading", () => {
+    // Unfiled. RPG is rarer than Action among all four, but not among the two filed under it.
+    const rows = [
+      withGenres(9, ["Action", "RPG"]),
+      withGenres(8, ["Action", "RPG"]),
+      withGenres(7, ["Action"]),
+      withGenres(6, ["Action"]),
+    ];
+    const heading = (genre: string) =>
+      groupReviews(rows, "genre", genre).map((g) => [g.label, g.items.length]);
+    expect(heading("")).toContainEqual(["RPG", 2]);
+    expect(heading("rpg")).toEqual([["RPG", 2]]);
+  });
+
   it("dispatches to the year and score groupings", () => {
     const rows = [review(8, 2015), review(10, 2024)];
     expect(groupReviews(rows, "year").map((g) => g.label)).toEqual([

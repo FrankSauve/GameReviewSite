@@ -19,7 +19,7 @@ interface GenreInputProps {
 export function GenreInput({
   value,
   onChange,
-  gameGenres = [],
+  gameGenres,
   size = "md",
 }: GenreInputProps) {
   const id = useId();

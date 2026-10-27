@@ -14,8 +14,10 @@ interface SecondaryGenresInputProps {
   size?: "sm" | "md";
 }
 
+/** As validateSecondaryGenres in backend/src/lib/labels.ts, which is authoritative. */
+const normalise = (genre: string) => genre.replace(/\s+/g, " ").trim();
 const sameGenre = (a: string, b: string) =>
-  a.trim().toLowerCase() === b.trim().toLowerCase();
+  normalise(a).toLowerCase() === normalise(b).toLowerCase();
 
 /**
  * More genres to filter the profile by, never to group it by. Added on Enter,
@@ -25,22 +27,25 @@ export function SecondaryGenresInput({
   value,
   onChange,
   genre,
-  gameGenres = [],
+  gameGenres,
   size = "md",
 }: SecondaryGenresInputProps) {
   const id = useId();
   const listId = useId();
   const [draft, setDraft] = useState("");
-  const full = value.length >= MAX_SECONDARY_GENRES;
+  // Hidden rather than removed: the server drops one the genre repeats, and
+  // changing the genre back brings it back.
+  const shown = value.filter((v) => !sameGenre(v, genre));
+  const full = shown.length >= MAX_SECONDARY_GENRES;
   const suggestions = useGenreSuggestions(gameGenres).filter(
-    (s) => !sameGenre(s, genre) && !value.some((v) => sameGenre(s, v)),
+    (s) => !sameGenre(s, genre) && !shown.some((v) => sameGenre(s, v)),
   );
 
   /** Adds each of `texts` that is new, then leaves `rest` in the field. */
   const commit = (texts: string[], rest = "") => {
-    const next = [...value];
+    const next = [...shown];
     for (const text of texts) {
-      const added = text.replace(/\s+/g, " ").trim();
+      const added = normalise(text);
       if (
         added &&
         next.length < MAX_SECONDARY_GENRES &&
@@ -50,7 +55,7 @@ export function SecondaryGenresInput({
         next.push(added);
     }
     setDraft(rest);
-    if (next.length !== value.length) onChange(next);
+    if (next.length !== shown.length) onChange(next);
   };
 
   const label =
@@ -63,12 +68,12 @@ export function SecondaryGenresInput({
       <label htmlFor={id} className={`block font-medium mb-1.5 ${label}`}>
         Other genres{" "}
         <span className="text-content-subtle font-normal">
-          {value.length}/{MAX_SECONDARY_GENRES}
+          {shown.length}/{MAX_SECONDARY_GENRES}
         </span>
       </label>
-      {value.length > 0 && (
+      {shown.length > 0 && (
         <ul className="flex flex-wrap gap-1 mb-1.5">
-          {value.map((g) => (
+          {shown.map((g) => (
             <li
               key={g}
               className="text-micro font-medium bg-surface-raised text-content-body pl-2 pr-1 py-0.5 rounded-pill border border-line-strong flex items-center gap-1"
@@ -76,7 +81,7 @@ export function SecondaryGenresInput({
               {g}
               <button
                 type="button"
-                onClick={() => onChange(value.filter((v) => v !== g))}
+                onClick={() => onChange(shown.filter((v) => v !== g))}
                 aria-label={`Remove ${g}`}
                 className="text-content-subtle hover:text-content px-1"
               >

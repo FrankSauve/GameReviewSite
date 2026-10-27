@@ -273,9 +273,11 @@ export const reviewResolvers = {
           : null;
       if (input.genre !== undefined) data.genre = validateGenre(input.genre);
       // Rechecked when only the genre changes, so it cannot come to repeat one.
-      if (input.genre !== undefined || input.secondaryGenres != null)
+      if (input.genre !== undefined || input.secondaryGenres !== undefined)
         data.secondaryGenres = validateSecondaryGenres(
-          input.secondaryGenres ?? existing.secondaryGenres,
+          input.secondaryGenres === undefined
+            ? existing.secondaryGenres
+            : (input.secondaryGenres ?? []),
           data.genre === undefined ? existing.genre : data.genre,
         );
       const review = await prisma.review.update({

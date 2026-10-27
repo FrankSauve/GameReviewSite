@@ -209,6 +209,18 @@ describe("adding secondary genres to a review", () => {
     expect(field().disabled).toBe(true);
   });
 
+  it("hides one the genre comes to repeat, and frees its place", async () => {
+    await renderForm();
+    type("Horror,b,c,d,e,");
+    expect(field().disabled).toBe(true);
+    const genre = screen.getByLabelText("Genre");
+    fireEvent.change(genre, { target: { value: "horror" } });
+    expect(chips()).toEqual(["b", "c", "d", "e"]);
+    expect(field().disabled).toBe(false);
+    fireEvent.change(genre, { target: { value: "Action" } });
+    expect(chips()).toEqual(["Horror", "b", "c", "d", "e"]);
+  });
+
   it("removes one", async () => {
     await renderForm();
     type("Horror,Shooter,");

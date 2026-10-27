@@ -211,7 +211,7 @@ export const typeDefs = `#graphql
   }
 
   # An explicit null on platform or genre clears it; omitting it leaves it alone.
-  # An empty secondaryGenres clears them.
+  # An explicit null or an empty list on secondaryGenres clears them.
   input UpdateReviewInput {
     rating: Float
     content: String

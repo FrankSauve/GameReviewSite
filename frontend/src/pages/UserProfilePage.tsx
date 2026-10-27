@@ -6,7 +6,6 @@ import { formatRating, ratingColor } from "../lib/rating";
 import { formatHours } from "../lib/playtime";
 import {
   ORDER_FOR,
-  filterByGenre,
   genreFilterOptions,
   groupReviews,
   type Grouping,
@@ -116,8 +115,13 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
   const selectedGenre =
     genreOptions.find((g) => g.toLowerCase() === genreFilter.toLowerCase()) ??
     genreFilter;
-  const groups = groupReviews(filterByGenre(reviews, genreFilter), grouping);
-  const setGenreFilter = (genre: string) => setParams(genre ? { genre } : {});
+  const groups = groupReviews(reviews, grouping, genreFilter);
+  const setGenreFilter = (genre: string) => {
+    const next = new URLSearchParams(params);
+    if (genre) next.set("genre", genre);
+    else next.delete("genre");
+    setParams(next);
+  };
   const isOwnProfile = me?.id === profile.id;
 
   const totalHours = reviews

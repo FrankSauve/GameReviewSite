@@ -50,6 +50,8 @@ export function validateGenre(value: string | null): string | null {
 /**
  * A review's secondary genres, held to the same rules as its genre. One that
  * repeats the genre is dropped, so a filter never counts a review twice.
+ * Mirrored by commit() in frontend/src/components/SecondaryGenresInput.tsx;
+ * this copy is authoritative.
  */
 export function validateSecondaryGenres(
   values: string[],
