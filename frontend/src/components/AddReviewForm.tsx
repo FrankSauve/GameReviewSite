@@ -8,6 +8,7 @@ import { RatingInput } from "./RatingInput";
 import { PlaytimeInput } from "./PlaytimeInput";
 import { PlatformSelect } from "./PlatformSelect";
 import { GenreInput } from "./GenreInput";
+import { SecondaryGenresInput } from "./SecondaryGenresInput";
 import { DEFAULT_PLATFORM } from "../lib/platforms";
 import { MarkdownEditor } from "./MarkdownEditor";
 import { errorMessage } from "../lib/errorMessage";
@@ -38,6 +39,7 @@ export function AddReviewForm({
   const [hoursPlayed, setHoursPlayed] = useState("");
   const [platform, setPlatform] = useState(DEFAULT_PLATFORM);
   const [genre, setGenre] = useState("");
+  const [secondaryGenres, setSecondaryGenres] = useState<string[]>([]);
 
   const [createReview, { loading, error }] = useMutation<CreateReviewResult>(
     CREATE_REVIEW,
@@ -63,6 +65,7 @@ export function AddReviewForm({
         setHoursPlayed("");
         setPlatform(DEFAULT_PLATFORM);
         setGenre("");
+        setSecondaryGenres([]);
         onSuccess?.(data.createReview.game);
       },
     },
@@ -100,6 +103,7 @@ export function AddReviewForm({
           hoursPlayed: snapHours(hours),
           platform: platform || null,
           genre: genre.trim() || null,
+          secondaryGenres,
         },
       },
     });
@@ -124,6 +128,13 @@ export function AddReviewForm({
       <PlatformSelect value={platform} onChange={setPlatform} />
 
       <GenreInput value={genre} onChange={setGenre} gameGenres={gameGenres} />
+
+      <SecondaryGenresInput
+        value={secondaryGenres}
+        onChange={setSecondaryGenres}
+        genre={genre}
+        gameGenres={gameGenres}
+      />
 
       <div>
         <label htmlFor={bodyId} className="field-label text-body">

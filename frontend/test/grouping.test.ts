@@ -349,6 +349,25 @@ describe("genreSuggestions", () => {
       "Action",
     ]);
   });
+
+  it("offers secondary genres after the headings, most used first, before the game's", () => {
+    const rows = [
+      { ...withGenres(9, []), genre: "Action", secondaryGenres: ["Horror"] },
+      {
+        ...withGenres(8, []),
+        genre: "Shooter",
+        secondaryGenres: ["horror", "Open World", "action"],
+      },
+      { ...withGenres(7, []), secondaryGenres: ["Horror"] },
+    ];
+    expect(genreSuggestions(rows, ["Puzzle", "open world"])).toEqual([
+      "Action",
+      "Shooter",
+      "Horror",
+      "Open World",
+      "Puzzle",
+    ]);
+  });
 });
 
 describe("group totals", () => {

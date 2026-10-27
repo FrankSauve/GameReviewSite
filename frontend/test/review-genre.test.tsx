@@ -41,6 +41,7 @@ const filedAs = (id: string, genre: string) => ({
   slug: `alice/${id}`,
   rating: 8,
   genre,
+  secondaryGenres: [],
   yearPlayed: 2024,
   hoursPlayed: 12,
   createdAt: "2026-01-01T00:00:00.000Z",
@@ -96,6 +97,7 @@ function createMock(genre: string | null) {
           hoursPlayed: 12,
           platform: "PC",
           genre,
+          secondaryGenres: [],
         },
       },
     },
@@ -111,6 +113,7 @@ function createMock(genre: string | null) {
           hoursPlayed: 12,
           platform: "PC",
           genre,
+          secondaryGenres: [],
           createdAt: "2026-01-01T00:00:00.000Z",
           user: {
             __typename: "User",

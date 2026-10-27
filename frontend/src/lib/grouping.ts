@@ -10,6 +10,8 @@ export interface ReviewSummary {
   commentCount: number;
   /** The reviewer's own choice of genre, which wins over the game's. */
   genre?: string | null;
+  /** Filtered by, never grouped by. */
+  secondaryGenres?: string[];
   game?: {
     id: string;
     slug?: string | null;
@@ -219,9 +221,31 @@ export function groupByGenre(reviews: ReviewSummary[]): ReviewGroup[] {
   return groups;
 }
 
+/** One per genre ignoring case, in its commonest spelling, commonest first then by name. */
+function rankGenres(genres: string[]): string[] {
+  const byKey = new Map<string, Map<string, number>>();
+  for (const genre of genres) {
+    const key = genre.toLowerCase();
+    let spellings = byKey.get(key);
+    if (!spellings) {
+      spellings = new Map();
+      byKey.set(key, spellings);
+    }
+    spellings.set(genre, (spellings.get(genre) ?? 0) + 1);
+  }
+  return [...byKey.values()]
+    .map((spellings) => ({
+      label: commonestSpelling(spellings),
+      count: [...spellings.values()].reduce((sum, n) => sum + n, 0),
+    }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+    .map(({ label }) => label);
+}
+
 /**
  * What the review form offers: the reviewer's genre headings, biggest first,
- * spelled as the profile spells them, then the game's genres not among them.
+ * spelled as the profile spells them, then their secondary genres, then the
+ * game's genres not among them.
  */
 export function genreSuggestions(
   reviews: ReviewSummary[],
@@ -232,7 +256,11 @@ export function genreSuggestions(
     .map((group) => group.label);
   // Once per genre ignoring case: a game's genres can repeat, and the datalist keys on them.
   const taken = new Set<string>();
-  return [...headings, ...gameGenres].filter((genre) => {
+  return [
+    ...headings,
+    ...rankGenres(reviews.flatMap((r) => r.secondaryGenres ?? [])),
+    ...gameGenres,
+  ].filter((genre) => {
     const key = genre.toLowerCase();
     if (taken.has(key)) return false;
     taken.add(key);

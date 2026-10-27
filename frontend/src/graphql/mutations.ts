@@ -11,6 +11,7 @@ export const CREATE_REVIEW = gql`
       hoursPlayed
       platform
       genre
+      secondaryGenres
       createdAt
       user {
         id
@@ -81,6 +82,7 @@ export const UPDATE_REVIEW = gql`
       hoursPlayed
       platform
       genre
+      secondaryGenres
     }
   }
 `;

@@ -15,6 +15,8 @@ import { RatingInput } from "../components/RatingInput";
 import { PlaytimeInput } from "../components/PlaytimeInput";
 import { PlatformSelect } from "../components/PlatformSelect";
 import { GenreInput } from "../components/GenreInput";
+import { LabelChips } from "../components/LabelChips";
+import { SecondaryGenresInput } from "../components/SecondaryGenresInput";
 import { Markdown } from "../components/Markdown";
 import { ReactionBar } from "../components/ReactionBar";
 import type { ReactionSummary } from "../types";
@@ -56,6 +58,7 @@ interface ReviewDetail {
   hoursPlayed?: number | null;
   platform?: string | null;
   genre?: string | null;
+  secondaryGenres?: string[];
   user?: CommentUser | null;
   game?: ReviewGame | null;
   comments?: ReviewComment[];
@@ -129,6 +132,7 @@ export function ReviewDetailPage() {
   const [editHours, setEditHours] = useState("");
   const [editPlatform, setEditPlatform] = useState("");
   const [editGenre, setEditGenre] = useState("");
+  const [editSecondaryGenres, setEditSecondaryGenres] = useState<string[]>([]);
   const [newComment, setNewComment] = useState("");
 
   if (loading && !data) {
@@ -174,6 +178,7 @@ export function ReviewDetailPage() {
     setEditHours(review.hoursPlayed != null ? String(review.hoursPlayed) : "");
     setEditPlatform(review.platform ?? "");
     setEditGenre(review.genre ?? "");
+    setEditSecondaryGenres(review.secondaryGenres ?? []);
     setEditing(true);
   };
 
@@ -195,6 +200,7 @@ export function ReviewDetailPage() {
           hoursPlayed: snapHours(editHoursNum),
           platform: editPlatform || null,
           genre: editGenre.trim() || null,
+          secondaryGenres: editSecondaryGenres,
         },
       },
     });
@@ -283,7 +289,9 @@ export function ReviewDetailPage() {
                   {timeAgo(review.createdAt)}
                   {playtime && <span> · played {playtime}</span>}
                 </p>
-                {(review.platform || review.genre) && (
+                {(review.platform ||
+                  review.genre ||
+                  (review.secondaryGenres?.length ?? 0) > 0) && (
                   <div className="flex flex-wrap gap-1 mt-1">
                     {review.platform && (
                       <span className={TAG}>{review.platform}</span>
@@ -291,6 +299,10 @@ export function ReviewDetailPage() {
                     {review.genre && (
                       <span className={TAG}>{review.genre}</span>
                     )}
+                    <LabelChips
+                      labels={review.secondaryGenres}
+                      className={TAG}
+                    />
                   </div>
                 )}
               </div>
@@ -365,6 +377,13 @@ export function ReviewDetailPage() {
               <GenreInput
                 value={editGenre}
                 onChange={setEditGenre}
+                gameGenres={game?.genres}
+                size="sm"
+              />
+              <SecondaryGenresInput
+                value={editSecondaryGenres}
+                onChange={setEditSecondaryGenres}
+                genre={editGenre}
                 gameGenres={game?.genres}
                 size="sm"
               />
