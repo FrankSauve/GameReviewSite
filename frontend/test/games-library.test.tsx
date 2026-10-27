@@ -49,6 +49,12 @@ function listMock(vars: Record<string, unknown>, first: number, total = TOTAL) {
   };
 }
 
+/** The genre menu's options, which arrive with their own query, not the list's. */
+function genreOptions(): string[] {
+  const menu = screen.getByLabelText("Genre") as HTMLSelectElement;
+  return [...menu.options].map((o) => o.value);
+}
+
 const pageMock = (page: number) =>
   listMock({ offset: page * PAGE_SIZE }, page * PAGE_SIZE + 1);
 
@@ -157,9 +163,7 @@ describe("the games library page", () => {
 
   it("offers the catalogue's own genres in the filter menu", async () => {
     renderAt("/games");
-    await waitFor(() => expect(screen.getByText("Game 1")).toBeTruthy());
-    const genre = screen.getByLabelText("Genre") as HTMLSelectElement;
-    expect([...genre.options].map((o) => o.value)).toEqual(["", "FPS", "RPG"]);
+    await waitFor(() => expect(genreOptions()).toEqual(["", "FPS", "RPG"]));
   });
 
   /** The catalogue no longer records platforms; a review does. */
@@ -176,6 +180,8 @@ describe("the games library page", () => {
   it("returns to page one when a filter changes", async () => {
     renderAt("/games?page=3", [listMock({ genre: "RPG" }, 301)]);
     await waitFor(() => expect(screen.getByText("Game 49")).toBeTruthy());
+    // The menu's options load apart from the list; choosing one not there yet changes nothing.
+    await waitFor(() => expect(genreOptions()).toContain("RPG"));
     fireEvent.change(screen.getByLabelText("Genre"), {
       target: { value: "RPG" },
     });
