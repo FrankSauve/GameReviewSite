@@ -46,6 +46,8 @@ interface ReviewGame {
   coverUrl?: string | null;
   releaseYear?: number | null;
   genres?: string[];
+  communityGenres?: string[];
+  communitySecondaryGenres?: string[];
   reviewCount?: number | null;
 }
 interface ReviewDetail {
@@ -378,6 +380,9 @@ export function ReviewDetailPage() {
                 value={editGenre}
                 onChange={setEditGenre}
                 gameGenres={game?.genres}
+                communityGenres={game?.communityGenres}
+                communitySecondaryGenres={game?.communitySecondaryGenres}
+                editing
                 size="sm"
               />
               <SecondaryGenresInput
@@ -385,6 +390,8 @@ export function ReviewDetailPage() {
                 onChange={setEditSecondaryGenres}
                 genre={editGenre}
                 gameGenres={game?.genres}
+                communityGenres={game?.communityGenres}
+                communitySecondaryGenres={game?.communitySecondaryGenres}
                 size="sm"
               />
               <MarkdownEditor

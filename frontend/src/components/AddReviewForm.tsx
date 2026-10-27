@@ -17,6 +17,8 @@ interface AddReviewFormProps {
   /** A game in the library, or a RAWG title its first review will add. */
   target: { gameId: string } | { rawgId: string };
   gameGenres?: string[] | undefined;
+  communityGenres?: string[] | undefined;
+  communitySecondaryGenres?: string[] | undefined;
   onSuccess?: (game: { id: string; slug?: string | null }) => void;
 }
 
@@ -29,6 +31,8 @@ const DEFAULT_RATING = 8;
 export function AddReviewForm({
   target,
   gameGenres,
+  communityGenres,
+  communitySecondaryGenres,
   onSuccess,
 }: AddReviewFormProps) {
   const { user, signIn } = useAuth();
@@ -127,13 +131,21 @@ export function AddReviewForm({
 
       <PlatformSelect value={platform} onChange={setPlatform} />
 
-      <GenreInput value={genre} onChange={setGenre} gameGenres={gameGenres} />
+      <GenreInput
+        value={genre}
+        onChange={setGenre}
+        gameGenres={gameGenres}
+        communityGenres={communityGenres}
+        communitySecondaryGenres={communitySecondaryGenres}
+      />
 
       <SecondaryGenresInput
         value={secondaryGenres}
         onChange={setSecondaryGenres}
         genre={genre}
         gameGenres={gameGenres}
+        communityGenres={communityGenres}
+        communitySecondaryGenres={communitySecondaryGenres}
       />
 
       <div>

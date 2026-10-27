@@ -10,6 +10,7 @@ import {
 import type { MockLink } from "@apollo/client/testing";
 import { MockedProvider } from "@apollo/client/testing/react";
 import { AddReviewForm } from "../src/components/AddReviewForm";
+import { GenreInput } from "../src/components/GenreInput";
 import { CREATE_REVIEW, GET_ME } from "../src/graphql/mutations";
 import { GET_USER_REVIEW_SUMMARIES } from "../src/graphql/queries";
 import { AuthProvider } from "../src/contexts/AuthContext";
@@ -131,7 +132,10 @@ function createMock(genre: string | null) {
   };
 }
 
-async function renderForm(extra: readonly MockLink.MockedResponse[] = []) {
+async function renderForm(
+  extra: readonly MockLink.MockedResponse[] = [],
+  communityGenres?: string[],
+) {
   const onSuccess = vi.fn();
   render(
     <MockedProvider mocks={[meMock, summariesMock, ...extra]}>
@@ -139,6 +143,7 @@ async function renderForm(extra: readonly MockLink.MockedResponse[] = []) {
         <AddReviewForm
           target={{ gameId: "g1" }}
           gameGenres={["Action", "rpg", "Platformer"]}
+          communityGenres={communityGenres}
           onSuccess={onSuccess}
         />
       </AuthProvider>
@@ -191,5 +196,55 @@ describe("choosing the genre a review is filed under", () => {
     fillBody();
     fireEvent.click(screen.getByRole("button", { name: "Submit Review" }));
     await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+  });
+});
+
+describe("the genres other reviewers filed the game under", () => {
+  it("suggests them first, in the reviewer's spelling of one they use", async () => {
+    await renderForm([], ["Roguelike", "rpg"]);
+    await waitFor(() =>
+      expect(suggestions()).toEqual([
+        "Roguelike",
+        "RPG",
+        "Metroidvania",
+        "Action",
+        "Platformer",
+      ]),
+    );
+  });
+
+  it("names the one a blank genre falls back to", async () => {
+    await renderForm([], ["Roguelike"]);
+    expect(
+      screen.getByPlaceholderText(
+        "Blank files it under Roguelike, as others did",
+      ),
+    ).toBeTruthy();
+  });
+
+  /** Filled in, it would read as the reviewer's own choice and be saved as one. */
+  it("still sends null when left blank", async () => {
+    const onSuccess = await renderForm([createMock(null)], ["Roguelike"]);
+    fillBody();
+    fireEvent.click(screen.getByRole("button", { name: "Submit Review" }));
+    await waitFor(() => expect(onSuccess).toHaveBeenCalled());
+  });
+
+  it("promises no fallback on an edit, where it may be the review's own", async () => {
+    render(
+      <MockedProvider mocks={[meMock, summariesMock]}>
+        <AuthProvider>
+          <GenreInput
+            value=""
+            onChange={() => {}}
+            communityGenres={["Roguelike"]}
+            editing
+          />
+        </AuthProvider>
+      </MockedProvider>,
+    );
+    expect(
+      screen.getByPlaceholderText("Blank uses the game's genres"),
+    ).toBeTruthy();
   });
 });

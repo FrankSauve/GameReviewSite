@@ -259,23 +259,44 @@ function rankGenres(genres: string[]): string[] {
     .map(({ label }) => label);
 }
 
+/** What other reviewers filed one game under, commonest first. */
+export interface CommunityGenres {
+  genres: string[];
+  secondaryGenres: string[];
+}
+
+const NO_COMMUNITY_GENRES: CommunityGenres = {
+  genres: [],
+  secondaryGenres: [],
+};
+
 /**
- * What the review form offers: the reviewer's genre headings, biggest first,
- * spelled as the profile spells them, then their secondary genres, then the
- * game's genres not among them.
+ * What the review form offers: the genres others filed the game under, then the
+ * reviewer's headings biggest first, their secondary genres, the others'
+ * secondary genres, and the game's own. A genre the reviewer already uses keeps
+ * the profile's spelling of it.
  */
 export function genreSuggestions(
   reviews: ReviewSummary[],
   gameGenres: string[],
+  community: CommunityGenres = NO_COMMUNITY_GENRES,
 ): string[] {
   const headings = groupByGenre(reviews)
     .filter((group) => group.key !== UNKNOWN_KEY)
     .map((group) => group.label);
+  const secondary = rankGenres(reviews.flatMap((r) => r.secondaryGenres ?? []));
+  // Headings last, so their spelling wins over a secondary genre's.
+  const theirs = new Map(
+    [...secondary, ...headings].map((genre) => [genre.toLowerCase(), genre]),
+  );
+  const spell = (genre: string) => theirs.get(genre.toLowerCase()) ?? genre;
   // Once per genre ignoring case: a game's genres can repeat, and the datalist keys on them.
   const taken = new Set<string>();
   return [
+    ...community.genres.map(spell),
     ...headings,
-    ...rankGenres(reviews.flatMap((r) => r.secondaryGenres ?? [])),
+    ...secondary,
+    ...community.secondaryGenres.map(spell),
     ...gameGenres,
   ].filter((genre) => {
     const key = genre.toLowerCase();

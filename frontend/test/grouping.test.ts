@@ -440,6 +440,25 @@ describe("genreSuggestions", () => {
       "Puzzle",
     ]);
   });
+
+  it("offers the genres others filed the game under first", () => {
+    const rows = [
+      { ...withGenres(9, []), genre: "RPG", secondaryGenres: ["Story"] },
+    ];
+    expect(
+      genreSuggestions(rows, ["Action"], {
+        genres: ["Horror", "Shooter"],
+        secondaryGenres: ["Atmospheric"],
+      }),
+    ).toEqual(["Horror", "Shooter", "RPG", "Story", "Atmospheric", "Action"]);
+  });
+
+  it("spells a community genre as the reviewer's heading of it", () => {
+    const rows = [{ ...withGenres(9, []), genre: "Rpg" }];
+    expect(
+      genreSuggestions(rows, [], { genres: ["RPG"], secondaryGenres: [] }),
+    ).toEqual(["Rpg"]);
+  });
 });
 
 describe("group totals", () => {
