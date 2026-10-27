@@ -19,6 +19,8 @@ export interface ReviewSummary {
     coverUrl?: string | null;
     releaseYear?: number | null;
     genres?: string[];
+    /** What other reviewers filed the game under, commonest first. */
+    communityGenres?: string[];
   } | null;
 }
 
@@ -127,9 +129,15 @@ function tallyInto(tally: Map<string, number>, genres: string[]): void {
 /** A fallback must be among this many games' genres, which keeps most headings off a single row. */
 const MIN_FALLBACK_GROUP = 2;
 
+/** The genre other reviewers filed the game under, for a review its author left unfiled. */
+function communityGenre(review: ReviewSummary): string | undefined {
+  return review.game?.communityGenres?.[0]?.trim() || undefined;
+}
+
 /**
- * Picks the one genre each review is filed under. Only games the reviewer has
- * not filed themselves count towards a fallback's rarity.
+ * Picks the one genre each review is filed under: the reviewer's own, then the
+ * game's community genre, then RAWG's. Only games that reach RAWG count towards
+ * its rarity, and a community genre is not the reviewer's filing, so it skips no floor.
  */
 function genrePicker(
   reviews: ReviewSummary[],
@@ -139,12 +147,15 @@ function genrePicker(
   for (const review of reviews) {
     const own = review.genre?.trim();
     if (own) tallyInto(chosen, [own]);
-    else tallyInto(unfiled, review.game?.genres ?? []);
+    else if (!communityGenre(review))
+      tallyInto(unfiled, review.game?.genres ?? []);
   }
 
   return (review) => {
     const own = review.genre?.trim();
     if (own) return own;
+    const community = communityGenre(review);
+    if (community) return community;
     const genres = review.game?.genres ?? [];
     return rarestShared(genres, chosen, unfiled) ?? genres[0] ?? null;
   };

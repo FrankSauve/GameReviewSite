@@ -54,6 +54,7 @@ const filedAs = (id: string, genre: string) => ({
     coverUrl: null,
     releaseYear: 2015,
     genres: [],
+    communityGenres: [],
   },
 });
 

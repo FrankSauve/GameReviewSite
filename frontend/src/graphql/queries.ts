@@ -282,6 +282,7 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
         coverUrl
         releaseYear
         genres
+        communityGenres
       }
     }
   }
