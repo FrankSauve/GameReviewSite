@@ -8,9 +8,11 @@ import {
   type ReviewSummary,
 } from "../lib/grouping";
 
-/** The genres the review form offers for the signed-in reviewer, theirs first. */
+/** The genres the review form offers the signed-in reviewer for one game. */
 export function useGenreSuggestions(
   gameGenres: string[] | undefined,
+  communityGenres: string[] | undefined,
+  communitySecondaryGenres: string[] | undefined,
 ): string[] {
   const { user } = useAuth();
   // The profile's own by-genre query, so a suggestion is spelled as its heading.
@@ -25,7 +27,11 @@ export function useGenreSuggestions(
   );
   const reviews = data?.reviewSummariesByUser;
   return useMemo(
-    () => genreSuggestions(reviews ?? [], gameGenres ?? []),
-    [reviews, gameGenres],
+    () =>
+      genreSuggestions(reviews ?? [], gameGenres ?? [], {
+        genres: communityGenres ?? [],
+        secondaryGenres: communitySecondaryGenres ?? [],
+      }),
+    [reviews, gameGenres, communityGenres, communitySecondaryGenres],
   );
 }

@@ -11,6 +11,9 @@ interface SecondaryGenresInputProps {
   /** The review's genre, which the server drops from this list. */
   genre: string;
   gameGenres?: string[] | undefined;
+  /** What other reviewers filed the game under, offered first. */
+  communityGenres?: string[] | undefined;
+  communitySecondaryGenres?: string[] | undefined;
   size?: "sm" | "md";
 }
 
@@ -28,6 +31,8 @@ export function SecondaryGenresInput({
   onChange,
   genre,
   gameGenres,
+  communityGenres,
+  communitySecondaryGenres,
   size = "md",
 }: SecondaryGenresInputProps) {
   const id = useId();
@@ -37,9 +42,11 @@ export function SecondaryGenresInput({
   // changing the genre back brings it back.
   const shown = value.filter((v) => !sameGenre(v, genre));
   const full = shown.length >= MAX_SECONDARY_GENRES;
-  const suggestions = useGenreSuggestions(gameGenres).filter(
-    (s) => !sameGenre(s, genre) && !shown.some((v) => sameGenre(s, v)),
-  );
+  const suggestions = useGenreSuggestions(
+    gameGenres,
+    communityGenres,
+    communitySecondaryGenres,
+  ).filter((s) => !sameGenre(s, genre) && !shown.some((v) => sameGenre(s, v)));
 
   /** Adds each of `texts` that is new, then leaves `rest` in the field. */
   const commit = (texts: string[], rest = "") => {

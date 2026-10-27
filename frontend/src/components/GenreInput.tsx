@@ -7,8 +7,13 @@ export const GENRE_MAX_LENGTH = 100;
 interface GenreInputProps {
   value: string;
   onChange: (genre: string) => void;
-  /** The game's own genres, offered after the reviewer's. */
+  /** The game's own genres, offered last. */
   gameGenres?: string[] | undefined;
+  /** What other reviewers filed the game under, offered first. */
+  communityGenres?: string[] | undefined;
+  communitySecondaryGenres?: string[] | undefined;
+  /** An edit's community genres can be this review's own, which clearing it takes away. */
+  editing?: boolean;
   size?: "sm" | "md";
 }
 
@@ -20,12 +25,20 @@ export function GenreInput({
   value,
   onChange,
   gameGenres,
+  communityGenres,
+  communitySecondaryGenres,
+  editing = false,
   size = "md",
 }: GenreInputProps) {
   const id = useId();
   const listId = useId();
-  const suggestions = useGenreSuggestions(gameGenres);
+  const suggestions = useGenreSuggestions(
+    gameGenres,
+    communityGenres,
+    communitySecondaryGenres,
+  );
 
+  const fallback = editing ? undefined : communityGenres?.[0];
   const label =
     size === "md"
       ? "text-body text-content-muted"
@@ -44,7 +57,11 @@ export function GenreInput({
         list={listId}
         maxLength={GENRE_MAX_LENGTH}
         autoComplete="off"
-        placeholder="Blank uses the game's genres"
+        placeholder={
+          fallback
+            ? `Blank files it under ${fallback}, as others did`
+            : "Blank uses the game's genres"
+        }
         className="input-field w-full"
       />
       <datalist id={listId}>

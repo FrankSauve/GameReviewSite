@@ -337,6 +337,76 @@ describe("groupByGenre", () => {
   });
 });
 
+describe("groupByGenre with community genres", () => {
+  /** A game other reviewers filed under `community`, which this reviewer left unfiled. */
+  function filedByOthers(
+    rating: number,
+    genres: string[],
+    community: string[],
+  ): ReviewSummary {
+    const base = withGenres(rating, genres);
+    return {
+      ...base,
+      game: {
+        id: `g-${base.id}`,
+        title: base.id,
+        genres,
+        communityGenres: community,
+      },
+    };
+  }
+
+  it("files an unfiled review under the genre others filed the game under", () => {
+    const rows = [
+      filedByOthers(9, ["Action", "Indie"], ["Survival Horror"]),
+      withGenres(8, ["Action", "Indie"]),
+      withGenres(7, ["Action", "Indie"]),
+    ];
+    expect(groupByGenre(rows).map((g) => [g.label, g.items.length])).toEqual([
+      ["Action", 2],
+      ["Survival Horror", 1],
+    ]);
+  });
+
+  it("keeps the reviewer's own genre over the community's", () => {
+    const own = {
+      ...filedByOthers(9, ["Action"], ["Horror"]),
+      genre: "Shooter",
+    };
+    expect(groupByGenre([own]).map((g) => g.label)).toEqual(["Shooter"]);
+  });
+
+  it("merges a community genre into the reviewer's heading of that name", () => {
+    const rows = [
+      { ...withGenres(9, []), genre: "RPG" },
+      filedByOthers(8, ["Action"], ["rpg"]),
+    ];
+    expect(groupByGenre(rows).map((g) => [g.label, g.items.length])).toEqual([
+      ["RPG", 2],
+    ]);
+  });
+
+  /** A community genre is someone else's filing, so it lifts no RAWG genre past the floor. */
+  it("does not count a community genre as the reviewer's filing", () => {
+    const lone = withGenres(7, ["Action", "Puzzle"]);
+    const rows = [
+      filedByOthers(9, ["Puzzle"], ["Puzzle"]),
+      lone,
+      withGenres(6, ["Action", "Strategy"]),
+    ];
+    expect(
+      groupByGenre(rows).find((g) => g.items.some((i) => i.id === lone.id))
+        ?.label,
+    ).toBe("Action");
+  });
+
+  it("offers a community heading in the genre filter", () => {
+    const rows = [filedByOthers(9, ["Action"], ["Horror"])];
+    expect(genreFilterOptions(rows)).toEqual(["Horror"]);
+    expect(filterByGenre(rows, "horror")).toEqual(rows);
+  });
+});
+
 describe("genreSuggestions", () => {
   it("offers the profile's headings biggest first, then the game's genres", () => {
     const rows = [
@@ -369,6 +439,25 @@ describe("genreSuggestions", () => {
       "Open World",
       "Puzzle",
     ]);
+  });
+
+  it("offers the genres others filed the game under first", () => {
+    const rows = [
+      { ...withGenres(9, []), genre: "RPG", secondaryGenres: ["Story"] },
+    ];
+    expect(
+      genreSuggestions(rows, ["Action"], {
+        genres: ["Horror", "Shooter"],
+        secondaryGenres: ["Atmospheric"],
+      }),
+    ).toEqual(["Horror", "Shooter", "RPG", "Story", "Atmospheric", "Action"]);
+  });
+
+  it("spells a community genre as the reviewer's heading of it", () => {
+    const rows = [{ ...withGenres(9, []), genre: "Rpg" }];
+    expect(
+      genreSuggestions(rows, [], { genres: ["RPG"], secondaryGenres: [] }),
+    ).toEqual(["Rpg"]);
   });
 });
 

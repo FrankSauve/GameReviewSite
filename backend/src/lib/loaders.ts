@@ -1,12 +1,19 @@
 import DataLoader from "dataloader";
-import type {
-  Comment,
-  FavoriteGame,
-  Game,
-  Review,
-  User,
+import {
+  Prisma,
+  type Comment,
+  type FavoriteGame,
+  type Game,
+  type Review,
+  type User,
 } from "../generated/prisma/client.js";
 import { prisma } from "./prisma.js";
+import {
+  NO_COMMUNITY_GENRES,
+  communityGenres,
+  type CommunityGenres,
+  type GenreTally,
+} from "./communityGenres.js";
 import { FAVORITE_BOUNDS, LIST_BOUNDS, REACTION_BOUNDS } from "./pagination.js";
 
 /**
@@ -22,6 +29,7 @@ export interface Loaders {
   /** Bounded at FAVORITE_BOUNDS.max: one row per category, by the unique pair. */
   favoritesByUserId: DataLoader<string, FavoriteGame[]>;
   reviewsByGameId: DataLoader<string, Review[]>;
+  communityGenresByGameId: DataLoader<string, CommunityGenres>;
   commentsByReviewId: DataLoader<string, Comment[]>;
   /** Aggregates, so a count or an average never loads the rows it summarises. */
   reviewStatsByUserId: DataLoader<string, ReviewStats>;
@@ -174,6 +182,50 @@ export function createLoaders(viewerId: string | null): Loaders {
         take: LIST_BOUNDS.nested.max * gameIds.length,
       });
       return groupBy(reviews, (r) => r.gameId, gameIds);
+    }),
+
+    // Counts, never a capped sample of rows: a cap ranks a much-reviewed game
+    // from whichever rows came back, and can starve the rest of the batch.
+    communityGenresByGameId: new DataLoader(async (gameIds) => {
+      const [genres, secondary] = await Promise.all([
+        prisma.review.groupBy({
+          by: ["gameId", "genre"],
+          where: { gameId: { in: [...gameIds] }, genre: { not: null } },
+          _count: { _all: true },
+        }),
+        prisma.$queryRaw<(GenreTally & { gameId: string })[]>`
+          SELECT "gameId", value, count(*)::int AS count
+          FROM "Review", unnest("secondaryGenres") AS value
+          WHERE "gameId" IN (${Prisma.join([...gameIds])})
+          GROUP BY "gameId", value
+        `,
+      ]);
+      const tallies = new Map<
+        string,
+        { genres: GenreTally[]; secondary: GenreTally[] }
+      >();
+      const tallyOf = (gameId: string) => {
+        let tally = tallies.get(gameId);
+        if (!tally) {
+          tally = { genres: [], secondary: [] };
+          tallies.set(gameId, tally);
+        }
+        return tally;
+      };
+      for (const g of genres)
+        if (g.genre)
+          tallyOf(g.gameId).genres.push({
+            value: g.genre,
+            count: g._count._all,
+          });
+      for (const { gameId, value, count } of secondary)
+        tallyOf(gameId).secondary.push({ value, count });
+      return gameIds.map((id) => {
+        const tally = tallies.get(id);
+        return tally
+          ? communityGenres(tally.genres, tally.secondary)
+          : NO_COMMUNITY_GENRES;
+      });
     }),
 
     commentsByReviewId: new DataLoader(async (reviewIds) => {

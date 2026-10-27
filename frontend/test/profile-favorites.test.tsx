@@ -55,7 +55,12 @@ const summary = (id: string, gameId: string, title: string) => ({
   secondaryGenres: [],
   createdAt: "2026-01-01T00:00:00.000Z",
   commentCount: 0,
-  game: { ...game(gameId, title), releaseYear: 2015, genres: ["RPG"] },
+  game: {
+    ...game(gameId, title),
+    releaseYear: 2015,
+    genres: ["RPG"],
+    communityGenres: [],
+  },
 });
 
 const favorite = (category: string, g: ReturnType<typeof game>) => ({

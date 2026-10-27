@@ -54,6 +54,7 @@ const summary = (
     coverUrl: null,
     releaseYear: 2015,
     genres,
+    communityGenres: [],
   },
 });
 

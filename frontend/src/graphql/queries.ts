@@ -97,6 +97,8 @@ export const GET_GAME = gql`
       slug
       title
       genres
+      communityGenres
+      communitySecondaryGenres
       description
       coverUrl
       releaseYear
@@ -210,6 +212,8 @@ export const GET_REVIEW = gql`
         coverUrl
         releaseYear
         genres
+        communityGenres
+        communitySecondaryGenres
       }
       reactions {
         emoji
@@ -282,6 +286,7 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
         coverUrl
         releaseYear
         genres
+        communityGenres
       }
     }
   }

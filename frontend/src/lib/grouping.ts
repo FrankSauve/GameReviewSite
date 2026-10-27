@@ -19,6 +19,8 @@ export interface ReviewSummary {
     coverUrl?: string | null;
     releaseYear?: number | null;
     genres?: string[];
+    /** What other reviewers filed the game under, commonest first. */
+    communityGenres?: string[];
   } | null;
 }
 
@@ -127,9 +129,15 @@ function tallyInto(tally: Map<string, number>, genres: string[]): void {
 /** A fallback must be among this many games' genres, which keeps most headings off a single row. */
 const MIN_FALLBACK_GROUP = 2;
 
+/** The genre other reviewers filed the game under, for a review its author left unfiled. */
+function communityGenre(review: ReviewSummary): string | undefined {
+  return review.game?.communityGenres?.[0]?.trim() || undefined;
+}
+
 /**
- * Picks the one genre each review is filed under. Only games the reviewer has
- * not filed themselves count towards a fallback's rarity.
+ * Picks the one genre each review is filed under: the reviewer's own, then the
+ * game's community genre, then RAWG's. Only games that reach RAWG count towards
+ * its rarity, and a community genre is not the reviewer's filing, so it skips no floor.
  */
 function genrePicker(
   reviews: ReviewSummary[],
@@ -139,12 +147,15 @@ function genrePicker(
   for (const review of reviews) {
     const own = review.genre?.trim();
     if (own) tallyInto(chosen, [own]);
-    else tallyInto(unfiled, review.game?.genres ?? []);
+    else if (!communityGenre(review))
+      tallyInto(unfiled, review.game?.genres ?? []);
   }
 
   return (review) => {
     const own = review.genre?.trim();
     if (own) return own;
+    const community = communityGenre(review);
+    if (community) return community;
     const genres = review.game?.genres ?? [];
     return rarestShared(genres, chosen, unfiled) ?? genres[0] ?? null;
   };
@@ -223,7 +234,11 @@ export function groupByGenre(
   return groups;
 }
 
-/** One per genre ignoring case, in its commonest spelling, commonest first then by name. */
+/**
+ * One per genre ignoring case, in its commonest spelling, commonest first then
+ * by name. Mirrored by rank() in backend/src/lib/communityGenres.ts; this copy
+ * is authoritative.
+ */
 function rankGenres(genres: string[]): string[] {
   const byKey = new Map<string, Map<string, number>>();
   for (const genre of genres) {
@@ -244,23 +259,44 @@ function rankGenres(genres: string[]): string[] {
     .map(({ label }) => label);
 }
 
+/** What other reviewers filed one game under, commonest first. */
+export interface CommunityGenres {
+  genres: string[];
+  secondaryGenres: string[];
+}
+
+const NO_COMMUNITY_GENRES: CommunityGenres = {
+  genres: [],
+  secondaryGenres: [],
+};
+
 /**
- * What the review form offers: the reviewer's genre headings, biggest first,
- * spelled as the profile spells them, then their secondary genres, then the
- * game's genres not among them.
+ * What the review form offers: the genres others filed the game under, then the
+ * reviewer's headings biggest first, their secondary genres, the others'
+ * secondary genres, and the game's own. A genre the reviewer already uses keeps
+ * the profile's spelling of it.
  */
 export function genreSuggestions(
   reviews: ReviewSummary[],
   gameGenres: string[],
+  community: CommunityGenres = NO_COMMUNITY_GENRES,
 ): string[] {
   const headings = groupByGenre(reviews)
     .filter((group) => group.key !== UNKNOWN_KEY)
     .map((group) => group.label);
+  const secondary = rankGenres(reviews.flatMap((r) => r.secondaryGenres ?? []));
+  // Headings last, so their spelling wins over a secondary genre's.
+  const theirs = new Map(
+    [...secondary, ...headings].map((genre) => [genre.toLowerCase(), genre]),
+  );
+  const spell = (genre: string) => theirs.get(genre.toLowerCase()) ?? genre;
   // Once per genre ignoring case: a game's genres can repeat, and the datalist keys on them.
   const taken = new Set<string>();
   return [
+    ...community.genres.map(spell),
     ...headings,
-    ...rankGenres(reviews.flatMap((r) => r.secondaryGenres ?? [])),
+    ...secondary,
+    ...community.secondaryGenres.map(spell),
     ...gameGenres,
   ].filter((genre) => {
     const key = genre.toLowerCase();

@@ -56,6 +56,9 @@ export interface Game {
   rawgId?: string | null;
   title: string;
   genres?: string[];
+  /** What its reviewers filed it under, commonest first. */
+  communityGenres?: string[];
+  communitySecondaryGenres?: string[];
   description?: string | null;
   coverUrl?: string | null;
   releaseYear?: number | null;

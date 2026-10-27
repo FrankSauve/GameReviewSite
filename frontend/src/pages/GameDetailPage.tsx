@@ -99,6 +99,8 @@ export function GameDetailPage() {
             <AddReviewForm
               target={{ gameId: game.id }}
               gameGenres={game.genres}
+              communityGenres={game.communityGenres}
+              communitySecondaryGenres={game.communitySecondaryGenres}
               onSuccess={() => setShowReviewForm(false)}
             />
           </div>
