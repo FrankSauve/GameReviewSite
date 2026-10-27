@@ -83,6 +83,7 @@ interface SeedReview {
   yearPlayed?: number | null;
   platform?: string | null;
   genre?: string | null;
+  secondaryGenres?: string[];
   content?: string;
   createdAt?: Date;
 }
@@ -108,6 +109,7 @@ async function seedReview(
       hoursPlayed: review.hoursPlayed === undefined ? 12 : review.hoursPlayed,
       platform: review.platform ?? null,
       genre: review.genre ?? null,
+      secondaryGenres: review.secondaryGenres ?? [],
       slug: `${user.username}/${game.slug}`,
       gameId: game.id,
       userId: user.id,
@@ -238,6 +240,20 @@ describe("exporting reviews as a zip of markdown files", () => {
     const entries = await readArchive(await bodyOf(getExport(app, cookie)));
     expect(entries.get("reviews-alice/hades.md")).toContain(
       "**Genre:** Roguelike\n",
+    );
+  });
+
+  it("lists the secondary genres under the genre", async () => {
+    const cookie = await sessionFor(ALICE);
+    await seedReview(ALICE, {
+      title: "Alan Wake",
+      genre: "Horror",
+      secondaryGenres: ["Shooter", "Story-driven"],
+    });
+
+    const entries = await readArchive(await bodyOf(getExport(app, cookie)));
+    expect(entries.get("reviews-alice/alan-wake.md")).toContain(
+      "**Genre:** Horror\n**Other genres:** Shooter, Story-driven\n",
     );
   });
 

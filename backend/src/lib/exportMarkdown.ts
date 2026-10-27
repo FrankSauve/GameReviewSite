@@ -15,6 +15,7 @@ export interface ExportableReview {
   yearPlayed?: number | null;
   platform?: string | null;
   genre?: string | null;
+  secondaryGenres?: string[];
   content: string;
 }
 
@@ -28,6 +29,9 @@ export function formatReview(review: ExportableReview): string {
   }
   if (review.genre) {
     lines.push(`**Genre:** ${review.genre}`);
+  }
+  if (review.secondaryGenres?.length) {
+    lines.push(`**Other genres:** ${review.secondaryGenres.join(", ")}`);
   }
   if (review.hoursPlayed != null) {
     lines.push(`**Playtime:** ${formatHoursPlayed(review.hoursPlayed)} hrs`);

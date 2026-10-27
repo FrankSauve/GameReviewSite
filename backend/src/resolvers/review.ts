@@ -15,7 +15,7 @@ import { createReview } from "../lib/createReview.js";
 import { validateString } from "../lib/validate.js";
 import { badInput } from "../lib/badInput.js";
 import { validatePlatform } from "../lib/platforms.js";
-import { validateGenre } from "../lib/labels.js";
+import { validateGenre, validateSecondaryGenres } from "../lib/labels.js";
 import { notifyReviewPosted } from "../lib/discord.js";
 import { pruneUnreviewedGames } from "../lib/pruneGames.js";
 
@@ -28,6 +28,7 @@ interface CreateReviewInput {
   hoursPlayed: number;
   platform?: string | null;
   genre?: string | null;
+  secondaryGenres?: string[] | null;
 }
 
 interface UpdateReviewInput {
@@ -37,6 +38,7 @@ interface UpdateReviewInput {
   hoursPlayed?: number;
   platform?: string | null;
   genre?: string | null;
+  secondaryGenres?: string[] | null;
 }
 
 /** Generous because a decade of backlog includes long reviews. */
@@ -203,13 +205,18 @@ export const reviewResolvers = {
       if ((input.gameId == null) === (input.rawgId == null))
         throw badInput("Give exactly one of gameId and rawgId.");
 
+      const genre = validateGenre(input.genre ?? null);
       const fields = {
         rating: validateRating(input.rating),
         content: validateString(input.content, "content", REVIEW_CONTENT_MAX),
         yearPlayed: validateYearPlayed(input.yearPlayed),
         hoursPlayed: validateHoursPlayed(input.hoursPlayed),
         platform: input.platform ? validatePlatform(input.platform) : null,
-        genre: validateGenre(input.genre ?? null),
+        genre,
+        secondaryGenres: validateSecondaryGenres(
+          input.secondaryGenres ?? [],
+          genre,
+        ),
       };
 
       const created = await createReview(
@@ -244,6 +251,7 @@ export const reviewResolvers = {
           | "hoursPlayed"
           | "platform"
           | "genre"
+          | "secondaryGenres"
         >
       > = {};
       if (input.rating !== undefined)
@@ -264,6 +272,12 @@ export const reviewResolvers = {
           ? validatePlatform(input.platform)
           : null;
       if (input.genre !== undefined) data.genre = validateGenre(input.genre);
+      // Rechecked when only the genre changes, so it cannot come to repeat one.
+      if (input.genre !== undefined || input.secondaryGenres != null)
+        data.secondaryGenres = validateSecondaryGenres(
+          input.secondaryGenres ?? existing.secondaryGenres,
+          data.genre === undefined ? existing.genre : data.genre,
+        );
       const review = await prisma.review.update({
         where: { id: existing.id },
         data,

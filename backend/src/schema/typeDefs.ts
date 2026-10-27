@@ -95,6 +95,8 @@ export const typeDefs = `#graphql
     platform: String
     # The genre the reviewer filed it under. Null for a review that has none.
     genre: String
+    # Up to five more, for filtering. Never repeats genre.
+    secondaryGenres: [String!]!
     createdAt: String
     commentCount: Int!
     game: Game
@@ -128,6 +130,9 @@ export const typeDefs = `#graphql
     # The one genre the reviewer filed it under, in their own words. Null for a
     # review that has none; the profile then falls back to the game's genres.
     genre: String
+    # Up to five more, for filtering only: the profile never groups by them.
+    # Never repeats genre.
+    secondaryGenres: [String!]!
     createdAt: String
     updatedAt: String
     user: User
@@ -202,9 +207,11 @@ export const typeDefs = `#graphql
     hoursPlayed: Float!
     platform: String
     genre: String
+    secondaryGenres: [String!]
   }
 
   # An explicit null on platform or genre clears it; omitting it leaves it alone.
+  # An empty secondaryGenres clears them.
   input UpdateReviewInput {
     rating: Float
     content: String
@@ -212,6 +219,7 @@ export const typeDefs = `#graphql
     hoursPlayed: Float
     platform: String
     genre: String
+    secondaryGenres: [String!]
   }
 
   # authorId is taken from the session — not supplied by the client.
