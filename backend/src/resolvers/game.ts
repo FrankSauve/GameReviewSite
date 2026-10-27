@@ -189,6 +189,19 @@ export const gameResolvers = {
 
     averageRating: async (parent: Game, _args: unknown, { loaders }: Context) =>
       (await loaders.reviewStatsByGameId.load(parent.id)).average,
+
+    communityGenres: async (
+      parent: Game,
+      _args: unknown,
+      { loaders }: Context,
+    ) => (await loaders.communityGenresByGameId.load(parent.id)).genres,
+
+    communitySecondaryGenres: async (
+      parent: Game,
+      _args: unknown,
+      { loaders }: Context,
+    ) =>
+      (await loaders.communityGenresByGameId.load(parent.id)).secondaryGenres,
   },
 };
 

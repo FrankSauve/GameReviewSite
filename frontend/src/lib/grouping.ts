@@ -223,7 +223,11 @@ export function groupByGenre(
   return groups;
 }
 
-/** One per genre ignoring case, in its commonest spelling, commonest first then by name. */
+/**
+ * One per genre ignoring case, in its commonest spelling, commonest first then
+ * by name. Mirrored by rank() in backend/src/lib/communityGenres.ts; this copy
+ * is authoritative.
+ */
 function rankGenres(genres: string[]): string[] {
   const byKey = new Map<string, Map<string, number>>();
   for (const genre of genres) {

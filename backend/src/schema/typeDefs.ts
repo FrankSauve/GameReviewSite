@@ -47,6 +47,10 @@ export const typeDefs = `#graphql
     reviews(limit: Int, offset: Int): [Review!]
     reviewCount: Int!
     averageRating: Float
+    # What its reviewers filed it under, commonest first, at most five each.
+    # A profile falls back to the first for a review its author left unfiled.
+    communityGenres: [String!]!
+    communitySecondaryGenres: [String!]!
   }
 
   enum GameSort {
