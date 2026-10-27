@@ -9,7 +9,13 @@ import { violatesUniqueOn } from "./uniqueViolation.js";
 
 export type ReviewFields = Pick<
   Review,
-  "rating" | "content" | "yearPlayed" | "hoursPlayed" | "platform" | "genre"
+  | "rating"
+  | "content"
+  | "yearPlayed"
+  | "hoursPlayed"
+  | "platform"
+  | "genre"
+  | "secondaryGenres"
 >;
 
 /** A game in the library, or a RAWG title whose first review this is. */

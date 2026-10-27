@@ -194,6 +194,7 @@ export const GET_REVIEW = gql`
       hoursPlayed
       platform
       genre
+      secondaryGenres
       createdAt
       user {
         id
@@ -269,6 +270,7 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
       slug
       rating
       genre
+      secondaryGenres
       yearPlayed
       hoursPlayed
       createdAt

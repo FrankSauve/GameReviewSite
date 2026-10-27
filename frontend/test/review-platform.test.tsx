@@ -48,6 +48,7 @@ function createMock(platform: string | null) {
           hoursPlayed: 12,
           platform,
           genre: null,
+          secondaryGenres: [],
         },
       },
     },
@@ -63,6 +64,7 @@ function createMock(platform: string | null) {
           hoursPlayed: 12,
           platform,
           genre: null,
+          secondaryGenres: [],
           createdAt: "2026-01-01T00:00:00.000Z",
           user: {
             __typename: "User",

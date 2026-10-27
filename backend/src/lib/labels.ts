@@ -1,8 +1,9 @@
 import { badInput } from "./badInput.js";
 
 /**
- * Duplicated as MAX_LABELS in frontend/src/pages/AddGamePage.tsx, which draws
- * the counter on the form, and once more in the backfill SQL of the
+ * Duplicated as MAX_SECONDARY_GENRES in
+ * frontend/src/components/SecondaryGenresInput.tsx, which draws the counter on
+ * the form, and once more in the backfill SQL of the
  * 20260829041559_multi_platform_genre migration (which still names this rule's
  * old home in resolvers/game.ts; an applied migration is checksummed, so it is
  * left alone). This copy is authoritative — change the form too, or it promises
@@ -43,11 +44,42 @@ export function validateLabels(values: string[], field: string): string[] {
  * and a Discord field, where a newline forges a line of its own.
  */
 export function validateGenre(value: string | null): string | null {
+  return normaliseGenre(value, "genre");
+}
+
+/**
+ * A review's secondary genres, held to the same rules as its genre. One that
+ * repeats the genre is dropped, so a filter never counts a review twice.
+ * Mirrored by commit() in frontend/src/components/SecondaryGenresInput.tsx;
+ * this copy is authoritative.
+ */
+export function validateSecondaryGenres(
+  values: string[],
+  genre: string | null,
+): string[] {
+  const seen = new Set<string>();
+  if (genre) seen.add(genre.toLowerCase());
+  const kept: string[] = [];
+
+  for (const value of values) {
+    const normalised = normaliseGenre(value, "secondary genre");
+    if (!normalised) continue;
+    const key = normalised.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    kept.push(normalised);
+    if (kept.length === MAX_LABELS) break;
+  }
+
+  return kept;
+}
+
+function normaliseGenre(value: string | null, field: string): string | null {
   const trimmed = value?.replace(/\s+/g, " ").trim();
   if (!trimmed) return null;
   if (/\p{Cc}/u.test(trimmed))
-    throw badInput("genre must not contain control characters.");
+    throw badInput(`${field} must not contain control characters.`);
   if (trimmed.length > LABEL_MAX_LENGTH)
-    throw badInput(`genre must be at most ${LABEL_MAX_LENGTH} characters.`);
+    throw badInput(`${field} must be at most ${LABEL_MAX_LENGTH} characters.`);
   return trimmed;
 }

@@ -93,6 +93,9 @@ model Review {
   /// Free text the reviewer chose, one per review. Null when unset, and the
   /// profile's genre view then falls back to the game's genres.
   genre       String?
+  /// Up to five more genres, for filtering only: the profile never groups by
+  /// them. Never repeats `genre`, ignoring case.
+  secondaryGenres String[] @default([])
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   userId    String

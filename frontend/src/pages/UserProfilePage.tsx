@@ -1,4 +1,4 @@
-import { Link, useParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@apollo/client/react";
 import { GET_USER_REVIEW_SUMMARIES } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
@@ -6,6 +6,7 @@ import { formatRating, ratingColor } from "../lib/rating";
 import { formatHours } from "../lib/playtime";
 import {
   ORDER_FOR,
+  genreFilterOptions,
   groupReviews,
   type Grouping,
   type ReviewSummary,
@@ -47,6 +48,8 @@ interface UserProfilePageProps {
 export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
   const { id } = useParams<{ id: string }>();
   const { user: me } = useAuth();
+  const [params, setParams] = useSearchParams();
+  const genreFilter = params.get("genre")?.trim() ?? "";
 
   // Favorites still needs the summaries: the header's totals come from them,
   // and the picker offers exactly the games they name. Borrowing the default
@@ -107,7 +110,18 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
 
   const profile = data.user;
   const reviews = data.reviewSummariesByUser ?? [];
-  const groups = groupReviews(reviews, grouping);
+  const genreOptions = genreFilterOptions(reviews);
+  // The URL may spell it in any case; the menu shows the profile's spelling.
+  const selectedGenre =
+    genreOptions.find((g) => g.toLowerCase() === genreFilter.toLowerCase()) ??
+    genreFilter;
+  const groups = groupReviews(reviews, grouping, genreFilter);
+  const setGenreFilter = (genre: string) => {
+    const next = new URLSearchParams(params);
+    if (genre) next.set("genre", genre);
+    else next.delete("genre");
+    setParams(next);
+  };
   const isOwnProfile = me?.id === profile.id;
 
   const totalHours = reviews
@@ -193,7 +207,14 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
           return (
             <Link
               key={entry.tab}
-              to={userPath(profile, PROFILE_TAB_PATH[entry.tab])}
+              to={{
+                pathname: userPath(profile, PROFILE_TAB_PATH[entry.tab]),
+                // The filter carries across the review tabs; favourites ignores it.
+                search:
+                  genreFilter && entry.tab !== "favorites"
+                    ? `?${new URLSearchParams({ genre: genreFilter })}`
+                    : "",
+              }}
               aria-current={active ? "page" : undefined}
               className={`px-2 sm:px-3 py-2 text-meta font-medium -mb-px border-b-2 whitespace-nowrap transition-colors duration-theme ${
                 active
@@ -206,6 +227,27 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
           );
         })}
       </nav>
+
+      {tab !== "favorites" && (genreOptions.length > 0 || genreFilter) && (
+        <div className="flex items-center gap-2">
+          <select
+            aria-label="Filter by genre"
+            value={selectedGenre}
+            onChange={(e) => setGenreFilter(e.target.value)}
+            className="input-field w-auto text-meta px-2 py-1.5"
+          >
+            <option value="">All genres</option>
+            {!genreOptions.includes(selectedGenre) && selectedGenre && (
+              <option value={selectedGenre}>{selectedGenre}</option>
+            )}
+            {genreOptions.map((g) => (
+              <option key={g} value={g}>
+                {g}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* ── Favorites, or the review list in the chosen view ── */}
       {!fresh ? (
@@ -220,6 +262,18 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
           isOwnProfile={isOwnProfile}
           pickable={pickableGames(reviews)}
         />
+      ) : groups.length === 0 && genreFilter ? (
+        <div className="card p-10 text-center space-y-2">
+          <p className="text-content-muted">
+            No reviews under {selectedGenre}.
+          </p>
+          <button
+            onClick={() => setGenreFilter("")}
+            className="text-meta text-accent-subtle-text hover:text-accent-subtle-text font-medium"
+          >
+            Clear filter
+          </button>
+        </div>
       ) : groups.length === 0 ? (
         <div className="card p-10 text-center space-y-2">
           <p className="text-3xl">✍️</p>

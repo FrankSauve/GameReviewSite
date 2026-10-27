@@ -41,6 +41,8 @@ export interface Review {
   platform?: string | null;
   /** The reviewer's own choice; null falls back to the game's genres. */
   genre?: string | null;
+  /** Filtered by on the profile, never grouped by. */
+  secondaryGenres?: string[];
   createdAt: string;
   user?: User | null;
   game?: GameSnippet | null;

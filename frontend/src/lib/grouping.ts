@@ -10,6 +10,8 @@ export interface ReviewSummary {
   commentCount: number;
   /** The reviewer's own choice of genre, which wins over the game's. */
   genre?: string | null;
+  /** Filtered by, never grouped by. */
+  secondaryGenres?: string[];
   game?: {
     id: string;
     slug?: string | null;
@@ -179,10 +181,12 @@ function rarestShared(
  * Groups by genre, one group per review, most games first, ties by name, with
  * "No genre" last.
  */
-export function groupByGenre(reviews: ReviewSummary[]): ReviewGroup[] {
+export function groupByGenre(
+  reviews: ReviewSummary[],
+  genreFor = genrePicker(reviews),
+): ReviewGroup[] {
   // Case-insensitive, because genres are free text: "RPG" and "rpg" are one
   // group. Its name is the commonest spelling, so re-scoring a game cannot rename it.
-  const genreFor = genrePicker(reviews);
   const byGenre = new Map<
     string,
     { spellings: Map<string, number>; items: ReviewSummary[] }
@@ -219,9 +223,31 @@ export function groupByGenre(reviews: ReviewSummary[]): ReviewGroup[] {
   return groups;
 }
 
+/** One per genre ignoring case, in its commonest spelling, commonest first then by name. */
+function rankGenres(genres: string[]): string[] {
+  const byKey = new Map<string, Map<string, number>>();
+  for (const genre of genres) {
+    const key = genre.toLowerCase();
+    let spellings = byKey.get(key);
+    if (!spellings) {
+      spellings = new Map();
+      byKey.set(key, spellings);
+    }
+    spellings.set(genre, (spellings.get(genre) ?? 0) + 1);
+  }
+  return [...byKey.values()]
+    .map((spellings) => ({
+      label: commonestSpelling(spellings),
+      count: [...spellings.values()].reduce((sum, n) => sum + n, 0),
+    }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+    .map(({ label }) => label);
+}
+
 /**
  * What the review form offers: the reviewer's genre headings, biggest first,
- * spelled as the profile spells them, then the game's genres not among them.
+ * spelled as the profile spells them, then their secondary genres, then the
+ * game's genres not among them.
  */
 export function genreSuggestions(
   reviews: ReviewSummary[],
@@ -232,7 +258,11 @@ export function genreSuggestions(
     .map((group) => group.label);
   // Once per genre ignoring case: a game's genres can repeat, and the datalist keys on them.
   const taken = new Set<string>();
-  return [...headings, ...gameGenres].filter((genre) => {
+  return [
+    ...headings,
+    ...rankGenres(reviews.flatMap((r) => r.secondaryGenres ?? [])),
+    ...gameGenres,
+  ].filter((genre) => {
     const key = genre.toLowerCase();
     if (taken.has(key)) return false;
     taken.add(key);
@@ -240,17 +270,63 @@ export function genreSuggestions(
   });
 }
 
+/** Each review's genres to filter by: its Genre-tab heading, then its secondary genres. */
+function filterGenres(
+  reviews: ReviewSummary[],
+): (r: ReviewSummary) => string[] {
+  // Over the whole list, so a heading is the one the unfiltered Genre tab shows.
+  const genreFor = genrePicker(reviews);
+  return (review) => {
+    const heading = genreFor(review);
+    return [...(heading ? [heading] : []), ...(review.secondaryGenres ?? [])];
+  };
+}
+
+/** The reviews filed under `genre` or carrying it as a secondary genre, ignoring case. */
+export function filterByGenre(
+  reviews: ReviewSummary[],
+  genre: string,
+): ReviewSummary[] {
+  const key = genre.trim().toLowerCase();
+  if (!key) return reviews;
+  const genresOf = filterGenres(reviews);
+  return reviews.filter((review) =>
+    genresOf(review).some((g) => g.toLowerCase() === key),
+  );
+}
+
+/** What the profile's genre filter offers, most reviews first. */
+export function genreFilterOptions(reviews: ReviewSummary[]): string[] {
+  const genresOf = filterGenres(reviews);
+  return rankGenres(
+    reviews.flatMap((review) => {
+      // Once per review: a fallback heading can repeat one of its secondary genres.
+      const seen = new Set<string>();
+      return genresOf(review).filter((g) => {
+        const key = g.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }),
+  );
+}
+
 export type Grouping = "year" | "score" | "genre" | "recent";
 
+/** Groups the reviews matching `genre` (all of them when blank). */
 export function groupReviews(
   reviews: ReviewSummary[],
   grouping: Grouping,
+  genre = "",
 ): ReviewGroup[] {
-  if (grouping === "year") return groupByYear(reviews);
-  if (grouping === "score") return groupByScore(reviews);
-  if (grouping === "genre") return groupByGenre(reviews);
+  const shown = filterByGenre(reviews, genre);
+  if (grouping === "year") return groupByYear(shown);
+  if (grouping === "score") return groupByScore(shown);
+  // Picked over every review, or a filtered one can change heading.
+  if (grouping === "genre") return groupByGenre(shown, genrePicker(reviews));
   // Recent is one undivided list; the server has already ordered it.
-  return reviews.length ? [toGroup("recent", "", reviews)] : [];
+  return shown.length ? [toGroup("recent", "", shown)] : [];
 }
 
 /** The server ordering each grouping needs. */
