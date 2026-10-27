@@ -268,6 +268,48 @@ export function genreSuggestions(
   });
 }
 
+/** Each review's genres to filter by: its Genre-tab heading, then its secondary genres. */
+function filterGenres(
+  reviews: ReviewSummary[],
+): (r: ReviewSummary) => string[] {
+  // Over the whole list, so a heading is the one the unfiltered Genre tab shows.
+  const genreFor = genrePicker(reviews);
+  return (review) => {
+    const heading = genreFor(review);
+    return [...(heading ? [heading] : []), ...(review.secondaryGenres ?? [])];
+  };
+}
+
+/** The reviews filed under `genre` or carrying it as a secondary genre, ignoring case. */
+export function filterByGenre(
+  reviews: ReviewSummary[],
+  genre: string,
+): ReviewSummary[] {
+  const key = genre.trim().toLowerCase();
+  if (!key) return reviews;
+  const genresOf = filterGenres(reviews);
+  return reviews.filter((review) =>
+    genresOf(review).some((g) => g.toLowerCase() === key),
+  );
+}
+
+/** What the profile's genre filter offers, most reviews first. */
+export function genreFilterOptions(reviews: ReviewSummary[]): string[] {
+  const genresOf = filterGenres(reviews);
+  return rankGenres(
+    reviews.flatMap((review) => {
+      // Once per review: a fallback heading can repeat one of its secondary genres.
+      const seen = new Set<string>();
+      return genresOf(review).filter((g) => {
+        const key = g.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+    }),
+  );
+}
+
 export type Grouping = "year" | "score" | "genre" | "recent";
 
 export function groupReviews(

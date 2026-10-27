@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   ORDER_FOR,
   groupByGenre,
+  filterByGenre,
+  genreFilterOptions,
   genreSuggestions,
   groupByScore,
   groupByYear,
@@ -434,5 +436,74 @@ describe("ORDER_FOR", () => {
     expect(ORDER_FOR.score).toBe("RATING_DESC");
     expect(ORDER_FOR.recent).toBe("RECENT");
     expect(ORDER_FOR.genre).toBe("RATING_DESC");
+  });
+});
+
+describe("filterByGenre", () => {
+  const rows = () => {
+    const filed = {
+      ...withGenres(9, ["Action"]),
+      genre: "Action",
+      secondaryGenres: ["Horror", "Story-driven"],
+    };
+    // Unfiled. RPG is rarer than Action among them, so it heads both.
+    const fallback = withGenres(8, ["Action", "RPG"]);
+    const fallback2 = withGenres(7, ["Action", "RPG"]);
+    const actionOnly = withGenres(5, ["Action"]);
+    const horrorOnly = {
+      ...withGenres(6, []),
+      genre: "Shooter",
+      secondaryGenres: ["horror"],
+    };
+    return [filed, fallback, fallback2, actionOnly, horrorOnly] as const;
+  };
+
+  it("keeps a review whose secondary genre matches, ignoring case", () => {
+    const all = rows();
+    const [filed, , , , horrorOnly] = all;
+    expect(filterByGenre([...all], "HORROR")).toEqual([filed, horrorOnly]);
+  });
+
+  it("keeps a review by the heading the Genre tab files it under", () => {
+    const all = rows();
+    const [, fallback, fallback2] = all;
+    expect(filterByGenre([...all], "rpg")).toEqual([fallback, fallback2]);
+  });
+
+  /** Most games carry Action from RAWG; matching all of them would make the filter useless. */
+  it("does not match a game genre the review is not filed under", () => {
+    const all = rows();
+    const [filed, , , actionOnly] = all;
+    expect(filterByGenre([...all], "Action")).toEqual([filed, actionOnly]);
+  });
+
+  it("returns every review when the filter is blank", () => {
+    const all = rows();
+    expect(filterByGenre([...all], " ")).toEqual([...all]);
+  });
+});
+
+describe("genreFilterOptions", () => {
+  it("offers headings and secondary genres once each, most reviews first, in the commonest spelling", () => {
+    const rows = [
+      { ...withGenres(9, []), genre: "Action", secondaryGenres: ["Horror"] },
+      { ...withGenres(8, []), genre: "Shooter", secondaryGenres: ["horror"] },
+      { ...withGenres(7, []), genre: "Puzzle", secondaryGenres: ["Horror"] },
+      { ...withGenres(6, []), genre: "action" },
+    ];
+    expect(genreFilterOptions(rows)).toEqual([
+      "Horror",
+      "Action",
+      "Puzzle",
+      "Shooter",
+    ]);
+  });
+
+  it("counts a review once when its fallback heading is also a secondary genre", () => {
+    const rows = [
+      { ...withGenres(9, ["Puzzle"]), secondaryGenres: ["Puzzle"] },
+      { ...withGenres(8, []), genre: "Action" },
+    ];
+    expect(genreFilterOptions(rows)).toEqual(["Action", "Puzzle"]);
   });
 });

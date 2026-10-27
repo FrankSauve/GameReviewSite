@@ -52,6 +52,7 @@ const summary = (id: string, gameId: string, title: string) => ({
   yearPlayed: 2024,
   hoursPlayed: 12,
   genre: null,
+  secondaryGenres: [],
   createdAt: "2026-01-01T00:00:00.000Z",
   commentCount: 0,
   game: { ...game(gameId, title), releaseYear: 2015, genres: ["RPG"] },

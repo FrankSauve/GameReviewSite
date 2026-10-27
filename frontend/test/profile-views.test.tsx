@@ -43,6 +43,7 @@ const summary = (
   yearPlayed,
   hoursPlayed: 12,
   genre: null,
+  secondaryGenres: [],
   createdAt: "2026-01-01T00:00:00.000Z",
   commentCount: 0,
   game: {
@@ -59,7 +60,10 @@ const summary = (
 const ROWS = [
   summary("r1", 10, 2024, "Best Game", ["RPG", "Action"]),
   summary("r2", 8.5, 2019, "Older Game", ["Action"]),
-  summary("r3", 10, 2019, "Another Great One", ["Puzzle"]),
+  {
+    ...summary("r3", 10, 2019, "Another Great One", ["Puzzle"]),
+    secondaryGenres: ["Horror"],
+  },
 ];
 
 function mockFor(order: string, id: string = USER_ID, delay = 0) {
@@ -195,6 +199,12 @@ describe("profile grouped views", () => {
     await expectHeadings(["Action", "Puzzle"]);
   });
 
+  /** Secondary genres filter the profile; they never add a heading. */
+  it("leaves the genre headings to each review's one genre", async () => {
+    renderAt(`/users/${USER_ID}/by-genre`);
+    await expectHeadings(["Action", "Puzzle"]);
+  });
+
   it("marks the tab of the view being shown", async () => {
     renderAt(`/users/${USER_ID}/by-genre`);
     await eventually(() =>
@@ -321,5 +331,67 @@ describe("profile grouped views", () => {
         screen.getByText("Best Game").closest("a")?.getAttribute("href"),
       ).toBe(`/reviews/${USER_SLUG}/best-game`),
     );
+  });
+});
+
+describe("filtering a profile by genre", () => {
+  const filter = () =>
+    screen.getByRole("combobox", {
+      name: "Filter by genre",
+    }) as HTMLSelectElement;
+
+  it("offers each heading and secondary genre, most reviews first", async () => {
+    renderAt(`/users/${USER_SLUG}`);
+    await expectHeadings(["2024", "2019"]);
+    expect([...filter().options].map((o) => o.textContent)).toEqual([
+      "All genres",
+      "Action",
+      "Horror",
+      "Puzzle",
+    ]);
+  });
+
+  it("keeps a review whose secondary genre matches, ignoring case", async () => {
+    renderAt(`/users/${USER_SLUG}?genre=horror`);
+    await expectHeadings(["2019"]);
+    expect(screen.getByText("Another Great One")).toBeTruthy();
+    expect(screen.queryByText("Older Game")).toBeNull();
+    expect(filter().value).toBe("Horror");
+  });
+
+  /** Best Game has RPG from RAWG but is filed under Action, so RPG matches nothing. */
+  it("matches the heading a review sits under, not every genre its game has", async () => {
+    renderAt(`/users/${USER_SLUG}/by-score?genre=RPG`);
+    await eventually(() =>
+      expect(screen.getByText("No reviews under RPG.")).toBeTruthy(),
+    );
+  });
+
+  it("carries the filter to the other review tabs, not to favourites", async () => {
+    renderAt(`/users/${USER_SLUG}/by-score?genre=Action`);
+    await expectHeadings(["10", "8.5"]);
+    const hrefs = screen
+      .getAllByRole("link")
+      .filter((a) => PROFILE_TABS.some((t) => t.label === a.textContent))
+      .map((a) => a.getAttribute("href"));
+    expect(hrefs).toEqual([
+      `/users/${USER_SLUG}?genre=Action`,
+      `/users/${USER_SLUG}/by-score?genre=Action`,
+      `/users/${USER_SLUG}/by-genre?genre=Action`,
+      `/users/${USER_SLUG}/recent?genre=Action`,
+      `/users/${USER_SLUG}/favorites`,
+    ]);
+    fireEvent.click(screen.getByRole("link", { name: "Year" }));
+    await expectHeadings(["2024", "2019"]);
+    expect(screen.queryByText("Another Great One")).toBeNull();
+  });
+
+  it("narrows and widens the list from the menu", async () => {
+    renderAt(`/users/${USER_SLUG}/by-genre`);
+    await expectHeadings(["Action", "Puzzle"]);
+    fireEvent.change(filter(), { target: { value: "Horror" } });
+    await expectHeadings(["Puzzle"]);
+    fireEvent.change(filter(), { target: { value: "" } });
+    await expectHeadings(["Action", "Puzzle"]);
   });
 });
