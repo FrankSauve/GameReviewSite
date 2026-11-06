@@ -10,7 +10,10 @@ import {
 } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
 import { byIdOrSlug } from "../lib/slug.js";
-import { validateRawgId } from "../lib/gameSources/rawg.js";
+import {
+  validateExternalId,
+  type GameSourceId,
+} from "../lib/gameSources/index.js";
 import { createReview } from "../lib/createReview.js";
 import { validateString } from "../lib/validate.js";
 import { badInput } from "../lib/badInput.js";
@@ -21,7 +24,8 @@ import { pruneUnreviewedGames } from "../lib/pruneGames.js";
 
 interface CreateReviewInput {
   gameId?: string | null;
-  rawgId?: string | null;
+  source?: GameSourceId | null;
+  externalId?: string | null;
   rating: number;
   content: string;
   yearPlayed: number;
@@ -202,8 +206,11 @@ export const reviewResolvers = {
       context: Context,
     ) => {
       const authUser = requireAuth(context);
-      if ((input.gameId == null) === (input.rawgId == null))
-        throw badInput("Give exactly one of gameId and rawgId.");
+      const { gameId, source, externalId } = input;
+      if ((gameId == null) === (source == null || externalId == null))
+        throw badInput(
+          "Give exactly one of gameId and source with externalId.",
+        );
 
       const genre = validateGenre(input.genre ?? null);
       const fields = {
@@ -220,9 +227,12 @@ export const reviewResolvers = {
       };
 
       const created = await createReview(
-        input.gameId != null
-          ? { gameId: input.gameId }
-          : { rawgId: validateRawgId(input.rawgId ?? "") },
+        gameId != null
+          ? { gameId }
+          : {
+              source: source as GameSourceId,
+              externalId: validateExternalId(externalId ?? ""),
+            },
         fields,
         authUser,
       );

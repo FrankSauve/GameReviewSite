@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { MockedProvider } from "@apollo/client/testing/react";
-import { GET_RAWG_GAME } from "../src/graphql/queries";
+import { GET_EXTERNAL_GAME } from "../src/graphql/queries";
 import { GET_ME } from "../src/graphql/mutations";
 import { AuthProvider } from "../src/contexts/AuthContext";
 import { NewGamePage } from "../src/pages/NewGamePage";
@@ -18,12 +18,16 @@ const meMock = {
 
 function previewMock(game: { id: string; slug: string } | null) {
   return {
-    request: { query: GET_RAWG_GAME, variables: { rawgId: "1" } },
+    request: {
+      query: GET_EXTERNAL_GAME,
+      variables: { source: "RAWG", id: "1" },
+    },
     result: {
       data: {
-        rawgGame: {
+        externalGame: {
           __typename: "ExternalGame",
-          rawgId: "1",
+          source: "RAWG",
+          externalId: "1",
           title: "Elden Ring",
           coverUrl: null,
           releaseYear: 2022,
@@ -40,9 +44,9 @@ function renderAt(game: { id: string; slug: string } | null) {
   render(
     <MockedProvider mocks={[meMock, previewMock(game)]}>
       <AuthProvider>
-        <MemoryRouter initialEntries={["/games/new/1"]}>
+        <MemoryRouter initialEntries={["/games/new/rawg/1"]}>
           <Routes>
-            <Route path="/games/new/:rawgId" element={<NewGamePage />} />
+            <Route path="/games/new/:source/:id" element={<NewGamePage />} />
             <Route path="/games/:id" element={<p>game page</p>} />
           </Routes>
         </MemoryRouter>

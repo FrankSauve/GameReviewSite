@@ -29,7 +29,10 @@ function App() {
                   <Route path="/" element={<HomePage />} />
                   <Route path="/games" element={<GameLibraryPage />} />
                   <Route path="/games/:id" element={<GameDetailPage />} />
-                  <Route path="/games/new/:rawgId" element={<NewGamePage />} />
+                  <Route
+                    path="/games/new/:source/:id"
+                    element={<NewGamePage />}
+                  />
                   {PROFILE_ROUTES.map(({ path, tab }) => (
                     <Route
                       key={path}

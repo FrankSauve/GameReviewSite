@@ -59,7 +59,7 @@ async function firstReviewOf(
       app,
       `mutation {
          createReview(input: {
-           rawgId: "${rawgId}", rating: 8, content: "Good", ${PLAYTIME_INPUT}
+           source: RAWG, externalId: "${rawgId}", rating: 8, content: "Good", ${PLAYTIME_INPUT}
          }) { game { id slug title } }
        }`,
       identity,

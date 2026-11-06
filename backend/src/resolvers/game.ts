@@ -9,7 +9,13 @@ import {
   type PageArgs,
 } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
-import { rawgSource, validateRawgId } from "../lib/gameSources/rawg.js";
+import { rawgSource } from "../lib/gameSources/rawg.js";
+import {
+  gameIdentity,
+  gameSource,
+  validateExternalId,
+  type GameSourceId,
+} from "../lib/gameSources/index.js";
 import { byIdOrSlug } from "../lib/slug.js";
 import { validateString } from "../lib/validate.js";
 import { badInput } from "../lib/badInput.js";
@@ -115,29 +121,43 @@ export const gameResolvers = {
         where: { rawgId: { in: results.map((hit) => hit.externalId) } },
       });
       const byRawgId = new Map(imported.map((game) => [game.rawgId, game]));
-      return results.map(({ externalId, ...hit }) => {
-        const game = byRawgId.get(externalId);
+      return results.map((hit) => {
+        const game = byRawgId.get(hit.externalId);
         return {
           ...hit,
-          rawgId: externalId,
+          source: rawgSource.id,
           game: game ? serializeDates(game) : null,
         };
       });
     },
 
     /** What the first review of a game will create, without creating it. */
-    rawgGame: async (_parent: unknown, { rawgId }: { rawgId: string }) => {
-      const id = validateRawgId(rawgId);
-      const game = await prisma.game.findUnique({ where: { rawgId: id } });
+    externalGame: async (
+      _parent: unknown,
+      { source, id }: { source: GameSourceId; id: string },
+    ) => {
+      const externalId = validateExternalId(id);
+      const game = await prisma.game.findUnique({
+        where: gameIdentity(source, externalId),
+      });
       if (game)
         return {
           ...serializeDates(game),
-          rawgId: id,
+          source,
+          externalId,
           game: serializeDates(game),
         };
 
-      const fields = await rawgSource.detail(id);
-      return fields && { ...fields, rawgId: id, metacritic: null, game: null };
+      const fields = await gameSource(source).detail(externalId);
+      return (
+        fields && {
+          ...fields,
+          source,
+          externalId,
+          metacritic: null,
+          game: null,
+        }
+      );
     },
   },
 

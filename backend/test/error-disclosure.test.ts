@@ -13,7 +13,8 @@ import { ALICE, authedQuery, publicQuery, resetDatabase } from "./helpers.js";
  * RAWG_API_KEY is unset in the test environment, so searchGamesExternal is a
  * genuine internal failure rather than a simulated one.
  */
-const INTERNAL_FAILURE = '{ searchGamesExternal(query: "halo") { rawgId } }';
+const INTERNAL_FAILURE =
+  '{ searchGamesExternal(query: "halo") { externalId } }';
 
 /**
  * `isProduction()` is read at call time, not at construction time — formatError
@@ -90,7 +91,7 @@ describe("error message disclosure", () => {
     // An authorization failure likewise.
     const anonWrite = await publicQuery(
       app,
-      'mutation { createReview(input: { rawgId: "1", rating: 8, content: "x", yearPlayed: 2024, hoursPlayed: 1 }) { id } }',
+      'mutation { createReview(input: { source: RAWG, externalId: "1", rating: 8, content: "x", yearPlayed: 2024, hoursPlayed: 1 }) { id } }',
     );
     expect(anonWrite.errors?.[0]?.extensions?.code).toBe("UNAUTHENTICATED");
     expect(anonWrite.errors?.[0]?.message).toMatch(/signed in/i);
@@ -110,7 +111,7 @@ describe("error message disclosure", () => {
 
     const res = await authedQuery(
       app,
-      'mutation { createReview(input: { rawgId: "1", rating: 8, content: "   ", yearPlayed: 2024, hoursPlayed: 1 }) { id } }',
+      'mutation { createReview(input: { source: RAWG, externalId: "1", rating: 8, content: "   ", yearPlayed: 2024, hoursPlayed: 1 }) { id } }',
       ALICE,
     );
 

@@ -26,7 +26,7 @@ const SEARCH = `query Search($query: String!, $limit: Int) {
 }`;
 
 const EXTERNAL = `query External($query: String!) {
-  searchGamesExternal(query: $query) { rawgId title game { slug } }
+  searchGamesExternal(query: $query) { externalId title game { slug } }
 }`;
 
 interface Found {
@@ -186,12 +186,19 @@ describe("searchGamesExternal", () => {
       data: { rawgId: "1", title: "Helldivers II", slug: "helldivers-ii" },
     });
     const res = await publicQuery<{
-      searchGamesExternal: { rawgId: string; game: { slug: string } | null }[];
+      searchGamesExternal: {
+        externalId: string;
+        game: { slug: string } | null;
+      }[];
     }>(app, EXTERNAL, {}, { query: "helldivers" });
     expect(res.errors).toBeUndefined();
     expect(res.data?.searchGamesExternal).toEqual([
-      { rawgId: "1", title: "Helldivers II", game: { slug: "helldivers-ii" } },
-      { rawgId: "2", title: "HELLDIVERS 2", game: null },
+      {
+        externalId: "1",
+        title: "Helldivers II",
+        game: { slug: "helldivers-ii" },
+      },
+      { externalId: "2", title: "HELLDIVERS 2", game: null },
     ]);
   });
 });

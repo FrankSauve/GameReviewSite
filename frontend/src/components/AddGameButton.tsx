@@ -55,7 +55,11 @@ export function AddGameButton() {
 
   const handleSelect = (game: ExternalGame) => {
     close();
-    void navigate(game.game ? gamePath(game.game) : newGamePath(game.rawgId));
+    void navigate(
+      game.game
+        ? gamePath(game.game)
+        : newGamePath(game.source, game.externalId),
+    );
   };
 
   const results = data?.searchGamesExternal ?? [];
@@ -117,7 +121,7 @@ export function AddGameButton() {
           {searched && results.length > 0 && (
             <ul className="max-h-[420px] overflow-y-auto divide-y divide-line">
               {results.map((game) => (
-                <li key={game.rawgId}>
+                <li key={`${game.source}:${game.externalId}`}>
                   <GameResultRow
                     game={game}
                     hint={game.game ? "View →" : "Add →"}

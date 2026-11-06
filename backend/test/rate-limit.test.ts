@@ -49,7 +49,9 @@ describe("rate limiting", () => {
       request(fresh.app)
         .post(GRAPHQL_PATH)
         .set("content-type", "application/json")
-        .send({ query: '{ searchGamesExternal(query: "halo") { rawgId } }' });
+        .send({
+          query: '{ searchGamesExternal(query: "halo") { externalId } }',
+        });
 
     const first = await rawg();
     const second = await rawg();
@@ -73,7 +75,7 @@ describe("rate limiting", () => {
   it("counts a RAWG query against the RAWG bucket when it arrives as a GET", async () => {
     const { createApp } = await import("../src/app.js");
     const fresh = await createApp();
-    const document = '{ searchGamesExternal(query: "halo") { rawgId } }';
+    const document = '{ searchGamesExternal(query: "halo") { externalId } }';
 
     const get = () =>
       request(fresh.app)
@@ -98,7 +100,7 @@ describe("rate limiting", () => {
   it("shares one RAWG bucket across both methods", async () => {
     const { createApp } = await import("../src/app.js");
     const fresh = await createApp();
-    const document = '{ searchGamesExternal(query: "halo") { rawgId } }';
+    const document = '{ searchGamesExternal(query: "halo") { externalId } }';
 
     const posted = await request(fresh.app)
       .post(GRAPHQL_PATH)

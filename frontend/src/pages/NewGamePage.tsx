@@ -1,21 +1,23 @@
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@apollo/client/react";
-import { GET_RAWG_GAME } from "../graphql/queries";
+import { GET_EXTERNAL_GAME } from "../graphql/queries";
 import type { ExternalGame } from "../types";
-import { gamePath } from "../lib/links";
+import { gamePath, sourceFromPath } from "../lib/links";
 import { GameHeader } from "../components/GameHeader";
 import { AddReviewForm } from "../components/AddReviewForm";
 
 /**
- * A RAWG title nobody has reviewed yet. Nothing is in the library until the
+ * A title from a game source that nobody has reviewed yet. Nothing is in the library until the
  * review is submitted: the game and its first review are written together.
  */
 export function NewGamePage() {
-  const { rawgId = "" } = useParams<{ rawgId: string }>();
+  const params = useParams<{ source: string; id: string }>();
+  const source = sourceFromPath(params.source ?? "");
+  const id = params.id ?? "";
   const navigate = useNavigate();
   const { data, loading, error } = useQuery<{
-    rawgGame: ExternalGame | null;
-  }>(GET_RAWG_GAME, { variables: { rawgId }, skip: !rawgId });
+    externalGame: ExternalGame | null;
+  }>(GET_EXTERNAL_GAME, { variables: { source, id }, skip: !source || !id });
 
   if (loading && !data)
     return (
@@ -30,7 +32,7 @@ export function NewGamePage() {
       </div>
     );
 
-  const preview = data?.rawgGame;
+  const preview = data?.externalGame;
   if (!preview)
     return (
       <div className="text-center py-20">
@@ -56,7 +58,7 @@ export function NewGamePage() {
           The game joins the library with your review.
         </p>
         <AddReviewForm
-          target={{ rawgId: preview.rawgId }}
+          target={{ source: preview.source, externalId: preview.externalId }}
           gameGenres={preview.genres}
           onSuccess={(game) => void navigate(gamePath(game), { replace: true })}
         />

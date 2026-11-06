@@ -2,7 +2,13 @@ import { GraphQLError } from "graphql";
 import type { Game, Prisma, Review } from "../generated/prisma/client.js";
 import { prisma } from "./prisma.js";
 import { badInput } from "./badInput.js";
-import { rawgSource } from "./gameSources/rawg.js";
+import {
+  SOURCE_COLUMN,
+  gameIdentity,
+  gameSource,
+  type GameIdentity,
+  type GameSourceId,
+} from "./gameSources/index.js";
 import type { GameFields } from "./gameSources/types.js";
 import { reviewSlugBase, slugify, uniqueSlug } from "./slug.js";
 import { violatesUniqueOn } from "./uniqueViolation.js";
@@ -18,13 +24,20 @@ export type ReviewFields = Pick<
   | "secondaryGenres"
 >;
 
-/** A game in the library, or a RAWG title whose first review this is. */
-export type ReviewTarget = { gameId: string } | { rawgId: string };
+/** A game in the library, or a source's title whose first review this is. */
+export type ReviewTarget =
+  { gameId: string } | { source: GameSourceId; externalId: string };
 
-type Resolved = { game: Game } | { create: GameFields & { rawgId: string } };
+type Resolved =
+  | { game: Game }
+  | {
+      create: GameFields & GameIdentity;
+      column: string;
+      identity: GameIdentity;
+    };
 
 /**
- * Writes a review, and with a RAWG title not yet in the library, the game too.
+ * Writes a review, and with a source's title not yet in the library, the game too.
  * A game exists only while it has a review, so the two share a transaction.
  */
 export async function createReview(
@@ -37,9 +50,10 @@ export async function createReview(
     return await write(resolved, fields, author);
   } catch (err) {
     // Someone else's first review created the game since we looked; review theirs.
-    if (!("create" in resolved) || !violatesUniqueOn(err, "rawgId")) throw err;
+    if (!("create" in resolved) || !violatesUniqueOn(err, resolved.column))
+      throw err;
     return write(
-      { game: await existingGame({ rawgId: resolved.create.rawgId }) },
+      { game: await existingGame(resolved.identity) },
       fields,
       author,
     );
@@ -50,13 +64,16 @@ async function resolve(target: ReviewTarget): Promise<Resolved> {
   if ("gameId" in target)
     return { game: await existingGame({ id: target.gameId }) };
 
-  const game = await prisma.game.findUnique({
-    where: { rawgId: target.rawgId },
-  });
+  const identity = gameIdentity(target.source, target.externalId);
+  const game = await prisma.game.findUnique({ where: identity });
   if (game) return { game };
-  const fields = await rawgSource.detail(target.rawgId);
+  const fields = await gameSource(target.source).detail(target.externalId);
   if (!fields) throw notFound();
-  return { create: { ...fields, rawgId: target.rawgId } };
+  return {
+    create: { ...fields, ...identity },
+    column: SOURCE_COLUMN[target.source],
+    identity,
+  };
 }
 
 async function existingGame(where: Prisma.GameWhereUniqueInput): Promise<Game> {

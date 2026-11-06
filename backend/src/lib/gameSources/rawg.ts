@@ -1,4 +1,3 @@
-import { badInput } from "../badInput.js";
 import { coverUrl, gameFields, yearOf } from "./fields.js";
 import { getJson } from "./http.js";
 import type { GameFields, GameSource } from "./types.js";
@@ -24,14 +23,6 @@ function getApiKey(): string {
     );
   }
   return key;
-}
-
-/** RAWG identifiers are integers; this is also what gets parsed for the detail fetch. */
-export function validateRawgId(value: string): string {
-  const trimmed = value.trim();
-  if (!/^\d{1,12}$/.test(trimmed))
-    throw badInput("rawgId must be a positive integer.");
-  return trimmed;
 }
 
 export function gameFieldsFromRawg(detail: RawgGame): GameFields | null {

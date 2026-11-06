@@ -41,7 +41,8 @@ export const GET_GAME_FACETS = gql`
 export const SEARCH_GAMES_EXTERNAL = gql`
   query SearchGamesExternal($query: String!) {
     searchGamesExternal(query: $query) {
-      rawgId
+      source
+      externalId
       title
       coverUrl
       releaseYear
@@ -57,10 +58,11 @@ export const SEARCH_GAMES_EXTERNAL = gql`
 `;
 
 /** A RAWG title as its first review will add it; nothing is written yet. */
-export const GET_RAWG_GAME = gql`
-  query GetRawgGame($rawgId: ID!) {
-    rawgGame(rawgId: $rawgId) {
-      rawgId
+export const GET_EXTERNAL_GAME = gql`
+  query GetExternalGame($source: GameSource!, $id: ID!) {
+    externalGame(source: $source, id: $id) {
+      source
+      externalId
       title
       coverUrl
       releaseYear

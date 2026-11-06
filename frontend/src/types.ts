@@ -67,8 +67,11 @@ export interface Game {
   reviews?: Review[];
 }
 
+export type GameSource = "STEAM" | "TGDB" | "RAWG";
+
 export interface ExternalGame {
-  rawgId: string;
+  source: GameSource;
+  externalId: string;
   title: string;
   coverUrl?: string | null;
   releaseYear?: number | null;
@@ -76,7 +79,7 @@ export interface ExternalGame {
   metacritic?: number | null;
   /** Only from the single-game preview; search results carry none. */
   description?: string | null;
-  /** The game already in the library under this rawgId, if any. */
+  /** The game already in the library under this source id, if any. */
   game?: {
     id: string;
     slug?: string | null;

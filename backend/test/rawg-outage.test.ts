@@ -12,8 +12,8 @@ import type { Express } from "express";
 import { sanitizeError } from "../src/lib/sanitizeError.js";
 import { errorCodes, publicQuery, startApp } from "./helpers.js";
 
-const SEARCH = '{ searchGamesExternal(query: "halo") { rawgId } }';
-const PREVIEW = '{ rawgGame(rawgId: "1") { rawgId } }';
+const SEARCH = '{ searchGamesExternal(query: "halo") { externalId } }';
+const PREVIEW = '{ externalGame(source: RAWG, id: "1") { externalId } }';
 const OUTAGE_MESSAGE = "RAWG is unavailable right now. Try again shortly.";
 
 describe("when RAWG is down", () => {
