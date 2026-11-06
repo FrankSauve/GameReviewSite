@@ -39,8 +39,8 @@ export const GET_GAME_FACETS = gql`
 `;
 
 export const SEARCH_GAMES_EXTERNAL = gql`
-  query SearchGamesExternal($query: String!) {
-    searchGamesExternal(query: $query) {
+  query SearchGamesExternal($query: String!, $scope: GameSearchScope) {
+    searchGamesExternal(query: $query, scope: $scope) {
       source
       externalId
       title

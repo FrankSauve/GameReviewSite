@@ -4,6 +4,7 @@ import { client } from "./apollo";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { Navbar } from "./components/Navbar";
+import { SiteFooter } from "./components/SiteFooter";
 import { HomePage } from "./pages/HomePage";
 import { GameLibraryPage } from "./pages/GameLibraryPage";
 import { GameDetailPage } from "./pages/GameDetailPage";
@@ -67,6 +68,7 @@ function App() {
                   />
                 </Routes>
               </main>
+              <SiteFooter />
             </div>
           </BrowserRouter>
         </ThemeProvider>

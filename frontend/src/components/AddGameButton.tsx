@@ -26,21 +26,23 @@ export function AddGameButton() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [everywhere, setEverywhere] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [search, { data, error, loading, variables }] = useLazyQuery<
     SearchResult,
-    { query: string }
+    { query: string; scope: "DEFAULT" | "EVERYWHERE" }
   >(SEARCH_GAMES_EXTERNAL, { fetchPolicy: "network-only" });
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuery(value);
+    setEverywhere(false);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (value.trim().length < 2) return;
     debounceRef.current = setTimeout(() => {
-      void search({ variables: { query: value.trim() } });
+      void search({ variables: { query: value.trim(), scope: "DEFAULT" } });
     }, 400);
   };
 
@@ -50,6 +52,7 @@ export function AddGameButton() {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setOpen(false);
     setQuery("");
+    setEverywhere(false);
   }, []);
   useDismiss(containerRef, close);
 
@@ -67,6 +70,13 @@ export function AddGameButton() {
   const searched = trimmed.length >= 2;
   // Still debouncing counts as searching, or "no games found" flashes first.
   const searching = searched && (loading || variables?.query !== trimmed);
+
+  // Steam answers a console title with the wrong games, not with nothing, so
+  // only the reader can tell that the rest of the sources are worth asking.
+  const searchEverywhere = () => {
+    setEverywhere(true);
+    void search({ variables: { query: trimmed, scope: "EVERYWHERE" } });
+  };
 
   return (
     <div className="relative shrink-0" ref={containerRef}>
@@ -88,7 +98,7 @@ export function AddGameButton() {
             <input
               autoFocus
               className="input-field rounded-card pl-9 pr-9 text-meta"
-              placeholder="Find a game on RAWG…"
+              placeholder="Find a game…"
               value={query}
               onChange={handleInput}
               autoComplete="off"
@@ -102,7 +112,7 @@ export function AddGameButton() {
 
           {searching && results.length === 0 && (
             <div className="flex items-center justify-center gap-2 py-6 text-meta text-content-subtle">
-              <Spinner /> Searching RAWG…
+              <Spinner /> Searching…
             </div>
           )}
 
@@ -154,18 +164,16 @@ export function AddGameButton() {
             </ul>
           )}
 
-          {/* RAWG attribution */}
-          <div className="px-3 py-2 border-t border-line flex items-center justify-end gap-1">
-            <span className="text-micro text-content-subtle">Powered by</span>
-            <a
-              href="https://rawg.io"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-micro text-content-subtle hover:text-content-muted"
-            >
-              RAWG
-            </a>
-          </div>
+          {searched && !searching && !everywhere && (
+            <div className="px-3 py-2 border-t border-line text-right">
+              <button
+                onClick={searchEverywhere}
+                className="text-micro text-content-subtle hover:text-content-muted underline underline-offset-2"
+              >
+                Not listed? Search everywhere
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

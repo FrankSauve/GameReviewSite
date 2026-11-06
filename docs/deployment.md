@@ -15,6 +15,8 @@ The authentik objects are in [authentik-setup.md](authentik-setup.md).
   its network `external` and attach the frontend and backend to it instead.
 - A DNS record, e.g. `reviews.example.com`.
 - A **RAWG API key** — free at <https://rawg.io/apidocs>.
+- A **TheGamesDB API key**, optional — requested at
+  <https://forums.thegamesdb.net>. Without one, Steam and RAWG still work.
 - `docker compose` v2.
 
 ## 1. Publish the images
@@ -54,6 +56,7 @@ In the `.env` next to your compose file:
 ```env
 GAMEREVIEWS_DB_PASSWORD=<the 24-byte value>
 GAMEREVIEWS_RAWG_API_KEY=<your RAWG key>
+GAMEREVIEWS_TGDB_API_KEY=<your TheGamesDB key, optional>
 GAMEREVIEWS_OIDC_ISSUER=https://authentik.example.com/application/o/reviews/
 GAMEREVIEWS_OIDC_CLIENT_ID=<from the provider>
 GAMEREVIEWS_OIDC_CLIENT_SECRET=<from the provider>
