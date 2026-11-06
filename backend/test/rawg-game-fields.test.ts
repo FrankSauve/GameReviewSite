@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { gameFieldsFromRawg } from "../src/lib/rawgGame.js";
+import { gameFieldsFromRawg } from "../src/lib/gameSources/rawg.js";
 
 const base = { id: 1, name: "Elden Ring" };
 
@@ -11,6 +11,15 @@ describe("the game a first review builds from RAWG", () => {
 
   it("has nothing to build from a blank title", () => {
     expect(gameFieldsFromRawg({ ...base, name: "   " })).toBeNull();
+  });
+
+  it("drops a cover on a host the CSP does not name", () => {
+    expect(
+      gameFieldsFromRawg({
+        ...base,
+        background_image: "https://example.com/a.png",
+      })?.coverUrl,
+    ).toBeNull();
   });
 
   it("keeps only an https cover", () => {

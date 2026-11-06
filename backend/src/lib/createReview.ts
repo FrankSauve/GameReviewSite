@@ -2,8 +2,8 @@ import { GraphQLError } from "graphql";
 import type { Game, Prisma, Review } from "../generated/prisma/client.js";
 import { prisma } from "./prisma.js";
 import { badInput } from "./badInput.js";
-import { getRawgGame } from "./rawg.js";
-import { gameFieldsFromRawg, type RawgGameFields } from "./rawgGame.js";
+import { rawgSource } from "./gameSources/rawg.js";
+import type { GameFields } from "./gameSources/types.js";
 import { reviewSlugBase, slugify, uniqueSlug } from "./slug.js";
 import { violatesUniqueOn } from "./uniqueViolation.js";
 
@@ -21,16 +21,7 @@ export type ReviewFields = Pick<
 /** A game in the library, or a RAWG title whose first review this is. */
 export type ReviewTarget = { gameId: string } | { rawgId: string };
 
-type Resolved =
-  { game: Game } | { create: RawgGameFields & { rawgId: string } };
-
-/** What RAWG has under `rawgId`, or null when it has no such game. */
-export async function rawgGameFields(
-  rawgId: string,
-): Promise<RawgGameFields | null> {
-  const detail = await getRawgGame(parseInt(rawgId, 10));
-  return detail && gameFieldsFromRawg(detail);
-}
+type Resolved = { game: Game } | { create: GameFields & { rawgId: string } };
 
 /**
  * Writes a review, and with a RAWG title not yet in the library, the game too.
@@ -63,7 +54,7 @@ async function resolve(target: ReviewTarget): Promise<Resolved> {
     where: { rawgId: target.rawgId },
   });
   if (game) return { game };
-  const fields = await rawgGameFields(target.rawgId);
+  const fields = await rawgSource.detail(target.rawgId);
   if (!fields) throw notFound();
   return { create: { ...fields, rawgId: target.rawgId } };
 }

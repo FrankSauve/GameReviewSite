@@ -10,7 +10,7 @@ import {
 } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
 import { byIdOrSlug } from "../lib/slug.js";
-import { validateRawgId } from "../lib/rawgGame.js";
+import { validateRawgId } from "../lib/gameSources/rawg.js";
 import { createReview } from "../lib/createReview.js";
 import { validateString } from "../lib/validate.js";
 import { badInput } from "../lib/badInput.js";

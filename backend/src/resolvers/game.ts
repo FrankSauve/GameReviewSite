@@ -9,9 +9,7 @@ import {
   type PageArgs,
 } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
-import { searchRawg, releaseYear } from "../lib/rawg.js";
-import { validateRawgId } from "../lib/rawgGame.js";
-import { rawgGameFields } from "../lib/createReview.js";
+import { rawgSource, validateRawgId } from "../lib/gameSources/rawg.js";
 import { byIdOrSlug } from "../lib/slug.js";
 import { validateString } from "../lib/validate.js";
 import { badInput } from "../lib/badInput.js";
@@ -112,20 +110,16 @@ export const gameResolvers = {
       { query }: { query: string },
     ) => {
       if (!query.trim()) return [];
-      const results = await searchRawg(query.trim());
+      const results = await rawgSource.search(query.trim());
       const imported = await prisma.game.findMany({
-        where: { rawgId: { in: results.map((g) => String(g.id)) } },
+        where: { rawgId: { in: results.map((hit) => hit.externalId) } },
       });
       const byRawgId = new Map(imported.map((game) => [game.rawgId, game]));
-      return results.map((g) => {
-        const game = byRawgId.get(String(g.id));
+      return results.map(({ externalId, ...hit }) => {
+        const game = byRawgId.get(externalId);
         return {
-          rawgId: String(g.id),
-          title: g.name,
-          coverUrl: g.background_image ?? null,
-          releaseYear: releaseYear(g.released),
-          genres: (g.genres ?? []).map((genre) => genre.name),
-          metacritic: g.metacritic ?? null,
+          ...hit,
+          rawgId: externalId,
           game: game ? serializeDates(game) : null,
         };
       });
@@ -142,7 +136,7 @@ export const gameResolvers = {
           game: serializeDates(game),
         };
 
-      const fields = await rawgGameFields(id);
+      const fields = await rawgSource.detail(id);
       return fields && { ...fields, rawgId: id, metacritic: null, game: null };
     },
   },
