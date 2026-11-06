@@ -43,7 +43,7 @@ describe("when RAWG is down", () => {
   const respondWith = (status: number) =>
     fetchStub.mockResolvedValue(new Response("{}", { status }));
 
-  it.each([500, 502, 503, 504, 429])(
+  it.each([500, 502, 503, 504, 429, 403])(
     "tells the reader so on a %i",
     async (status) => {
       respondWith(status);

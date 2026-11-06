@@ -67,7 +67,8 @@ export interface Game {
   reviews?: Review[];
 }
 
-export type GameSource = "STEAM" | "TGDB" | "RAWG";
+export const GAME_SOURCES = ["STEAM", "TGDB", "RAWG"] as const;
+export type GameSource = (typeof GAME_SOURCES)[number];
 
 export interface ExternalGame {
   source: GameSource;

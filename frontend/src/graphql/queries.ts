@@ -57,7 +57,7 @@ export const SEARCH_GAMES_EXTERNAL = gql`
   }
 `;
 
-/** A RAWG title as its first review will add it; nothing is written yet. */
+/** A source's title as its first review will add it; nothing is written yet. */
 export const GET_EXTERNAL_GAME = gql`
   query GetExternalGame($source: GameSource!, $id: ID!) {
     externalGame(source: $source, id: $id) {

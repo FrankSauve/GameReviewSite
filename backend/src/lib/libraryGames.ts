@@ -26,6 +26,10 @@ export async function possibleLibraryGame(fields: {
   title: string;
   releaseYear: number | null;
 }): Promise<Game | null> {
-  const games = await prisma.game.findMany({ orderBy: { createdAt: "asc" } });
-  return games.find((game) => mightBeSameGame(fields, game)) ?? null;
+  const games = await prisma.game.findMany({
+    select: { id: true, title: true, releaseYear: true },
+    orderBy: { createdAt: "asc" },
+  });
+  const match = games.find((game) => mightBeSameGame(fields, game));
+  return match ? prisma.game.findUnique({ where: { id: match.id } }) : null;
 }

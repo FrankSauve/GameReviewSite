@@ -90,7 +90,7 @@ function documents(req: Request): string[] {
   return found;
 }
 
-function isRawgOperation(req: Request): boolean {
+function isSourceOperation(req: Request): boolean {
   return documents(req).some((doc) =>
     SOURCE_FIELDS.some((field) => doc.includes(field)),
   );
@@ -103,7 +103,7 @@ function envInt(name: string, fallback: number): number {
 
 export interface Limiters {
   general: RequestHandler;
-  rawg: RequestHandler;
+  gameSources: RequestHandler;
   auth: RequestHandler;
   exports: RequestHandler;
   embeds: RequestHandler;
@@ -124,12 +124,12 @@ export function createLimiters(): Limiters {
       message: { errors: [{ message: "Too many requests." }] },
     }),
     // Tighter, to keep the game sources' quotas from being burned by a bot.
-    rawg: rateLimit({
+    gameSources: rateLimit({
       windowMs: envInt("RATE_LIMIT_WINDOW_MS", 60_000),
       limit: envInt("RAWG_RATE_LIMIT_MAX", 30),
       standardHeaders: "draft-7",
       legacyHeaders: false,
-      skip: (req) => !isRawgOperation(req),
+      skip: (req) => !isSourceOperation(req),
       message: { errors: [{ message: "Too many game searches, slow down." }] },
     }),
     // The /auth routes sit outside the GraphQL limiters and are cheap to abuse:

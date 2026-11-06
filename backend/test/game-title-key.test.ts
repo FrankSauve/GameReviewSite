@@ -15,6 +15,7 @@ describe("titleKey", () => {
     ],
     ["Batman: Arkham City", "Batman: Arkham City - Game of the Year Edition"],
     ["Dark Souls", "DARK SOULS™: REMASTERED"],
+    ["Death Stranding", "Death Stranding: The Director's Cut"],
   ])("treats %s and %s alike", (a, b) => {
     expect(titleKey(a)).toBe(titleKey(b));
   });
@@ -24,6 +25,9 @@ describe("titleKey", () => {
     ["Hades", "Hades II"],
     ["Halo 3", "Halo 3: ODST"],
     ["Alan Wake", "Alan Wake 2"],
+    ["ドラゴンクエスト", "ファイナルファンタジー"],
+    ["Война и мир", "Тетрис"],
+    ["...", "???"],
   ])("keeps %s and %s apart", (a, b) => {
     expect(titleKey(a)).not.toBe(titleKey(b));
   });

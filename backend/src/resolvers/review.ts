@@ -207,7 +207,11 @@ export const reviewResolvers = {
     ) => {
       const authUser = requireAuth(context);
       const { gameId, source, externalId } = input;
-      if ((gameId == null) === (source == null || externalId == null))
+      const malformed =
+        gameId != null
+          ? source != null || externalId != null
+          : source == null || externalId == null;
+      if (malformed)
         throw badInput(
           "Give exactly one of gameId and source with externalId.",
         );

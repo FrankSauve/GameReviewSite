@@ -1,5 +1,5 @@
 import { coverUrl, decodeEntities, gameFields } from "./fields.js";
-import { getJson } from "./http.js";
+import { getJson, sourceUnavailable } from "./http.js";
 import type { GameHit, GameSource } from "./types.js";
 
 const COVER_HOST = "shared.akamai.steamstatic.com";
@@ -67,8 +67,11 @@ async function search(query: string, category: string): Promise<GameHit[]> {
     "Steam",
     `https://store.steampowered.com/search/results/?${params.toString()}`,
   );
+  // Undocumented: anything but a list must fall through, not read as no results.
+  if (!Array.isArray(data?.items))
+    throw sourceUnavailable("Steam", "search answered without a list");
   const hits: GameHit[] = [];
-  for (const item of (data?.items ?? []).slice(0, MAX_RESULTS)) {
+  for (const item of data.items.slice(0, MAX_RESULTS)) {
     const externalId = appIdOf(item.logo);
     if (!externalId) continue;
     hits.push({
@@ -109,7 +112,7 @@ export const steamSource: GameSource = {
     const year = app.release_date?.date?.match(/\b(?:19|20)\d{2}\b/)?.[0];
     return gameFields({
       title: cleanTitle(app.name),
-      // Stored as returned: newer apps hash their asset paths, so a URL derived
+      // Taken from the answer: newer apps hash their asset paths, so a URL derived
       // from the app id 404s.
       coverUrl: cover(app.header_image),
       genres: (app.genres ?? [])

@@ -63,10 +63,10 @@ export const gameSearch = createGameSearch({
   },
 });
 
-/** Every source numbers its games; this is also what its detail fetch is sent. */
+/** Every source numbers its games. No leading zero: "07" would be a second row for 7. */
 export function validateExternalId(value: string): string {
   const trimmed = value.trim();
-  if (!/^\d{1,12}$/.test(trimmed))
+  if (!/^[1-9]\d{0,11}$/.test(trimmed))
     throw badInput("externalId must be a positive integer.");
   return trimmed;
 }

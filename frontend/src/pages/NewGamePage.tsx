@@ -16,7 +16,9 @@ export function NewGamePage() {
   const source = sourceFromPath(params.source ?? "");
   const id = params.id ?? "";
   const navigate = useNavigate();
-  const [different, setDifferent] = useState(false);
+  // By path: the route keeps this page mounted from one new game to the next.
+  const path = `${params.source}/${id}`;
+  const [different, setDifferent] = useState<string | null>(null);
   const { data, loading, error } = useQuery<{
     externalGame: ExternalGame | null;
   }>(GET_EXTERNAL_GAME, { variables: { source, id }, skip: !source || !id });
@@ -55,7 +57,7 @@ export function NewGamePage() {
 
       <GameHeader game={preview} />
 
-      {match && !different ? (
+      {match && different !== path ? (
         <div className="card p-card-pad space-y-3">
           <h2 className="font-semibold text-content">
             Already in the library?
@@ -70,7 +72,7 @@ export function NewGamePage() {
               Review that game
             </Link>
             <button
-              onClick={() => setDifferent(true)}
+              onClick={() => setDifferent(path)}
               className="btn-secondary text-meta"
             >
               This is a different game

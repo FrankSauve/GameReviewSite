@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 import { MockedProvider } from "@apollo/client/testing/react";
 import { GET_EXTERNAL_GAME } from "../src/graphql/queries";
 import { GET_ME } from "../src/graphql/mutations";
@@ -120,6 +120,56 @@ describe("a title that looks like a game already in the library", () => {
       await screen.findByRole("button", { name: /different game/i }),
     );
     expect(await screen.findByText("Your Review")).toBeTruthy();
+  });
+});
+
+describe("moving from one new game to the next", () => {
+  const matched = (id: string) => {
+    const preview = previewMock(null);
+    return {
+      request: {
+        query: GET_EXTERNAL_GAME,
+        variables: { source: "RAWG", id },
+      },
+      result: {
+        data: {
+          externalGame: {
+            ...preview.result.data.externalGame,
+            externalId: id,
+            libraryMatch: {
+              __typename: "Game",
+              id: "g1",
+              slug: "doom",
+              title: "Doom",
+              releaseYear: 2016,
+            },
+          },
+        },
+      },
+    };
+  };
+
+  it("asks again, though the route kept the page mounted", async () => {
+    render(
+      <MockedProvider mocks={[meMock, matched("1"), matched("2")]}>
+        <AuthProvider>
+          <MemoryRouter initialEntries={["/games/new/rawg/1"]}>
+            <Link to="/games/new/rawg/2">next game</Link>
+            <Routes>
+              <Route path="/games/new/:source/:id" element={<NewGamePage />} />
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>
+      </MockedProvider>,
+    );
+    fireEvent.click(
+      await screen.findByRole("button", { name: /different game/i }),
+    );
+    expect(await screen.findByText("Your Review")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("link", { name: "next game" }));
+    expect(await screen.findByText(/already in the library/i)).toBeTruthy();
+    expect(screen.queryByText("Your Review")).toBeNull();
   });
 });
 

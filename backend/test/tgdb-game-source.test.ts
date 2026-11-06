@@ -127,6 +127,13 @@ describe("TheGamesDB as a game source", () => {
     expect(tgdbSource.enabled?.()).toBe(false);
   });
 
+  it("reports a saved link as unavailable without a key, not as our failure", async () => {
+    delete process.env["TGDB_API_KEY"];
+    await expect(tgdbSource.detail("1")).rejects.toMatchObject({
+      extensions: { code: "SERVICE_UNAVAILABLE" },
+    });
+  });
+
   it("stops being offered once the allowance runs low, until it refreshes", async () => {
     vi.useFakeTimers();
     answer({

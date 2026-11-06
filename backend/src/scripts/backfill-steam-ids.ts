@@ -8,6 +8,7 @@
  * Usage: npm run backfill:steam-ids -- [--write] [--delay=<ms>]
  *        node dist/scripts/backfill-steam-ids.js [--write] [--delay=<ms>]
  */
+import "dotenv/config";
 import { rawgSteamAppId } from "../lib/gameSources/rawg.js";
 import { prisma } from "../lib/prisma.js";
 
@@ -50,7 +51,9 @@ async function main() {
   let found = 0;
   let notOnSteam = 0;
   let failures = 0;
+  const failed: string[] = [];
   const conflicts: string[] = [];
+  const pause = () => new Promise((resolve) => setTimeout(resolve, delayMs));
 
   for (const game of games) {
     if (!game.rawgId) continue;
@@ -58,9 +61,13 @@ async function main() {
     try {
       appId = await rawgSteamAppId(game.rawgId);
       failures = 0;
-    } catch {
+    } catch (err) {
+      failed.push(`${game.title}: ${String(err)}`);
       failures += 1;
-      if (failures < MAX_FAILURES_IN_A_ROW) continue;
+      if (failures < MAX_FAILURES_IN_A_ROW) {
+        await pause();
+        continue;
+      }
       console.log(
         "RAWG keeps failing, so stopping. Re-run this when it is up.",
       );
@@ -80,13 +87,14 @@ async function main() {
           data: { steamAppId: appId },
         });
     }
-    await new Promise((resolve) => setTimeout(resolve, delayMs));
+    await pause();
   }
 
   console.log(
     `${write ? "Wrote" : "Would write"} ${found}; ${notOnSteam} not on Steam.`,
   );
   for (const conflict of conflicts) console.log(`Already held: ${conflict}`);
+  for (const failure of failed) console.log(`Failed: ${failure}`);
 }
 
 await main();

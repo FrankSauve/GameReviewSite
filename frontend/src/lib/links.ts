@@ -1,4 +1,5 @@
-import type { GameSource } from "../types";
+import { GAME_SOURCES, type GameSource } from "../types";
+
 interface Slugged {
   id: string;
   slug?: string | null;
@@ -22,11 +23,9 @@ export function newGamePath(source: GameSource, externalId: string): string {
   return `/games/new/${source.toLowerCase()}/${encodeURIComponent(externalId)}`;
 }
 
-const SOURCES: readonly GameSource[] = ["STEAM", "TGDB", "RAWG"];
-
 /** Null for a segment that names no source: the URL is the reader's to edit. */
 export function sourceFromPath(segment: string): GameSource | null {
-  return SOURCES.find((source) => source === segment.toUpperCase()) ?? null;
+  return GAME_SOURCES.find((name) => name === segment.toUpperCase()) ?? null;
 }
 
 /** `/reviews/alice/elden-ring`. The two segments live in the slug itself. */

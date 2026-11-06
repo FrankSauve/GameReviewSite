@@ -45,6 +45,22 @@ describe("Steam as a game source", () => {
     );
   });
 
+  it("counts a search answer with no list as an outage, not as no results", async () => {
+    answer({ success: 1 });
+    await expect(steamSource.search("hades")).rejects.toMatchObject({
+      extensions: { code: "SERVICE_UNAVAILABLE" },
+    });
+  });
+
+  it("counts a search that 404s as an outage, not as no results", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      async () => new Response("{}", { status: 404 }),
+    );
+    await expect(steamSource.search("hades")).rejects.toMatchObject({
+      extensions: { code: "SERVICE_UNAVAILABLE" },
+    });
+  });
+
   it("stops at twelve when Steam sends more", async () => {
     const item = { name: "Game", logo: "https://x/steam/apps/1/a.jpg" };
     answer({ items: Array.from({ length: 20 }, () => item) });

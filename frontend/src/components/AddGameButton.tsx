@@ -19,8 +19,8 @@ interface SearchResult {
 }
 
 /**
- * Searches RAWG, in RAWG's own order, for a game to review. Picking one writes
- * nothing: a game joins the catalogue with its first review.
+ * Searches the game sources for a game to review. Picking one writes nothing:
+ * a game joins the catalogue with its first review.
  */
 export function AddGameButton() {
   const navigate = useNavigate();
@@ -46,8 +46,8 @@ export function AddGameButton() {
     }, 400);
   };
 
-  // A search still waiting on its debounce would spend a RAWG call on a closed
-  // panel.
+  // A search still waiting on its debounce would spend a source's call on a
+  // closed panel.
   const close = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setOpen(false);
@@ -74,6 +74,7 @@ export function AddGameButton() {
   // Steam answers a console title with the wrong games, not with nothing, so
   // only the reader can tell that the rest of the sources are worth asking.
   const searchEverywhere = () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     setEverywhere(true);
     void search({ variables: { query: trimmed, scope: "EVERYWHERE" } });
   };

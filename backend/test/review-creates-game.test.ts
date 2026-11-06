@@ -185,7 +185,11 @@ describe("the first review of a game", () => {
     });
     for (const target of [
       {},
+      { source: "RAWG" },
+      { externalId: "1" },
       { gameId: game.id, source: "RAWG", externalId: "1" },
+      { gameId: game.id, source: "RAWG" },
+      { gameId: game.id, externalId: "1" },
     ]) {
       const res = await write(ALICE, { ...review, ...target });
       expect(errorCodes(res)).toContain("BAD_USER_INPUT");
@@ -211,6 +215,18 @@ describe("the first review of a game", () => {
     );
     expect(res.data?.externalGame.game).toBeNull();
     expect(res.data?.externalGame.libraryMatch.slug).toBe("elden-ring");
+  });
+
+  it("refuses a leading zero, which would be a second row for one id", async () => {
+    const res = await write(ALICE, {
+      ...review,
+      source: "RAWG",
+      externalId: "01",
+    });
+    expect(res.errors?.[0]?.message).toMatch(
+      /externalId must be a positive integer/,
+    );
+    expect(rawg.calls).toHaveLength(0);
   });
 
   it("refuses a source id that is not an integer before calling RAWG", async () => {

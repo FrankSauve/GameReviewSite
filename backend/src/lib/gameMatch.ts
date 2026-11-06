@@ -12,7 +12,7 @@ const ROMAN: Record<string, string> = {
 
 /** A release of a game rather than another game. Applied once, at the end. */
 const EDITION =
-  /\s(?:(?:game of the year|goty|deluxe|digital deluxe|definitive|enhanced|ultimate|complete|gold|premium|special|collectors|legendary|anniversary|standard) edition|goty|remastered|(?:the )?final cut|directors cut)$/;
+  /\s(?:(?:game of the year|goty|deluxe|digital deluxe|definitive|enhanced|ultimate|complete|gold|premium|special|collectors|legendary|anniversary|standard) edition|goty|remastered|(?:the )?(?:final|directors) cut)$/;
 
 /**
  * Compares titles across sources, which punctuate and number one game
@@ -27,12 +27,13 @@ export function titleKey(title: string): string {
     .replace(/\s*\((?:19|20)\d{2}\)\s*$/, "")
     .replace(/['’]/g, "")
     .replace(/&/g, " and ")
-    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/[^\p{L}\p{M}\p{N}]+/gu, " ")
     .trim()
     .split(" ")
     .map((word) => ROMAN[word] ?? word)
     .join(" ");
-  return key.replace(EDITION, "") || key;
+  // A title of punctuation alone has no key, and must not match every other such.
+  return key.replace(EDITION, "") || key || title.trim();
 }
 
 interface Titled {

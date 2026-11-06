@@ -1,6 +1,6 @@
 import { titleKey } from "../gameMatch.js";
 import { coverUrl, gameFields, yearOf } from "./fields.js";
-import { getJson } from "./http.js";
+import { getJson, sourceUnavailable } from "./http.js";
 import type { GameFields, GameHit, GameSource } from "./types.js";
 
 const TGDB_BASE = "https://api.thegamesdb.net";
@@ -64,7 +64,8 @@ let lowUntil = 0;
 
 function apiKey(): string {
   const key = process.env["TGDB_API_KEY"];
-  if (!key) throw new Error("TGDB_API_KEY is not configured.");
+  // A saved link reaches detail even when `enabled` keeps search away.
+  if (!key) throw sourceUnavailable("TheGamesDB", "TGDB_API_KEY is not set");
   return key;
 }
 
