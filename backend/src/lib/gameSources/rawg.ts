@@ -35,6 +35,28 @@ export function gameFieldsFromRawg(detail: RawgGame): GameFields | null {
   });
 }
 
+/** Null for a store page that is not Steam's: RAWG lists every storefront. */
+export function steamAppIdFrom(storeUrl: string): string | null {
+  return (
+    storeUrl.match(/^https?:\/\/store\.steampowered\.com\/app\/(\d+)/)?.[1] ??
+    null
+  );
+}
+
+/** Null when RAWG lists no Steam page for the game. */
+export async function rawgSteamAppId(rawgId: string): Promise<string | null> {
+  const params = new URLSearchParams({ key: getApiKey() });
+  const data = await getJson<{ results?: { url: string }[] }>(
+    "RAWG",
+    `${RAWG_BASE}/games/${parseInt(rawgId, 10)}/stores?${params.toString()}`,
+  );
+  for (const { url } of data?.results ?? []) {
+    const appId = steamAppIdFrom(url);
+    if (appId) return appId;
+  }
+  return null;
+}
+
 export const rawgSource: GameSource = {
   id: "RAWG",
 

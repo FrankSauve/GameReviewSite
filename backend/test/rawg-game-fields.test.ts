@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { gameFieldsFromRawg } from "../src/lib/gameSources/rawg.js";
+import {
+  gameFieldsFromRawg,
+  steamAppIdFrom,
+} from "../src/lib/gameSources/rawg.js";
 
 const base = { id: 1, name: "Elden Ring" };
 
@@ -69,5 +72,23 @@ describe("the game a first review builds from RAWG", () => {
     });
     expect(fields?.releaseYear).toBe(2022);
     expect(fields?.description).toBeNull();
+  });
+});
+
+describe("steamAppIdFrom", () => {
+  it("reads the app id from a Steam store page", () => {
+    expect(
+      steamAppIdFrom(
+        "https://store.steampowered.com/app/292030/The_Witcher_3/",
+      ),
+    ).toBe("292030");
+    expect(steamAppIdFrom("http://store.steampowered.com/app/400")).toBe("400");
+  });
+
+  it("ignores every other storefront", () => {
+    expect(steamAppIdFrom("https://www.gog.com/game/witcher_3")).toBeNull();
+    expect(
+      steamAppIdFrom("https://example.com/store.steampowered.com/app/1"),
+    ).toBeNull();
   });
 });

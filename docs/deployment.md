@@ -309,3 +309,24 @@ majors and the new image refuses to start against an old data directory. To
 upgrade — dump, stop the three containers, delete the volume, change the tag,
 start, restore. Renovate holds this major back permanently; an image updater does
 not, so the pin in the snippet is what protects you.
+
+### Backfilling Steam ids
+
+Games added before Steam became a source have no `steamAppId`, so a search has
+to fall back on comparing titles to recognise them. RAWG knows which of its
+games are on Steam. The repair ships in the image and only works while RAWG is
+up:
+
+```bash
+# Dry run: prints what it would write.
+docker compose exec gamereviews-backend node dist/scripts/backfill-steam-ids.js
+
+# Apply.
+docker compose exec gamereviews-backend node dist/scripts/backfill-steam-ids.js --write
+```
+
+It goes one game at a time with a 1s pause (`--delay=<ms>` to change it), and
+stops after three failures in a row, so a RAWG outage ends the run rather than
+walking the library. Re-running picks up where it left off. An app id already
+held by another game is reported and skipped, because two rows for one game are
+for a person to merge.
