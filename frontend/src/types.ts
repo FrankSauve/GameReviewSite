@@ -85,6 +85,13 @@ export interface ExternalGame {
     slug?: string | null;
     reviewCount?: number | null;
   } | null;
+  /** Only from the single-game preview: the reader decides if it is this game. */
+  libraryMatch?: {
+    id: string;
+    slug?: string | null;
+    title: string;
+    releaseYear?: number | null;
+  } | null;
 }
 
 export interface CurrentUser {

@@ -93,6 +93,9 @@ export const typeDefs = `#graphql
     description: String
     # The game already in the library under this source id, if any.
     game: Game
+    # Only from externalGame: a game with the same title and a close year, which
+    # the reader confirms or dismisses. Never treated as the same game by itself.
+    libraryMatch: Game
   }
 
   # A review without its body.

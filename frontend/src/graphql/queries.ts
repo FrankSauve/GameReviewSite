@@ -72,6 +72,12 @@ export const GET_EXTERNAL_GAME = gql`
         id
         slug
       }
+      libraryMatch {
+        id
+        slug
+        title
+        releaseYear
+      }
     }
   }
 `;

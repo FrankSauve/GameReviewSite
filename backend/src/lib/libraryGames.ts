@@ -1,3 +1,5 @@
+import type { Game } from "../generated/prisma/client.js";
+import { mightBeSameGame } from "./gameMatch.js";
 import { prisma } from "./prisma.js";
 import { serializeDates } from "./serialize.js";
 import { gameIdentity, SOURCE_COLUMN } from "./gameSources/index.js";
@@ -14,4 +16,16 @@ export async function withLibraryGames(hits: SourcedHit[]) {
     );
     return { ...hit, game: game ? serializeDates(game) : null };
   });
+}
+
+/**
+ * A game the reader may mean instead, for them to confirm: a false split is
+ * fixable, but a false merge files reviews under the wrong game.
+ */
+export async function possibleLibraryGame(fields: {
+  title: string;
+  releaseYear: number | null;
+}): Promise<Game | null> {
+  const games = await prisma.game.findMany({ orderBy: { createdAt: "asc" } });
+  return games.find((game) => mightBeSameGame(fields, game)) ?? null;
 }

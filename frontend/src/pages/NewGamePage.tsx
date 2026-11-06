@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@apollo/client/react";
 import { GET_EXTERNAL_GAME } from "../graphql/queries";
@@ -15,6 +16,7 @@ export function NewGamePage() {
   const source = sourceFromPath(params.source ?? "");
   const id = params.id ?? "";
   const navigate = useNavigate();
+  const [different, setDifferent] = useState(false);
   const { data, loading, error } = useQuery<{
     externalGame: ExternalGame | null;
   }>(GET_EXTERNAL_GAME, { variables: { source, id }, skip: !source || !id });
@@ -33,6 +35,7 @@ export function NewGamePage() {
     );
 
   const preview = data?.externalGame;
+  const match = preview?.libraryMatch;
   if (!preview)
     return (
       <div className="text-center py-20">
@@ -52,17 +55,43 @@ export function NewGamePage() {
 
       <GameHeader game={preview} />
 
-      <div className="card p-card-pad">
-        <h2 className="font-semibold text-content mb-1">Your Review</h2>
-        <p className="text-meta text-content-subtle mb-4">
-          The game joins the library with your review.
-        </p>
-        <AddReviewForm
-          target={{ source: preview.source, externalId: preview.externalId }}
-          gameGenres={preview.genres}
-          onSuccess={(game) => void navigate(gamePath(game), { replace: true })}
-        />
-      </div>
+      {match && !different ? (
+        <div className="card p-card-pad space-y-3">
+          <h2 className="font-semibold text-content">
+            Already in the library?
+          </h2>
+          <p className="text-meta text-content-subtle">
+            This looks like {match.title}
+            {match.releaseYear ? ` (${match.releaseYear})` : ""}, which is
+            already here.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Link to={gamePath(match)} className="btn-primary text-meta">
+              Review that game
+            </Link>
+            <button
+              onClick={() => setDifferent(true)}
+              className="btn-secondary text-meta"
+            >
+              This is a different game
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="card p-card-pad">
+          <h2 className="font-semibold text-content mb-1">Your Review</h2>
+          <p className="text-meta text-content-subtle mb-4">
+            The game joins the library with your review.
+          </p>
+          <AddReviewForm
+            target={{ source: preview.source, externalId: preview.externalId }}
+            gameGenres={preview.genres}
+            onSuccess={(game) =>
+              void navigate(gamePath(game), { replace: true })
+            }
+          />
+        </div>
+      )}
     </div>
   );
 }

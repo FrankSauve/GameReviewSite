@@ -10,7 +10,7 @@ import {
 } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
 import type { GameSearchScope } from "../lib/gameSearch.js";
-import { withLibraryGames } from "../lib/libraryGames.js";
+import { possibleLibraryGame, withLibraryGames } from "../lib/libraryGames.js";
 import {
   gameIdentity,
   gameSearch,
@@ -141,15 +141,16 @@ export const gameResolvers = {
         };
 
       const fields = await gameSource(source).detail(externalId);
-      return (
-        fields && {
-          ...fields,
-          source,
-          externalId,
-          metacritic: null,
-          game: null,
-        }
-      );
+      if (!fields) return null;
+      const match = await possibleLibraryGame(fields);
+      return {
+        ...fields,
+        source,
+        externalId,
+        metacritic: null,
+        game: null,
+        libraryMatch: match && serializeDates(match),
+      };
     },
   },
 

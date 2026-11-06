@@ -193,6 +193,26 @@ describe("the first review of a game", () => {
     expect(await prisma.review.count()).toBe(0);
   });
 
+  it("offers a same-titled library game for the reader to confirm", async () => {
+    await prisma.game.create({
+      data: {
+        steamAppId: "7",
+        title: "ELDEN RING",
+        slug: "elden-ring",
+        releaseYear: 2022,
+      },
+    });
+    const res = await authedQuery<{
+      externalGame: { game: null; libraryMatch: { slug: string } };
+    }>(
+      app,
+      `{ externalGame(source: RAWG, id: "1") { game { id } libraryMatch { slug } } }`,
+      ALICE,
+    );
+    expect(res.data?.externalGame.game).toBeNull();
+    expect(res.data?.externalGame.libraryMatch.slug).toBe("elden-ring");
+  });
+
   it("refuses a source id that is not an integer before calling RAWG", async () => {
     const res = await write(ALICE, {
       ...review,

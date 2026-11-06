@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { titleKey } from "../src/lib/gameMatch.js";
+import { mightBeSameGame, titleKey } from "../src/lib/gameMatch.js";
 
 describe("titleKey", () => {
   it.each([
@@ -30,5 +30,31 @@ describe("titleKey", () => {
 
   it("does not empty a title that is only an edition's words", () => {
     expect(titleKey("Remastered")).toBe("remastered");
+  });
+});
+
+describe("mightBeSameGame", () => {
+  const game = (title: string, releaseYear: number | null) => ({
+    title,
+    releaseYear,
+  });
+
+  it("matches an edition with the game, a year apart", () => {
+    expect(
+      mightBeSameGame(
+        game("Disco Elysium - The Final Cut", 2020),
+        game("Disco Elysium", 2019),
+      ),
+    ).toBe(true);
+  });
+
+  it("keeps a same-titled game of another decade apart", () => {
+    expect(mightBeSameGame(game("DOOM", 2016), game("Doom", 1993))).toBe(false);
+  });
+
+  it("still asks when a year is missing", () => {
+    expect(mightBeSameGame(game("Hades", null), game("Hades", 2020))).toBe(
+      true,
+    );
   });
 });
