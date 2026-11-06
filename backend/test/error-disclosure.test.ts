@@ -10,11 +10,11 @@ import { ALICE, authedQuery, publicQuery, resetDatabase } from "./helpers.js";
  * add it to backend/.env", and a Prisma failure would have named tables,
  * columns and constraints the same way.
  *
- * RAWG_API_KEY is unset in the test environment, so searchGamesExternal is a
+ * RAWG_API_KEY is unset in the test environment, so a RAWG detail fetch is a
  * genuine internal failure rather than a simulated one.
  */
 const INTERNAL_FAILURE =
-  '{ searchGamesExternal(query: "halo") { externalId } }';
+  '{ externalGame(source: RAWG, id: "1") { externalId } }';
 
 /**
  * `isProduction()` is read at call time, not at construction time — formatError

@@ -1,22 +1,22 @@
 {
- "2138330": {
-  "success": true,
-  "data": {
-   "type": "dlc",
-   "name": "Cyberpunk 2077: Phantom Liberty",
-   "steam_appid": 2138330,
-   "short_description": "Phantom Liberty is a new spy-thriller expansion for the open-world action-adventure RPG Cyberpunk 2077. As cyber-enhanced mercenary V, join secret agent Solomon Reed to unravel a web of shattered loyalties and sinister political machinations.",
-   "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2138330/bdbeea292270b8cd9dde1f2044a411624db58657/header.jpg?t=1784713876",
-   "genres": [
-    {
-     "id": "3",
-     "description": "RPG"
+  "2138330": {
+    "success": true,
+    "data": {
+      "type": "dlc",
+      "name": "Cyberpunk 2077: Phantom Liberty",
+      "steam_appid": 2138330,
+      "short_description": "Phantom Liberty is a new spy-thriller expansion for the open-world action-adventure RPG Cyberpunk 2077. As cyber-enhanced mercenary V, join secret agent Solomon Reed to unravel a web of shattered loyalties and sinister political machinations.",
+      "header_image": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2138330/bdbeea292270b8cd9dde1f2044a411624db58657/header.jpg?t=1784713876",
+      "genres": [
+        {
+          "id": "3",
+          "description": "RPG"
+        }
+      ],
+      "release_date": {
+        "coming_soon": false,
+        "date": "Sep 25, 2023"
+      }
     }
-   ],
-   "release_date": {
-    "coming_soon": false,
-    "date": "Sep 25, 2023"
-   }
   }
- }
 }

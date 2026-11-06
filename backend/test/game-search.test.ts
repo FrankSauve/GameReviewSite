@@ -11,6 +11,7 @@ import {
 import type { Express } from "express";
 import { prisma } from "../src/lib/prisma.js";
 import { escapeLike, searchableTitle } from "../src/lib/gameCatalogue.js";
+import { gameSearch } from "../src/lib/gameSources/index.js";
 import {
   ALICE,
   BOB,
@@ -163,11 +164,13 @@ describe("searchGamesExternal", () => {
     await resetDatabase();
     process.env["RAWG_API_KEY"] = "test-key";
     original = globalThis.fetch;
+    gameSearch.clear();
     globalThis.fetch = vi.fn(async () => {
+      const logo = (id: number) => `https://x/steam/apps/${id}/capsule.jpg`;
       const body = {
-        results: [
-          { id: 1, name: "Helldivers II" },
-          { id: 2, name: "HELLDIVERS 2" },
+        items: [
+          { name: "Helldivers II", logo: logo(1) },
+          { name: "HELLDIVERS 2", logo: logo(2) },
         ],
       };
       return new Response(JSON.stringify(body), {
@@ -181,9 +184,9 @@ describe("searchGamesExternal", () => {
     delete process.env["RAWG_API_KEY"];
   });
 
-  it("links a result to the game already imported under its rawgId", async () => {
+  it("links a result to the game already imported under its source id", async () => {
     await prisma.game.create({
-      data: { rawgId: "1", title: "Helldivers II", slug: "helldivers-ii" },
+      data: { steamAppId: "1", title: "Helldivers II", slug: "helldivers-ii" },
     });
     const res = await publicQuery<{
       searchGamesExternal: {

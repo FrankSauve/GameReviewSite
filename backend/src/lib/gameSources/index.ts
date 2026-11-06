@@ -1,6 +1,7 @@
 import { badInput } from "../badInput.js";
+import { createGameSearch, type Lookup } from "../gameSearch.js";
 import { rawgSource } from "./rawg.js";
-import { steamSource } from "./steam.js";
+import { searchSteamDlc, steamSource } from "./steam.js";
 import { tgdbSource } from "./tgdb.js";
 import type { GameSource, GameSourceId } from "./types.js";
 
@@ -37,6 +38,30 @@ const SOURCES: Record<GameSourceId, GameSource> = {
 };
 
 export const gameSource = (id: GameSourceId): GameSource => SOURCES[id];
+
+const lookup = (source: GameSource): Lookup => ({
+  name: source.id,
+  source: source.id,
+  enabled: () => source.enabled?.() ?? true,
+  search: (query) => source.search(query),
+});
+
+const steam = lookup(steamSource);
+const tgdb = lookup(tgdbSource);
+const rawg = lookup(rawgSource);
+
+/**
+ * Steam first because the library is nearly all PC. It answers a console title
+ * with a confident list of the wrong games, so nothing here can fall through to
+ * TheGamesDB on its own: that takes the reader's "search everywhere".
+ */
+export const gameSearch = createGameSearch({
+  DEFAULT: { fallback: [steam, tgdb, rawg] },
+  EVERYWHERE: {
+    fallback: [tgdb, rawg],
+    extra: [{ name: "STEAM_DLC", source: "STEAM", search: searchSteamDlc }],
+  },
+});
 
 /** Every source numbers its games; this is also what its detail fetch is sent. */
 export function validateExternalId(value: string): string {

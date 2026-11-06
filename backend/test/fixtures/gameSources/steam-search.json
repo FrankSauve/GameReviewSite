@@ -1,25 +1,25 @@
 {
- "desc": "",
- "items": [
-  {
-   "name": "Hades",
-   "logo": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1145360/capsule_sm_120.jpg?t=1758127023"
-  },
-  {
-   "name": "Hades II",
-   "logo": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1145350/10c9138570a8d7ac9144f601ab0f2ccbc820337e/capsule_sm_120.jpg?t=1779901265"
-  },
-  {
-   "name": "Hades' Star",
-   "logo": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/755800/capsule_sm_120.jpg?t=1760538814"
-  },
-  {
-   "name": "H.A.D.E.S Zero",
-   "logo": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3695570/b3c38ac7bef7070cc4877a5f09e158f16e7563d7/capsule_sm_120.jpg?t=1775321517"
-  },
-  {
-   "name": "Daedalic - Gigantic Bundle",
-   "logo": "https://shared.akamai.steamstatic.com/store_item_assets/steam/subs/76471/capsule_sm_120.jpg?t=1481"
-  }
- ]
+  "desc": "",
+  "items": [
+    {
+      "name": "Hades",
+      "logo": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1145360/capsule_sm_120.jpg?t=1758127023"
+    },
+    {
+      "name": "Hades II",
+      "logo": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1145350/10c9138570a8d7ac9144f601ab0f2ccbc820337e/capsule_sm_120.jpg?t=1779901265"
+    },
+    {
+      "name": "Hades' Star",
+      "logo": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/755800/capsule_sm_120.jpg?t=1760538814"
+    },
+    {
+      "name": "H.A.D.E.S Zero",
+      "logo": "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/3695570/b3c38ac7bef7070cc4877a5f09e158f16e7563d7/capsule_sm_120.jpg?t=1775321517"
+    },
+    {
+      "name": "Daedalic - Gigantic Bundle",
+      "logo": "https://shared.akamai.steamstatic.com/store_item_assets/steam/subs/76471/capsule_sm_120.jpg?t=1481"
+    }
+  ]
 }

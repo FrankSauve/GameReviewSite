@@ -1,51 +1,46 @@
 {
- "code": 200,
- "status": "Success",
- "data": {
-  "count": 1,
-  "games": [
-   {
-    "id": 87675,
-    "game_title": "Metroid Dread",
-    "release_date": "2021-10-08",
-    "platform": 4971,
-    "region_id": 1,
-    "country_id": 50,
-    "overview": "Join intergalactic bounty hunter Samus Aran in her first new 2D Metroid story in 19 years\r\nSamus’ story continues after ",
-    "developers": [
-     5388
-    ],
-    "genres": [
-     1,
-     2
+  "code": 200,
+  "status": "Success",
+  "data": {
+    "count": 1,
+    "games": [
+      {
+        "id": 87675,
+        "game_title": "Metroid Dread",
+        "release_date": "2021-10-08",
+        "platform": 4971,
+        "region_id": 1,
+        "country_id": 50,
+        "overview": "Join intergalactic bounty hunter Samus Aran in her first new 2D Metroid story in 19 years\r\nSamus’ story continues after ",
+        "developers": [5388],
+        "genres": [1, 2]
+      }
     ]
-   }
-  ]
- },
- "include": {
-  "boxart": {
-   "base_url": {
-    "original": "https://cdn.thegamesdb.net/images/original/",
-    "small": "https://cdn.thegamesdb.net/images/small/",
-    "thumb": "https://cdn.thegamesdb.net/images/thumb/",
-    "cropped_center_thumb": "https://cdn.thegamesdb.net/images/cropped_center_thumb/",
-    "medium": "https://cdn.thegamesdb.net/images/medium/",
-    "large": "https://cdn.thegamesdb.net/images/large/"
-   },
-   "data": {
-    "87675": [
-     {
-      "id": 306967,
-      "type": "boxart",
-      "side": "front",
-      "filename": "boxart/front/87675-1.jpg",
-      "resolution": null
-     }
-    ]
-   }
-  }
- },
- "remaining_monthly_allowance": 741,
- "extra_allowance": 0,
- "allowance_refresh_timer": 2616944
+  },
+  "include": {
+    "boxart": {
+      "base_url": {
+        "original": "https://cdn.thegamesdb.net/images/original/",
+        "small": "https://cdn.thegamesdb.net/images/small/",
+        "thumb": "https://cdn.thegamesdb.net/images/thumb/",
+        "cropped_center_thumb": "https://cdn.thegamesdb.net/images/cropped_center_thumb/",
+        "medium": "https://cdn.thegamesdb.net/images/medium/",
+        "large": "https://cdn.thegamesdb.net/images/large/"
+      },
+      "data": {
+        "87675": [
+          {
+            "id": 306967,
+            "type": "boxart",
+            "side": "front",
+            "filename": "boxart/front/87675-1.jpg",
+            "resolution": null
+          }
+        ]
+      }
+    }
+  },
+  "remaining_monthly_allowance": 741,
+  "extra_allowance": 0,
+  "allowance_refresh_timer": 2616944
 }

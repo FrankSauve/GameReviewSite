@@ -74,6 +74,12 @@ export const typeDefs = `#graphql
     RAWG
   }
 
+  # EVERYWHERE adds the sources Steam-first search does not reach by itself.
+  enum GameSearchScope {
+    DEFAULT
+    EVERYWHERE
+  }
+
   # A game at a source, which may not be in our database yet.
   type ExternalGame {
     source: GameSource!
@@ -305,7 +311,7 @@ export const typeDefs = `#graphql
     game(id: ID!): Game
     # Reviewed games whose title contains the query, most-reviewed first.
     searchGames(query: String!, limit: Int): [Game!]!
-    searchGamesExternal(query: String!): [ExternalGame!]!
+    searchGamesExternal(query: String!, scope: GameSearchScope): [ExternalGame!]!
     externalGame(source: GameSource!, id: ID!): ExternalGame
 
     reviews(limit: Int, offset: Int): [Review!]!

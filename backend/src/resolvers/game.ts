@@ -9,9 +9,11 @@ import {
   type PageArgs,
 } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
-import { rawgSource } from "../lib/gameSources/rawg.js";
+import type { GameSearchScope } from "../lib/gameSearch.js";
+import { withLibraryGames } from "../lib/libraryGames.js";
 import {
   gameIdentity,
+  gameSearch,
   gameSource,
   validateExternalId,
   type GameSourceId,
@@ -113,22 +115,12 @@ export const gameResolvers = {
 
     searchGamesExternal: async (
       _parent: unknown,
-      { query }: { query: string },
+      args: { query: string; scope?: GameSearchScope | null },
     ) => {
-      if (!query.trim()) return [];
-      const results = await rawgSource.search(query.trim());
-      const imported = await prisma.game.findMany({
-        where: { rawgId: { in: results.map((hit) => hit.externalId) } },
-      });
-      const byRawgId = new Map(imported.map((game) => [game.rawgId, game]));
-      return results.map((hit) => {
-        const game = byRawgId.get(hit.externalId);
-        return {
-          ...hit,
-          source: rawgSource.id,
-          game: game ? serializeDates(game) : null,
-        };
-      });
+      const query = searchableTitle(args.query);
+      if (!query) return [];
+      const hits = await gameSearch.search(query, args.scope ?? "DEFAULT");
+      return withLibraryGames(hits);
     },
 
     /** What the first review of a game will create, without creating it. */
