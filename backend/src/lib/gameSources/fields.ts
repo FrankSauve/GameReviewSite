@@ -22,7 +22,8 @@ export function decodeEntities(text: string): string {
 
 /**
  * Covers land in an <img src> on every reader's page, so only https passes, and
- * only from a host the CSP's img-src names: any other fails silently there.
+ * only from a host the CSP's img-src names: any other fails silently there. A
+ * host starting with a dot allows that domain's subdomains.
  */
 export function coverUrl(
   value: string | null | undefined,
@@ -31,9 +32,12 @@ export function coverUrl(
   if (!value || value.length > 2000) return null;
   try {
     const url = new URL(value.trim());
-    return url.protocol === "https:" && hosts.includes(url.hostname)
-      ? url.toString()
-      : null;
+    const allowed = hosts.some((host) =>
+      host.startsWith(".")
+        ? url.hostname.endsWith(host)
+        : url.hostname === host,
+    );
+    return url.protocol === "https:" && allowed ? url.toString() : null;
   } catch {
     return null;
   }

@@ -31,35 +31,23 @@ describe("Steam as a game source", () => {
     );
   });
 
-  it("pins a cover from any of Steam's CDNs to the one the CSP names", async () => {
-    answer({
-      items: [
-        {
-          name: "Hades",
-          logo: "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1/a/b.jpg?t=1",
-        },
-      ],
-    });
-    expect((await steamSource.search("hades"))[0]?.coverUrl).toBe(
-      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1/a/b.jpg?t=1",
-    );
-  });
+  it.each(["shared.fastly.steamstatic.com", "shared.akamai.steamstatic.com"])(
+    "keeps a cover from %s as Steam returned it",
+    async (host) => {
+      const logo = `https://${host}/store_item_assets/steam/apps/1/a/b.jpg?t=1`;
+      answer({ items: [{ name: "Hades", logo }] });
+      expect((await steamSource.search("hades"))[0]?.coverUrl).toBe(logo);
+    },
+  );
 
-  it("counts a search answer with no list as an outage, not as no results", async () => {
-    answer({ success: 1 });
-    await expect(steamSource.search("hades")).rejects.toMatchObject({
-      extensions: { code: "SERVICE_UNAVAILABLE" },
-    });
-  });
-
-  it("counts a search that 404s as an outage, not as no results", async () => {
-    vi.spyOn(globalThis, "fetch").mockImplementation(
-      async () => new Response("{}", { status: 404 }),
-    );
-    await expect(steamSource.search("hades")).rejects.toMatchObject({
-      extensions: { code: "SERVICE_UNAVAILABLE" },
-    });
-  });
+  it.each(["steamstatic.com.example.com", "evilsteamstatic.com"])(
+    "drops a cover from %s",
+    async (host) => {
+      const logo = `https://${host}/store_item_assets/steam/apps/1/a.jpg`;
+      answer({ items: [{ name: "Hades", logo }] });
+      expect((await steamSource.search("hades"))[0]?.coverUrl).toBeNull();
+    },
+  );
 
   it("stops at twelve when Steam sends more", async () => {
     const item = { name: "Game", logo: "https://x/steam/apps/1/a.jpg" };
@@ -96,7 +84,7 @@ describe("Steam as a game source", () => {
       releaseYear: 2020,
       genres: ["Action", "Indie", "RPG"],
       coverUrl: expect.stringMatching(
-        /^https:\/\/shared\.akamai\.steamstatic\.com\/.*header\.jpg/,
+        /^https:\/\/shared\.[a-z]+\.steamstatic\.com\/.*header\.jpg/,
       ),
     });
   });

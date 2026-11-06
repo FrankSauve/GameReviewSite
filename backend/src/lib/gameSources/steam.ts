@@ -2,7 +2,7 @@ import { coverUrl, decodeEntities, gameFields } from "./fields.js";
 import { getJson, sourceUnavailable } from "./http.js";
 import type { GameHit, GameSource } from "./types.js";
 
-const COVER_HOST = "shared.akamai.steamstatic.com";
+const COVER_DOMAIN = ".steamstatic.com";
 const CATEGORY_GAMES = "998";
 const CATEGORY_DLC = "21";
 const MAX_RESULTS = 12;
@@ -39,17 +39,10 @@ const cleanTitle = (name: string) =>
   decodeEntities(name).replace(/[™®©]/g, "").trim();
 
 /**
- * Steam answers from whichever CDN it likes, request to request, with the same
- * paths on all of them. The CSP names one, so every cover is pinned to it.
+ * Steam answers from whichever CDN it likes, request to request, so a cover is
+ * kept as returned and the CSP allows the whole domain.
  */
-const cover = (url?: string) =>
-  coverUrl(
-    url?.replace(
-      /^https:\/\/shared\.[a-z]+\.steamstatic\.com\//,
-      `https://${COVER_HOST}/`,
-    ),
-    [COVER_HOST],
-  );
+const cover = (url?: string) => coverUrl(url, [COVER_DOMAIN]);
 
 /** A bundle's logo is under /subs/, so it falls out here too. */
 const appIdOf = (logo?: string) => logo?.match(/\/steam\/apps\/(\d+)\//)?.[1];
