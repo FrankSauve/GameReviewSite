@@ -9,6 +9,7 @@ import {
   vi,
 } from "vitest";
 import type { Express } from "express";
+import { gameSearch } from "../src/lib/gameSources/index.js";
 import { prisma } from "../src/lib/prisma.js";
 import {
   ALICE,
@@ -93,6 +94,7 @@ describe("the first review of a game", () => {
 
   beforeEach(async () => {
     await resetDatabase();
+    gameSearch.clear();
     process.env["RAWG_API_KEY"] = "test-key";
     rawg = stubRawg();
   });
@@ -274,6 +276,7 @@ describe("previewing a game before its first review", () => {
 
   beforeEach(async () => {
     await resetDatabase();
+    gameSearch.clear();
     process.env["RAWG_API_KEY"] = "test-key";
     rawg = stubRawg();
   });

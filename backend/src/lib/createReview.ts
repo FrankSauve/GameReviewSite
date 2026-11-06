@@ -4,8 +4,8 @@ import { prisma } from "./prisma.js";
 import { badInput } from "./badInput.js";
 import {
   SOURCE_COLUMN,
+  gameDetail,
   gameIdentity,
-  gameSource,
   type GameIdentity,
   type GameSourceId,
 } from "./gameSources/index.js";
@@ -67,7 +67,7 @@ async function resolve(target: ReviewTarget): Promise<Resolved> {
   const identity = gameIdentity(target.source, target.externalId);
   const game = await prisma.game.findUnique({ where: identity });
   if (game) return { game };
-  const fields = await gameSource(target.source).detail(target.externalId);
+  const fields = await gameDetail(target.source, target.externalId);
   if (!fields) throw notFound();
   return {
     create: { ...fields, ...identity },

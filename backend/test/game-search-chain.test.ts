@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createGameSearch, type Lookup } from "../src/lib/gameSearch.js";
 import { GraphQLError } from "graphql";
+import type { GameSource } from "../src/lib/gameSources/types.js";
 
 const hit = (title: string) => ({
   externalId: "1",
@@ -116,6 +117,25 @@ describe("searching across game sources", () => {
     clock += 60 * 60 * 1000 + 1;
     await chain.search("halo", "DEFAULT");
     expect(steam.search).toHaveBeenCalledTimes(2);
+  });
+
+  it("reads a game's detail once per pick, and does not keep a miss", async () => {
+    const detail = vi.fn<GameSource["detail"]>(async () => ({
+      title: "Game",
+      coverUrl: null,
+      genres: [],
+      releaseYear: null,
+      description: null,
+    }));
+    const game = { id: "TGDB", search: async () => [], detail } as GameSource;
+    await chain.detail(game, "1");
+    await chain.detail(game, "1");
+    expect(detail).toHaveBeenCalledTimes(1);
+
+    detail.mockResolvedValue(null);
+    await chain.detail(game, "2");
+    await chain.detail(game, "2");
+    expect(detail).toHaveBeenCalledTimes(3);
   });
 
   it("keeps Steam's results when searching everywhere, and adds the rest", async () => {

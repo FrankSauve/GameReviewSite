@@ -12,9 +12,9 @@ import { requireAuth, type Context } from "../context.js";
 import type { GameSearchScope } from "../lib/gameSearch.js";
 import { possibleLibraryGame, withLibraryGames } from "../lib/libraryGames.js";
 import {
+  gameDetail,
   gameIdentity,
   gameSearch,
-  gameSource,
   validateExternalId,
   type GameSourceId,
 } from "../lib/gameSources/index.js";
@@ -144,7 +144,7 @@ export const gameResolvers = {
           game: serializeDates(game),
         };
 
-      const fields = await gameSource(source).detail(externalId);
+      const fields = await gameDetail(source, externalId);
       if (!fields) return null;
       const match = await possibleLibraryGame(fields);
       return {

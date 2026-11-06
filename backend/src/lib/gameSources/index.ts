@@ -37,8 +37,6 @@ const SOURCES: Record<GameSourceId, GameSource> = {
   RAWG: rawgSource,
 };
 
-export const gameSource = (id: GameSourceId): GameSource => SOURCES[id];
-
 const lookup = (source: GameSource): Lookup => ({
   name: source.id,
   source: source.id,
@@ -64,6 +62,9 @@ export const gameSearch = createGameSearch({
     extra: [{ name: "STEAM_DLC", source: "STEAM", search: searchSteamDlc }],
   },
 });
+
+export const gameDetail = (source: GameSourceId, externalId: string) =>
+  gameSearch.detail(SOURCES[source], externalId);
 
 /** Every source numbers its games. No leading zero: "07" would be a second row for 7. */
 export function validateExternalId(value: string): string {

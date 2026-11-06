@@ -1,5 +1,10 @@
 import { sourceUnavailable } from "./gameSources/http.js";
-import type { GameHit, GameSourceId } from "./gameSources/types.js";
+import type {
+  GameFields,
+  GameHit,
+  GameSource,
+  GameSourceId,
+} from "./gameSources/types.js";
 
 export type GameSearchScope = "DEFAULT" | "EVERYWHERE";
 
@@ -26,7 +31,8 @@ interface Plan {
 
 /** A source that just failed is not awaited again: a reader would wait out its timeout. */
 const SKIP_MS = 60_000;
-/** Mostly for an outage, when typing lands on TheGamesDB's monthly allowance. */
+/** Mostly for an outage, when typing lands on TheGamesDB's monthly allowance. A
+ *  pick reads a game twice, for its preview and its first review. */
 const CACHE_MS = 60 * 60 * 1000;
 const CACHE_MAX = 500;
 /** How long an answer waits for the lookups that are fine to lose. */
@@ -47,6 +53,16 @@ export function createGameSearch(
 ) {
   const skippedUntil = new Map<string, number>();
   const cache = new Map<string, { hits: SourcedHit[]; expires: number }>();
+  const details = new Map<string, { fields: GameFields; expires: number }>();
+
+  function remember<T>(map: Map<string, T>, key: string, entry: T) {
+    map.delete(key);
+    map.set(key, entry);
+    for (const oldest of map.keys()) {
+      if (map.size <= CACHE_MAX) break;
+      map.delete(oldest);
+    }
+  }
 
   /** Null when the source cannot be asked, or failed when it was. */
   async function ask(
@@ -63,12 +79,7 @@ export function createGameSearch(
     try {
       const found = await lookup.search(query);
       const hits = found.map((hit) => ({ ...hit, source: lookup.source }));
-      cache.delete(key);
-      cache.set(key, { hits, expires: now() + CACHE_MS });
-      for (const oldest of cache.keys()) {
-        if (cache.size <= CACHE_MAX) break;
-        cache.delete(oldest);
-      }
+      remember(cache, key, { hits, expires: now() + CACHE_MS });
       return hits;
     } catch (err) {
       console.warn(`${lookup.name} search failed:`, err);
@@ -108,9 +119,19 @@ export function createGameSearch(
       return hits;
     },
 
+    async detail(source: GameSource, externalId: string) {
+      const key = `${source.id}:${externalId}`;
+      const cached = details.get(key);
+      if (cached && cached.expires > now()) return cached.fields;
+      const fields = await source.detail(externalId);
+      if (fields) remember(details, key, { fields, expires: now() + CACHE_MS });
+      return fields;
+    },
+
     clear() {
       skippedUntil.clear();
       cache.clear();
+      details.clear();
     },
   };
 }
