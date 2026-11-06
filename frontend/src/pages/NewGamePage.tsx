@@ -3,9 +3,16 @@ import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@apollo/client/react";
 import { GET_EXTERNAL_GAME } from "../graphql/queries";
 import type { ExternalGame } from "../types";
-import { gamePath, sourceFromPath } from "../lib/links";
+import { useAuth } from "../contexts/AuthContext";
+import { gamePath, newGamePath, sourceFromPath } from "../lib/links";
 import { GameHeader } from "../components/GameHeader";
 import { AddReviewForm } from "../components/AddReviewForm";
+
+/** The path before game sources: every id then was RAWG's. */
+export function OldNewGamePath() {
+  const { id = "" } = useParams<{ id: string }>();
+  return <Navigate to={newGamePath("RAWG", id)} replace />;
+}
 
 /**
  * A title from a game source that nobody has reviewed yet. Nothing is in the library until the
@@ -16,14 +23,27 @@ export function NewGamePage() {
   const source = sourceFromPath(params.source ?? "");
   const id = params.id ?? "";
   const navigate = useNavigate();
+  const { user, loading: authLoading, signIn } = useAuth();
   // By path: the route keeps this page mounted from one new game to the next.
   const path = `${params.source}/${id}`;
   const [different, setDifferent] = useState<string | null>(null);
   const { data, loading, error } = useQuery<{
     externalGame: ExternalGame | null;
-  }>(GET_EXTERNAL_GAME, { variables: { source, id }, skip: !source || !id });
+  }>(GET_EXTERNAL_GAME, {
+    variables: { source, id },
+    skip: !user || !source || !id,
+  });
 
-  if (loading && !data)
+  if (!authLoading && !user)
+    return (
+      <div className="text-center py-20 space-y-4">
+        <p className="text-content-subtle">Sign in to add this game.</p>
+        <button onClick={() => signIn()} className="btn-primary text-meta">
+          Sign in
+        </button>
+      </div>
+    );
+  if (authLoading || (loading && !data))
     return (
       <div className="page-column animate-pulse">
         <div className="card p-card-pad h-40" />

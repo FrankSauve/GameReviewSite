@@ -8,7 +8,7 @@ import { SiteFooter } from "./components/SiteFooter";
 import { HomePage } from "./pages/HomePage";
 import { GameLibraryPage } from "./pages/GameLibraryPage";
 import { GameDetailPage } from "./pages/GameDetailPage";
-import { NewGamePage } from "./pages/NewGamePage";
+import { NewGamePage, OldNewGamePath } from "./pages/NewGamePage";
 import { UserProfilePage } from "./pages/UserProfilePage";
 import { PROFILE_ROUTES } from "./lib/profileViews";
 import { ReviewDetailPage } from "./pages/ReviewDetailPage";
@@ -30,6 +30,7 @@ function App() {
                   <Route path="/" element={<HomePage />} />
                   <Route path="/games" element={<GameLibraryPage />} />
                   <Route path="/games/:id" element={<GameDetailPage />} />
+                  <Route path="/games/new/:id" element={<OldNewGamePath />} />
                   <Route
                     path="/games/new/:source/:id"
                     element={<NewGamePage />}

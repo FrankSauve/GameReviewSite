@@ -3,7 +3,7 @@ import { useLazyQuery } from "@apollo/client/react";
 import { useNavigate } from "react-router-dom";
 import { SEARCH_GAMES_EXTERNAL } from "../graphql/queries";
 import type { ExternalGame } from "../types";
-import { gamePath, newGamePath } from "../lib/links";
+import { SOURCE_LABELS, gamePath, newGamePath } from "../lib/links";
 import { useDismiss } from "../hooks/useDismiss";
 import { metacriticColor } from "../lib/rating";
 import { errorMessage } from "../lib/errorMessage";
@@ -70,6 +70,11 @@ export function AddGameButton() {
   const searched = trimmed.length >= 2;
   // Still debouncing counts as searching, or "no games found" flashes first.
   const searching = searched && (loading || variables?.query !== trimmed);
+
+  // A reader left with only Steam's rows has not seen anything new, whether the
+  // other sources found nothing or failed, so the way to ask again stays.
+  const looked =
+    everywhere && !error && results.some(({ source }) => source !== "STEAM");
 
   // Steam answers a console title with the wrong games, not with nothing, so
   // only the reader can tell that the rest of the sources are worth asking.
@@ -138,6 +143,9 @@ export function AddGameButton() {
                     hint={game.game ? "View →" : "Add →"}
                     onClick={() => handleSelect(game)}
                   >
+                    <span className="text-micro text-content-subtle">
+                      {SOURCE_LABELS[game.source]}
+                    </span>
                     {game.releaseYear && (
                       <span className="text-micro text-content-subtle">
                         {game.releaseYear}
@@ -165,7 +173,7 @@ export function AddGameButton() {
             </ul>
           )}
 
-          {searched && !searching && !everywhere && (
+          {searched && !searching && !looked && (
             <div className="px-3 py-2 border-t border-line text-right">
               <button
                 onClick={searchEverywhere}

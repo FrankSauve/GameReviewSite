@@ -1,5 +1,11 @@
 import { GAME_SOURCES, type GameSource } from "../types";
 
+export const SOURCE_LABELS: Record<GameSource, string> = {
+  STEAM: "Steam",
+  TGDB: "TheGamesDB",
+  RAWG: "RAWG",
+};
+
 interface Slugged {
   id: string;
   slug?: string | null;

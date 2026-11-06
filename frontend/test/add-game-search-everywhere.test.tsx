@@ -71,4 +71,67 @@ describe("searching everywhere from Add game", () => {
       screen.queryByRole("button", { name: /search everywhere/i }),
     ).toBeNull();
   });
+
+  it("says where each result came from", async () => {
+    searchForMetroid();
+    await screen.findByText("Scrapland Remastered");
+    expect(screen.getByText("Steam")).toBeTruthy();
+  });
+
+  it("offers the link again when searching everywhere fails", async () => {
+    render(
+      <MockedProvider
+        mocks={[
+          answer("DEFAULT", [row("STEAM", "1", "Scrapland Remastered")]),
+          {
+            request: {
+              query: SEARCH_GAMES_EXTERNAL,
+              variables: { query: "metroid dread", scope: "EVERYWHERE" },
+            },
+            result: { errors: [{ message: "Game search is down." }] },
+          },
+        ]}
+      >
+        <MemoryRouter>
+          <AddGameButton />
+        </MemoryRouter>
+      </MockedProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /add game/i }));
+    fireEvent.change(screen.getByPlaceholderText(/find a game/i), {
+      target: { value: "metroid dread" },
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: /search everywhere/i }),
+    );
+    expect(await screen.findByText("Game search is down.")).toBeTruthy();
+    expect(
+      screen.getByRole("button", { name: /search everywhere/i }),
+    ).toBeTruthy();
+  });
+
+  it("keeps the link when the other sources added nothing", async () => {
+    render(
+      <MockedProvider
+        mocks={[
+          answer("DEFAULT", [row("STEAM", "1", "Scrapland Remastered")]),
+          answer("EVERYWHERE", [row("STEAM", "1", "Scrapland Remastered")]),
+        ]}
+      >
+        <MemoryRouter>
+          <AddGameButton />
+        </MemoryRouter>
+      </MockedProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /add game/i }));
+    fireEvent.change(screen.getByPlaceholderText(/find a game/i), {
+      target: { value: "metroid dread" },
+    });
+    fireEvent.click(
+      await screen.findByRole("button", { name: /search everywhere/i }),
+    );
+    expect(
+      await screen.findByRole("button", { name: /search everywhere/i }),
+    ).toBeTruthy();
+  });
 });

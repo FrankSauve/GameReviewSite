@@ -6,12 +6,30 @@ import { MockedProvider } from "@apollo/client/testing/react";
 import { GET_EXTERNAL_GAME } from "../src/graphql/queries";
 import { GET_ME } from "../src/graphql/mutations";
 import { AuthProvider } from "../src/contexts/AuthContext";
-import { NewGamePage } from "../src/pages/NewGamePage";
+import { NewGamePage, OldNewGamePath } from "../src/pages/NewGamePage";
 
 /** See profile-views.test.tsx: vitest runs without globals, so this is manual. */
 afterEach(cleanup);
 
 const meMock = {
+  request: { query: GET_ME },
+  result: {
+    data: {
+      me: {
+        __typename: "User",
+        id: "u1",
+        slug: "alice",
+        username: "alice",
+        avatarColor: null,
+        theme: null,
+        palette: null,
+        email: null,
+      },
+    },
+  },
+};
+
+const signedOut = {
   request: { query: GET_ME },
   result: { data: { me: null } },
 };
@@ -119,7 +137,9 @@ describe("a title that looks like a game already in the library", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: /different game/i }),
     );
-    expect(await screen.findByText("Your Review")).toBeTruthy();
+    expect(
+      await screen.findByRole("heading", { name: "Your Review" }),
+    ).toBeTruthy();
   });
 });
 
@@ -165,7 +185,9 @@ describe("moving from one new game to the next", () => {
     fireEvent.click(
       await screen.findByRole("button", { name: /different game/i }),
     );
-    expect(await screen.findByText("Your Review")).toBeTruthy();
+    expect(
+      await screen.findByRole("heading", { name: "Your Review" }),
+    ).toBeTruthy();
 
     fireEvent.click(screen.getByRole("link", { name: "next game" }));
     expect(await screen.findByText(/already in the library/i)).toBeTruthy();
@@ -187,5 +209,43 @@ describe("the new game route", () => {
       </MockedProvider>,
     );
     expect(await screen.findByText("Game not found.")).toBeTruthy();
+  });
+});
+
+describe("a new game link opened signed out", () => {
+  it("offers sign-in, and does not ask the API for the game", async () => {
+    render(
+      <MockedProvider mocks={[signedOut]}>
+        <AuthProvider>
+          <MemoryRouter initialEntries={["/games/new/steam/1"]}>
+            <Routes>
+              <Route path="/games/new/:source/:id" element={<NewGamePage />} />
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>
+      </MockedProvider>,
+    );
+    expect(await screen.findByRole("button", { name: "Sign in" })).toBeTruthy();
+    expect(screen.getByText("Sign in to add this game.")).toBeTruthy();
+  });
+});
+
+describe("a link from before game sources", () => {
+  it("lands on the same game, as RAWG's", async () => {
+    render(
+      <MockedProvider mocks={[meMock, previewMock(null)]}>
+        <AuthProvider>
+          <MemoryRouter initialEntries={["/games/new/1"]}>
+            <Routes>
+              <Route path="/games/new/:id" element={<OldNewGamePath />} />
+              <Route path="/games/new/:source/:id" element={<NewGamePage />} />
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>
+      </MockedProvider>,
+    );
+    expect(
+      await screen.findByRole("heading", { name: "Elden Ring" }),
+    ).toBeTruthy();
   });
 });
