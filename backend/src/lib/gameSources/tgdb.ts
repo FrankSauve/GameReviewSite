@@ -4,7 +4,7 @@ import { getJson, requireList, sourceUnavailable } from "./http.js";
 import type { GameFields, GameHit, GameSource } from "./types.js";
 
 const TGDB_BASE = "https://api.thegamesdb.net";
-const COVER_HOSTS = ["cdn.thegamesdb.net"];
+export const COVER_HOSTS = ["cdn.thegamesdb.net"];
 const MAX_RESULTS = 12;
 /** Left for picking a game, so search going quiet does not strand a reader. */
 const ALLOWANCE_RESERVE = 50;

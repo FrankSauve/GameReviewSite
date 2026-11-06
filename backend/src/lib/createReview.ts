@@ -28,13 +28,7 @@ export type ReviewFields = Pick<
 export type ReviewTarget =
   { gameId: string } | { source: GameSourceId; externalId: string };
 
-type Resolved =
-  | { game: Game }
-  | {
-      create: GameFields & GameIdentity;
-      column: string;
-      identity: GameIdentity;
-    };
+type Resolved = { game: Game } | { create: GameFields & GameIdentity };
 
 /**
  * Writes a review, and with a source's title not yet in the library, the game too.
@@ -50,10 +44,17 @@ export async function createReview(
     return await write(resolved, fields, author);
   } catch (err) {
     // Someone else's first review created the game since we looked; review theirs.
-    if (!("create" in resolved) || !violatesUniqueOn(err, resolved.column))
+    if (
+      "gameId" in target ||
+      !violatesUniqueOn(err, SOURCE_COLUMN[target.source])
+    )
       throw err;
     return write(
-      { game: await existingGame(resolved.identity) },
+      {
+        game: await existingGame(
+          gameIdentity(target.source, target.externalId),
+        ),
+      },
       fields,
       author,
     );
@@ -69,11 +70,7 @@ async function resolve(target: ReviewTarget): Promise<Resolved> {
   if (game) return { game };
   const fields = await gameDetail(target.source, target.externalId);
   if (!fields) throw notFound();
-  return {
-    create: { ...fields, ...identity },
-    column: SOURCE_COLUMN[target.source],
-    identity,
-  };
+  return { create: { ...fields, ...identity } };
 }
 
 async function existingGame(where: Prisma.GameWhereUniqueInput): Promise<Game> {

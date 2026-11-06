@@ -2,7 +2,7 @@ import { coverUrl, decodeEntities, gameFields } from "./fields.js";
 import { getJson, requireList, sourceUnavailable } from "./http.js";
 import type { GameHit, GameSource } from "./types.js";
 
-const COVER_DOMAIN = ".steamstatic.com";
+export const COVER_DOMAIN = ".steamstatic.com";
 const CATEGORY_GAMES = "998";
 const CATEGORY_DLC = "21";
 const MAX_RESULTS = 12;

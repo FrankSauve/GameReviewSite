@@ -13,7 +13,7 @@ describe("rate limiting", () => {
 
   beforeAll(async () => {
     process.env["RATE_LIMIT_MAX"] = "5";
-    process.env["RAWG_RATE_LIMIT_MAX"] = "2";
+    process.env["GAME_SOURCE_RATE_LIMIT_MAX"] = "2";
     // Imported after the environment is set: the limiters read it when the app
     // is constructed.
     const { createApp } = await import("../src/app.js");
@@ -23,7 +23,7 @@ describe("rate limiting", () => {
   afterAll(async () => {
     await stop();
     delete process.env["RATE_LIMIT_MAX"];
-    delete process.env["RAWG_RATE_LIMIT_MAX"];
+    delete process.env["GAME_SOURCE_RATE_LIMIT_MAX"];
     delete process.env["AUTH_RATE_LIMIT_MAX"];
   });
 

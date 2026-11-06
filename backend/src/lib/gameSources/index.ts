@@ -7,29 +7,23 @@ import type { GameSource, GameSourceId } from "./types.js";
 
 export type { GameSourceId } from "./types.js";
 
-/** A game's identity at a source, shaped as a `Game` unique lookup and write. */
-export type GameIdentity =
-  { steamAppId: string } | { tgdbId: string } | { rawgId: string };
-
 export const SOURCE_COLUMN = {
   STEAM: "steamAppId",
   TGDB: "tgdbId",
   RAWG: "rawgId",
 } as const;
 
-export function gameIdentity(
+type SourceColumn = (typeof SOURCE_COLUMN)[GameSourceId];
+
+/** A game's identity at a source, shaped as a `Game` unique lookup and write. */
+export type GameIdentity = {
+  [Column in SourceColumn]: Record<Column, string>;
+}[SourceColumn];
+
+export const gameIdentity = (
   source: GameSourceId,
   externalId: string,
-): GameIdentity {
-  switch (source) {
-    case "STEAM":
-      return { steamAppId: externalId };
-    case "TGDB":
-      return { tgdbId: externalId };
-    case "RAWG":
-      return { rawgId: externalId };
-  }
-}
+): GameIdentity => ({ [SOURCE_COLUMN[source]]: externalId }) as GameIdentity;
 
 const SOURCES: Record<GameSourceId, GameSource> = {
   STEAM: steamSource,
@@ -48,11 +42,8 @@ const steam = lookup(steamSource);
 const tgdb = lookup(tgdbSource);
 const rawg = lookup(rawgSource);
 
-/**
- * Steam first because the library is nearly all PC. It answers a console title
- * with a confident list of the wrong games, so nothing here can fall through to
- * TheGamesDB on its own: that takes the reader's "search everywhere".
- */
+/** Steam leads because the library is nearly all PC. It answers a console title
+ *  with the wrong games, not with nothing, which is why EVERYWHERE exists. */
 export const gameSearch = createGameSearch({
   DEFAULT: { fallback: [steam, tgdb, rawg] },
   EVERYWHERE: {

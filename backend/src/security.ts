@@ -126,7 +126,7 @@ export function createLimiters(): Limiters {
     // Tighter, to keep the game sources' quotas from being burned by a bot.
     gameSources: rateLimit({
       windowMs: envInt("RATE_LIMIT_WINDOW_MS", 60_000),
-      limit: envInt("RAWG_RATE_LIMIT_MAX", 30),
+      limit: envInt("GAME_SOURCE_RATE_LIMIT_MAX", 30),
       standardHeaders: "draft-7",
       legacyHeaders: false,
       skip: (req) => !isSourceOperation(req),

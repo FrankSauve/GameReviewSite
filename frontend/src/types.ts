@@ -53,7 +53,6 @@ export interface Review {
 export interface Game {
   id: string;
   slug?: string | null;
-  rawgId?: string | null;
   title: string;
   genres?: string[];
   /** What its reviewers filed it under, commonest first. */

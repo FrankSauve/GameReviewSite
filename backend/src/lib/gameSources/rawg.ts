@@ -3,7 +3,7 @@ import { getJson, requireList, sourceUnavailable } from "./http.js";
 import type { GameFields, GameSource } from "./types.js";
 
 const RAWG_BASE = "https://api.rawg.io/api";
-const COVER_HOSTS = ["media.rawg.io"];
+export const COVER_HOSTS = ["media.rawg.io"];
 
 interface RawgGame {
   id: number;

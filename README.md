@@ -58,6 +58,7 @@ anonymous visitor. It is ignored whenever `NODE_ENV=production`.
 | ------------------------------- | ---------- | ---------------------------------------------- |
 | `RAWG_API_KEY`                  | yes        | game search, last in line                      |
 | `TGDB_API_KEY`                  | no         | game search beyond Steam; skipped without one  |
+| `GAME_SOURCE_RATE_LIMIT_MAX`    | no         | game source calls per minute, default 30       |
 | `AUTH_DEV_IDENTITY`             | local only | fakes a signed-in user, ignored in production  |
 | `OIDC_ISSUER`                   | production | per-application issuer URL from authentik      |
 | `OIDC_CLIENT_ID`                | production |                                                |

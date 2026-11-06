@@ -22,8 +22,7 @@ export function decodeEntities(text: string): string {
 
 /**
  * Covers land in an <img src> on every reader's page, so only https passes, and
- * only from a host the CSP's img-src names: any other fails silently there. A
- * host starting with a dot allows that domain's subdomains.
+ * only from a host img-src names. Each source's list is authoritative for that CSP.
  */
 export function coverUrl(
   value: string | null | undefined,

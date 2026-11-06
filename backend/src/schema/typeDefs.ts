@@ -33,7 +33,6 @@ export const typeDefs = `#graphql
 
   type Game {
     id: ID!
-    rawgId: String
     slug: String!
     title: String!
     # Capped server-side.
