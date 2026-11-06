@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mightBeSameGame, titleKey } from "../src/lib/gameMatch.js";
+import { closestGame, titleKey } from "../src/lib/gameMatch.js";
 
 describe("titleKey", () => {
   it.each([
@@ -25,6 +25,10 @@ describe("titleKey", () => {
     ["Hades", "Hades II"],
     ["Halo 3", "Halo 3: ODST"],
     ["Alan Wake", "Alan Wake 2"],
+    ["Mega Man X", "Mega Man 10"],
+    ["X-Men", "10 Men"],
+    ["V Rising", "5 Rising"],
+    ["ガンダム", "カンタム"],
     ["ドラゴンクエスト", "ファイナルファンタジー"],
     ["Война и мир", "Тетрис"],
     ["...", "???"],
@@ -37,28 +41,40 @@ describe("titleKey", () => {
   });
 });
 
-describe("mightBeSameGame", () => {
+describe("closestGame", () => {
   const game = (title: string, releaseYear: number | null) => ({
     title,
     releaseYear,
   });
 
   it("matches an edition with the game, a year apart", () => {
+    const library = [game("Disco Elysium", 2019)];
     expect(
-      mightBeSameGame(
-        game("Disco Elysium - The Final Cut", 2020),
-        game("Disco Elysium", 2019),
-      ),
-    ).toBe(true);
+      closestGame(game("Disco Elysium - The Final Cut", 2020), library),
+    ).toBe(library[0]);
   });
 
   it("keeps a same-titled game of another decade apart", () => {
-    expect(mightBeSameGame(game("DOOM", 2016), game("Doom", 1993))).toBe(false);
+    expect(closestGame(game("DOOM", 2016), [game("Doom", 1993)])).toBeNull();
   });
 
   it("still asks when a year is missing", () => {
-    expect(mightBeSameGame(game("Hades", null), game("Hades", 2020))).toBe(
-      true,
-    );
+    expect(
+      closestGame(game("Hades", null), [game("Hades", 2020)]),
+    ).toBeTruthy();
+  });
+
+  it("prefers the matching year over an older row with no year", () => {
+    const library = [
+      game("Doom", null),
+      game("Doom", 2017),
+      game("DOOM", 2016),
+    ];
+    expect(closestGame(game("DOOM", 2016), library)).toBe(library[2]);
+  });
+
+  it("prefers a year's drift over a row with no year", () => {
+    const library = [game("Doom", null), game("Doom", 2017)];
+    expect(closestGame(game("DOOM", 2016), library)).toBe(library[1]);
   });
 });

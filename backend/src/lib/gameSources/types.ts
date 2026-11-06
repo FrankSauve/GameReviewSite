@@ -3,6 +3,8 @@ export type GameSourceId = "STEAM" | "TGDB" | "RAWG";
 /** A search result: only what the picker draws. */
 export interface GameHit {
   externalId: string;
+  /** Ids of the same game at this source, any of which may be the stored one. */
+  otherIds?: string[];
   title: string;
   coverUrl: string | null;
   releaseYear: number | null;

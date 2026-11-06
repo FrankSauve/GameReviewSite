@@ -73,6 +73,23 @@ describe("TheGamesDB as a game source", () => {
     });
   });
 
+  it("lists every id in a group, because a stored one may not be the row offered", async () => {
+    answer({
+      data: { games: [row(3, "Game"), row(1, "Game"), row(2, "Game")] },
+    });
+    expect((await tgdbSource.search("game"))[0]).toMatchObject({
+      externalId: "1",
+      otherIds: ["2", "3"],
+    });
+  });
+
+  it("drops a row whose title is only an edition", async () => {
+    answer({ data: { games: [row(1, "[Special Edition]"), row(2, "Game")] } });
+    expect((await tgdbSource.search("x")).map((hit) => hit.title)).toEqual([
+      "Game",
+    ]);
+  });
+
   it("leaves out ROM hacks and demos", async () => {
     answer({
       data: {
@@ -154,6 +171,17 @@ describe("TheGamesDB as a game source", () => {
     await expect(tgdbSource.detail("1")).rejects.toMatchObject({
       extensions: { code: "SERVICE_UNAVAILABLE" },
     });
+  });
+
+  it("counts extra allowance as allowance", async () => {
+    answer({
+      data: { games: [] },
+      remaining_monthly_allowance: 10,
+      extra_allowance: 500,
+      allowance_refresh_timer: 60,
+    });
+    await tgdbSource.search("x");
+    expect(tgdbSource.enabled?.()).toBe(true);
   });
 
   it("stops being offered once the allowance runs low, until it refreshes", async () => {

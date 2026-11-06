@@ -1,19 +1,27 @@
 import type { Game } from "../generated/prisma/client.js";
-import { mightBeSameGame } from "./gameMatch.js";
+import { closestGame } from "./gameMatch.js";
 import { prisma } from "./prisma.js";
 import { serializeDates } from "./serialize.js";
 import { gameIdentity, SOURCE_COLUMN } from "./gameSources/index.js";
 import type { SourcedHit } from "./gameSearch.js";
 
+const idsOf = (hit: SourcedHit) => [hit.externalId, ...(hit.otherIds ?? [])];
+
 /** Attaches the game each hit already is, by source id alone: titles can collide. */
 export async function withLibraryGames(hits: SourcedHit[]) {
   const games = await prisma.game.findMany({
-    where: { OR: hits.map((hit) => gameIdentity(hit.source, hit.externalId)) },
+    where: {
+      OR: hits.flatMap((hit) =>
+        idsOf(hit).map((id) => gameIdentity(hit.source, id)),
+      ),
+    },
   });
   return hits.map((hit) => {
-    const game = games.find(
-      (row) => row[SOURCE_COLUMN[hit.source]] === hit.externalId,
-    );
+    const ids = idsOf(hit);
+    const game = games.find((row) => {
+      const stored = row[SOURCE_COLUMN[hit.source]];
+      return stored !== null && ids.includes(stored);
+    });
     return { ...hit, game: game ? serializeDates(game) : null };
   });
 }
@@ -30,6 +38,6 @@ export async function possibleLibraryGame(fields: {
     select: { id: true, title: true, releaseYear: true },
     orderBy: { createdAt: "asc" },
   });
-  const match = games.find((game) => mightBeSameGame(fields, game));
+  const match = closestGame(fields, games);
   return match ? prisma.game.findUnique({ where: { id: match.id } }) : null;
 }

@@ -57,6 +57,7 @@ interface Answer {
   data?: { games?: TgdbGame[] };
   include?: { boxart?: Boxart };
   remaining_monthly_allowance?: number;
+  extra_allowance?: number | null;
   allowance_refresh_timer?: number | null;
 }
 
@@ -81,7 +82,8 @@ async function get(path: string, params: Record<string, string>) {
     `${TGDB_BASE}${path}?${query.toString()}`,
   );
   const remaining = answer?.remaining_monthly_allowance;
-  if (remaining !== undefined && remaining < ALLOWANCE_RESERVE)
+  const extra = answer?.extra_allowance ?? 0;
+  if (remaining !== undefined && remaining + extra < ALLOWANCE_RESERVE)
     lowUntil = Date.now() + (answer?.allowance_refresh_timer ?? 3600) * 1000;
   return answer;
 }
@@ -104,7 +106,7 @@ function cover(game: TgdbGame, box: Boxart | undefined, base?: string) {
 const genresOf = (game: TgdbGame) =>
   (game.genres ?? []).flatMap((id) => GENRES[id] ?? []);
 
-/** Lowest id wins a tie, so one game keeps one id from search to search. */
+/** Lowest id wins a tie. It can still change, which is why a hit lists the others. */
 function richer(box: Boxart | undefined) {
   const score = (game: TgdbGame) =>
     (box?.data?.[game.id]?.some((art) => art.side === "front") ? 2 : 0) +
@@ -121,14 +123,16 @@ function grouped(answer: Answer | null): GameHit[] {
   const groups = new Map<string, TgdbGame[]>();
   for (const game of requireList("TheGamesDB", answer?.data?.games)) {
     if (game.genres?.some((id) => NOT_GAMES.has(id))) continue;
+    if (!baseTitle(game.game_title)) continue;
     const key = `${titleKey(baseTitle(game.game_title))}|${releaseYear(game)}`;
     groups.set(key, [...(groups.get(key) ?? []), game]);
   }
   return [...groups.values()].slice(0, MAX_RESULTS).flatMap((rows) => {
-    const game = [...rows].sort(richer(box))[0];
+    const [game, ...others] = [...rows].sort(richer(box));
     if (!game) return [];
     return {
       externalId: String(game.id),
+      otherIds: others.map(({ id }) => String(id)),
       title: baseTitle(game.game_title),
       coverUrl: cover(game, box, box?.base_url?.thumb),
       releaseYear: releaseYear(game),

@@ -1,3 +1,4 @@
+/** Not x, which names Mega Man X rather than numbering it. */
 const ROMAN: Record<string, string> = {
   ii: "2",
   iii: "3",
@@ -7,7 +8,6 @@ const ROMAN: Record<string, string> = {
   vii: "7",
   viii: "8",
   ix: "9",
-  x: "10",
 };
 
 /** A release of a game rather than another game. Applied once, at the end. */
@@ -22,7 +22,7 @@ export function titleKey(title: string): string {
   const key = title
     .replace(/[™®©]/g, "")
     .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/\s*\((?:19|20)\d{2}\)\s*$/, "")
     .replace(/['’]/g, "")
@@ -30,7 +30,7 @@ export function titleKey(title: string): string {
     .replace(/[^\p{L}\p{M}\p{N}]+/gu, " ")
     .trim()
     .split(" ")
-    .map((word) => ROMAN[word] ?? word)
+    .map((word, index) => (index > 0 ? (ROMAN[word] ?? word) : word))
     .join(" ");
   // A title of punctuation alone has no key, and must not match every other such.
   return key.replace(EDITION, "") || key || title.trim();
@@ -41,9 +41,26 @@ interface Titled {
   releaseYear: number | null;
 }
 
-/** Ports drift a year; a missing year cannot rule a match out, so it asks. */
-export function mightBeSameGame(a: Titled, b: Titled): boolean {
-  if (titleKey(a.title) !== titleKey(b.title)) return false;
-  if (a.releaseYear === null || b.releaseYear === null) return true;
-  return Math.abs(a.releaseYear - b.releaseYear) <= 1;
+/** Past a year's port drift; a missing year cannot rule a game out, so it ranks last. */
+const UNKNOWN_YEAR = 1.5;
+
+function yearGap(a: Titled, b: Titled): number {
+  if (a.releaseYear === null || b.releaseYear === null) return UNKNOWN_YEAR;
+  return Math.abs(a.releaseYear - b.releaseYear);
+}
+
+/** The game with this title closest in year, among those that might be the same one. */
+export function closestGame<T extends Titled>(
+  target: Titled,
+  games: T[],
+): T | null {
+  const key = titleKey(target.title);
+  let best: T | null = null;
+  for (const game of games) {
+    if (titleKey(game.title) !== key) continue;
+    const gap = yearGap(target, game);
+    if (gap > UNKNOWN_YEAR) continue;
+    if (!best || gap < yearGap(target, best)) best = game;
+  }
+  return best;
 }
