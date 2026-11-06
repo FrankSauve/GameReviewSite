@@ -6,6 +6,7 @@ import type { ExternalGame } from "../types";
 import { gamePath, newGamePath } from "../lib/links";
 import { useDismiss } from "../hooks/useDismiss";
 import { metacriticColor } from "../lib/rating";
+import { errorMessage } from "../lib/errorMessage";
 import {
   GameResultRow,
   ReviewCountMeta,
@@ -28,7 +29,7 @@ export function AddGameButton() {
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [search, { data, loading, variables }] = useLazyQuery<
+  const [search, { data, error, loading, variables }] = useLazyQuery<
     SearchResult,
     { query: string }
   >(SEARCH_GAMES_EXTERNAL, { fetchPolicy: "network-only" });
@@ -101,7 +102,13 @@ export function AddGameButton() {
             </div>
           )}
 
-          {searched && !searching && results.length === 0 && (
+          {searched && !searching && error && (
+            <div className="py-6 px-4 text-center text-meta text-danger-text">
+              {errorMessage(error)}
+            </div>
+          )}
+
+          {searched && !searching && !error && results.length === 0 && (
             <div className="py-6 text-center text-meta text-content-subtle">
               No games found for "{query}"
             </div>
