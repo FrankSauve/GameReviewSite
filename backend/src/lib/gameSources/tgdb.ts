@@ -112,7 +112,10 @@ function richer(box: Boxart | undefined) {
   return (a: TgdbGame, b: TgdbGame) => score(b) - score(a) || a.id - b.id;
 }
 
-/** One game arrives once per platform, region and retail edition. */
+/**
+ * One game arrives once per platform, region and retail edition. Within this
+ * source, the same title and year is taken to be one game.
+ */
 function grouped(answer: Answer | null): GameHit[] {
   const box = answer?.include?.boxart;
   const groups = new Map<string, TgdbGame[]>();

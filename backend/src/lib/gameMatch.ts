@@ -16,7 +16,7 @@ const EDITION =
 
 /**
  * Compares titles across sources, which punctuate and number one game
- * differently. Equal keys mean "ask", never "merge": "Doom" is two games.
+ * differently. Across sources, equal keys mean "ask": "Doom" is two games.
  */
 export function titleKey(title: string): string {
   const key = title
