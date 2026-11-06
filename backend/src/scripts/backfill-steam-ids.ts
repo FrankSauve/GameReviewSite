@@ -56,50 +56,55 @@ async function main() {
   const conflicts: string[] = [];
   const pause = () => new Promise((resolve) => setTimeout(resolve, delayMs));
 
-  for (const game of games) {
-    if (!game.rawgId) continue;
-    let appId: string | null;
-    try {
-      appId = await rawgSteamAppId(game.rawgId);
-      failures = 0;
-    } catch (err) {
-      failed.push(`${game.title}: ${String(err)}`);
-      failures += 1;
-      if (failures < MAX_FAILURES_IN_A_ROW) {
-        await pause();
-        continue;
+  // A failed write must not lose what the run had already found.
+  try {
+    for (const game of games) {
+      if (!game.rawgId) continue;
+      let appId: string | null;
+      try {
+        appId = await rawgSteamAppId(game.rawgId);
+        failures = 0;
+      } catch (err) {
+        failed.push(`${game.title}: ${String(err)}`);
+        failures += 1;
+        if (failures < MAX_FAILURES_IN_A_ROW) {
+          await pause();
+          continue;
+        }
+        console.log(
+          "RAWG keeps failing, so stopping. Re-run this when it is up.",
+        );
+        break;
       }
-      console.log(
-        "RAWG keeps failing, so stopping. Re-run this when it is up.",
-      );
-      break;
-    }
 
-    if (!appId) notOnSteam += 1;
-    else if (held.has(appId))
-      conflicts.push(`${game.title}: ${appId} is ${held.get(appId)}`);
-    else {
-      found += 1;
-      held.set(appId, game.title);
-      console.log(`${game.title}: ${appId}`);
-      if (write)
-        await prisma.game
-          .update({ where: { id: game.id }, data: { steamAppId: appId } })
-          .catch((err: unknown) => {
-            // A reader's first review can claim the id while this runs.
-            if (!violatesUniqueOn(err, "steamAppId")) throw err;
-            found -= 1;
-            conflicts.push(`${game.title}: ${appId} was taken during this run`);
-          });
+      if (!appId) notOnSteam += 1;
+      else if (held.has(appId))
+        conflicts.push(`${game.title}: ${appId} is ${held.get(appId)}`);
+      else {
+        found += 1;
+        held.set(appId, game.title);
+        console.log(`${game.title}: ${appId}`);
+        if (write)
+          await prisma.game
+            .update({ where: { id: game.id }, data: { steamAppId: appId } })
+            .catch((err: unknown) => {
+              found -= 1;
+              // A reader's first review can claim the id while this runs.
+              if (!violatesUniqueOn(err, "steamAppId")) throw err;
+              conflicts.push(
+                `${game.title}: ${appId} was taken during this run`,
+              );
+            });
+      }
+      await pause();
     }
-    await pause();
+  } finally {
+    console.log(
+      `${write ? "Wrote" : "Would write"} ${found}; ${notOnSteam} not on Steam.`,
+    );
+    for (const conflict of conflicts) console.log(`Already held: ${conflict}`);
+    for (const failure of failed) console.log(`Failed: ${failure}`);
   }
-
-  console.log(
-    `${write ? "Wrote" : "Would write"} ${found}; ${notOnSteam} not on Steam.`,
-  );
-  for (const conflict of conflicts) console.log(`Already held: ${conflict}`);
-  for (const failure of failed) console.log(`Failed: ${failure}`);
 }
 
 await main().finally(() => prisma.$disconnect());

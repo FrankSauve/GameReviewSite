@@ -4,15 +4,10 @@ import { useQuery } from "@apollo/client/react";
 import { GET_EXTERNAL_GAME } from "../graphql/queries";
 import type { ExternalGame } from "../types";
 import { useAuth } from "../contexts/AuthContext";
-import { gamePath, newGamePath, sourceFromPath } from "../lib/links";
+import { errorMessage, isSignedOutError } from "../lib/errorMessage";
+import { gamePath, sourceFromPath } from "../lib/links";
 import { GameHeader } from "../components/GameHeader";
 import { AddReviewForm } from "../components/AddReviewForm";
-
-/** The path before game sources: every id then was RAWG's. */
-export function OldNewGamePath() {
-  const { id = "" } = useParams<{ id: string }>();
-  return <Navigate to={newGamePath("RAWG", id)} replace />;
-}
 
 /**
  * A title from a game source that nobody has reviewed yet. Nothing is in the library until the
@@ -34,7 +29,7 @@ export function NewGamePage() {
     skip: !user || !source || !id,
   });
 
-  if (!authLoading && !user)
+  if (!authLoading && (!user || isSignedOutError(error)))
     return (
       <div className="text-center py-20 space-y-4">
         <p className="text-content-subtle">Sign in to add this game.</p>
@@ -52,7 +47,7 @@ export function NewGamePage() {
   if (error && !data)
     return (
       <div className="text-center py-20">
-        <p className="text-danger-text">{error.message}</p>
+        <p className="text-danger-text">{errorMessage(error)}</p>
       </div>
     );
 

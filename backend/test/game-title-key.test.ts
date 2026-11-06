@@ -16,6 +16,11 @@ describe("titleKey", () => {
     ["Batman: Arkham City", "Batman: Arkham City - Game of the Year Edition"],
     ["Dark Souls", "DARK SOULS™: REMASTERED"],
     ["Death Stranding", "Death Stranding: The Director's Cut"],
+    ["Grand Theft Auto IV", "Grand Theft Auto IV: The Complete Edition"],
+    [
+      "The Witcher 3: Wild Hunt",
+      "The Witcher 3: Wild Hunt - The Game of the Year Edition",
+    ],
   ])("treats %s and %s alike", (a, b) => {
     expect(titleKey(a)).toBe(titleKey(b));
   });
@@ -38,6 +43,12 @@ describe("titleKey", () => {
 
   it("does not empty a title that is only an edition's words", () => {
     expect(titleKey("Remastered")).toBe("remastered");
+  });
+
+  it("reads a word that every object also has as a word", () => {
+    expect(titleKey("Bridge Constructor Portal")).toBe(
+      "bridge constructor portal",
+    );
   });
 });
 

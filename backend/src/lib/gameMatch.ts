@@ -1,18 +1,21 @@
-/** Not x, which names Mega Man X rather than numbering it. */
-const ROMAN: Record<string, string> = {
-  ii: "2",
-  iii: "3",
-  iv: "4",
-  v: "5",
-  vi: "6",
-  vii: "7",
-  viii: "8",
-  ix: "9",
-};
+/**
+ * Not x, which names Mega Man X rather than numbering it. A Map, because an
+ * object would answer "constructor", a word in real titles, with a function.
+ */
+const ROMAN = new Map([
+  ["ii", "2"],
+  ["iii", "3"],
+  ["iv", "4"],
+  ["v", "5"],
+  ["vi", "6"],
+  ["vii", "7"],
+  ["viii", "8"],
+  ["ix", "9"],
+]);
 
 /** A release of a game rather than another game. Applied once, at the end. */
 const EDITION =
-  /\s(?:(?:game of the year|goty|deluxe|digital deluxe|definitive|enhanced|ultimate|complete|gold|premium|special|collectors|legendary|anniversary|standard) edition|goty|remastered|(?:the )?(?:final|directors) cut)$/;
+  /\s(?:the )?(?:(?:game of the year|goty|deluxe|digital deluxe|definitive|enhanced|ultimate|complete|gold|premium|special|collectors|legendary|anniversary|standard) edition|goty|remastered|(?:final|directors) cut)$/;
 
 /**
  * Compares titles across sources, which punctuate and number one game
@@ -30,7 +33,7 @@ export function titleKey(title: string): string {
     .replace(/[^\p{L}\p{M}\p{N}]+/gu, " ")
     .trim()
     .split(" ")
-    .map((word, index) => (index > 0 ? (ROMAN[word] ?? word) : word))
+    .map((word, index) => (index > 0 ? (ROMAN.get(word) ?? word) : word))
     .join(" ");
   // A title of punctuation alone has no key, and must not match every other such.
   return key.replace(EDITION, "") || key || title.trim();

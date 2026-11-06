@@ -14,7 +14,7 @@ import {
   validateExternalId,
   type GameSourceId,
 } from "../lib/gameSources/index.js";
-import { createReview } from "../lib/createReview.js";
+import { createReview, type ReviewTarget } from "../lib/createReview.js";
 import { validateString } from "../lib/validate.js";
 import { badInput } from "../lib/badInput.js";
 import { validatePlatform } from "../lib/platforms.js";
@@ -43,6 +43,17 @@ interface UpdateReviewInput {
   platform?: string | null;
   genre?: string | null;
   secondaryGenres?: string[] | null;
+}
+
+function reviewTarget({
+  gameId,
+  source,
+  externalId,
+}: CreateReviewInput): ReviewTarget {
+  if (gameId != null && source == null && externalId == null) return { gameId };
+  if (gameId == null && source != null && externalId != null)
+    return { source, externalId: validateExternalId(externalId) };
+  throw badInput("Give exactly one of gameId and source with externalId.");
 }
 
 /** Generous because a decade of backlog includes long reviews. */
@@ -206,15 +217,7 @@ export const reviewResolvers = {
       context: Context,
     ) => {
       const authUser = requireAuth(context);
-      const { gameId, source, externalId } = input;
-      const malformed =
-        gameId != null
-          ? source != null || externalId != null
-          : source == null || externalId == null;
-      if (malformed)
-        throw badInput(
-          "Give exactly one of gameId and source with externalId.",
-        );
+      const target = reviewTarget(input);
 
       const genre = validateGenre(input.genre ?? null);
       const fields = {
@@ -230,16 +233,7 @@ export const reviewResolvers = {
         ),
       };
 
-      const created = await createReview(
-        gameId != null
-          ? { gameId }
-          : {
-              source: source as GameSourceId,
-              externalId: validateExternalId(externalId ?? ""),
-            },
-        fields,
-        authUser,
-      );
+      const created = await createReview(target, fields, authUser);
 
       // Not awaited: a slow Discord must not hold up the review.
       void notifyReviewPosted(

@@ -6,7 +6,8 @@ import { MockedProvider } from "@apollo/client/testing/react";
 import { GET_EXTERNAL_GAME } from "../src/graphql/queries";
 import { GET_ME } from "../src/graphql/mutations";
 import { AuthProvider } from "../src/contexts/AuthContext";
-import { NewGamePage, OldNewGamePath } from "../src/pages/NewGamePage";
+import { NewGamePage } from "../src/pages/NewGamePage";
+import { OldNewGamePath } from "../src/pages/OldNewGamePath";
 
 /** See profile-views.test.tsx: vitest runs without globals, so this is manual. */
 afterEach(cleanup);
@@ -227,6 +228,38 @@ describe("a new game link opened signed out", () => {
     );
     expect(await screen.findByRole("button", { name: "Sign in" })).toBeTruthy();
     expect(screen.getByText("Sign in to add this game.")).toBeTruthy();
+  });
+});
+
+describe("a new game link opened after the session ended", () => {
+  it("offers sign-in rather than the API's refusal", async () => {
+    const refused = {
+      request: {
+        query: GET_EXTERNAL_GAME,
+        variables: { source: "RAWG", id: "1" },
+      },
+      result: {
+        errors: [
+          {
+            message: "You must be signed in to do that.",
+            extensions: { code: "UNAUTHENTICATED" },
+          },
+        ],
+      },
+    };
+    render(
+      <MockedProvider mocks={[meMock, refused]}>
+        <AuthProvider>
+          <MemoryRouter initialEntries={["/games/new/rawg/1"]}>
+            <Routes>
+              <Route path="/games/new/:source/:id" element={<NewGamePage />} />
+            </Routes>
+          </MemoryRouter>
+        </AuthProvider>
+      </MockedProvider>,
+    );
+    expect(await screen.findByRole("button", { name: "Sign in" })).toBeTruthy();
+    expect(screen.queryByText("You must be signed in to do that.")).toBeNull();
   });
 });
 
