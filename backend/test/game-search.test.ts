@@ -15,6 +15,8 @@ import { gameSearch } from "../src/lib/gameSources/index.js";
 import {
   ALICE,
   BOB,
+  authedQuery,
+  errorCodes,
   publicQuery,
   resetDatabase,
   seedGame,
@@ -184,16 +186,22 @@ describe("searchGamesExternal", () => {
     delete process.env["RAWG_API_KEY"];
   });
 
+  it("is for signed-in readers, and asks no source otherwise", async () => {
+    const res = await publicQuery(app, EXTERNAL, {}, { query: "helldivers" });
+    expect(errorCodes(res)).toEqual(["UNAUTHENTICATED"]);
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
   it("links a result to the game already imported under its source id", async () => {
     await prisma.game.create({
       data: { steamAppId: "1", title: "Helldivers II", slug: "helldivers-ii" },
     });
-    const res = await publicQuery<{
+    const res = await authedQuery<{
       searchGamesExternal: {
         externalId: string;
         game: { slug: string } | null;
       }[];
-    }>(app, EXTERNAL, {}, { query: "helldivers" });
+    }>(app, EXTERNAL, ALICE, {}, { query: "helldivers" });
     expect(res.errors).toBeUndefined();
     expect(res.data?.searchGamesExternal).toEqual([
       {

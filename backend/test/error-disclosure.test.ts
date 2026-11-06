@@ -58,7 +58,7 @@ describe("error message disclosure", () => {
       .mockImplementation(() => undefined);
     const { app, stop } = await appFor("production");
 
-    const res = await publicQuery(app, INTERNAL_FAILURE);
+    const res = await authedQuery(app, INTERNAL_FAILURE, ALICE);
 
     expect(res.errors?.[0]?.message).toBe("Internal server error.");
     expect(res.errors?.[0]?.message).not.toMatch(/RAWG_API_KEY|apidocs|\.env/);
@@ -73,7 +73,7 @@ describe("error message disclosure", () => {
 
   it("keeps the real message outside production, where it is the point", async () => {
     const { app, stop } = await appFor("test");
-    const res = await publicQuery(app, INTERNAL_FAILURE);
+    const res = await authedQuery(app, INTERNAL_FAILURE, ALICE);
     expect(res.errors?.[0]?.message).toMatch(/RAWG_API_KEY/);
     await stop();
   });

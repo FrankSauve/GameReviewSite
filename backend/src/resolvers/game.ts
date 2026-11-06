@@ -116,7 +116,9 @@ export const gameResolvers = {
     searchGamesExternal: async (
       _parent: unknown,
       args: { query: string; scope?: GameSearchScope | null },
+      context: Context,
     ) => {
+      requireAuth(context);
       const query = searchableTitle(args.query);
       if (!query) return [];
       const hits = await gameSearch.search(query, args.scope ?? "DEFAULT");
@@ -127,7 +129,9 @@ export const gameResolvers = {
     externalGame: async (
       _parent: unknown,
       { source, id }: { source: GameSourceId; id: string },
+      context: Context,
     ) => {
+      requireAuth(context);
       const externalId = validateExternalId(id);
       const game = await prisma.game.findUnique({
         where: gameIdentity(source, externalId),

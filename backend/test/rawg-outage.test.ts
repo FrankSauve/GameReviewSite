@@ -11,7 +11,13 @@ import {
 import type { Express } from "express";
 import { gameSearch } from "../src/lib/gameSources/index.js";
 import { sanitizeError } from "../src/lib/sanitizeError.js";
-import { errorCodes, publicQuery, startApp } from "./helpers.js";
+import {
+  ALICE,
+  authedQuery,
+  errorCodes,
+  resetDatabase,
+  startApp,
+} from "./helpers.js";
 
 const DETAIL = '{ externalGame(source: RAWG, id: "1") { externalId } }';
 const OUTAGE_MESSAGE = "RAWG is unavailable right now. Try again shortly.";
@@ -28,7 +34,9 @@ describe("when RAWG is down", () => {
   afterAll(async () => {
     await stop();
   });
-  beforeEach(() => {
+  beforeEach(async () => {
+    await resetDatabase();
+    gameSearch.clear();
     process.env["RAWG_API_KEY"] = "secret-key";
     globalThis.fetch = fetchStub;
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
@@ -47,7 +55,7 @@ describe("when RAWG is down", () => {
     "tells the reader so on a %i",
     async (status) => {
       respondWith(status);
-      const res = await publicQuery(app, DETAIL);
+      const res = await authedQuery(app, DETAIL, ALICE);
       expect(errorCodes(res)).toEqual(["SERVICE_UNAVAILABLE"]);
       expect(res.errors?.[0]?.message).toBe(OUTAGE_MESSAGE);
     },
@@ -55,7 +63,7 @@ describe("when RAWG is down", () => {
 
   it("tells the reader so when the connection fails", async () => {
     fetchStub.mockRejectedValue(new TypeError("fetch failed"));
-    const res = await publicQuery(app, DETAIL);
+    const res = await authedQuery(app, DETAIL, ALICE);
     expect(errorCodes(res)).toEqual(["SERVICE_UNAVAILABLE"]);
   });
 
@@ -63,20 +71,20 @@ describe("when RAWG is down", () => {
     fetchStub.mockRejectedValue(
       new DOMException("The operation timed out.", "TimeoutError"),
     );
-    const res = await publicQuery(app, DETAIL);
+    const res = await authedQuery(app, DETAIL, ALICE);
     expect(errorCodes(res)).toEqual(["SERVICE_UNAVAILABLE"]);
   });
 
   it("tells the reader so when a 200 is not JSON", async () => {
     fetchStub.mockResolvedValue(new Response("<html>maintenance</html>"));
-    const res = await publicQuery(app, DETAIL);
+    const res = await authedQuery(app, DETAIL, ALICE);
     expect(errorCodes(res)).toEqual(["SERVICE_UNAVAILABLE"]);
   });
 
   it("puts a deadline on every call", async () => {
     respondWith(200);
-    await publicQuery(app, DETAIL);
-    await publicQuery(app, DETAIL);
+    await authedQuery(app, DETAIL, ALICE);
+    await authedQuery(app, DETAIL, ALICE);
     expect(fetchStub).toHaveBeenCalledTimes(2);
     for (const [, init] of fetchStub.mock.calls)
       expect(init?.signal).toBeInstanceOf(AbortSignal);
@@ -84,13 +92,13 @@ describe("when RAWG is down", () => {
 
   it("treats a refused key as our failure, not an outage", async () => {
     respondWith(401);
-    const res = await publicQuery(app, DETAIL);
+    const res = await authedQuery(app, DETAIL, ALICE);
     expect(errorCodes(res)).not.toContain("SERVICE_UNAVAILABLE");
   });
 
   it("logs the outage without the key", async () => {
     fetchStub.mockRejectedValue(new TypeError("fetch failed"));
-    await publicQuery(app, DETAIL);
+    await authedQuery(app, DETAIL, ALICE);
     expect(console.warn).toHaveBeenCalled();
     expect(JSON.stringify(vi.mocked(console.warn).mock.calls)).not.toContain(
       "secret-key",
@@ -135,9 +143,10 @@ describe("when every game source is down", () => {
       return new Response("{}", { status: 503 });
     }) as unknown as typeof globalThis.fetch;
 
-    const res = await publicQuery(
+    const res = await authedQuery(
       app,
       '{ searchGamesExternal(query: "halo") { externalId } }',
+      ALICE,
     );
     expect(errorCodes(res)).toEqual(["SERVICE_UNAVAILABLE"]);
     expect(res.errors?.[0]?.message).toBe(

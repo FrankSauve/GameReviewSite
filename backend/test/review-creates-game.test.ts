@@ -14,6 +14,7 @@ import {
   ALICE,
   BOB,
   authedQuery,
+  publicQuery,
   errorCodes,
   resetDatabase,
   startApp,
@@ -195,6 +196,12 @@ describe("the first review of a game", () => {
       expect(errorCodes(res)).toContain("BAD_USER_INPUT");
     }
     expect(await prisma.review.count()).toBe(0);
+  });
+
+  it("previews a game for signed-in readers only", async () => {
+    const res = await publicQuery(app, PREVIEW, {}, { id: "1" });
+    expect(errorCodes(res)).toEqual(["UNAUTHENTICATED"]);
+    expect(rawg.calls).toHaveLength(0);
   });
 
   it("offers a same-titled library game for the reader to confirm", async () => {
