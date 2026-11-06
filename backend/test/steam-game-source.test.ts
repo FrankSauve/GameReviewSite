@@ -31,6 +31,20 @@ describe("Steam as a game source", () => {
     );
   });
 
+  it("pins a cover from any of Steam's CDNs to the one the CSP names", async () => {
+    answer({
+      items: [
+        {
+          name: "Hades",
+          logo: "https://shared.fastly.steamstatic.com/store_item_assets/steam/apps/1/a/b.jpg?t=1",
+        },
+      ],
+    });
+    expect((await steamSource.search("hades"))[0]?.coverUrl).toBe(
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1/a/b.jpg?t=1",
+    );
+  });
+
   it("stops at twelve when Steam sends more", async () => {
     const item = { name: "Game", logo: "https://x/steam/apps/1/a.jpg" };
     answer({ items: Array.from({ length: 20 }, () => item) });
