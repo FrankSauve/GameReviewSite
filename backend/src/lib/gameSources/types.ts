@@ -21,6 +21,8 @@ export interface GameFields {
 
 export interface GameSource {
   id: GameSourceId;
+  /** False when it cannot be asked right now: no key, or its allowance is spent. */
+  enabled?(): boolean;
   search(query: string): Promise<GameHit[]>;
   /** Null when the source has no game under that id; any other failure throws. */
   detail(externalId: string): Promise<GameFields | null>;
