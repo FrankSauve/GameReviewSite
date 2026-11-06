@@ -5,6 +5,7 @@
   "description": "GraphQL API for a game review site backed by PostgreSQL via Prisma",
   "main": "dist/index.js",
   "scripts": {
+    "match:steam-ids": "tsx src/scripts/match-steam-ids.ts",
     "backfill:steam-ids": "tsx src/scripts/backfill-steam-ids.ts",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",

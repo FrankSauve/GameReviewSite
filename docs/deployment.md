@@ -310,6 +310,26 @@ upgrade — dump, stop the three containers, delete the volume, change the tag,
 start, restore. Renovate holds this major back permanently; an image updater does
 not, so the pin in the snippet is what protects you.
 
+### Matching Steam ids
+
+Games added before Steam was a source have no `steamAppId`, so a Steam result
+for one looks new. This matches them against Steam's own search by title, and
+needs nothing from RAWG. It ships in the image. Run it first, because a Steam
+game's year is its PC release, which the title check cannot compare:
+
+```bash
+# Dry run: prints every proposed link, and writes nothing.
+docker compose exec gamereviews-backend node dist/scripts/match-steam-ids.js
+
+# Settle the plan, then apply it.
+docker compose exec gamereviews-backend node dist/scripts/match-steam-ids.js \
+  --skip=<app ids to reject> --pick=<app ids to choose> --write
+```
+
+It takes about 3s per game. Check the plan before writing: a game can match its
+remaster, and only you can say whether that is the same game. Re-running skips
+games that are already linked.
+
 ### Backfilling Steam ids
 
 Games added before Steam became a source have no `steamAppId`, so a search has
