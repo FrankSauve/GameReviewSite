@@ -1,5 +1,6 @@
 import { badInput } from "../badInput.js";
 import { rawgSource } from "./rawg.js";
+import { steamSource } from "./steam.js";
 import type { GameSource, GameSourceId } from "./types.js";
 
 export type { GameSourceId } from "./types.js";
@@ -30,6 +31,7 @@ export function gameIdentity(
 
 export function gameSource(id: GameSourceId): GameSource {
   if (id === "RAWG") return rawgSource;
+  if (id === "STEAM") return steamSource;
   throw badInput(`${id} is not a game source yet.`);
 }
 

@@ -10,6 +10,16 @@ export function yearOf(date?: string | null): number | null {
   return isNaN(year) ? null : year;
 }
 
+/** `&amp;` goes last, or `&amp;lt;` would come out as `<`. */
+export function decodeEntities(text: string): string {
+  return text
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'")
+    .replace(/&amp;/g, "&");
+}
+
 /**
  * Covers land in an <img src> on every reader's page, so only https passes, and
  * only from a host the CSP's img-src names: any other fails silently there.
