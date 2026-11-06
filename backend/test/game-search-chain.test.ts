@@ -37,7 +37,11 @@ describe("searching across game sources", () => {
     chain = createGameSearch(
       {
         DEFAULT: { fallback: [steam, tgdb, rawg] },
-        EVERYWHERE: { fallback: [tgdb, rawg], extra: [dlc] },
+        EVERYWHERE: {
+          fallback: [tgdb, rawg],
+          emptyFallsThrough: true,
+          extra: [dlc],
+        },
       },
       () => clock,
     );
@@ -117,6 +121,17 @@ describe("searching across game sources", () => {
     expect(await titles("EVERYWHERE")).toEqual(["TGDB", "Expansion"]);
     expect(steam.search).not.toHaveBeenCalled();
     expect(rawg.search).not.toHaveBeenCalled();
+  });
+
+  it("asks RAWG when TheGamesDB has nothing, if the reader asked to look further", async () => {
+    tgdb.search.mockResolvedValue([]);
+    expect(await titles("EVERYWHERE")).toEqual(["RAWG", "Expansion"]);
+  });
+
+  it("still answers with nothing when RAWG then fails", async () => {
+    tgdb.search.mockResolvedValue([]);
+    down(rawg);
+    expect(await titles("EVERYWHERE")).toEqual(["Expansion"]);
   });
 
   it("survives losing either half of searching everywhere", async () => {

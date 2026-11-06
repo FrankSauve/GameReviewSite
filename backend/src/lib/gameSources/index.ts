@@ -59,6 +59,7 @@ export const gameSearch = createGameSearch({
   DEFAULT: { fallback: [steam, tgdb, rawg] },
   EVERYWHERE: {
     fallback: [tgdb, rawg],
+    emptyFallsThrough: true,
     extra: [{ name: "STEAM_DLC", source: "STEAM", search: searchSteamDlc }],
   },
 });

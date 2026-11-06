@@ -14,8 +14,10 @@ export interface Lookup {
 export type SourcedHit = GameHit & { source: GameSourceId };
 
 interface Plan {
-  /** Tried in order until one answers. An empty answer is an answer. */
+  /** Tried in order until one answers. An empty answer is an answer... */
   fallback: Lookup[];
+  /** ...unless this is set, for a reader who asked to look further. */
+  emptyFallsThrough?: boolean;
   /** Also asked, and fine to lose. */
   extra?: Lookup[];
 }
@@ -62,19 +64,22 @@ export function createGameSearch(
     }
   }
 
-  async function firstAnswer(lookups: Lookup[], query: string) {
-    for (const lookup of lookups) {
+  async function firstAnswer(plan: Plan, query: string) {
+    let answer: SourcedHit[] | null = null;
+    for (const lookup of plan.fallback) {
       const hits = await ask(lookup, query);
-      if (hits) return hits;
+      if (!hits) continue;
+      answer = hits;
+      if (hits.length > 0 || !plan.emptyFallsThrough) break;
     }
-    return null;
+    return answer;
   }
 
   return {
     async search(query: string, scope: GameSearchScope): Promise<SourcedHit[]> {
       const plan = plans[scope];
       const [main, ...extras] = await Promise.all([
-        firstAnswer(plan.fallback, query),
+        firstAnswer(plan, query),
         ...(plan.extra ?? []).map((lookup) => ask(lookup, query)),
       ]);
       const answers = [main, ...extras].filter((hits) => hits !== null);
