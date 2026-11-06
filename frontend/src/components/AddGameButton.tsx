@@ -3,7 +3,7 @@ import { useLazyQuery } from "@apollo/client/react";
 import { useNavigate } from "react-router-dom";
 import { SEARCH_GAMES_EXTERNAL } from "../graphql/queries";
 import type { ExternalGame } from "../types";
-import { gamePath, newGamePath } from "../lib/links";
+import { SOURCE_LABELS, gamePath, newGamePath } from "../lib/links";
 import { useDismiss } from "../hooks/useDismiss";
 import { metacriticColor } from "../lib/rating";
 import { errorMessage } from "../lib/errorMessage";
@@ -19,43 +19,50 @@ interface SearchResult {
 }
 
 /**
- * Searches RAWG, in RAWG's own order, for a game to review. Picking one writes
- * nothing: a game joins the catalogue with its first review.
+ * Searches the game sources for a game to review. Picking one writes nothing:
+ * a game joins the catalogue with its first review.
  */
 export function AddGameButton() {
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+  const [everywhere, setEverywhere] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [search, { data, error, loading, variables }] = useLazyQuery<
     SearchResult,
-    { query: string }
+    { query: string; scope: "DEFAULT" | "EVERYWHERE" }
   >(SEARCH_GAMES_EXTERNAL, { fetchPolicy: "network-only" });
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setQuery(value);
+    setEverywhere(false);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     if (value.trim().length < 2) return;
     debounceRef.current = setTimeout(() => {
-      void search({ variables: { query: value.trim() } });
+      void search({ variables: { query: value.trim(), scope: "DEFAULT" } });
     }, 400);
   };
 
-  // A search still waiting on its debounce would spend a RAWG call on a closed
-  // panel.
+  // A search still waiting on its debounce would spend a source's call on a
+  // closed panel.
   const close = useCallback(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     setOpen(false);
     setQuery("");
+    setEverywhere(false);
   }, []);
   useDismiss(containerRef, close);
 
   const handleSelect = (game: ExternalGame) => {
     close();
-    void navigate(game.game ? gamePath(game.game) : newGamePath(game.rawgId));
+    void navigate(
+      game.game
+        ? gamePath(game.game)
+        : newGamePath(game.source, game.externalId),
+    );
   };
 
   const results = data?.searchGamesExternal ?? [];
@@ -63,6 +70,19 @@ export function AddGameButton() {
   const searched = trimmed.length >= 2;
   // Still debouncing counts as searching, or "no games found" flashes first.
   const searching = searched && (loading || variables?.query !== trimmed);
+
+  // A reader left with only Steam's rows has not seen anything new, whether the
+  // other sources found nothing or failed, so the way to ask again stays.
+  const looked =
+    everywhere && !error && results.some(({ source }) => source !== "STEAM");
+
+  // Steam answers a console title with the wrong games, not with nothing, so
+  // only the reader can tell that the rest of the sources are worth asking.
+  const searchEverywhere = () => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    setEverywhere(true);
+    void search({ variables: { query: trimmed, scope: "EVERYWHERE" } });
+  };
 
   return (
     <div className="relative shrink-0" ref={containerRef}>
@@ -84,7 +104,7 @@ export function AddGameButton() {
             <input
               autoFocus
               className="input-field rounded-card pl-9 pr-9 text-meta"
-              placeholder="Find a game on RAWG…"
+              placeholder="Find a game…"
               value={query}
               onChange={handleInput}
               autoComplete="off"
@@ -98,7 +118,7 @@ export function AddGameButton() {
 
           {searching && results.length === 0 && (
             <div className="flex items-center justify-center gap-2 py-6 text-meta text-content-subtle">
-              <Spinner /> Searching RAWG…
+              <Spinner /> Searching…
             </div>
           )}
 
@@ -117,12 +137,15 @@ export function AddGameButton() {
           {searched && results.length > 0 && (
             <ul className="max-h-[420px] overflow-y-auto divide-y divide-line">
               {results.map((game) => (
-                <li key={game.rawgId}>
+                <li key={`${game.source}:${game.externalId}`}>
                   <GameResultRow
                     game={game}
                     hint={game.game ? "View →" : "Add →"}
                     onClick={() => handleSelect(game)}
                   >
+                    <span className="text-micro text-content-subtle">
+                      {SOURCE_LABELS[game.source]}
+                    </span>
                     {game.releaseYear && (
                       <span className="text-micro text-content-subtle">
                         {game.releaseYear}
@@ -150,18 +173,16 @@ export function AddGameButton() {
             </ul>
           )}
 
-          {/* RAWG attribution */}
-          <div className="px-3 py-2 border-t border-line flex items-center justify-end gap-1">
-            <span className="text-micro text-content-subtle">Powered by</span>
-            <a
-              href="https://rawg.io"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-micro text-content-subtle hover:text-content-muted"
-            >
-              RAWG
-            </a>
-          </div>
+          {searched && !searching && !looked && (
+            <div className="px-3 py-2 border-t border-line text-right">
+              <button
+                onClick={searchEverywhere}
+                className="text-micro text-content-subtle hover:text-content-muted underline underline-offset-2"
+              >
+                Not listed? Search everywhere
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

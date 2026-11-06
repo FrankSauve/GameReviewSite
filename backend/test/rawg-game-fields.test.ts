@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { gameFieldsFromRawg } from "../src/lib/rawgGame.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  gameFieldsFromRawg,
+  rawgSource,
+  steamAppIdFrom,
+} from "../src/lib/gameSources/rawg.js";
 
 const base = { id: 1, name: "Elden Ring" };
 
@@ -11,6 +15,15 @@ describe("the game a first review builds from RAWG", () => {
 
   it("has nothing to build from a blank title", () => {
     expect(gameFieldsFromRawg({ ...base, name: "   " })).toBeNull();
+  });
+
+  it("drops a cover on a host the CSP does not name", () => {
+    expect(
+      gameFieldsFromRawg({
+        ...base,
+        background_image: "https://example.com/a.png",
+      })?.coverUrl,
+    ).toBeNull();
   });
 
   it("keeps only an https cover", () => {
@@ -60,5 +73,45 @@ describe("the game a first review builds from RAWG", () => {
     });
     expect(fields?.releaseYear).toBe(2022);
     expect(fields?.description).toBeNull();
+  });
+});
+
+describe("steamAppIdFrom", () => {
+  it("reads the app id from a Steam store page", () => {
+    expect(
+      steamAppIdFrom(
+        "https://store.steampowered.com/app/292030/The_Witcher_3/",
+      ),
+    ).toBe("292030");
+    expect(steamAppIdFrom("http://store.steampowered.com/app/400")).toBe("400");
+  });
+
+  it("ignores every other storefront", () => {
+    expect(steamAppIdFrom("https://www.gog.com/game/witcher_3")).toBeNull();
+    expect(
+      steamAppIdFrom("https://example.com/store.steampowered.com/app/1"),
+    ).toBeNull();
+  });
+});
+
+describe("a shapeless answer from RAWG", () => {
+  beforeEach(() => {
+    process.env["RAWG_API_KEY"] = "test-key";
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      async () => new Response("{}"),
+    );
+  });
+  afterEach(() => {
+    delete process.env["RAWG_API_KEY"];
+    vi.restoreAllMocks();
+  });
+
+  it("is an outage in search, not no results", async () => {
+    await expect(rawgSource.search("x")).rejects.toThrow("RAWG is unavailable");
+  });
+
+  it("is an outage in detail, not a crash", async () => {
+    await expect(rawgSource.detail("1")).rejects.toThrow("RAWG is unavailable");
   });
 });

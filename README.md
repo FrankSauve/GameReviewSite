@@ -6,7 +6,7 @@ reviews, and comment on other people's. Sign-in is delegated to your own
 
 ## Features
 
-- Game search via the [RAWG](https://rawg.io/apidocs) API; a game joins the library with its first review
+- Game search through the Steam store, then [TheGamesDB](https://thegamesdb.net) and [RAWG](https://rawg.io/apidocs); a game joins the library with its first review
 - Reviews scored out of 10 in half points, written in Markdown, editable and
   deletable by their author
 - Each review records the year the game was played and the hours spent on it, so
@@ -56,7 +56,9 @@ anonymous visitor. It is ignored whenever `NODE_ENV=production`.
 
 | Variable                        | Required   | Purpose                                        |
 | ------------------------------- | ---------- | ---------------------------------------------- |
-| `RAWG_API_KEY`                  | yes        | game search                                    |
+| `RAWG_API_KEY`                  | yes        | game search, last in line                      |
+| `TGDB_API_KEY`                  | no         | game search beyond Steam; skipped without one  |
+| `GAME_SOURCE_RATE_LIMIT_MAX`    | no         | game source calls per minute, default 30       |
 | `AUTH_DEV_IDENTITY`             | local only | fakes a signed-in user, ignored in production  |
 | `OIDC_ISSUER`                   | production | per-application issuer URL from authentik      |
 | `OIDC_CLIENT_ID`                | production |                                                |

@@ -9,11 +9,13 @@ import {
   vi,
 } from "vitest";
 import type { Express } from "express";
+import { gameSearch } from "../src/lib/gameSources/index.js";
 import { prisma } from "../src/lib/prisma.js";
 import {
   ALICE,
   BOB,
   authedQuery,
+  publicQuery,
   errorCodes,
   resetDatabase,
   startApp,
@@ -63,8 +65,8 @@ const CREATE = `mutation Create($input: CreateReviewInput!) {
   createReview(input: $input) { id game { id title slug } }
 }`;
 
-const PREVIEW = `query Preview($rawgId: ID!) {
-  rawgGame(rawgId: $rawgId) { rawgId title coverUrl genres releaseYear description game { id } }
+const PREVIEW = `query Preview($id: ID!) {
+  externalGame(source: RAWG, id: $id) { externalId title coverUrl genres releaseYear description game { id } }
 }`;
 
 const review = {
@@ -92,6 +94,7 @@ describe("the first review of a game", () => {
 
   beforeEach(async () => {
     await resetDatabase();
+    gameSearch.clear();
     process.env["RAWG_API_KEY"] = "test-key";
     rawg = stubRawg();
   });
@@ -104,7 +107,11 @@ describe("the first review of a game", () => {
     authedQuery<Created>(app, CREATE, identity, {}, { input });
 
   it("creates the game from RAWG along with the review", async () => {
-    const res = await write(ALICE, { ...review, rawgId: "1" });
+    const res = await write(ALICE, {
+      ...review,
+      source: "RAWG",
+      externalId: "1",
+    });
     expect(res.errors).toBeUndefined();
 
     const game = await prisma.game.findUnique({
@@ -124,10 +131,14 @@ describe("the first review of a game", () => {
   });
 
   it("reviews the game already there, without asking RAWG", async () => {
-    await write(ALICE, { ...review, rawgId: "1" });
+    await write(ALICE, { ...review, source: "RAWG", externalId: "1" });
     const before = rawg.calls.length;
 
-    const res = await write(BOB, { ...review, rawgId: "1" });
+    const res = await write(BOB, {
+      ...review,
+      source: "RAWG",
+      externalId: "1",
+    });
     expect(res.errors).toBeUndefined();
     expect(rawg.calls).toHaveLength(before);
     expect(await prisma.game.count()).toBe(1);
@@ -137,7 +148,11 @@ describe("the first review of a game", () => {
   it("writes nothing when RAWG fails", async () => {
     rawg.restore();
     rawg = stubRawg(500);
-    const res = await write(ALICE, { ...review, rawgId: "1" });
+    const res = await write(ALICE, {
+      ...review,
+      source: "RAWG",
+      externalId: "1",
+    });
     expect(res.errors).toBeDefined();
     expect(await prisma.game.count()).toBe(0);
   });
@@ -145,34 +160,92 @@ describe("the first review of a game", () => {
   it("reports a RAWG id RAWG does not know as a missing game", async () => {
     rawg.restore();
     rawg = stubRawg(404, { detail: "Not found." });
-    const res = await write(ALICE, { ...review, rawgId: "999999999" });
+    const res = await write(ALICE, {
+      ...review,
+      source: "RAWG",
+      externalId: "999999999",
+    });
     expect(errorCodes(res)).toContain("NOT_FOUND");
     expect(res.errors?.[0]?.message).toBe("Game not found.");
     expect(await prisma.game.count()).toBe(0);
   });
 
   it("writes no game when the review itself is refused", async () => {
-    const res = await write(ALICE, { ...review, rating: 11, rawgId: "1" });
+    const res = await write(ALICE, {
+      ...review,
+      rating: 11,
+      source: "RAWG",
+      externalId: "1",
+    });
     expect(errorCodes(res)).toContain("BAD_USER_INPUT");
     expect(await prisma.game.count()).toBe(0);
     expect(rawg.calls).toHaveLength(0);
   });
 
-  it("asks for exactly one of gameId and rawgId", async () => {
+  it("asks for exactly one of gameId and a source id", async () => {
     const game = await prisma.game.create({
       data: { title: "Hades", slug: "hades" },
     });
-    for (const target of [{}, { gameId: game.id, rawgId: "1" }]) {
+    for (const target of [
+      {},
+      { source: "RAWG" },
+      { externalId: "1" },
+      { gameId: game.id, source: "RAWG", externalId: "1" },
+      { gameId: game.id, source: "RAWG" },
+      { gameId: game.id, externalId: "1" },
+    ]) {
       const res = await write(ALICE, { ...review, ...target });
       expect(errorCodes(res)).toContain("BAD_USER_INPUT");
     }
     expect(await prisma.review.count()).toBe(0);
   });
 
-  it("refuses a rawgId that is not an integer before calling RAWG", async () => {
-    const res = await write(ALICE, { ...review, rawgId: "../../etc/passwd" });
+  it("previews a game for signed-in readers only", async () => {
+    const res = await publicQuery(app, PREVIEW, {}, { id: "1" });
+    expect(errorCodes(res)).toEqual(["UNAUTHENTICATED"]);
+    expect(rawg.calls).toHaveLength(0);
+  });
+
+  it("offers a same-titled library game for the reader to confirm", async () => {
+    await prisma.game.create({
+      data: {
+        steamAppId: "7",
+        title: "ELDEN RING",
+        slug: "elden-ring",
+        releaseYear: 2022,
+      },
+    });
+    const res = await authedQuery<{
+      externalGame: { game: null; libraryMatch: { slug: string } };
+    }>(
+      app,
+      `{ externalGame(source: RAWG, id: "1") { game { id } libraryMatch { slug } } }`,
+      ALICE,
+    );
+    expect(res.data?.externalGame.game).toBeNull();
+    expect(res.data?.externalGame.libraryMatch.slug).toBe("elden-ring");
+  });
+
+  it("refuses a leading zero, which would be a second row for one id", async () => {
+    const res = await write(ALICE, {
+      ...review,
+      source: "RAWG",
+      externalId: "01",
+    });
     expect(res.errors?.[0]?.message).toMatch(
-      /rawgId must be a positive integer/,
+      /externalId must be a positive integer/,
+    );
+    expect(rawg.calls).toHaveLength(0);
+  });
+
+  it("refuses a source id that is not an integer before calling RAWG", async () => {
+    const res = await write(ALICE, {
+      ...review,
+      source: "RAWG",
+      externalId: "../../etc/passwd",
+    });
+    expect(res.errors?.[0]?.message).toMatch(
+      /externalId must be a positive integer/,
     );
     expect(rawg.calls).toHaveLength(0);
   });
@@ -183,7 +256,7 @@ describe("the first review of a game", () => {
       ...ELDEN_RING,
       background_image: "http://media.rawg.io/elden-ring.jpg",
     });
-    await write(ALICE, { ...review, rawgId: "1" });
+    await write(ALICE, { ...review, source: "RAWG", externalId: "1" });
     const game = await prisma.game.findUnique({ where: { rawgId: "1" } });
     expect(game?.coverUrl).toBeNull();
   });
@@ -203,6 +276,7 @@ describe("previewing a game before its first review", () => {
 
   beforeEach(async () => {
     await resetDatabase();
+    gameSearch.clear();
     process.env["RAWG_API_KEY"] = "test-key";
     rawg = stubRawg();
   });
@@ -213,10 +287,10 @@ describe("previewing a game before its first review", () => {
 
   it("shows what RAWG has, and writes nothing", async () => {
     const res = await authedQuery<{
-      rawgGame: { title: string; description: string; game: null };
-    }>(app, PREVIEW, ALICE, {}, { rawgId: "1" });
+      externalGame: { title: string; description: string; game: null };
+    }>(app, PREVIEW, ALICE, {}, { id: "1" });
     expect(res.errors).toBeUndefined();
-    expect(res.data?.rawgGame).toMatchObject({
+    expect(res.data?.externalGame).toMatchObject({
       title: "Elden Ring",
       description: "A game.",
       game: null,
@@ -227,29 +301,29 @@ describe("previewing a game before its first review", () => {
   it("is null for a RAWG id RAWG does not know", async () => {
     rawg.restore();
     rawg = stubRawg(404, { detail: "Not found." });
-    const res = await authedQuery<{ rawgGame: null }>(
+    const res = await authedQuery<{ externalGame: null }>(
       app,
       PREVIEW,
       ALICE,
       {},
-      { rawgId: "999999999" },
+      { id: "999999999" },
     );
     expect(res.errors).toBeUndefined();
-    expect(res.data?.rawgGame).toBeNull();
+    expect(res.data?.externalGame).toBeNull();
   });
 
   it("points at the game when it is already in the library", async () => {
     const game = await prisma.game.create({
       data: { rawgId: "1", title: "Elden Ring", slug: "elden-ring" },
     });
-    const res = await authedQuery<{ rawgGame: { game: { id: string } } }>(
+    const res = await authedQuery<{ externalGame: { game: { id: string } } }>(
       app,
       PREVIEW,
       ALICE,
       {},
-      { rawgId: "1" },
+      { id: "1" },
     );
-    expect(res.data?.rawgGame.game.id).toBe(game.id);
+    expect(res.data?.externalGame.game.id).toBe(game.id);
     expect(rawg.calls).toHaveLength(0);
   });
 });

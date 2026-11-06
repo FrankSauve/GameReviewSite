@@ -7,3 +7,13 @@ export function errorMessage(error: ErrorLike): string {
   }
   return error.message;
 }
+
+/** A session can end while the page still holds `me`: only the API's refusal shows it. */
+export function isSignedOutError(error: ErrorLike | undefined): boolean {
+  return (
+    CombinedGraphQLErrors.is(error) &&
+    error.errors.some(
+      ({ extensions }) => extensions?.["code"] === "UNAUTHENTICATED",
+    )
+  );
+}

@@ -1,0 +1,159 @@
+{
+  "code": 200,
+  "status": "Success",
+  "data": {
+    "count": 7,
+    "games": [
+      {
+        "id": 87675,
+        "game_title": "Metroid Dread",
+        "release_date": "2021-10-08",
+        "platform": 4971,
+        "region_id": 1,
+        "country_id": 50,
+        "overview": "Join intergalactic bounty hunter Samus Aran in her first new 2D Metroid story in",
+        "genres": [1, 2]
+      },
+      {
+        "id": 118849,
+        "game_title": "Metroid Dread",
+        "release_date": "2021-10-08",
+        "platform": 4971,
+        "region_id": 6,
+        "country_id": 4,
+        "overview": "Join intergalactic bounty hunter Samus Aran in her first new 2D Metroid story in",
+        "genres": [1, 2]
+      },
+      {
+        "id": 121672,
+        "game_title": "Metroid Dread",
+        "release_date": "2021-10-08",
+        "platform": 4971,
+        "region_id": 1,
+        "country_id": 31,
+        "overview": "Únete a la cazarrecompensas Samus Aran en su intento por escapar de un mortífero",
+        "genres": [1]
+      },
+      {
+        "id": 93849,
+        "game_title": "Metroid Dread ",
+        "release_date": "2021-10-08",
+        "platform": 4971,
+        "region_id": 6,
+        "country_id": 0,
+        "overview": "Join intergalactic bounty hunter Samus Aran in her first new 2D Metroid story in",
+        "genres": [1, 2]
+      },
+      {
+        "id": 93786,
+        "game_title": "Metroid Dread [Special Edition]",
+        "release_date": "2021-10-08",
+        "platform": 4971,
+        "region_id": 1,
+        "country_id": 0,
+        "overview": "Join intergalactic bounty hunter Samus Aran in her first new 2D Metroid story in",
+        "genres": [1, 2, 15]
+      },
+      {
+        "id": 93850,
+        "game_title": "Metroid Dread [Special Edition]",
+        "release_date": "2021-10-08",
+        "platform": 4971,
+        "region_id": 6,
+        "country_id": 0,
+        "overview": "Join intergalactic bounty hunter Samus Aran in her first new 2D Metroid story in",
+        "genres": [1, 2]
+      },
+      {
+        "id": 113579,
+        "game_title": "Metroid Dread [Special Edition]",
+        "release_date": "2021-10-08",
+        "platform": 4971,
+        "region_id": 4,
+        "country_id": 28,
+        "overview": "Join intergalactic bounty hunter Samus Aran in her first new 2D Metroid story in",
+        "genres": [1, 2]
+      }
+    ]
+  },
+  "include": {
+    "boxart": {
+      "base_url": {
+        "original": "https://cdn.thegamesdb.net/images/original/",
+        "small": "https://cdn.thegamesdb.net/images/small/",
+        "thumb": "https://cdn.thegamesdb.net/images/thumb/",
+        "cropped_center_thumb": "https://cdn.thegamesdb.net/images/cropped_center_thumb/",
+        "medium": "https://cdn.thegamesdb.net/images/medium/",
+        "large": "https://cdn.thegamesdb.net/images/large/"
+      },
+      "data": {
+        "87675": [
+          {
+            "id": 306967,
+            "type": "boxart",
+            "side": "front",
+            "filename": "boxart/front/87675-1.jpg",
+            "resolution": null
+          }
+        ],
+        "93786": [
+          {
+            "id": 314204,
+            "type": "boxart",
+            "side": "front",
+            "filename": "boxart/front/93786-1.jpg",
+            "resolution": null
+          }
+        ],
+        "93849": [
+          {
+            "id": 382494,
+            "type": "boxart",
+            "side": "front",
+            "filename": "boxart/front/93849-1.jpg",
+            "resolution": null
+          }
+        ],
+        "93850": [
+          {
+            "id": 370644,
+            "type": "boxart",
+            "side": "front",
+            "filename": "boxart/front/93850-1.jpg",
+            "resolution": null
+          }
+        ],
+        "113579": [
+          {
+            "id": 386870,
+            "type": "boxart",
+            "side": "front",
+            "filename": "boxart/front/113579-1.jpg",
+            "resolution": null
+          }
+        ],
+        "118849": [
+          {
+            "id": 406484,
+            "type": "boxart",
+            "side": "front",
+            "filename": "boxart/front/118849-1.jpg",
+            "resolution": null
+          }
+        ],
+        "121672": [
+          {
+            "id": 421188,
+            "type": "boxart",
+            "side": "front",
+            "filename": "boxart/front/121672-1.jpg",
+            "resolution": null
+          }
+        ]
+      }
+    }
+  },
+  "remaining_monthly_allowance": 742,
+  "extra_allowance": 0,
+  "allowance_refresh_timer": 2616944
+}

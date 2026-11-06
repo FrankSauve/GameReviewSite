@@ -17,7 +17,7 @@ export default defineConfig({
       // High enough that the functional tests never trip it; the rate limit
       // test lowers it for itself.
       RATE_LIMIT_MAX: "100000",
-      RAWG_RATE_LIMIT_MAX: "100000",
+      GAME_SOURCE_RATE_LIMIT_MAX: "100000",
       // Likewise: the OIDC flow test signs in a dozen times in one minute,
       // which is well past what a person would do and past the real default.
       AUTH_RATE_LIMIT_MAX: "100000",

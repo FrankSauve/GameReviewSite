@@ -40,17 +40,21 @@ async function appFor(
  * updateGame, the one path that still takes them from the client.
  */
 const fromRawg = (rawgId: string) =>
-  `mutation { createReview(input: { rawgId: "${rawgId}", rating: 8, content: "ok", yearPlayed: 2024, hoursPlayed: 10 }) { id } }`;
+  `mutation { createReview(input: { source: RAWG, externalId: "${rawgId}", rating: 8, content: "ok", yearPlayed: 2024, hoursPlayed: 10 }) { id } }`;
 const update = (fields: string) => (gameId: string) =>
   `mutation { updateGame(id: "${gameId}", input: { ${fields} }) { id } }`;
 
 const CASES: Array<[string, (gameId: string) => string, string]> = [
-  ["rawgId", () => fromRawg("abc"), "rawgId must be a positive integer."],
   [
-    "neither gameId nor rawgId",
+    "externalId",
+    () => fromRawg("abc"),
+    "externalId must be a positive integer.",
+  ],
+  [
+    "neither gameId nor a source id",
     () =>
       'mutation { createReview(input: { rating: 8, content: "ok", yearPlayed: 2024, hoursPlayed: 10 }) { id } }',
-    "Give exactly one of gameId and rawgId.",
+    "Give exactly one of gameId and source with externalId.",
   ],
   [
     "label length",

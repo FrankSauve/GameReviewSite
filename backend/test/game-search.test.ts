@@ -11,9 +11,12 @@ import {
 import type { Express } from "express";
 import { prisma } from "../src/lib/prisma.js";
 import { escapeLike, searchableTitle } from "../src/lib/gameCatalogue.js";
+import { gameSearch } from "../src/lib/gameSources/index.js";
 import {
   ALICE,
   BOB,
+  authedQuery,
+  errorCodes,
   publicQuery,
   resetDatabase,
   seedGame,
@@ -26,7 +29,7 @@ const SEARCH = `query Search($query: String!, $limit: Int) {
 }`;
 
 const EXTERNAL = `query External($query: String!) {
-  searchGamesExternal(query: $query) { rawgId title game { slug } }
+  searchGamesExternal(query: $query) { externalId title game { slug } }
 }`;
 
 interface Found {
@@ -163,11 +166,13 @@ describe("searchGamesExternal", () => {
     await resetDatabase();
     process.env["RAWG_API_KEY"] = "test-key";
     original = globalThis.fetch;
+    gameSearch.clear();
     globalThis.fetch = vi.fn(async () => {
+      const logo = (id: number) => `https://x/steam/apps/${id}/capsule.jpg`;
       const body = {
-        results: [
-          { id: 1, name: "Helldivers II" },
-          { id: 2, name: "HELLDIVERS 2" },
+        items: [
+          { name: "Helldivers II", logo: logo(1) },
+          { name: "HELLDIVERS 2", logo: logo(2) },
         ],
       };
       return new Response(JSON.stringify(body), {
@@ -181,17 +186,30 @@ describe("searchGamesExternal", () => {
     delete process.env["RAWG_API_KEY"];
   });
 
-  it("links a result to the game already imported under its rawgId", async () => {
+  it("is for signed-in readers, and asks no source otherwise", async () => {
+    const res = await publicQuery(app, EXTERNAL, {}, { query: "helldivers" });
+    expect(errorCodes(res)).toEqual(["UNAUTHENTICATED"]);
+    expect(globalThis.fetch).not.toHaveBeenCalled();
+  });
+
+  it("links a result to the game already imported under its source id", async () => {
     await prisma.game.create({
-      data: { rawgId: "1", title: "Helldivers II", slug: "helldivers-ii" },
+      data: { steamAppId: "1", title: "Helldivers II", slug: "helldivers-ii" },
     });
-    const res = await publicQuery<{
-      searchGamesExternal: { rawgId: string; game: { slug: string } | null }[];
-    }>(app, EXTERNAL, {}, { query: "helldivers" });
+    const res = await authedQuery<{
+      searchGamesExternal: {
+        externalId: string;
+        game: { slug: string } | null;
+      }[];
+    }>(app, EXTERNAL, ALICE, {}, { query: "helldivers" });
     expect(res.errors).toBeUndefined();
     expect(res.data?.searchGamesExternal).toEqual([
-      { rawgId: "1", title: "Helldivers II", game: { slug: "helldivers-ii" } },
-      { rawgId: "2", title: "HELLDIVERS 2", game: null },
+      {
+        externalId: "1",
+        title: "Helldivers II",
+        game: { slug: "helldivers-ii" },
+      },
+      { externalId: "2", title: "HELLDIVERS 2", game: null },
     ]);
   });
 });

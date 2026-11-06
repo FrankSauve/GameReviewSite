@@ -1,23 +1,44 @@
+import { useState } from "react";
 import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@apollo/client/react";
-import { GET_RAWG_GAME } from "../graphql/queries";
+import { GET_EXTERNAL_GAME } from "../graphql/queries";
 import type { ExternalGame } from "../types";
-import { gamePath } from "../lib/links";
+import { useAuth } from "../contexts/AuthContext";
+import { errorMessage, isSignedOutError } from "../lib/errorMessage";
+import { gamePath, sourceFromPath } from "../lib/links";
 import { GameHeader } from "../components/GameHeader";
 import { AddReviewForm } from "../components/AddReviewForm";
 
 /**
- * A RAWG title nobody has reviewed yet. Nothing is in the library until the
+ * A title from a game source that nobody has reviewed yet. Nothing is in the library until the
  * review is submitted: the game and its first review are written together.
  */
 export function NewGamePage() {
-  const { rawgId = "" } = useParams<{ rawgId: string }>();
+  const params = useParams<{ source: string; id: string }>();
+  const source = sourceFromPath(params.source ?? "");
+  const id = params.id ?? "";
   const navigate = useNavigate();
+  const { user, loading: authLoading, signIn } = useAuth();
+  // By path: the route keeps this page mounted from one new game to the next.
+  const path = `${params.source}/${id}`;
+  const [different, setDifferent] = useState<string | null>(null);
   const { data, loading, error } = useQuery<{
-    rawgGame: ExternalGame | null;
-  }>(GET_RAWG_GAME, { variables: { rawgId }, skip: !rawgId });
+    externalGame: ExternalGame | null;
+  }>(GET_EXTERNAL_GAME, {
+    variables: { source, id },
+    skip: !user || !source || !id,
+  });
 
-  if (loading && !data)
+  if (!authLoading && (!user || isSignedOutError(error)))
+    return (
+      <div className="text-center py-20 space-y-4">
+        <p className="text-content-subtle">Sign in to add this game.</p>
+        <button onClick={() => signIn()} className="btn-primary text-meta">
+          Sign in
+        </button>
+      </div>
+    );
+  if (authLoading || (loading && !data))
     return (
       <div className="page-column animate-pulse">
         <div className="card p-card-pad h-40" />
@@ -26,11 +47,12 @@ export function NewGamePage() {
   if (error && !data)
     return (
       <div className="text-center py-20">
-        <p className="text-danger-text">{error.message}</p>
+        <p className="text-danger-text">{errorMessage(error)}</p>
       </div>
     );
 
-  const preview = data?.rawgGame;
+  const preview = data?.externalGame;
+  const match = preview?.libraryMatch;
   if (!preview)
     return (
       <div className="text-center py-20">
@@ -50,17 +72,43 @@ export function NewGamePage() {
 
       <GameHeader game={preview} />
 
-      <div className="card p-card-pad">
-        <h2 className="font-semibold text-content mb-1">Your Review</h2>
-        <p className="text-meta text-content-subtle mb-4">
-          The game joins the library with your review.
-        </p>
-        <AddReviewForm
-          target={{ rawgId: preview.rawgId }}
-          gameGenres={preview.genres}
-          onSuccess={(game) => void navigate(gamePath(game), { replace: true })}
-        />
-      </div>
+      {match && different !== path ? (
+        <div className="card p-card-pad space-y-3">
+          <h2 className="font-semibold text-content">
+            Already in the library?
+          </h2>
+          <p className="text-meta text-content-subtle">
+            This looks like {match.title}
+            {match.releaseYear ? ` (${match.releaseYear})` : ""}, which is
+            already here.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Link to={gamePath(match)} className="btn-primary text-meta">
+              Review that game
+            </Link>
+            <button
+              onClick={() => setDifferent(path)}
+              className="btn-secondary text-meta"
+            >
+              This is a different game
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="card p-card-pad">
+          <h2 className="font-semibold text-content mb-1">Your Review</h2>
+          <p className="text-meta text-content-subtle mb-4">
+            The game joins the library with your review.
+          </p>
+          <AddReviewForm
+            target={{ source: preview.source, externalId: preview.externalId }}
+            gameGenres={preview.genres}
+            onSuccess={(game) =>
+              void navigate(gamePath(game), { replace: true })
+            }
+          />
+        </div>
+      )}
     </div>
   );
 }

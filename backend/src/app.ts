@@ -122,7 +122,7 @@ export async function createApp(): Promise<AppHandle> {
     sameOriginOnly(),
     express.json({ limit: "100kb" }),
     limiters.general,
-    limiters.rawg,
+    limiters.gameSources,
     expressMiddleware(server, {
       context: async ({ req }) => buildContext({ req }),
     }),

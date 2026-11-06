@@ -63,10 +63,14 @@ model Session {
 
 model Game {
   id          String   @id @default(uuid())
+  /// At most one of these three names the source a new game came from; a
+  /// backfill can fill in the others, so none of them is the game's identity.
   rawgId      String?  @unique
+  steamAppId  String?  @unique
+  tgdbId      String?  @unique
   slug        String   @unique
   title       String
-  /// A scalar list, not a join table: labels copied from RAWG for display, never
+  /// A scalar list, not a join table: labels copied from a game source for display, never
   /// queried across or deduplicated between games.
   genres      String[] @default([])
   description String?

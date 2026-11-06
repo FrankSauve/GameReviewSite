@@ -10,10 +10,11 @@ import { ALICE, authedQuery, publicQuery, resetDatabase } from "./helpers.js";
  * add it to backend/.env", and a Prisma failure would have named tables,
  * columns and constraints the same way.
  *
- * RAWG_API_KEY is unset in the test environment, so searchGamesExternal is a
+ * RAWG_API_KEY is unset in the test environment, so a RAWG detail fetch is a
  * genuine internal failure rather than a simulated one.
  */
-const INTERNAL_FAILURE = '{ searchGamesExternal(query: "halo") { rawgId } }';
+const INTERNAL_FAILURE =
+  '{ externalGame(source: RAWG, id: "1") { externalId } }';
 
 /**
  * `isProduction()` is read at call time, not at construction time — formatError
@@ -57,7 +58,7 @@ describe("error message disclosure", () => {
       .mockImplementation(() => undefined);
     const { app, stop } = await appFor("production");
 
-    const res = await publicQuery(app, INTERNAL_FAILURE);
+    const res = await authedQuery(app, INTERNAL_FAILURE, ALICE);
 
     expect(res.errors?.[0]?.message).toBe("Internal server error.");
     expect(res.errors?.[0]?.message).not.toMatch(/RAWG_API_KEY|apidocs|\.env/);
@@ -72,7 +73,7 @@ describe("error message disclosure", () => {
 
   it("keeps the real message outside production, where it is the point", async () => {
     const { app, stop } = await appFor("test");
-    const res = await publicQuery(app, INTERNAL_FAILURE);
+    const res = await authedQuery(app, INTERNAL_FAILURE, ALICE);
     expect(res.errors?.[0]?.message).toMatch(/RAWG_API_KEY/);
     await stop();
   });
@@ -90,7 +91,7 @@ describe("error message disclosure", () => {
     // An authorization failure likewise.
     const anonWrite = await publicQuery(
       app,
-      'mutation { createReview(input: { rawgId: "1", rating: 8, content: "x", yearPlayed: 2024, hoursPlayed: 1 }) { id } }',
+      'mutation { createReview(input: { source: RAWG, externalId: "1", rating: 8, content: "x", yearPlayed: 2024, hoursPlayed: 1 }) { id } }',
     );
     expect(anonWrite.errors?.[0]?.extensions?.code).toBe("UNAUTHENTICATED");
     expect(anonWrite.errors?.[0]?.message).toMatch(/signed in/i);
@@ -110,7 +111,7 @@ describe("error message disclosure", () => {
 
     const res = await authedQuery(
       app,
-      'mutation { createReview(input: { rawgId: "1", rating: 8, content: "   ", yearPlayed: 2024, hoursPlayed: 1 }) { id } }',
+      'mutation { createReview(input: { source: RAWG, externalId: "1", rating: 8, content: "   ", yearPlayed: 2024, hoursPlayed: 1 }) { id } }',
       ALICE,
     );
 

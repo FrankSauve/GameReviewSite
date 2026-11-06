@@ -4,10 +4,12 @@ import { client } from "./apollo";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { Navbar } from "./components/Navbar";
+import { SiteFooter } from "./components/SiteFooter";
 import { HomePage } from "./pages/HomePage";
 import { GameLibraryPage } from "./pages/GameLibraryPage";
 import { GameDetailPage } from "./pages/GameDetailPage";
 import { NewGamePage } from "./pages/NewGamePage";
+import { OldNewGamePath } from "./pages/OldNewGamePath";
 import { UserProfilePage } from "./pages/UserProfilePage";
 import { PROFILE_ROUTES } from "./lib/profileViews";
 import { ReviewDetailPage } from "./pages/ReviewDetailPage";
@@ -29,7 +31,11 @@ function App() {
                   <Route path="/" element={<HomePage />} />
                   <Route path="/games" element={<GameLibraryPage />} />
                   <Route path="/games/:id" element={<GameDetailPage />} />
-                  <Route path="/games/new/:rawgId" element={<NewGamePage />} />
+                  <Route path="/games/new/:id" element={<OldNewGamePath />} />
+                  <Route
+                    path="/games/new/:source/:id"
+                    element={<NewGamePage />}
+                  />
                   {PROFILE_ROUTES.map(({ path, tab }) => (
                     <Route
                       key={path}
@@ -64,6 +70,7 @@ function App() {
                   />
                 </Routes>
               </main>
+              <SiteFooter />
             </div>
           </BrowserRouter>
         </ThemeProvider>

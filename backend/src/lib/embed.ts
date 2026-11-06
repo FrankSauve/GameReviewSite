@@ -165,7 +165,7 @@ export interface Embed {
   description: string;
   /** The canonical URL of the page on the site, absolute. */
   url: string;
-  /** Today only a game's cover, absolute and on RAWG's CDN. Absent for a game
+  /** Today only a game's cover, absolute and on a game source's CDN. Absent for a game
    *  added by hand and for every profile, in which case no image tag is emitted
    *  at all — an `og:image` pointing at nothing makes some clients drop the
    *  whole embed. */

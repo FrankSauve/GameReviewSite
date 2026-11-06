@@ -1,3 +1,4 @@
+import type { GameSource } from "../types";
 import { useId, useState } from "react";
 import { useMutation } from "@apollo/client/react";
 import { CREATE_REVIEW } from "../graphql/mutations";
@@ -14,8 +15,8 @@ import { MarkdownEditor } from "./MarkdownEditor";
 import { errorMessage } from "../lib/errorMessage";
 
 interface AddReviewFormProps {
-  /** A game in the library, or a RAWG title its first review will add. */
-  target: { gameId: string } | { rawgId: string };
+  /** A game in the library, or a source's title its first review will add. */
+  target: { gameId: string } | { source: GameSource; externalId: string };
   gameGenres?: string[] | undefined;
   communityGenres?: string[] | undefined;
   communitySecondaryGenres?: string[] | undefined;
