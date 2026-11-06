@@ -11,6 +11,7 @@
 import "dotenv/config";
 import { rawgSteamAppId } from "../lib/gameSources/rawg.js";
 import { prisma } from "../lib/prisma.js";
+import { violatesUniqueOn } from "../lib/uniqueViolation.js";
 
 const DEFAULT_DELAY_MS = 1_000;
 const MAX_FAILURES_IN_A_ROW = 3;
@@ -82,10 +83,14 @@ async function main() {
       held.set(appId, game.title);
       console.log(`${game.title}: ${appId}`);
       if (write)
-        await prisma.game.update({
-          where: { id: game.id },
-          data: { steamAppId: appId },
-        });
+        await prisma.game
+          .update({ where: { id: game.id }, data: { steamAppId: appId } })
+          .catch((err: unknown) => {
+            // A reader's first review can claim the id while this runs.
+            if (!violatesUniqueOn(err, "steamAppId")) throw err;
+            found -= 1;
+            conflicts.push(`${game.title}: ${appId} was taken during this run`);
+          });
     }
     await pause();
   }
@@ -97,5 +102,4 @@ async function main() {
   for (const failure of failed) console.log(`Failed: ${failure}`);
 }
 
-await main();
-await prisma.$disconnect();
+await main().finally(() => prisma.$disconnect());
