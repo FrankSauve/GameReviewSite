@@ -38,6 +38,7 @@ describe("searching across game sources", () => {
       {
         DEFAULT: { fallback: [steam, tgdb, rawg] },
         EVERYWHERE: {
+          lead: [steam],
           fallback: [tgdb, rawg],
           emptyFallsThrough: true,
           extra: [dlc],
@@ -117,27 +118,59 @@ describe("searching across game sources", () => {
     expect(steam.search).toHaveBeenCalledTimes(2);
   });
 
-  it("searches everywhere without Steam's games, adding its DLC", async () => {
-    expect(await titles("EVERYWHERE")).toEqual(["TGDB", "Expansion"]);
-    expect(steam.search).not.toHaveBeenCalled();
+  it("keeps Steam's results when searching everywhere, and adds the rest", async () => {
+    expect(await titles("EVERYWHERE")).toEqual(["STEAM", "TGDB", "Expansion"]);
     expect(rawg.search).not.toHaveBeenCalled();
   });
 
   it("asks RAWG when TheGamesDB has nothing, if the reader asked to look further", async () => {
     tgdb.search.mockResolvedValue([]);
-    expect(await titles("EVERYWHERE")).toEqual(["RAWG", "Expansion"]);
+    expect(await titles("EVERYWHERE")).toEqual(["STEAM", "RAWG", "Expansion"]);
   });
 
-  it("still answers with nothing when RAWG then fails", async () => {
+  it("still answers with what it has when RAWG then fails", async () => {
     tgdb.search.mockResolvedValue([]);
     down(rawg);
-    expect(await titles("EVERYWHERE")).toEqual(["Expansion"]);
+    expect(await titles("EVERYWHERE")).toEqual(["STEAM", "Expansion"]);
   });
 
-  it("survives losing either half of searching everywhere", async () => {
+  it("survives losing any part of searching everywhere", async () => {
     down(dlc);
-    expect(await titles("EVERYWHERE", "a")).toEqual(["TGDB"]);
+    expect(await titles("EVERYWHERE", "a")).toEqual(["STEAM", "TGDB"]);
+    clock += 60_001;
+    dlc.search.mockResolvedValue([]);
     down(tgdb);
-    expect(await titles("EVERYWHERE", "b")).toEqual(["RAWG"]);
+    expect(await titles("EVERYWHERE", "b")).toEqual(["STEAM", "RAWG"]);
+  });
+
+  it("calls it an outage when the fallback fails and the rest found nothing", async () => {
+    down(tgdb);
+    down(rawg);
+    steam.search.mockResolvedValue([]);
+    dlc.search.mockResolvedValue([]);
+    await expect(chain.search("a", "EVERYWHERE")).rejects.toThrow(
+      "Game search is unavailable",
+    );
+  });
+
+  it("does not wait on Steam's DLC after Steam's games just failed", async () => {
+    down(steam);
+    await chain.search("a", "DEFAULT");
+    await chain.search("b", "EVERYWHERE");
+    expect(dlc.search).not.toHaveBeenCalled();
+  });
+
+  it("answers without a lookup that is fine to lose, once it hangs", async () => {
+    dlc.search.mockReturnValue(new Promise(() => undefined));
+    const quick = createGameSearch(
+      {
+        DEFAULT: { fallback: [] },
+        EVERYWHERE: { fallback: [tgdb], extra: [dlc] },
+      },
+      () => clock,
+      5,
+    );
+    const hits = await quick.search("a", "EVERYWHERE");
+    expect(hits.map((found) => found.title)).toEqual(["TGDB"]);
   });
 });

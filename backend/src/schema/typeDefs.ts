@@ -74,7 +74,7 @@ export const typeDefs = `#graphql
     RAWG
   }
 
-  # EVERYWHERE adds the sources Steam-first search does not reach by itself.
+  # EVERYWHERE keeps Steam's results and adds the sources DEFAULT does not reach.
   enum GameSearchScope {
     DEFAULT
     EVERYWHERE

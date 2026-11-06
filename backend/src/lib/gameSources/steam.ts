@@ -1,5 +1,5 @@
 import { coverUrl, decodeEntities, gameFields } from "./fields.js";
-import { getJson, sourceUnavailable } from "./http.js";
+import { getJson, requireList, sourceUnavailable } from "./http.js";
 import type { GameHit, GameSource } from "./types.js";
 
 const COVER_DOMAIN = ".steamstatic.com";
@@ -60,11 +60,8 @@ async function search(query: string, category: string): Promise<GameHit[]> {
     "Steam",
     `https://store.steampowered.com/search/results/?${params.toString()}`,
   );
-  // Undocumented: anything but a list must fall through, not read as no results.
-  if (!Array.isArray(data?.items))
-    throw sourceUnavailable("Steam", "search answered without a list");
   const hits: GameHit[] = [];
-  for (const item of data.items.slice(0, MAX_RESULTS)) {
+  for (const item of requireList("Steam", data?.items).slice(0, MAX_RESULTS)) {
     const externalId = appIdOf(item.logo);
     if (!externalId) continue;
     hits.push({
@@ -99,8 +96,11 @@ export const steamSource: GameSource = {
       "Steam",
       `https://store.steampowered.com/api/appdetails?${params.toString()}`,
     );
-    const app = data?.[externalId]?.data;
-    if (!app || (app.type !== "game" && app.type !== "dlc")) return null;
+    const entry = data?.[externalId];
+    if (entry?.success === false) return null;
+    const app = entry?.data;
+    if (!app) throw sourceUnavailable("Steam", "answered without the app");
+    if (app.type !== "game" && app.type !== "dlc") return null;
 
     const year = app.release_date?.date?.match(/\b(?:19|20)\d{2}\b/)?.[0];
     return gameFields({

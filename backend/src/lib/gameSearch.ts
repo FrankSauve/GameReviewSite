@@ -14,6 +14,8 @@ export interface Lookup {
 export type SourcedHit = GameHit & { source: GameSourceId };
 
 interface Plan {
+  /** Listed first, and fine to lose. */
+  lead?: Lookup[];
   /** Tried in order until one answers. An empty answer is an answer... */
   fallback: Lookup[];
   /** ...unless this is set, for a reader who asked to look further. */
@@ -27,10 +29,21 @@ const SKIP_MS = 60_000;
 /** Mostly for an outage, when typing lands on TheGamesDB's monthly allowance. */
 const CACHE_MS = 60 * 60 * 1000;
 const CACHE_MAX = 500;
+/** How long an answer waits for the lookups that are fine to lose. */
+const GRACE_MS = 1000;
+
+/** Races a promise against one shared deadline, which reads as a lost answer. */
+function within(ms: number) {
+  const deadline = new Promise<null>((resolve) => {
+    setTimeout(() => resolve(null), ms).unref();
+  });
+  return <T>(promise: Promise<T>) => Promise.race([promise, deadline]);
+}
 
 export function createGameSearch(
   plans: Record<GameSearchScope, Plan>,
   now: () => number = Date.now,
+  graceMs = GRACE_MS,
 ) {
   const skippedUntil = new Map<string, number>();
   const cache = new Map<string, { hits: SourcedHit[]; expires: number }>();
@@ -45,7 +58,7 @@ export function createGameSearch(
     if (cached && cached.expires > now()) return cached.hits;
 
     if (lookup.enabled?.() === false) return null;
-    if ((skippedUntil.get(lookup.name) ?? 0) > now()) return null;
+    if ((skippedUntil.get(lookup.source) ?? 0) > now()) return null;
 
     try {
       const found = await lookup.search(query);
@@ -59,7 +72,7 @@ export function createGameSearch(
       return hits;
     } catch (err) {
       console.warn(`${lookup.name} search failed:`, err);
-      skippedUntil.set(lookup.name, now() + SKIP_MS);
+      skippedUntil.set(lookup.source, now() + SKIP_MS);
       return null;
     }
   }
@@ -78,14 +91,21 @@ export function createGameSearch(
   return {
     async search(query: string, scope: GameSearchScope): Promise<SourcedHit[]> {
       const plan = plans[scope];
-      const [main, ...extras] = await Promise.all([
-        firstAnswer(plan, query),
-        ...(plan.extra ?? []).map((lookup) => ask(lookup, query)),
+      const lead = (plan.lead ?? []).map((lookup) => ask(lookup, query));
+      const extra = (plan.extra ?? []).map((lookup) => ask(lookup, query));
+      const main = await firstAnswer(plan, query);
+
+      // With nothing from the main chain, these are all there is to wait for.
+      const settled = main ? within(graceMs) : undefined;
+      const [leads, extras] = await Promise.all([
+        Promise.all(lead.map((hits) => settled?.(hits) ?? hits)),
+        Promise.all(extra.map((hits) => settled?.(hits) ?? hits)),
       ]);
-      const answers = [main, ...extras].filter((hits) => hits !== null);
-      if (answers.length === 0)
-        throw sourceUnavailable("Game search", "every source failed");
-      return answers.flat();
+
+      const hits = [...leads, main, ...extras].flatMap((list) => list ?? []);
+      if (!main && hits.length === 0)
+        throw sourceUnavailable("Game search", "no source answered");
+      return hits;
     },
 
     clear() {

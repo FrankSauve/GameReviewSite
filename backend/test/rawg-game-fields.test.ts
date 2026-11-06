@@ -1,6 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   gameFieldsFromRawg,
+  rawgSource,
   steamAppIdFrom,
 } from "../src/lib/gameSources/rawg.js";
 
@@ -90,5 +91,27 @@ describe("steamAppIdFrom", () => {
     expect(
       steamAppIdFrom("https://example.com/store.steampowered.com/app/1"),
     ).toBeNull();
+  });
+});
+
+describe("a shapeless answer from RAWG", () => {
+  beforeEach(() => {
+    process.env["RAWG_API_KEY"] = "test-key";
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      async () => new Response("{}"),
+    );
+  });
+  afterEach(() => {
+    delete process.env["RAWG_API_KEY"];
+    vi.restoreAllMocks();
+  });
+
+  it("is an outage in search, not no results", async () => {
+    await expect(rawgSource.search("x")).rejects.toThrow("RAWG is unavailable");
+  });
+
+  it("is an outage in detail, not a crash", async () => {
+    await expect(rawgSource.detail("1")).rejects.toThrow("RAWG is unavailable");
   });
 });

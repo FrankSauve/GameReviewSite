@@ -122,6 +122,28 @@ describe("TheGamesDB as a game source", () => {
     expect(await tgdbSource.detail("999999999")).toBeNull();
   });
 
+  it.each([
+    ["no list", { code: 200 }],
+    ["no data at all", {}],
+  ])(
+    "calls a shapeless answer (%s) an outage, not no results",
+    async (_name, body) => {
+      answer(body);
+      await expect(tgdbSource.search("x")).rejects.toThrow(
+        "TheGamesDB is unavailable",
+      );
+    },
+  );
+
+  it("calls a moved endpoint an outage, not no results", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      async () => new Response("{}", { status: 404 }),
+    );
+    await expect(tgdbSource.search("x")).rejects.toThrow(
+      "TheGamesDB is unavailable",
+    );
+  });
+
   it("is off without a key", () => {
     delete process.env["TGDB_API_KEY"];
     expect(tgdbSource.enabled?.()).toBe(false);

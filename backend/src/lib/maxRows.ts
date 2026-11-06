@@ -38,8 +38,8 @@ const EXPLICIT_BOUNDS: Record<string, Bounds> = {
   "Query.searchGames": LIST_BOUNDS.gameSearch,
   "Query.comments": LIST_BOUNDS.nested,
   "Query.articles": LIST_BOUNDS.articles,
-  // Twelve from the first source to answer, and twelve of Steam's DLC.
-  "Query.searchGamesExternal": { def: 24, max: 24 },
+  // Twelve each of Steam's games, the fallback's answer, and Steam's DLC.
+  "Query.searchGamesExternal": { def: 36, max: 36 },
   // Without these the nested bounds price them at 50 each, and the review page
   // asks for `review { comments { reactions } }` — 2500 rows, and refused.
   "Review.reactions": REACTION_BOUNDS,

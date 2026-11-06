@@ -1,5 +1,5 @@
 import { coverUrl, gameFields, yearOf } from "./fields.js";
-import { getJson } from "./http.js";
+import { getJson, requireList, sourceUnavailable } from "./http.js";
 import type { GameFields, GameSource } from "./types.js";
 
 const RAWG_BASE = "https://api.rawg.io/api";
@@ -72,7 +72,7 @@ export const rawgSource: GameSource = {
       "RAWG",
       `${RAWG_BASE}/games?${params.toString()}`,
     );
-    return (data?.results ?? []).map((game) => ({
+    return requireList("RAWG", data?.results).map((game) => ({
       externalId: String(game.id),
       title: game.name,
       coverUrl: coverUrl(game.background_image, COVER_HOSTS),
@@ -89,6 +89,8 @@ export const rawgSource: GameSource = {
       "RAWG",
       `${RAWG_BASE}/games/${id}?${params.toString()}`,
     );
+    if (game && typeof game.name !== "string")
+      throw sourceUnavailable("RAWG", "answered without a game");
     return game && gameFieldsFromRawg(game);
   },
 };

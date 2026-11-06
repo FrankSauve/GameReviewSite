@@ -1,6 +1,6 @@
 import { titleKey } from "../gameMatch.js";
 import { coverUrl, gameFields, yearOf } from "./fields.js";
-import { getJson, sourceUnavailable } from "./http.js";
+import { getJson, requireList, sourceUnavailable } from "./http.js";
 import type { GameFields, GameHit, GameSource } from "./types.js";
 
 const TGDB_BASE = "https://api.thegamesdb.net";
@@ -119,7 +119,7 @@ function richer(box: Boxart | undefined) {
 function grouped(answer: Answer | null): GameHit[] {
   const box = answer?.include?.boxart;
   const groups = new Map<string, TgdbGame[]>();
-  for (const game of answer?.data?.games ?? []) {
+  for (const game of requireList("TheGamesDB", answer?.data?.games)) {
     if (game.genres?.some((id) => NOT_GAMES.has(id))) continue;
     const key = `${titleKey(baseTitle(game.game_title))}|${releaseYear(game)}`;
     groups.set(key, [...(groups.get(key) ?? []), game]);
@@ -139,7 +139,7 @@ function grouped(answer: Answer | null): GameHit[] {
 }
 
 function fieldsOf(answer: Answer | null): GameFields | null {
-  const game = answer?.data?.games?.[0];
+  const game = requireList("TheGamesDB", answer?.data?.games)[0];
   if (!game) return null;
   const box = answer?.include?.boxart;
   return gameFields({

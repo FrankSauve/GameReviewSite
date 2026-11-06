@@ -106,6 +106,20 @@ describe("Steam as a game source", () => {
     expect(await steamSource.detail("1")).toBeNull();
   });
 
+  it.each([
+    ["null", null],
+    ["no entry", {}],
+    ["no data", { "1": { success: true } }],
+  ])(
+    "calls a shapeless detail (%s) an outage, not a missing game",
+    async (_name, body) => {
+      answer(body);
+      await expect(steamSource.detail("1")).rejects.toThrow(
+        "Steam is unavailable",
+      );
+    },
+  );
+
   it("leaves out labels that are not genres", async () => {
     answer({
       "1": {

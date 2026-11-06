@@ -16,6 +16,13 @@ export function sourceUnavailable(source: string, reason: unknown) {
   );
 }
 
+/** A search answer must hold a list: anything else falls through, not "no results". */
+export function requireList<T>(source: string, list: T[] | null | undefined) {
+  if (!Array.isArray(list))
+    throw sourceUnavailable(source, "answered without a list");
+  return list;
+}
+
 /**
  * The parsed body, or null on a 404. An outage is theirs, as is a 403: it is how
  * Steam rate-limits and TheGamesDB refuses a spent allowance. Other failures are ours.
