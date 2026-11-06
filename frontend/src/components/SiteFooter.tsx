@@ -23,7 +23,7 @@ export function SiteFooter() {
       >
         RAWG
       </a>
-      . Not affiliated with Valve.
+      .
     </footer>
   );
 }
