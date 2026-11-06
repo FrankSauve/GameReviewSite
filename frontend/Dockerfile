@@ -31,6 +31,13 @@ RUN npm run build
 # tag alone would have let the base drift silently under a running deployment.
 FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:b5047b9b76845eac124358373c6852377c52e4b05834a47647e955dd91cb8f1e
 
+# CVE-2026-111497: the base still ships brotli-libs 1.2.0-r1. Drop these three
+# lines once a Renovate digest bump carries 1.2.1-r0 or later. The final USER is
+# the base image's own: the container must not run as root.
+USER root
+RUN apk add --no-cache --upgrade 'brotli-libs>=1.2.1-r0'
+USER 101
+
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Included by every location block in default.conf. Deliberately not under

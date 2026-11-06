@@ -13,6 +13,7 @@ const CLIENT_ERROR_CODES = new Set([
   "FORBIDDEN",
   "NOT_FOUND",
   "QUERY_TOO_LARGE",
+  "SERVICE_UNAVAILABLE",
 ]);
 
 const GENERIC_MESSAGE = "Internal server error.";
