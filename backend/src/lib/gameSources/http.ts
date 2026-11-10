@@ -10,9 +10,13 @@ const TIMEOUT_MS = 5000;
 export function sourceUnavailable(source: string, reason: unknown) {
   // Never log the request URL: an API key can be in its query string.
   console.warn(`${source} unavailable:`, reason);
+  // The reason rides on originalError, which formatError never sends to a reader.
   return new GraphQLError(
     `${source} is unavailable right now. Try again shortly.`,
-    { extensions: { code: "SERVICE_UNAVAILABLE" } },
+    {
+      extensions: { code: "SERVICE_UNAVAILABLE" },
+      originalError: new Error(String(reason)),
+    },
   );
 }
 

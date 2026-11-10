@@ -6,12 +6,17 @@
  * Usage: node dist/scripts/refresh-covers.js [--write] [--delay=<ms>]
  */
 import "dotenv/config";
-import { coverSource, needsNewCover } from "../lib/coverRefresh.js";
+import {
+  coverSource,
+  failureReason,
+  needsNewCover,
+} from "../lib/coverRefresh.js";
 import { gameDetail } from "../lib/gameSources/index.js";
+import { tgdbSource } from "../lib/gameSources/tgdb.js";
 import type { GameSourceId } from "../lib/gameSources/types.js";
 import { prisma } from "../lib/prisma.js";
 
-/** Applies to Steam calls only; TheGamesDB is metered by month, not by minute. */
+/** Steam's appdetails refuses past about 200 calls in five minutes; 2s stays under. */
 const DEFAULT_STEAM_DELAY_MS = 2_000;
 const FAILURE_PAUSE_MS = 30_000;
 const MAX_FAILURES_IN_A_ROW = 3;
@@ -55,8 +60,10 @@ async function main() {
   const noSource: string[] = [];
   const gone: string[] = [];
   const failed: string[] = [];
+  const skipped: string[] = [];
   const failures = new Map<GameSourceId, number>();
-  let stopped: GameSourceId | null = null;
+  const notBefore = new Map<GameSourceId, number>();
+  const stopped = new Set<GameSourceId>();
 
   try {
     for (const game of games) {
@@ -66,22 +73,29 @@ async function main() {
         continue;
       }
       const label = `${game.title}  <-  ${plan.source} ${plan.externalId}`;
+      // enabled() is off without a key, or once the allowance nears the reserve.
+      if (
+        stopped.has(plan.source) ||
+        (plan.source === "TGDB" && tgdbSource.enabled?.() === false)
+      ) {
+        skipped.push(label);
+        continue;
+      }
+
+      await sleep(Math.max(0, (notBefore.get(plan.source) ?? 0) - Date.now()));
       let fields: Awaited<ReturnType<typeof gameDetail>>;
       try {
         fields = await gameDetail(plan.source, plan.externalId);
         failures.set(plan.source, 0);
+        if (plan.source === "STEAM")
+          notBefore.set("STEAM", Date.now() + delayMs);
       } catch (err) {
-        failed.push(`${label}: ${String(err)}`);
+        failed.push(`${label}: ${failureReason(err)}`);
         const streak = (failures.get(plan.source) ?? 0) + 1;
         failures.set(plan.source, streak);
-        if (streak >= MAX_FAILURES_IN_A_ROW) {
-          stopped = plan.source;
-          break;
-        }
-        await sleep(FAILURE_PAUSE_MS);
+        if (streak >= MAX_FAILURES_IN_A_ROW) stopped.add(plan.source);
+        notBefore.set(plan.source, Date.now() + FAILURE_PAUSE_MS);
         continue;
-      } finally {
-        if (plan.source === "STEAM") await sleep(delayMs);
       }
 
       if (!fields) notFound.push(label);
@@ -105,14 +119,22 @@ async function main() {
     };
     section(write ? "Replaced" : "Would replace", replaced);
     section("Source has the game but no cover: kept", noCover);
-    section("Source has no game under that id: kept", notFound);
+    section(
+      "Source returned nothing for that id (mistyped, delisted, or not a game): kept",
+      notFound,
+    );
     section("No Steam or TheGamesDB id: kept", noSource);
     section("Deleted during the run", gone);
     section("Failed", failed);
-    if (stopped)
+    section(
+      "Not asked: source stopped, unset or near its allowance; re-run later",
+      skipped,
+    );
+    for (const source of stopped)
       console.log(
-        `\n${stopped} failed ${MAX_FAILURES_IN_A_ROW} times in a row, so stopped. Re-run to resume.`,
+        `\n${source} failed ${MAX_FAILURES_IN_A_ROW} times in a row, so its remaining games were skipped.`,
       );
+    if (failed.length > 0 || skipped.length > 0) process.exitCode = 1;
   }
 }
 

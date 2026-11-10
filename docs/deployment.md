@@ -310,6 +310,11 @@ upgrade — dump, stop the three containers, delete the volume, change the tag,
 start, restore. Renovate holds this major back permanently; an image updater does
 not, so the pin in the snippet is what protects you.
 
+## One-time moves off RAWG
+
+RAWG was the only game source until Steam and TheGamesDB joined it, and its API
+has since stopped answering. These run once, in this order.
+
 ### Matching Steam ids
 
 Games added before Steam was a source have no `steamAppId`, so a Steam result
@@ -344,6 +349,15 @@ its own art, such as a remaster or a collection. The script takes that game's
 cover from TheGamesDB, and once a cover has moved it is never revisited, so
 setting the id afterwards does not change it.
 
+Nothing in the app sets that id, so it is a statement in the database
+container. The id is unique: if another row already holds it, the library has
+two rows for one game, and those are for a person to merge first.
+
+```bash
+docker compose exec gamereviews-db psql -U gamereview gamereview -c \
+  "UPDATE \"Game\" SET \"tgdbId\" = '<TheGamesDB id>' WHERE slug = '<game slug>'"
+```
+
 ```bash
 # Dry run: prints every cover it would replace, and writes nothing.
 docker compose exec gamereviews-backend node dist/scripts/refresh-covers.js
@@ -354,6 +368,9 @@ docker compose exec gamereviews-backend node dist/scripts/refresh-covers.js --wr
 
 Each run asks the source once per game, so a dry run and a write each spend one
 TheGamesDB call per TheGamesDB game. Steam calls are paced 2s apart
-(`--delay=<ms>` to change it). A source that fails three times in a row stops
-the run, and re-running skips covers already moved. A game whose source has no
-cover, or no game under that id, keeps the cover it has; the report says which.
+(`--delay=<ms>` to change it). A source that fails three times in a row is
+skipped for the rest of the run, and re-running skips covers already moved. A game whose source has no
+cover, or nothing under that id, keeps the cover it has; the report says which,
+and each re-run asks about those games again, at a TheGamesDB call each. A
+source that is unset, stopped, or near its allowance is skipped rather than
+asked, and the run then exits non-zero so the shell sees it did not finish.
