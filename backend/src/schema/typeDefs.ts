@@ -33,7 +33,6 @@ export const typeDefs = `#graphql
 
   type Game {
     id: ID!
-    rawgId: String
     slug: String!
     title: String!
     # Capped server-side.
@@ -68,18 +67,34 @@ export const typeDefs = `#graphql
     genres: [String!]!
   }
 
-  # A game result from the RAWG external API (not yet in our database)
+  enum GameSource {
+    STEAM
+    TGDB
+    RAWG
+  }
+
+  # EVERYWHERE keeps Steam's results and adds the sources DEFAULT does not reach.
+  enum GameSearchScope {
+    DEFAULT
+    EVERYWHERE
+  }
+
+  # A game at a source, which may not be in our database yet.
   type ExternalGame {
-    rawgId: String!
+    source: GameSource!
+    externalId: String!
     title: String!
     coverUrl: String
     releaseYear: Int
     genres: [String!]
     metacritic: Int
-    # Only from rawgGame; search results carry none.
+    # Only from externalGame; search results carry none.
     description: String
-    # The game already in the library under this rawgId, if any.
+    # The game already in the library under this source id, if any.
     game: Game
+    # Only from externalGame: a game with the same title and a close year, which
+    # the reader confirms or dismisses. Never treated as the same game by itself.
+    libraryMatch: Game
   }
 
   # A review without its body.
@@ -200,11 +215,12 @@ export const typeDefs = `#graphql
   # Every review written through the app carries them; the row that predates the
   # columns, and an importer that genuinely does not know a value, do not have to.
   #
-  # Exactly one of gameId and rawgId. A rawgId not yet in the library creates the
-  # game along with the review: a game exists only while it has one.
+  # Exactly one of gameId and source with externalId. One not yet in the library
+  # creates the game along with the review: a game exists only while it has one.
   input CreateReviewInput {
     gameId: ID
-    rawgId: ID
+    source: GameSource
+    externalId: ID
     rating: Float!
     content: String!
     yearPlayed: Int!
@@ -297,8 +313,8 @@ export const typeDefs = `#graphql
     game(id: ID!): Game
     # Reviewed games whose title contains the query, most-reviewed first.
     searchGames(query: String!, limit: Int): [Game!]!
-    searchGamesExternal(query: String!): [ExternalGame!]!
-    rawgGame(rawgId: ID!): ExternalGame
+    searchGamesExternal(query: String!, scope: GameSearchScope): [ExternalGame!]!
+    externalGame(source: GameSource!, id: ID!): ExternalGame
 
     reviews(limit: Int, offset: Int): [Review!]!
     review(id: ID!): Review

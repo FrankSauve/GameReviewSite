@@ -10,6 +10,7 @@ import {
 import type { Express } from "express";
 import { provisionUser } from "../src/lib/identity.js";
 import { slugify } from "../src/lib/slug.js";
+import { gameSearch } from "../src/lib/gameSources/index.js";
 import { prisma } from "../src/lib/prisma.js";
 import {
   ALICE,
@@ -49,6 +50,7 @@ async function firstReviewOf(
   rawgId: number,
   title: string,
 ): Promise<GamePayload> {
+  gameSearch.clear();
   const original = globalThis.fetch;
   globalThis.fetch = vi.fn(
     async () => new Response(JSON.stringify({ id: rawgId, name: title })),
@@ -59,7 +61,7 @@ async function firstReviewOf(
       app,
       `mutation {
          createReview(input: {
-           rawgId: "${rawgId}", rating: 8, content: "Good", ${PLAYTIME_INPUT}
+           source: RAWG, externalId: "${rawgId}", rating: 8, content: "Good", ${PLAYTIME_INPUT}
          }) { game { id slug title } }
        }`,
       identity,

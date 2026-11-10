@@ -136,8 +136,8 @@ function communityGenre(review: ReviewSummary): string | undefined {
 
 /**
  * Picks the one genre each review is filed under: the reviewer's own, then the
- * game's community genre, then RAWG's. Only games that reach RAWG count towards
- * its rarity, and a community genre is not the reviewer's filing, so it skips no floor.
+ * game's community genre, then its source's. Only games that reach those count
+ * towards their rarity, and a community genre is not the reviewer's filing, so it skips no floor.
  */
 function genrePicker(
   reviews: ReviewSummary[],

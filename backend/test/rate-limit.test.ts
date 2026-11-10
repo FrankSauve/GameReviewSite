@@ -13,7 +13,7 @@ describe("rate limiting", () => {
 
   beforeAll(async () => {
     process.env["RATE_LIMIT_MAX"] = "5";
-    process.env["RAWG_RATE_LIMIT_MAX"] = "2";
+    process.env["GAME_SOURCE_RATE_LIMIT_MAX"] = "2";
     // Imported after the environment is set: the limiters read it when the app
     // is constructed.
     const { createApp } = await import("../src/app.js");
@@ -23,7 +23,7 @@ describe("rate limiting", () => {
   afterAll(async () => {
     await stop();
     delete process.env["RATE_LIMIT_MAX"];
-    delete process.env["RAWG_RATE_LIMIT_MAX"];
+    delete process.env["GAME_SOURCE_RATE_LIMIT_MAX"];
     delete process.env["AUTH_RATE_LIMIT_MAX"];
   });
 
@@ -49,7 +49,9 @@ describe("rate limiting", () => {
       request(fresh.app)
         .post(GRAPHQL_PATH)
         .set("content-type", "application/json")
-        .send({ query: '{ searchGamesExternal(query: "halo") { rawgId } }' });
+        .send({
+          query: '{ externalGame(source: RAWG, id: "1") { externalId } }',
+        });
 
     const first = await rawg();
     const second = await rawg();
@@ -73,7 +75,7 @@ describe("rate limiting", () => {
   it("counts a RAWG query against the RAWG bucket when it arrives as a GET", async () => {
     const { createApp } = await import("../src/app.js");
     const fresh = await createApp();
-    const document = '{ searchGamesExternal(query: "halo") { rawgId } }';
+    const document = '{ externalGame(source: RAWG, id: "1") { externalId } }';
 
     const get = () =>
       request(fresh.app)
@@ -98,7 +100,7 @@ describe("rate limiting", () => {
   it("shares one RAWG bucket across both methods", async () => {
     const { createApp } = await import("../src/app.js");
     const fresh = await createApp();
-    const document = '{ searchGamesExternal(query: "halo") { rawgId } }';
+    const document = '{ externalGame(source: RAWG, id: "1") { externalId } }';
 
     const posted = await request(fresh.app)
       .post(GRAPHQL_PATH)

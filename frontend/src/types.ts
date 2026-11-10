@@ -53,7 +53,6 @@ export interface Review {
 export interface Game {
   id: string;
   slug?: string | null;
-  rawgId?: string | null;
   title: string;
   genres?: string[];
   /** What its reviewers filed it under, commonest first. */
@@ -67,8 +66,12 @@ export interface Game {
   reviews?: Review[];
 }
 
+export const GAME_SOURCES = ["STEAM", "TGDB", "RAWG"] as const;
+export type GameSource = (typeof GAME_SOURCES)[number];
+
 export interface ExternalGame {
-  rawgId: string;
+  source: GameSource;
+  externalId: string;
   title: string;
   coverUrl?: string | null;
   releaseYear?: number | null;
@@ -76,11 +79,18 @@ export interface ExternalGame {
   metacritic?: number | null;
   /** Only from the single-game preview; search results carry none. */
   description?: string | null;
-  /** The game already in the library under this rawgId, if any. */
+  /** The game already in the library under this source id, if any. */
   game?: {
     id: string;
     slug?: string | null;
     reviewCount?: number | null;
+  } | null;
+  /** Only from the single-game preview: the reader decides if it is this game. */
+  libraryMatch?: {
+    id: string;
+    slug?: string | null;
+    title: string;
+    releaseYear?: number | null;
   } | null;
 }
 

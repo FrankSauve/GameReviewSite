@@ -135,8 +135,8 @@ describe("Markdown element allow-list", () => {
   });
 
   /**
-   * The CSP names media.rawg.io as the only remote image source, so a real <img>
-   * would be blocked and show broken. Excluding `img` from the allow-list instead
+   * The CSP names only the game sources' image hosts, so a real <img> would be
+   * blocked and show broken. Excluding `img` from the allow-list instead
    * lost the alt text too, because `unwrapDisallowed` keeps children and alt text
    * is an attribute — so an image became a silent gap.
    */

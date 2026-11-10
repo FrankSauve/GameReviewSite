@@ -9,9 +9,15 @@ import {
   type PageArgs,
 } from "../lib/pagination.js";
 import { requireAuth, type Context } from "../context.js";
-import { searchRawg, releaseYear } from "../lib/rawg.js";
-import { validateRawgId } from "../lib/rawgGame.js";
-import { rawgGameFields } from "../lib/createReview.js";
+import type { GameSearchScope } from "../lib/gameSearch.js";
+import { possibleLibraryGame, withLibraryGames } from "../lib/libraryGames.js";
+import {
+  gameDetail,
+  gameIdentity,
+  gameSearch,
+  validateExternalId,
+  type GameSourceId,
+} from "../lib/gameSources/index.js";
 import { byIdOrSlug } from "../lib/slug.js";
 import { validateString } from "../lib/validate.js";
 import { badInput } from "../lib/badInput.js";
@@ -109,41 +115,46 @@ export const gameResolvers = {
 
     searchGamesExternal: async (
       _parent: unknown,
-      { query }: { query: string },
+      args: { query: string; scope?: GameSearchScope | null },
+      context: Context,
     ) => {
-      if (!query.trim()) return [];
-      const results = await searchRawg(query.trim());
-      const imported = await prisma.game.findMany({
-        where: { rawgId: { in: results.map((g) => String(g.id)) } },
-      });
-      const byRawgId = new Map(imported.map((game) => [game.rawgId, game]));
-      return results.map((g) => {
-        const game = byRawgId.get(String(g.id));
-        return {
-          rawgId: String(g.id),
-          title: g.name,
-          coverUrl: g.background_image ?? null,
-          releaseYear: releaseYear(g.released),
-          genres: (g.genres ?? []).map((genre) => genre.name),
-          metacritic: g.metacritic ?? null,
-          game: game ? serializeDates(game) : null,
-        };
-      });
+      requireAuth(context);
+      const query = searchableTitle(args.query);
+      if (!query) return [];
+      const hits = await gameSearch.search(query, args.scope ?? "DEFAULT");
+      return withLibraryGames(hits);
     },
 
     /** What the first review of a game will create, without creating it. */
-    rawgGame: async (_parent: unknown, { rawgId }: { rawgId: string }) => {
-      const id = validateRawgId(rawgId);
-      const game = await prisma.game.findUnique({ where: { rawgId: id } });
+    externalGame: async (
+      _parent: unknown,
+      { source, id }: { source: GameSourceId; id: string },
+      context: Context,
+    ) => {
+      requireAuth(context);
+      const externalId = validateExternalId(id);
+      const game = await prisma.game.findUnique({
+        where: gameIdentity(source, externalId),
+      });
       if (game)
         return {
           ...serializeDates(game),
-          rawgId: id,
+          source,
+          externalId,
           game: serializeDates(game),
         };
 
-      const fields = await rawgGameFields(id);
-      return fields && { ...fields, rawgId: id, metacritic: null, game: null };
+      const fields = await gameDetail(source, externalId);
+      if (!fields) return null;
+      const match = await possibleLibraryGame(fields);
+      return {
+        ...fields,
+        source,
+        externalId,
+        metacritic: null,
+        game: null,
+        libraryMatch: match && serializeDates(match),
+      };
     },
   },
 

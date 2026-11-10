@@ -35,8 +35,8 @@ export function allowedOrigins(): string[] | false {
   return isProduction() ? false : DEV_ORIGINS;
 }
 
-/** Field names that cause an outbound call to the RAWG API. */
-const RAWG_FIELDS = ["searchGamesExternal", "rawgGame", "createReview"];
+/** Field names that cause an outbound call to a game source. */
+const SOURCE_FIELDS = ["searchGamesExternal", "externalGame", "createReview"];
 
 /**
  * Refuses browser requests from another site: identity is a cookie, and
@@ -90,9 +90,9 @@ function documents(req: Request): string[] {
   return found;
 }
 
-function isRawgOperation(req: Request): boolean {
+function isSourceOperation(req: Request): boolean {
   return documents(req).some((doc) =>
-    RAWG_FIELDS.some((field) => doc.includes(field)),
+    SOURCE_FIELDS.some((field) => doc.includes(field)),
   );
 }
 
@@ -103,7 +103,7 @@ function envInt(name: string, fallback: number): number {
 
 export interface Limiters {
   general: RequestHandler;
-  rawg: RequestHandler;
+  gameSources: RequestHandler;
   auth: RequestHandler;
   exports: RequestHandler;
   embeds: RequestHandler;
@@ -123,13 +123,13 @@ export function createLimiters(): Limiters {
       legacyHeaders: false,
       message: { errors: [{ message: "Too many requests." }] },
     }),
-    // Tighter, to keep the RAWG API quota from being burned by a bot.
-    rawg: rateLimit({
+    // Tighter, to keep the game sources' quotas from being burned by a bot.
+    gameSources: rateLimit({
       windowMs: envInt("RATE_LIMIT_WINDOW_MS", 60_000),
-      limit: envInt("RAWG_RATE_LIMIT_MAX", 30),
+      limit: envInt("GAME_SOURCE_RATE_LIMIT_MAX", 30),
       standardHeaders: "draft-7",
       legacyHeaders: false,
-      skip: (req) => !isRawgOperation(req),
+      skip: (req) => !isSourceOperation(req),
       message: { errors: [{ message: "Too many game searches, slow down." }] },
     }),
     // The /auth routes sit outside the GraphQL limiters and are cheap to abuse:

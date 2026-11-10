@@ -1,3 +1,11 @@
+import { GAME_SOURCES, type GameSource } from "../types";
+
+export const SOURCE_LABELS: Record<GameSource, string> = {
+  STEAM: "Steam",
+  TGDB: "TheGamesDB",
+  RAWG: "RAWG",
+};
+
 interface Slugged {
   id: string;
   slug?: string | null;
@@ -16,9 +24,14 @@ export function gamePath(game?: Slugged | null): string {
   return game ? `/games/${game.slug ?? game.id}` : "/";
 }
 
-/** A RAWG title not yet in the library: the page that writes its first review. */
-export function newGamePath(rawgId: string): string {
-  return `/games/new/${encodeURIComponent(rawgId)}`;
+/** A source's title not yet in the library: the page that writes its first review. */
+export function newGamePath(source: GameSource, externalId: string): string {
+  return `/games/new/${source.toLowerCase()}/${encodeURIComponent(externalId)}`;
+}
+
+/** Null for a segment that names no source: the URL is the reader's to edit. */
+export function sourceFromPath(segment: string): GameSource | null {
+  return GAME_SOURCES.find((name) => name === segment.toUpperCase()) ?? null;
 }
 
 /** `/reviews/alice/elden-ring`. The two segments live in the slug itself. */

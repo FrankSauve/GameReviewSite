@@ -148,9 +148,9 @@ const components: Components = {
     <td className="border border-line px-2 py-1">{children}</td>
   ),
   /**
-   * Renders the alt text, never an `<img>`: the CSP names `media.rawg.io` as
-   * the only remote image source (see frontend/security-headers.conf), so a
-   * real `<img>` elsewhere would show as broken.
+   * Renders the alt text, never an `<img>`: the CSP names only the game
+   * sources' image hosts (see frontend/security-headers.conf), so a real
+   * `<img>` elsewhere would show as broken.
    */
   img: ({ alt }) => (
     <span className="text-micro text-content-subtle italic">

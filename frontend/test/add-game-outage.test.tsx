@@ -20,7 +20,10 @@ function searchFor(
     <MockedProvider
       mocks={[
         {
-          request: { query: SEARCH_GAMES_EXTERNAL, variables: { query } },
+          request: {
+            query: SEARCH_GAMES_EXTERNAL,
+            variables: { query, scope: "DEFAULT" },
+          },
           ...mock,
         },
       ]}
