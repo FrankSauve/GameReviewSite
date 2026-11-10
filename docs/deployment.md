@@ -329,3 +329,22 @@ docker compose exec gamereviews-backend node dist/scripts/match-steam-ids.js \
 It takes about 3s per game. Check the plan before writing: a game can match its
 remaster, and only you can say whether that is the same game. Re-running skips
 games that are already linked.
+
+### Moving covers off RAWG
+
+Covers stored before Steam and TheGamesDB were sources are hosted by RAWG,
+whose API has gone. This replaces each one with the game's cover from
+TheGamesDB when the game has a TheGamesDB id, and from Steam otherwise. It ships
+in the image, and needs the ids from the matching above:
+
+```bash
+# Dry run: prints every cover it would replace, and writes nothing.
+docker compose exec gamereviews-backend node dist/scripts/refresh-covers.js
+
+# Apply.
+docker compose exec gamereviews-backend node dist/scripts/refresh-covers.js --write
+```
+
+It takes about 2s per game (`--delay=<ms>` to change it), and stops after three
+failures in a row. Re-running skips covers already moved. A game whose source
+has no cover keeps its RAWG one.
