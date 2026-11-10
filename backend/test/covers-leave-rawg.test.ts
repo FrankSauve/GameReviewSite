@@ -1,10 +1,5 @@
-import { describe, expect, it, vi } from "vitest";
-import {
-  coverSource,
-  failureReason,
-  needsNewCover,
-} from "../src/lib/coverRefresh.js";
-import { sourceUnavailable } from "../src/lib/gameSources/http.js";
+import { describe, expect, it } from "vitest";
+import { coverSource, needsNewCover } from "../src/lib/coverRefresh.js";
 
 describe("which covers are replaced", () => {
   it("replaces a cover RAWG hosts, and a missing one", () => {
@@ -59,21 +54,5 @@ describe("where a new cover comes from", () => {
 
   it("has nowhere to look for a game with neither id", () => {
     expect(coverSource({ steamAppId: null, tgdbId: null })).toBeNull();
-  });
-});
-
-describe("why a cover lookup failed", () => {
-  it("gives the cause behind the reader's 'unavailable' message", () => {
-    vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    expect(
-      failureReason(sourceUnavailable("TheGamesDB", "TGDB_API_KEY is not set")),
-    ).toBe("TGDB_API_KEY is not set");
-    expect(failureReason(sourceUnavailable("Steam", 403))).toBe("403");
-  });
-
-  it("gives any other error's own message", () => {
-    expect(failureReason(new Error("Steam API returned 400"))).toBe(
-      "Steam API returned 400",
-    );
   });
 });

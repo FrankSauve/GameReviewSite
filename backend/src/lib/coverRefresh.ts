@@ -1,5 +1,5 @@
-import { GraphQLError } from "graphql";
 import { coverUrl } from "./gameSources/fields.js";
+import { SourceUnavailableError } from "./gameSources/http.js";
 import { COVER_DOMAIN as STEAM_COVER_DOMAIN } from "./gameSources/steam.js";
 import { COVER_HOSTS as TGDB_COVER_HOSTS } from "./gameSources/tgdb.js";
 import type { GameSourceId } from "./gameSources/types.js";
@@ -26,9 +26,12 @@ export function coverSource(
   return null;
 }
 
-/** sourceUnavailable's message is the reader's; the cause is on originalError. */
+/** An outage says nothing about the id asked for, unlike any other failure. */
+export function isOutage(err: unknown): boolean {
+  return err instanceof SourceUnavailableError;
+}
+
 export function failureReason(err: unknown): string {
-  if (err instanceof GraphQLError && err.originalError)
-    return err.originalError.message;
+  if (err instanceof SourceUnavailableError) return err.reason;
   return err instanceof Error ? err.message : String(err);
 }

@@ -313,7 +313,8 @@ not, so the pin in the snippet is what protects you.
 ## One-time moves off RAWG
 
 RAWG was the only game source until Steam and TheGamesDB joined it, and its API
-has since stopped answering. These run once, in this order.
+has since stopped answering. These are one-off moves, run in this order, and
+each is safe to re-run until it has finished.
 
 ### Matching Steam ids
 
@@ -349,9 +350,11 @@ its own art, such as a remaster or a collection. The script takes that game's
 cover from TheGamesDB, and once a cover has moved it is never revisited, so
 setting the id afterwards does not change it.
 
-Nothing in the app sets that id, so it is a statement in the database
-container. The id is unique: if another row already holds it, the library has
-two rows for one game, and those are for a person to merge first.
+Nothing in the app sets that id on a game already in the library, so it is a
+statement in the database container. The id is unique, and the statement fails
+if another row holds it. That row may be the same game added from TheGamesDB,
+which is two rows for a person to merge first, or a different game sharing the
+id, in which case pick another of the game's TheGamesDB ids.
 
 ```bash
 docker compose exec gamereviews-db psql -U gamereview gamereview -c \
@@ -367,10 +370,19 @@ docker compose exec gamereviews-backend node dist/scripts/refresh-covers.js --wr
 ```
 
 Each run asks the source once per game, so a dry run and a write each spend one
-TheGamesDB call per TheGamesDB game. Steam calls are paced 2s apart
-(`--delay=<ms>` to change it). A source that fails three times in a row is
-skipped for the rest of the run, and re-running skips covers already moved. A game whose source has no
-cover, or nothing under that id, keeps the cover it has; the report says which,
-and each re-run asks about those games again, at a TheGamesDB call each. A
-source that is unset, stopped, or near its allowance is skipped rather than
-asked, and the run then exits non-zero so the shell sees it did not finish.
+TheGamesDB call per TheGamesDB game. A game whose source has no cover, or
+nothing under that id, keeps the cover it has; the report says which, and each
+re-run asks about those games again, at a TheGamesDB call each.
+
+Steam calls are paced 2s apart (`--delay=<ms>` to change it). An outage pauses
+that source for 30s, and the run waits with it whenever that source's game is
+next. Three outages in a row from one source skip its remaining games. A failure
+about one id, such as a 400, is reported but does not count towards that. The
+run also skips TheGamesDB when `TGDB_API_KEY` is unset, and once an answer shows
+the allowance near the reserve kept for readers adding games. It only learns the
+allowance from its own answers, so its first TheGamesDB call goes ahead
+regardless.
+
+The run exits non-zero if any game failed or was skipped. Re-running skips
+covers already moved, so run it again until it exits zero, or until only games
+you have checked are left.

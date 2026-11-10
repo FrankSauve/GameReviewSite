@@ -3,21 +3,42 @@ import { GraphQLError } from "graphql";
 /** Readers sit waiting on this: Node's own limit on a hung upstream is minutes. */
 const TIMEOUT_MS = 5000;
 
+/** What went wrong, for logs and the operator: never sent to a reader. */
+function describe(reason: unknown): string {
+  if (typeof reason === "number") return `HTTP ${reason}`;
+  if (reason instanceof Error) {
+    const cause = reason.cause as { code?: unknown; message?: unknown } | null;
+    const detail = cause?.code ?? cause?.message;
+    return detail ? `${reason.message} (${String(detail)})` : reason.message;
+  }
+  if (typeof reason === "string") return reason;
+  try {
+    return JSON.stringify(reason) ?? String(reason);
+  } catch {
+    return String(reason);
+  }
+}
+
 /**
  * Has a code in sanitizeError's CLIENT_ERROR_CODES, which is what lets the reader
- * see this in production rather than "Internal server error."
+ * see the message in production rather than "Internal server error."
  */
-export function sourceUnavailable(source: string, reason: unknown) {
-  // Never log the request URL: an API key can be in its query string.
-  console.warn(`${source} unavailable:`, reason);
-  // The reason rides on originalError, which formatError never sends to a reader.
-  return new GraphQLError(
-    `${source} is unavailable right now. Try again shortly.`,
-    {
+export class SourceUnavailableError extends GraphQLError {
+  constructor(
+    source: string,
+    readonly reason: string,
+  ) {
+    super(`${source} is unavailable right now. Try again shortly.`, {
       extensions: { code: "SERVICE_UNAVAILABLE" },
-      originalError: new Error(String(reason)),
-    },
-  );
+    });
+  }
+}
+
+export function sourceUnavailable(source: string, reason: unknown) {
+  const described = describe(reason);
+  // Never log the request URL: an API key can be in its query string.
+  console.warn(`${source} unavailable:`, described);
+  return new SourceUnavailableError(source, described);
 }
 
 /** A search answer must hold a list: anything else falls through, not "no results". */
@@ -43,7 +64,7 @@ export async function getJson<T>(
     });
     if (res.ok) return (await res.json()) as T;
   } catch (err) {
-    throw sourceUnavailable(source, err instanceof Error ? err.message : err);
+    throw sourceUnavailable(source, err);
   }
   if (res.status === 404) return null;
   if (res.status === 403 || res.status === 429 || res.status >= 500)

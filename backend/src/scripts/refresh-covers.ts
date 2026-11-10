@@ -9,10 +9,10 @@ import "dotenv/config";
 import {
   coverSource,
   failureReason,
+  isOutage,
   needsNewCover,
 } from "../lib/coverRefresh.js";
-import { gameDetail } from "../lib/gameSources/index.js";
-import { tgdbSource } from "../lib/gameSources/tgdb.js";
+import { gameDetail, sourceEnabled } from "../lib/gameSources/index.js";
 import type { GameSourceId } from "../lib/gameSources/types.js";
 import { prisma } from "../lib/prisma.js";
 
@@ -61,6 +61,7 @@ async function main() {
   const gone: string[] = [];
   const failed: string[] = [];
   const skipped: string[] = [];
+  const noKey: string[] = [];
   const failures = new Map<GameSourceId, number>();
   const notBefore = new Map<GameSourceId, number>();
   const stopped = new Set<GameSourceId>();
@@ -73,11 +74,11 @@ async function main() {
         continue;
       }
       const label = `${game.title}  <-  ${plan.source} ${plan.externalId}`;
-      // enabled() is off without a key, or once the allowance nears the reserve.
-      if (
-        stopped.has(plan.source) ||
-        (plan.source === "TGDB" && tgdbSource.enabled?.() === false)
-      ) {
+      if (plan.source === "TGDB" && !process.env["TGDB_API_KEY"]) {
+        noKey.push(label);
+        continue;
+      }
+      if (stopped.has(plan.source) || !sourceEnabled(plan.source)) {
         skipped.push(label);
         continue;
       }
@@ -91,6 +92,7 @@ async function main() {
           notBefore.set("STEAM", Date.now() + delayMs);
       } catch (err) {
         failed.push(`${label}: ${failureReason(err)}`);
+        if (!isOutage(err)) continue;
         const streak = (failures.get(plan.source) ?? 0) + 1;
         failures.set(plan.source, streak);
         if (streak >= MAX_FAILURES_IN_A_ROW) stopped.add(plan.source);
@@ -126,15 +128,16 @@ async function main() {
     section("No Steam or TheGamesDB id: kept", noSource);
     section("Deleted during the run", gone);
     section("Failed", failed);
+    section("Not asked: TGDB_API_KEY is not set", noKey);
     section(
-      "Not asked: source stopped, unset or near its allowance; re-run later",
+      "Not asked: source stopped or near its allowance; re-run later",
       skipped,
     );
     for (const source of stopped)
       console.log(
         `\n${source} failed ${MAX_FAILURES_IN_A_ROW} times in a row, so its remaining games were skipped.`,
       );
-    if (failed.length > 0 || skipped.length > 0) process.exitCode = 1;
+    if (failed.length + skipped.length + noKey.length > 0) process.exitCode = 1;
   }
 }
 
