@@ -10,6 +10,19 @@ describe("which covers are replaced", () => {
     expect(needsNewCover("not a url")).toBe(true);
   });
 
+  it("replaces a cover on any host the live sources do not serve from", () => {
+    expect(needsNewCover("https://api.rawg.io/media/x.jpg")).toBe(true);
+    expect(needsNewCover("https://example.com/x.jpg")).toBe(true);
+    expect(needsNewCover("https://steamstatic.com.example.com/x.jpg")).toBe(
+      true,
+    );
+    expect(
+      needsNewCover(
+        "http://cdn.thegamesdb.net/images/large/boxart/front/1.jpg",
+      ),
+    ).toBe(true);
+  });
+
   it("leaves a cover that already comes from Steam or TheGamesDB", () => {
     expect(
       needsNewCover(

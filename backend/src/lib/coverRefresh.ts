@@ -1,4 +1,6 @@
-import { COVER_HOSTS as RAWG_COVER_HOSTS } from "./gameSources/rawg.js";
+import { coverUrl } from "./gameSources/fields.js";
+import { COVER_DOMAIN as STEAM_COVER_DOMAIN } from "./gameSources/steam.js";
+import { COVER_HOSTS as TGDB_COVER_HOSTS } from "./gameSources/tgdb.js";
 import type { GameSourceId } from "./gameSources/types.js";
 
 export interface CoverIdentity {
@@ -6,20 +8,12 @@ export interface CoverIdentity {
   tgdbId: string | null;
 }
 
-/** RAWG's API is gone, so a cover it hosts is one outage from a broken image. */
-export function needsNewCover(coverUrl: string | null): boolean {
-  if (!coverUrl) return true;
-  try {
-    return RAWG_COVER_HOSTS.includes(new URL(coverUrl).hostname);
-  } catch {
-    return true;
-  }
+/** True for any cover not already on a host the live sources serve from. */
+export function needsNewCover(url: string | null): boolean {
+  return coverUrl(url, [STEAM_COVER_DOMAIN, ...TGDB_COVER_HOSTS]) === null;
 }
 
-/**
- * TheGamesDB wins over Steam: a library game holds a TheGamesDB id only when
- * Steam has no page for it, or Steam's page is a re-release with its own art.
- */
+/** A library game holds a TheGamesDB id only where Steam's art is not the game's. */
 export function coverSource(
   game: CoverIdentity,
 ): { source: Exclude<GameSourceId, "RAWG">; externalId: string } | null {

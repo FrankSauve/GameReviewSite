@@ -314,8 +314,9 @@ not, so the pin in the snippet is what protects you.
 
 Games added before Steam was a source have no `steamAppId`, so a Steam result
 for one looks new. This matches them against Steam's own search by title, and
-needs nothing from RAWG. It ships in the image. A Steam game's year is its PC
-release, which the title check cannot compare:
+needs nothing from RAWG. It ships in the image. Without it, a library game
+that Steam dates by its later PC release is one the title check cannot
+recognise:
 
 ```bash
 # Dry run: prints every proposed link, and writes nothing.
@@ -333,9 +334,15 @@ games that are already linked.
 ### Moving covers off RAWG
 
 Covers stored before Steam and TheGamesDB were sources are hosted by RAWG,
-whose API has gone. This replaces each one with the game's cover from
-TheGamesDB when the game has a TheGamesDB id, and from Steam otherwise. It ships
-in the image, and needs the ids from the matching above:
+whose API has gone. This replaces every cover not already on Steam's or
+TheGamesDB's image hosts: from TheGamesDB when the game has a TheGamesDB id,
+and from Steam otherwise. It ships in the image, and needs the ids from the
+matching above.
+
+Set the TheGamesDB id first on any game whose Steam page is a re-release with
+its own art, such as a remaster or a collection. The script takes that game's
+cover from TheGamesDB, and once a cover has moved it is never revisited, so
+setting the id afterwards does not change it.
 
 ```bash
 # Dry run: prints every cover it would replace, and writes nothing.
@@ -345,6 +352,8 @@ docker compose exec gamereviews-backend node dist/scripts/refresh-covers.js
 docker compose exec gamereviews-backend node dist/scripts/refresh-covers.js --write
 ```
 
-It takes about 2s per game (`--delay=<ms>` to change it), and stops after three
-failures in a row. Re-running skips covers already moved. A game whose source
-has no cover keeps its RAWG one.
+Each run asks the source once per game, so a dry run and a write each spend one
+TheGamesDB call per TheGamesDB game. Steam calls are paced 2s apart
+(`--delay=<ms>` to change it). A source that fails three times in a row stops
+the run, and re-running skips covers already moved. A game whose source has no
+cover, or no game under that id, keeps the cover it has; the report says which.
