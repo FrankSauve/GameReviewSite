@@ -6,6 +6,7 @@ interface GameHeaderProps {
   game: {
     title: string;
     coverUrl?: string | null;
+    posterUrl?: string | null;
     bannerUrl?: string | null;
     genres?: string[] | undefined;
     releaseYear?: number | null;
@@ -21,7 +22,7 @@ export function GameHeader({ game, children }: GameHeaderProps) {
       {/* Cover hero */}
       {game.coverUrl ? (
         <div className="relative h-56 sm:h-72 overflow-hidden">
-          <GameCover game={game} size="lg" eager banner />
+          <GameCover game={game} size="lg" eager art="banner" />
           <div className="absolute inset-0 bg-gradient-to-t from-scrim via-scrim/40 to-transparent" />
           {/* Title overlaid on cover */}
           <div className="absolute bottom-0 left-0 p-6">

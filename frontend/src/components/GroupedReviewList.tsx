@@ -12,8 +12,11 @@ function ReviewRow({ item }: { item: ReviewGroup["items"][number] }) {
   return (
     <Link to={reviewPath(item)} className="group block">
       <article className="card card-interactive overflow-hidden flex items-stretch">
-        <div className="w-14 sm:w-16 shrink-0 overflow-hidden">
-          <GameCover game={game} size="sm" decorative />
+        <div className="w-14 sm:w-16 shrink-0 relative overflow-hidden">
+          {/* Out of flow, so the row's text sets its height, not the art's shape. */}
+          <div className="absolute inset-0">
+            <GameCover game={game} size="sm" art="poster" decorative />
+          </div>
         </div>
 
         <div className="flex-1 min-w-0 px-3 py-2.5 flex items-center gap-3">

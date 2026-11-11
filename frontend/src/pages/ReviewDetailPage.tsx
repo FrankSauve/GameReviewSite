@@ -44,6 +44,7 @@ interface ReviewGame {
   slug?: string | null;
   title: string;
   coverUrl?: string | null;
+  posterUrl?: string | null;
   bannerUrl?: string | null;
   releaseYear?: number | null;
   genres?: string[];
@@ -250,7 +251,7 @@ export function ReviewDetailPage() {
         {game && (
           <Link to={gamePath(game)} className="group block">
             <div className="relative h-40 rounded-card overflow-hidden">
-              <GameCover game={game} size="lg" eager banner />
+              <GameCover game={game} size="lg" eager art="banner" />
               <div className="absolute inset-0 bg-gradient-to-t from-scrim/90 via-scrim/40 to-transparent" />
               <div className="absolute bottom-4 left-4">
                 <h2 className="text-title font-bold text-content-on-art group-hover:text-accent-subtle-text transition-colors duration-theme">
