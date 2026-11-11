@@ -39,6 +39,8 @@ export function GameCover({
       <img
         src={game.coverUrl}
         alt={decorative ? "" : title}
+        // The site sends no referrer, and TheGamesDB's CDN refuses an image without one.
+        referrerPolicy="origin"
         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-theme"
         {...(eager ? {} : { loading: "lazy" as const })}
       />
