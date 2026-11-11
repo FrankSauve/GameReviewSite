@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { GameCover } from "../src/components/GameCover";
 import { cropsWell } from "../src/lib/coverFit";
+import { steamBannerUrl } from "../src/lib/steamBanner";
 
 afterEach(cleanup);
 
@@ -82,5 +83,52 @@ describe("a cover in a slot of a different shape", () => {
     const imgs = screen.getAllByRole("img");
     expect(imgs).toHaveLength(1);
     expect(imgs[0]?.className).toContain("object-cover");
+  });
+});
+
+describe("the art a wide banner uses", () => {
+  const HEADER =
+    "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2183900/header.jpg?t=1790874369";
+  const HERO =
+    "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2183900/library_hero.jpg";
+
+  it("finds Steam's banner art from its header, hashed path or not", () => {
+    expect(steamBannerUrl(HEADER)).toBe(HERO);
+    expect(
+      steamBannerUrl(
+        "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2825880/895480a8fb88/header.jpg",
+      ),
+    ).toBe(
+      "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/2825880/library_hero.jpg",
+    );
+  });
+
+  it("has none for a cover from anywhere else", () => {
+    expect(
+      steamBannerUrl(
+        "https://cdn.thegamesdb.net/images/large/boxart/front/70-1.jpg",
+      ),
+    ).toBeNull();
+    expect(
+      steamBannerUrl(
+        "https://steamstatic.com.example.com/store_item_assets/steam/apps/1/header.jpg",
+      ),
+    ).toBeNull();
+    expect(steamBannerUrl("not a url")).toBeNull();
+  });
+
+  it("uses it in a banner, and falls back to the cover when it is missing", () => {
+    render(
+      <GameCover game={{ title: "Space Marine 2", coverUrl: HEADER }} banner />,
+    );
+    const img = screen.getByRole("img");
+    expect(img.getAttribute("src")).toBe(HERO);
+    fireEvent.error(img);
+    expect(screen.getByRole("img").getAttribute("src")).toBe(HEADER);
+  });
+
+  it("is not used outside a banner", () => {
+    render(<GameCover game={{ title: "Space Marine 2", coverUrl: HEADER }} />);
+    expect(screen.getByRole("img").getAttribute("src")).toBe(HEADER);
   });
 });

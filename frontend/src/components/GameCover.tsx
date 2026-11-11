@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { titleGradient } from "../lib/coverGradient";
 import { cropsWell } from "../lib/coverFit";
+import { steamBannerUrl } from "../lib/steamBanner";
 
 export type CoverSize = "sm" | "md" | "lg";
 
@@ -20,6 +21,8 @@ interface GameCoverProps {
   decorative?: boolean;
   /** Above the fold, where deferring the fetch would only delay the hero. */
   eager?: boolean;
+  /** A wide hero: Steam's banner art is used over its header where it has one. */
+  banner?: boolean;
 }
 
 /**
@@ -34,11 +37,15 @@ export function GameCover({
   size = "md",
   decorative = false,
   eager = false,
+  banner = false,
 }: GameCoverProps) {
   // Keyed by url, so a reused component measures a new game's art afresh.
   const [wholeFor, setWholeFor] = useState<string | null>(null);
+  const [failed, setFailed] = useState<string | null>(null);
   const title = game?.title ?? "";
-  const src = game?.coverUrl;
+  const cover = game?.coverUrl;
+  const hero = banner && cover ? steamBannerUrl(cover) : null;
+  const src = hero && failed !== hero ? hero : cover;
 
   if (src) {
     const shared = {
@@ -46,6 +53,9 @@ export function GameCover({
       // The site sends no referrer, and TheGamesDB's CDN refuses an image without one.
       referrerPolicy: "origin" as const,
       ...(eager ? {} : { loading: "lazy" as const }),
+      onError: () => {
+        if (src === hero) setFailed(hero);
+      },
     };
     const alt = decorative ? "" : title;
 
