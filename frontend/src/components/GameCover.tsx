@@ -51,7 +51,7 @@ export function GameCover({
     const shared = {
       src,
       // The site sends no referrer, and TheGamesDB's CDN refuses an image without one.
-      referrerPolicy: "origin" as const,
+      referrerPolicy: "strict-origin" as const,
       ...(eager ? {} : { loading: "lazy" as const }),
       onError: () => {
         if (src === hero) setFailed(hero);

@@ -34,7 +34,7 @@ describe("a game cover", () => {
   it("names the site to the image host, which TheGamesDB requires", () => {
     render(<GameCover game={WITH_COVER} />);
     expect(screen.getByRole("img").getAttribute("referrerpolicy")).toBe(
-      "origin",
+      "strict-origin",
     );
   });
 
