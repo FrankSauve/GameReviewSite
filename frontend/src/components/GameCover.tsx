@@ -34,6 +34,8 @@ interface GameCoverProps {
    * since a caller with no banner art lays the page out differently.
    */
   art?: "cover" | "poster" | "banner";
+  /** Told when an image fails, for a caller that lays out around the art. */
+  onFail?: (url: string) => void;
 }
 
 /**
@@ -49,6 +51,7 @@ export function GameCover({
   decorative = false,
   eager = false,
   art = "cover",
+  onFail,
 }: GameCoverProps) {
   const [failed, setFailed] = useState<string[]>([]);
   const title = game?.title ?? "";
@@ -125,7 +128,10 @@ export function GameCover({
           loaded.current = src;
           measure();
         }}
-        onError={() => setFailed((urls) => [...urls, src])}
+        onError={() => {
+          setFailed((urls) => [...urls, src]);
+          onFail?.(src);
+        }}
       />
     </div>
   );

@@ -108,6 +108,41 @@ describe("the art at the top of a game", () => {
     expect(container.querySelector(".aspect-\\[2\\/3\\] img")).not.toBeNull();
   });
 
+  it("falls back to the poster when the banner art fails to load", () => {
+    const { container } = render(
+      <GameArtBand
+        game={{
+          title: "A",
+          coverUrl: COVER,
+          posterUrl: POSTER,
+          bannerUrl: BANNER,
+        }}
+        className="h-72"
+        pad="p-6"
+      >
+        <h1>A</h1>
+      </GameArtBand>,
+    );
+    const banner = container.querySelector("img");
+    if (!banner) throw new Error("no banner drawn");
+    fireEvent.error(banner);
+    expect(srcs(container)).toEqual([POSTER, POSTER]);
+  });
+
+  it("lays a cover across the band for a game with no poster", () => {
+    const { container } = render(
+      <GameArtBand
+        game={{ title: "A", coverUrl: COVER }}
+        className="h-72"
+        pad="p-6"
+      >
+        <h1>A</h1>
+      </GameArtBand>,
+    );
+    expect(srcs(container)).toEqual([COVER]);
+    expect(container.querySelector(".aspect-\\[2\\/3\\]")).toBeNull();
+  });
+
   it("draws the title's placeholder for a game with no art", () => {
     const { container } = render(
       <GameArtBand game={{ title: "Unknown" }} className="h-40" pad="p-4">

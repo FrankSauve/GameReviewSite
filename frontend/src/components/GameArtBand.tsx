@@ -1,5 +1,5 @@
-import type { ReactNode } from "react";
-import { hasGameArt, type GameArt } from "../lib/gameArt";
+import { useState, type ReactNode } from "react";
+import type { GameArt } from "../lib/gameArt";
 import { GameCover } from "./GameCover";
 
 interface GameArtBandProps {
@@ -14,8 +14,8 @@ interface GameArtBandProps {
 
 /**
  * The art at the top of a game: its banner art behind the title where it has
- * some, otherwise its poster beside the title, over a blur of the same art.
- * With no art at all, the title's placeholder stands in for a banner.
+ * some, else its poster beside the title over a blur of the same art, else
+ * its cover (or the title's placeholder) across the band as before.
  */
 export function GameArtBand({
   game,
@@ -23,10 +23,20 @@ export function GameArtBand({
   pad,
   children,
 }: GameArtBandProps) {
-  if (game.bannerUrl || !hasGameArt(game))
+  // Keyed by url, so a new game's banner is tried afresh.
+  const [failedBanner, setFailedBanner] = useState<string | null>(null);
+  const banner = game.bannerUrl !== failedBanner ? game.bannerUrl : null;
+
+  if (banner || !game.posterUrl)
     return (
       <div className={`relative overflow-hidden ${className}`}>
-        <GameCover game={game} size="lg" eager art="banner" />
+        <GameCover
+          game={game}
+          size="lg"
+          eager
+          art={banner ? "banner" : "cover"}
+          {...(banner ? { onFail: setFailedBanner } : {})}
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-scrim via-scrim/40 to-transparent" />
         <div className={`absolute bottom-0 left-0 ${pad}`}>{children}</div>
       </div>
