@@ -1,25 +1,27 @@
 /**
- * One-time fill of each game's poster and banner art, from the source its cover
- * came from. Prints a plan and writes nothing unless --write is passed.
+ * Fills each game's poster and banner art from the source its cover came from,
+ * for games added before art was stored or during an outage. Prints a plan and
+ * writes nothing unless --write is passed.
  *
  * Usage: node dist/scripts/refresh-art.js [--write]
  */
 import "dotenv/config";
+import { setTimeout as sleep } from "node:timers/promises";
 import { coverSource, failureReason } from "../lib/coverRefresh.js";
 import {
   ART_BATCH as STEAM_BATCH,
   steamArt,
 } from "../lib/gameSources/steam.js";
+import { coverUrl } from "../lib/gameSources/fields.js";
 import {
   ART_BATCH as TGDB_BATCH,
+  COVER_HOSTS as TGDB_HOSTS,
   tgdbFanart,
 } from "../lib/gameSources/tgdb.js";
 import type { GameArt } from "../lib/gameSources/types.js";
 import { prisma } from "../lib/prisma.js";
 
 const PAUSE_MS = 1_000;
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function chunks<T>(items: T[], size: number): T[][] {
   const out: T[][] = [];
@@ -81,6 +83,8 @@ async function main() {
       };
 
   const changed: string[] = [];
+  const unanswered: string[] = [];
+  const gone: string[] = [];
   const noPoster: string[] = [];
   const noBanner: string[] = [];
   const noSource: string[] = [];
@@ -100,26 +104,34 @@ async function main() {
       failed.push(`${label}: ${failure}`);
       continue;
     }
-    const art: GameArt =
-      plan.source === "STEAM"
-        ? (steam.found.get(plan.externalId) ?? {
-            posterUrl: null,
-            bannerUrl: null,
-          })
-        : // The stored cover is TheGamesDB's front box art: already a poster.
-          {
-            posterUrl: game.coverUrl,
-            bannerUrl: tgdb.found.get(plan.externalId) ?? null,
-          };
+    let art: GameArt;
+    if (plan.source === "STEAM") {
+      const found = steam.found.get(plan.externalId);
+      // Left alone, not cleared: a delisted app keeps the art it was added with.
+      if (!found) {
+        unanswered.push(label);
+        continue;
+      }
+      art = found;
+    } else {
+      art = {
+        // Box art only: a cover from anywhere else is not portrait.
+        posterUrl: coverUrl(game.coverUrl, TGDB_HOSTS),
+        bannerUrl: tgdb.found.get(plan.externalId) ?? null,
+      };
+    }
     if (!art.posterUrl) noPoster.push(label);
     if (!art.bannerUrl) noBanner.push(label);
     if (art.posterUrl === game.posterUrl && art.bannerUrl === game.bannerUrl) {
       unchanged++;
       continue;
     }
-    if (write)
-      await prisma.game.updateMany({ where: { id: game.id }, data: art });
-    changed.push(label);
+    // updateMany, so a game deleted mid-run is reported, not thrown.
+    const { count } = write
+      ? await prisma.game.updateMany({ where: { id: game.id }, data: art })
+      : { count: 1 };
+    if (count === 0) gone.push(game.title);
+    else changed.push(label);
   }
 
   const section = (heading: string, lines: string[]) => {
@@ -130,7 +142,9 @@ async function main() {
   section(write ? "Updated" : "Would update", changed);
   section("No poster: the cover stands in", noPoster);
   section("No banner: the poster sits beside the title", noBanner);
+  section("Steam returned nothing for that app: left alone", unanswered);
   section("No Steam or TheGamesDB id: left alone", noSource);
+  section("Deleted during the run", gone);
   section("Failed: left alone, re-run later", failed);
   if (failed.length > 0) process.exitCode = 1;
 }

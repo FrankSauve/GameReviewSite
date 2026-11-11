@@ -408,3 +408,7 @@ call per 20, so a run over the whole library is a handful of calls. A game with
 no poster shows its cover in its place, and one with no banner art shows its
 poster beside the title. A batch that fails leaves its games as they were, and
 the run exits non-zero; re-run it until it exits zero.
+
+It is also how a game added during a source outage gets its art: such a game
+joins the library without any. Re-running changes only games whose art
+differs, and leaves a game Steam no longer answers for with the art it has.
