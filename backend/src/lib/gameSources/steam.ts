@@ -1,6 +1,11 @@
 import { coverUrl, decodeEntities, gameFields } from "./fields.js";
 import { getJson, requireList, sourceUnavailable } from "./http.js";
-import type { GameHit, GameSource } from "./types.js";
+import {
+  NO_ART,
+  type GameArt,
+  type GameHit,
+  type GameSource,
+} from "./types.js";
 
 export const COVER_DOMAIN = ".steamstatic.com";
 const CATEGORY_GAMES = "998";
@@ -47,20 +52,49 @@ const cover = (url?: string) => coverUrl(url, [COVER_DOMAIN]);
 /** A bundle's logo is under /subs/, so it falls out here too. */
 const appIdOf = (logo?: string) => logo?.match(/\/steam\/apps\/(\d+)\//)?.[1];
 
+const STEAM_ASSETS = "https://shared.akamai.steamstatic.com/store_item_assets/";
+/** Steam's store API takes up to this many apps in one call. */
+export const ART_BATCH = 50;
+
+interface StoreItem {
+  appid?: number;
+  assets?: {
+    asset_url_format?: string;
+    library_capsule?: string;
+    library_hero?: string;
+  };
+}
+
 /**
- * Steam's 1920×620 library hero for a cover that is a Steam header, or null.
- * Not in appdetails, and not every app has one: a caller falls back to the cover.
+ * Library art for each app, from the one API that knows where it is: newer apps
+ * hash their asset paths, and an app with no hero has none to guess at.
  */
-export function steamBannerUrl(
-  coverUrl: string | null | undefined,
-): string | null {
-  const url = cover(coverUrl ?? undefined);
-  if (!url) return null;
-  const appId = appIdOf(new URL(url).pathname);
-  // Only the shared.* hosts serve store_item_assets; cdn.* answers 404.
-  return appId
-    ? `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appId}/library_hero.jpg`
-    : null;
+export async function steamArt(
+  appIds: string[],
+): Promise<Map<string, GameArt>> {
+  const input = {
+    ids: appIds.map((id) => ({ appid: Number(id) })),
+    context: { language: "english", country_code: "US" },
+    data_request: { include_assets: true },
+  };
+  const data = await getJson<{ response?: { store_items?: StoreItem[] } }>(
+    "Steam",
+    `https://api.steampowered.com/IStoreBrowseService/GetItems/v1/?${new URLSearchParams({ input_json: JSON.stringify(input) }).toString()}`,
+  );
+  const art = new Map<string, GameArt>();
+  for (const item of requireList("Steam", data?.response?.store_items)) {
+    const format = item.assets?.asset_url_format;
+    const url = (file?: string) =>
+      format && file
+        ? cover(STEAM_ASSETS + format.replace(/\$\{FILENAME\}/, file))
+        : null;
+    if (item.appid)
+      art.set(String(item.appid), {
+        posterUrl: url(item.assets?.library_capsule),
+        bannerUrl: url(item.assets?.library_hero),
+      });
+  }
+  return art;
 }
 
 async function search(query: string, category: string): Promise<GameHit[]> {
@@ -119,7 +153,13 @@ export const steamSource: GameSource = {
     if (app.type !== "game" && app.type !== "dlc") return null;
 
     const year = app.release_date?.date?.match(/\b(?:19|20)\d{2}\b/)?.[0];
+    // Art is a nicety: a game is still added without it.
+    const art = await steamArt([externalId]).then(
+      (found) => found.get(externalId) ?? NO_ART,
+      () => NO_ART,
+    );
     return gameFields({
+      ...art,
       title: cleanTitle(app.name),
       // Taken from the answer: newer apps hash their asset paths, so a URL derived
       // from the app id 404s.

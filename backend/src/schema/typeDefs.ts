@@ -39,7 +39,9 @@ export const typeDefs = `#graphql
     genres: [String!]!
     description: String
     coverUrl: String
-    # Wide art for a banner, where the cover's source has it; else use coverUrl.
+    # Portrait art, about 2:3; null when the source has none.
+    posterUrl: String
+    # Wide art without a logo, for a banner; null when the source has none.
     bannerUrl: String
     releaseYear: Int
     createdAt: String
@@ -87,7 +89,8 @@ export const typeDefs = `#graphql
     externalId: String!
     title: String!
     coverUrl: String
-    # As Game.bannerUrl.
+    # As on Game.
+    posterUrl: String
     bannerUrl: String
     releaseYear: Int
     genres: [String!]

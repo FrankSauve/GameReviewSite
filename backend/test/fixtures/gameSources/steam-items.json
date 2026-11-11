@@ -1,0 +1,52 @@
+{
+  "response": {
+    "store_items": [
+      {
+        "item_type": 0,
+        "id": 2183900,
+        "success": 1,
+        "visible": true,
+        "name": "Warhammer 40,000: Space Marine 2",
+        "appid": 2183900,
+        "type": 0,
+        "assets": {
+          "asset_url_format": "steam/apps/2183900/${FILENAME}?t=1790874369",
+          "library_capsule": "library_600x900.jpg",
+          "library_capsule_2x": "library_600x900_2x.jpg",
+          "library_hero": "library_hero.jpg",
+          "header": "header.jpg"
+        }
+      },
+      {
+        "item_type": 0,
+        "id": 2062430,
+        "success": 1,
+        "visible": true,
+        "name": "BALL x PIT",
+        "appid": 2062430,
+        "type": 0,
+        "assets": {
+          "asset_url_format": "steam/apps/2062430/${FILENAME}?t=1790869056",
+          "library_capsule": "b6cabe1940c55119820eee4ed2d0b604bd5b3af4/library_600x900.jpg",
+          "library_capsule_2x": "b6cabe1940c55119820eee4ed2d0b604bd5b3af4/library_600x900_2x.jpg",
+          "library_hero": "1d72e463611ac3e4c6f7c80a835931ce6af67893/library_hero.jpg",
+          "header": "a157aa8de4bd9070194ddffb27c31636355dca05/header.jpg"
+        }
+      },
+      {
+        "item_type": 0,
+        "id": 256290,
+        "success": 1,
+        "visible": true,
+        "name": "Child of Light",
+        "appid": 256290,
+        "type": 0,
+        "assets": {
+          "asset_url_format": "steam/apps/256290/${FILENAME}?t=1777993974",
+          "library_capsule": "portrait.png",
+          "header": "header.jpg"
+        }
+      }
+    ]
+  }
+}

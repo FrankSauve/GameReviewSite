@@ -123,6 +123,8 @@ describe("searching across game sources", () => {
     const detail = vi.fn<GameSource["detail"]>(async () => ({
       title: "Game",
       coverUrl: null,
+      posterUrl: null,
+      bannerUrl: null,
       genres: [],
       releaseYear: null,
       description: null,

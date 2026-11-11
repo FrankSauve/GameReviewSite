@@ -29,6 +29,8 @@ export function gameFieldsFromRawg(detail: RawgGame): GameFields | null {
   return gameFields({
     title: detail.name,
     coverUrl: coverUrl(detail.background_image, COVER_HOSTS),
+    posterUrl: null,
+    bannerUrl: null,
     genres: (detail.genres ?? []).map(({ name }) => name),
     releaseYear: yearOf(detail.released),
     description: detail.description_raw ?? null,

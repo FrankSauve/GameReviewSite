@@ -53,12 +53,22 @@ interface Boxart {
   data?: Record<string, { side?: string; filename: string }[]>;
 }
 
-interface Answer {
-  data?: { games?: TgdbGame[] };
-  include?: { boxart?: Boxart };
+interface Allowance {
   remaining_monthly_allowance?: number;
   extra_allowance?: number | null;
   allowance_refresh_timer?: number | null;
+}
+
+interface Answer extends Allowance {
+  data?: { games?: TgdbGame[] };
+  include?: { boxart?: Boxart };
+}
+
+interface ImagesAnswer extends Allowance {
+  data?: {
+    base_url?: { large?: string };
+    images?: Record<string, { id: number; type: string; filename: string }[]>;
+  };
 }
 
 let lowUntil = 0;
@@ -70,14 +80,14 @@ function apiKey(): string {
   return key;
 }
 
-async function get(path: string, params: Record<string, string>) {
-  const query = new URLSearchParams({
-    apikey: apiKey(),
-    fields: "genres,overview",
-    include: "boxart",
-    ...params,
-  });
-  const answer = await getJson<Answer>(
+const GAME_PARAMS = { fields: "genres,overview", include: "boxart" };
+
+async function get<T extends Allowance>(
+  path: string,
+  params: Record<string, string>,
+) {
+  const query = new URLSearchParams({ apikey: apiKey(), ...params });
+  const answer = await getJson<T>(
     "TheGamesDB",
     `${TGDB_BASE}${path}?${query.toString()}`,
   );
@@ -142,13 +152,37 @@ function grouped(answer: Answer | null): GameHit[] {
   });
 }
 
+/** TheGamesDB answers for up to this many games in one call. */
+export const ART_BATCH = 20;
+
+/** The first fan art uploaded for each game: wide, 16:9, and free of logos. */
+export async function tgdbFanart(ids: string[]): Promise<Map<string, string>> {
+  const answer = await get<ImagesAnswer>("/v1/Games/Images", {
+    games_id: ids.join(","),
+    "filter[type]": "fanart",
+  });
+  const base = answer?.data?.base_url?.large;
+  const fanart = new Map<string, string>();
+  for (const [id, images] of Object.entries(answer?.data?.images ?? {})) {
+    const first = images
+      .filter((image) => image.type === "fanart")
+      .sort((a, b) => a.id - b.id)[0];
+    const url = first && coverUrl(`${base}${first.filename}`, COVER_HOSTS);
+    if (url) fanart.set(id, url);
+  }
+  return fanart;
+}
+
 function fieldsOf(answer: Answer | null): GameFields | null {
   const game = requireList("TheGamesDB", answer?.data?.games)[0];
   if (!game) return null;
   const box = answer?.include?.boxart;
+  const boxart = cover(game, box, box?.base_url?.large);
   return gameFields({
     title: baseTitle(game.game_title),
-    coverUrl: cover(game, box, box?.base_url?.large),
+    coverUrl: boxart,
+    posterUrl: boxart,
+    bannerUrl: null,
     genres: genresOf(game),
     releaseYear: releaseYear(game),
     description: game.overview ?? null,
@@ -161,8 +195,26 @@ export const tgdbSource: GameSource = {
   enabled: () => !!process.env["TGDB_API_KEY"] && Date.now() >= lowUntil,
 
   search: async (query) =>
-    grouped(await get("/v1.1/Games/ByGameName", { name: query })),
+    grouped(
+      await get<Answer>("/v1.1/Games/ByGameName", {
+        ...GAME_PARAMS,
+        name: query,
+      }),
+    ),
 
-  detail: async (externalId) =>
-    fieldsOf(await get("/v1/Games/ByGameID", { id: externalId })),
+  async detail(externalId) {
+    const fields = fieldsOf(
+      await get<Answer>("/v1/Games/ByGameID", {
+        ...GAME_PARAMS,
+        id: externalId,
+      }),
+    );
+    if (!fields) return null;
+    // Art is a nicety: a game is still added without it.
+    const bannerUrl = await tgdbFanart([externalId]).then(
+      (found) => found.get(externalId) ?? null,
+      () => null,
+    );
+    return { ...fields, bannerUrl };
+  },
 };
