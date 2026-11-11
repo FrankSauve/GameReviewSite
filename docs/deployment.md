@@ -386,3 +386,25 @@ regardless.
 The run exits non-zero if any game failed or was skipped. Re-running skips
 covers already moved, so run it again until it exits zero, or until only games
 you have checked are left.
+
+### Filling poster and banner art
+
+Each game also stores a portrait poster, for thumbnails, and wide banner art,
+for the top of its page. Games added since then get both when they join the
+library. This fills them in for the rest, from the same source the cover came
+from: Steam's library art, or TheGamesDB's box art and first fan art. It ships
+in the image, and needs the moves above.
+
+```bash
+# Dry run: prints which games would change and which have no art, and writes nothing.
+docker compose exec gamereviews-backend node dist/scripts/refresh-art.js
+
+# Apply.
+docker compose exec gamereviews-backend node dist/scripts/refresh-art.js --write
+```
+
+It asks each source in batches: one Steam call per 50 games and one TheGamesDB
+call per 20, so a run over the whole library is a handful of calls. A game with
+no poster shows its cover in its place, and one with no banner art shows its
+poster beside the title. A batch that fails leaves its games as they were, and
+the run exits non-zero; re-run it until it exits zero.
