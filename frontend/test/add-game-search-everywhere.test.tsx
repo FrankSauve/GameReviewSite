@@ -135,3 +135,39 @@ describe("searching everywhere from Add game", () => {
     ).toBeTruthy();
   });
 });
+
+describe("a search result already in the library", () => {
+  it("shows the poster the library has, not the source's search art", async () => {
+    const { container } = render(
+      <MockedProvider
+        mocks={[
+          answer("DEFAULT", [
+            {
+              ...row("STEAM", "2183900", "Space Marine 2"),
+              coverUrl: "https://x.test/search-logo.jpg",
+              game: {
+                __typename: "Game",
+                id: "g1",
+                slug: "space-marine-2",
+                reviewCount: 3,
+                posterUrl: "https://x.test/poster.jpg",
+              },
+            },
+          ]),
+        ]}
+      >
+        <MemoryRouter>
+          <AddGameButton />
+        </MemoryRouter>
+      </MockedProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /add game/i }));
+    fireEvent.change(screen.getByPlaceholderText(/find a game/i), {
+      target: { value: "metroid dread" },
+    });
+    await screen.findByText("Space Marine 2");
+    expect(
+      container.ownerDocument.querySelector("li img")?.getAttribute("src"),
+    ).toBe("https://x.test/poster.jpg");
+  });
+});

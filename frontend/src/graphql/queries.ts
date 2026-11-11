@@ -52,6 +52,7 @@ export const SEARCH_GAMES_EXTERNAL = gql`
         id
         slug
         reviewCount
+        posterUrl
       }
     }
   }
