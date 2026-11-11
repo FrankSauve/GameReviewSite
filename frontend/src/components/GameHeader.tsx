@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from "react";
-import { GameCover } from "./GameCover";
+import { hasGameArt } from "../lib/gameArt";
+import { GameArtBand } from "./GameArtBand";
 import { LabelChips } from "./LabelChips";
 
 interface GameHeaderProps {
@@ -19,22 +20,16 @@ interface GameHeaderProps {
 export function GameHeader({ game, children }: GameHeaderProps) {
   return (
     <div className="card overflow-hidden">
-      {/* Cover hero */}
-      {game.coverUrl ? (
-        <div className="relative h-56 sm:h-72 overflow-hidden">
-          <GameCover game={game} size="lg" eager art="banner" />
-          <div className="absolute inset-0 bg-gradient-to-t from-scrim via-scrim/40 to-transparent" />
-          {/* Title overlaid on cover */}
-          <div className="absolute bottom-0 left-0 p-6">
-            <h1 className="font-display text-display text-content-on-art drop-shadow-lg">
-              {game.title}
-            </h1>
-          </div>
-        </div>
-      ) : null}
+      {hasGameArt(game) && (
+        <GameArtBand game={game} className="h-56 sm:h-72" pad="p-6">
+          <h1 className="font-display text-display text-content-on-art drop-shadow-lg">
+            {game.title}
+          </h1>
+        </GameArtBand>
+      )}
 
       <div className="p-6 space-y-4">
-        {!game.coverUrl && (
+        {!hasGameArt(game) && (
           <h1 className="font-display text-display text-content">
             {game.title}
           </h1>

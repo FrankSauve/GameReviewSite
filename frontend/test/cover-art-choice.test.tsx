@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { GameArtBand } from "../src/components/GameArtBand";
 import { GameCover } from "../src/components/GameCover";
 
 afterEach(cleanup);
@@ -8,6 +9,9 @@ afterEach(cleanup);
 const COVER = "https://x.test/header.jpg";
 const POSTER = "https://x.test/poster.jpg";
 const BANNER = "https://x.test/hero.jpg";
+
+const srcs = (container: HTMLElement) =>
+  [...container.querySelectorAll("img")].map((img) => img.getAttribute("src"));
 
 describe("the art a cover slot uses", () => {
   it("is the poster in a portrait slot, and the cover where there is none", () => {
@@ -60,6 +64,58 @@ describe("the art a cover slot uses", () => {
     fireEvent.load(img);
     expect(screen.getAllByRole("img")).toHaveLength(1);
     expect(img.className).toContain("object-cover");
+  });
+});
+
+describe("the art at the top of a game", () => {
+  it("lays the title over the banner art where there is some", () => {
+    const { container } = render(
+      <GameArtBand
+        game={{
+          title: "Space Marine 2",
+          coverUrl: COVER,
+          posterUrl: POSTER,
+          bannerUrl: BANNER,
+        }}
+        className="h-72"
+        pad="p-6"
+      >
+        <h1>Space Marine 2</h1>
+      </GameArtBand>,
+    );
+    expect(srcs(container)).toEqual([BANNER]);
+    expect(
+      screen.getByRole("heading", { name: "Space Marine 2" }),
+    ).toBeDefined();
+  });
+
+  it("sets the poster beside the title where there is no banner art", () => {
+    const { container } = render(
+      <GameArtBand
+        game={{
+          title: "Final Fantasy VII",
+          coverUrl: POSTER,
+          posterUrl: POSTER,
+        }}
+        className="h-72"
+        pad="p-6"
+      >
+        <h1>Final Fantasy VII</h1>
+      </GameArtBand>,
+    );
+    // The poster, and the same art blurred behind it.
+    expect(srcs(container)).toEqual([POSTER, POSTER]);
+    expect(container.querySelector(".aspect-\\[2\\/3\\] img")).not.toBeNull();
+  });
+
+  it("draws the title's placeholder for a game with no art", () => {
+    const { container } = render(
+      <GameArtBand game={{ title: "Unknown" }} className="h-40" pad="p-4">
+        <h2>Unknown</h2>
+      </GameArtBand>,
+    );
+    expect(container.querySelector("img")).toBeNull();
+    expect(screen.getByText("🎮")).toBeDefined();
   });
 });
 
