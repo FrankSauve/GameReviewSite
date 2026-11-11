@@ -50,7 +50,7 @@ export function GameCover({
   const wanted = banner ? (game?.bannerUrl ?? null) : null;
   const bannerArt =
     wanted && wanted !== failed && !missingBanners.has(wanted) ? wanted : null;
-  const src = bannerArt ?? cover;
+  const src = bannerArt ?? (cover !== failed ? cover : null);
 
   // Keyed by url, so a reused component measures new art afresh.
   const [wholeFor, setWholeFor] = useState<string | null>(null);
@@ -80,8 +80,11 @@ export function GameCover({
     return (
       <div
         className={`w-full h-full ${titleGradient(title)} flex items-center justify-center`}
+        {...(decorative ? {} : { role: "img", "aria-label": title })}
       >
-        <span className={`${EMOJI[size]} opacity-30`}>🎮</span>
+        <span aria-hidden="true" className={`${EMOJI[size]} opacity-30`}>
+          🎮
+        </span>
       </div>
     );
 
@@ -115,8 +118,7 @@ export function GameCover({
           measure();
         }}
         onError={() => {
-          if (src !== bannerArt) return;
-          missingBanners.add(src);
+          if (src === bannerArt) missingBanners.add(src);
           setFailed(src);
         }}
       />

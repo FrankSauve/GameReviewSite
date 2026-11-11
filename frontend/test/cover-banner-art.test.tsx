@@ -62,3 +62,34 @@ describe("the art a wide banner uses", () => {
     );
   });
 });
+
+describe("a cover that fails to load", () => {
+  it("gives way to the title's placeholder, not a broken image", () => {
+    const { container } = render(
+      <GameCover game={{ title: "D", coverUrl: "https://x.test/dead.jpg" }} />,
+    );
+    fireEvent.error(screen.getByRole("img"));
+    expect(container.querySelector("img")).toBeNull();
+    expect(screen.getByText("🎮")).toBeDefined();
+  });
+
+  it("still names the game to a screen reader", () => {
+    render(
+      <GameCover game={{ title: "Dead", coverUrl: "https://x.test/d2.jpg" }} />,
+    );
+    fireEvent.error(screen.getByRole("img"));
+    expect(screen.getByRole("img", { name: "Dead" })).toBeDefined();
+    expect(screen.getByText("🎮").getAttribute("aria-hidden")).toBe("true");
+  });
+
+  it("stays silent where the caller says it is decorative", () => {
+    render(
+      <GameCover
+        game={{ title: "Quiet", coverUrl: "https://x.test/d3.jpg" }}
+        decorative
+      />,
+    );
+    fireEvent.error(screen.getByRole("presentation"));
+    expect(screen.queryByRole("img")).toBeNull();
+  });
+});
