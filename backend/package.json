@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "scripts": {
     "match:steam-ids": "tsx src/scripts/match-steam-ids.ts",
-    "backfill:steam-ids": "tsx src/scripts/backfill-steam-ids.ts",
+    "refresh:covers": "tsx src/scripts/refresh-covers.ts",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
     "build": "tsc",

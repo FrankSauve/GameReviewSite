@@ -310,12 +310,19 @@ upgrade — dump, stop the three containers, delete the volume, change the tag,
 start, restore. Renovate holds this major back permanently; an image updater does
 not, so the pin in the snippet is what protects you.
 
+## One-time moves off RAWG
+
+RAWG was the only game source until Steam and TheGamesDB joined it, and its API
+has since stopped answering. These are one-off moves, run in this order, and
+each is safe to re-run until it has finished.
+
 ### Matching Steam ids
 
 Games added before Steam was a source have no `steamAppId`, so a Steam result
 for one looks new. This matches them against Steam's own search by title, and
-needs nothing from RAWG. It ships in the image. Run it first, because a Steam
-game's year is its PC release, which the title check cannot compare:
+needs nothing from RAWG. It ships in the image. Without it, a library game
+that Steam dates by its later PC release is one the title check cannot
+recognise:
 
 ```bash
 # Dry run: prints every proposed link, and writes nothing.
@@ -330,23 +337,52 @@ It takes about 3s per game. Check the plan before writing: a game can match its
 remaster, and only you can say whether that is the same game. Re-running skips
 games that are already linked.
 
-### Backfilling Steam ids
+### Moving covers off RAWG
 
-Games added before Steam became a source have no `steamAppId`, so a search has
-to fall back on comparing titles to recognise them. RAWG knows which of its
-games are on Steam. The repair ships in the image and only works while RAWG is
-up:
+Covers stored before Steam and TheGamesDB were sources are hosted by RAWG,
+whose API has gone. This replaces every cover not already on Steam's or
+TheGamesDB's image hosts: from TheGamesDB when the game has a TheGamesDB id,
+and from Steam otherwise. It ships in the image, and needs the ids from the
+matching above.
+
+Set the TheGamesDB id first on any game whose Steam page is a re-release with
+its own art, such as a remaster or a collection. The script takes that game's
+cover from TheGamesDB, and once a cover has moved it is never revisited, so
+setting the id afterwards does not change it.
+
+Nothing in the app sets that id on a game already in the library, so it is a
+statement in the database container. The id is unique, and the statement fails
+if another row holds it. That row may be the same game added from TheGamesDB,
+which is two rows for a person to merge first, or a different game sharing the
+id, in which case pick another of the game's TheGamesDB ids.
 
 ```bash
-# Dry run: prints what it would write.
-docker compose exec gamereviews-backend node dist/scripts/backfill-steam-ids.js
-
-# Apply.
-docker compose exec gamereviews-backend node dist/scripts/backfill-steam-ids.js --write
+docker compose exec gamereviews-db psql -U gamereview gamereview -c \
+  "UPDATE \"Game\" SET \"tgdbId\" = '<TheGamesDB id>' WHERE slug = '<game slug>'"
 ```
 
-It goes one game at a time with a 1s pause (`--delay=<ms>` to change it), and
-stops after three failures in a row, so a RAWG outage ends the run rather than
-walking the library. Re-running picks up where it left off. An app id already
-held by another game is reported and skipped, because two rows for one game are
-for a person to merge.
+```bash
+# Dry run: prints every cover it would replace, and writes nothing.
+docker compose exec gamereviews-backend node dist/scripts/refresh-covers.js
+
+# Apply.
+docker compose exec gamereviews-backend node dist/scripts/refresh-covers.js --write
+```
+
+Each run asks the source once per game, so a dry run and a write each spend one
+TheGamesDB call per TheGamesDB game. A game whose source has no cover, or
+nothing under that id, keeps the cover it has; the report says which, and each
+re-run asks about those games again, at a TheGamesDB call each.
+
+Steam calls are paced 2s apart (`--delay=<ms>` to change it). An outage pauses
+that source for 30s, and the run waits with it whenever that source's game is
+next. Three outages in a row from one source skip its remaining games. A failure
+about one id, such as a 400, is reported but does not count towards that. The
+run also skips TheGamesDB when `TGDB_API_KEY` is unset, and once an answer shows
+the allowance near the reserve kept for readers adding games. It only learns the
+allowance from its own answers, so its first TheGamesDB call goes ahead
+regardless.
+
+The run exits non-zero if any game failed or was skipped. Re-running skips
+covers already moved, so run it again until it exits zero, or until only games
+you have checked are left.

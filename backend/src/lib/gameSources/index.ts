@@ -57,6 +57,9 @@ export const gameSearch = createGameSearch({
 export const gameDetail = (source: GameSourceId, externalId: string) =>
   gameSearch.detail(SOURCES[source], externalId);
 
+export const sourceEnabled = (source: GameSourceId) =>
+  SOURCES[source].enabled?.() ?? true;
+
 /** Every source numbers its games. No leading zero: "07" would be a second row for 7. */
 export function validateExternalId(value: string): string {
   const trimmed = value.trim();
