@@ -1,7 +1,7 @@
 import { SourceUnavailableError } from "./http.js";
 import type { GameFields } from "./types.js";
 
-/** Fields built while the art lookup was down: never cached, so the next ask retries. */
+/** Fields built while the art lookup was down: cached briefly, so it is retried. */
 const missedArt = new WeakSet<GameFields>();
 
 export const artMissed = (fields: GameFields) => missedArt.has(fields);

@@ -141,7 +141,7 @@ describe("searching across game sources", () => {
     expect(detail).toHaveBeenCalledTimes(3);
   });
 
-  it("asks again for a game whose art lookup was down", async () => {
+  it("asks again soon, not at once, for a game whose art lookup was down", async () => {
     const detail = vi.fn<GameSource["detail"]>(async () =>
       withArt(
         {
@@ -158,6 +158,9 @@ describe("searching across game sources", () => {
     );
     const game = { id: "STEAM", search: async () => [], detail } as GameSource;
     await chain.detail(game, "1");
+    await chain.detail(game, "1");
+    expect(detail).toHaveBeenCalledTimes(1);
+    clock += 61_000;
     await chain.detail(game, "1");
     expect(detail).toHaveBeenCalledTimes(2);
   });

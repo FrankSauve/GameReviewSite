@@ -59,6 +59,7 @@ export const ART_BATCH = 50;
 
 interface StoreItem {
   appid?: number;
+  success?: number;
   assets?: {
     asset_url_format?: string;
     library_capsule?: string;
@@ -86,7 +87,8 @@ export async function steamArt(
       format && file
         ? cover(STEAM_ASSETS + format.replace(/\$\{FILENAME\}/, () => file))
         : null;
-    if (item.appid)
+    // An app Steam does not have answers with success other than 1, and no art.
+    if (item.appid && item.success === 1)
       art.set(String(item.appid), {
         posterUrl: url(item.assets?.library_capsule),
         bannerUrl: url(item.assets?.library_hero),
@@ -133,7 +135,6 @@ export const steamSource: GameSource = {
   search: (query) => search(query, CATEGORY_GAMES),
 
   async detail(externalId) {
-    // Asked alongside the details rather than after them.
     const art = artOrNone(
       steamArt([externalId]).then((found) => found.get(externalId) ?? NO_ART),
       NO_ART,

@@ -125,8 +125,9 @@ export function createGameSearch(
       const cached = details.get(key);
       if (cached && cached.expires > now()) return cached.fields;
       const fields = await source.detail(externalId);
-      if (fields && !artMissed(fields))
-        remember(details, key, { fields, expires: now() + CACHE_MS });
+      // Art missed in an outage is retried soon, but not on every ask.
+      const ttl = fields && artMissed(fields) ? SKIP_MS : CACHE_MS;
+      if (fields) remember(details, key, { fields, expires: now() + ttl });
       return fields;
     },
 
