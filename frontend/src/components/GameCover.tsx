@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { titleGradient } from "../lib/coverGradient";
+import { cropsWell } from "../lib/coverFit";
 
 export type CoverSize = "sm" | "md" | "lg";
 
@@ -21,7 +23,8 @@ interface GameCoverProps {
 }
 
 /**
- * Fills its parent, which owns the size and any scrim laid over it.
+ * Fills its parent, which owns the size and any scrim laid over it. Art whose
+ * shape is far from the slot's is shown whole, over a blurred copy of itself.
  *
  * `group-hover:scale-105` is inert without a `.group` ancestor, so it costs the
  * callers that do not want it nothing.
@@ -32,17 +35,50 @@ export function GameCover({
   decorative = false,
   eager = false,
 }: GameCoverProps) {
+  // Keyed by url, so a reused component measures a new game's art afresh.
+  const [wholeFor, setWholeFor] = useState<string | null>(null);
   const title = game?.title ?? "";
+  const src = game?.coverUrl;
 
-  if (game?.coverUrl) {
+  if (src) {
+    const shared = {
+      src,
+      // The site sends no referrer, and TheGamesDB's CDN refuses an image without one.
+      referrerPolicy: "origin" as const,
+      ...(eager ? {} : { loading: "lazy" as const }),
+    };
+    const alt = decorative ? "" : title;
+
+    if (wholeFor === src)
+      return (
+        <div className="relative w-full h-full overflow-hidden">
+          <img
+            {...shared}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-60"
+          />
+          <img
+            {...shared}
+            alt={alt}
+            className="relative w-full h-full object-contain group-hover:scale-105 transition-transform duration-theme"
+          />
+        </div>
+      );
+
     return (
       <img
-        src={game.coverUrl}
-        alt={decorative ? "" : title}
-        // The site sends no referrer, and TheGamesDB's CDN refuses an image without one.
-        referrerPolicy="origin"
+        {...shared}
+        alt={alt}
         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-theme"
-        {...(eager ? {} : { loading: "lazy" as const })}
+        onLoad={(e) => {
+          const img = e.currentTarget;
+          const fits = cropsWell(
+            { width: img.naturalWidth, height: img.naturalHeight },
+            { width: img.clientWidth, height: img.clientHeight },
+          );
+          if (!fits) setWholeFor(src);
+        }}
       />
     );
   }
