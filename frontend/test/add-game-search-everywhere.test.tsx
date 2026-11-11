@@ -21,10 +21,10 @@ const row = (source: string, externalId: string, title: string) => ({
   game: null,
 });
 
-const answer = (scope: string, games: object[]) => ({
+const answer = (scope: string, games: object[], query = "metroid dread") => ({
   request: {
     query: SEARCH_GAMES_EXTERNAL,
-    variables: { query: "metroid dread", scope },
+    variables: { query, scope },
   },
   result: { data: { searchGamesExternal: games } },
 });
@@ -141,19 +141,23 @@ describe("a search result already in the library", () => {
     const { container } = render(
       <MockedProvider
         mocks={[
-          answer("DEFAULT", [
-            {
-              ...row("STEAM", "2183900", "Space Marine 2"),
-              coverUrl: "https://x.test/search-logo.jpg",
-              game: {
-                __typename: "Game",
-                id: "g1",
-                slug: "space-marine-2",
-                reviewCount: 3,
-                posterUrl: "https://x.test/poster.jpg",
+          answer(
+            "DEFAULT",
+            [
+              {
+                ...row("STEAM", "2183900", "Space Marine 2"),
+                coverUrl: "https://x.test/search-logo.jpg",
+                game: {
+                  __typename: "Game",
+                  id: "g1",
+                  slug: "space-marine-2",
+                  reviewCount: 3,
+                  posterUrl: "https://x.test/poster.jpg",
+                },
               },
-            },
-          ]),
+            ],
+            "space marine 2",
+          ),
         ]}
       >
         <MemoryRouter>
@@ -163,7 +167,7 @@ describe("a search result already in the library", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /add game/i }));
     fireEvent.change(screen.getByPlaceholderText(/find a game/i), {
-      target: { value: "metroid dread" },
+      target: { value: "space marine 2" },
     });
     await screen.findByText("Space Marine 2");
     expect(

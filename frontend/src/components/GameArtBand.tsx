@@ -15,7 +15,7 @@ interface GameArtBandProps {
 /**
  * The art at the top of a game: its banner art behind the title where it has
  * some, else its poster beside the title over a blur of the same art, else
- * its cover (or the title's placeholder) across the band as before.
+ * its cover, or the title's placeholder, across the band.
  */
 export function GameArtBand({
   game,
