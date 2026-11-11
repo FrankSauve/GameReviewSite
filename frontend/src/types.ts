@@ -60,6 +60,7 @@ export interface Game {
   communitySecondaryGenres?: string[];
   description?: string | null;
   coverUrl?: string | null;
+  bannerUrl?: string | null;
   releaseYear?: number | null;
   averageRating?: number | null;
   reviewCount?: number | null;
@@ -74,6 +75,7 @@ export interface ExternalGame {
   externalId: string;
   title: string;
   coverUrl?: string | null;
+  bannerUrl?: string | null;
   releaseYear?: number | null;
   genres?: string[];
   metacritic?: number | null;

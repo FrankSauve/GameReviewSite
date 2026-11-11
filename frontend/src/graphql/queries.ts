@@ -65,6 +65,7 @@ export const GET_EXTERNAL_GAME = gql`
       externalId
       title
       coverUrl
+      bannerUrl
       releaseYear
       genres
       description
@@ -109,6 +110,7 @@ export const GET_GAME = gql`
       communitySecondaryGenres
       description
       coverUrl
+      bannerUrl
       releaseYear
       averageRating
       reviews {
@@ -218,6 +220,7 @@ export const GET_REVIEW = gql`
         title
         reviewCount
         coverUrl
+        bannerUrl
         releaseYear
         genres
         communityGenres

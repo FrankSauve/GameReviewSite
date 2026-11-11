@@ -44,6 +44,7 @@ interface ReviewGame {
   slug?: string | null;
   title: string;
   coverUrl?: string | null;
+  bannerUrl?: string | null;
   releaseYear?: number | null;
   genres?: string[];
   communityGenres?: string[];

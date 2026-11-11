@@ -47,6 +47,22 @@ const cover = (url?: string) => coverUrl(url, [COVER_DOMAIN]);
 /** A bundle's logo is under /subs/, so it falls out here too. */
 const appIdOf = (logo?: string) => logo?.match(/\/steam\/apps\/(\d+)\//)?.[1];
 
+/**
+ * Steam's 1920×620 library hero for a cover that is a Steam header, or null.
+ * Not in appdetails, and not every app has one: a caller falls back to the cover.
+ */
+export function steamBannerUrl(
+  coverUrl: string | null | undefined,
+): string | null {
+  const url = cover(coverUrl ?? undefined);
+  if (!url) return null;
+  const appId = appIdOf(new URL(url).pathname);
+  // Only the shared.* hosts serve store_item_assets; cdn.* answers 404.
+  return appId
+    ? `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${appId}/library_hero.jpg`
+    : null;
+}
+
 async function search(query: string, category: string): Promise<GameHit[]> {
   const params = new URLSearchParams({
     term: query,

@@ -12,6 +12,7 @@ import { requireAuth, type Context } from "../context.js";
 import type { GameSearchScope } from "../lib/gameSearch.js";
 import { possibleLibraryGame, withLibraryGames } from "../lib/libraryGames.js";
 import {
+  bannerUrl,
   gameDetail,
   gameIdentity,
   gameSearch,
@@ -183,7 +184,14 @@ export const gameResolvers = {
     },
   },
 
+  ExternalGame: {
+    bannerUrl: (parent: { coverUrl?: string | null }) =>
+      bannerUrl(parent.coverUrl),
+  },
+
   Game: {
+    bannerUrl: (parent: Game) => bannerUrl(parent.coverUrl),
+
     reviews: async (
       parent: Game,
       args: PageArgs,

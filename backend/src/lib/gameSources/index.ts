@@ -1,7 +1,7 @@
 import { badInput } from "../badInput.js";
 import { createGameSearch, type Lookup } from "../gameSearch.js";
 import { rawgSource } from "./rawg.js";
-import { searchSteamDlc, steamSource } from "./steam.js";
+import { searchSteamDlc, steamBannerUrl, steamSource } from "./steam.js";
 import { tgdbSource } from "./tgdb.js";
 import type { GameSource, GameSourceId } from "./types.js";
 
@@ -56,6 +56,10 @@ export const gameSearch = createGameSearch({
 
 export const gameDetail = (source: GameSourceId, externalId: string) =>
   gameSearch.detail(SOURCES[source], externalId);
+
+/** Wide art for a banner, from whichever source the cover came from; null when it has none. */
+export const bannerUrl = (coverUrl: string | null | undefined) =>
+  steamBannerUrl(coverUrl);
 
 export const sourceEnabled = (source: GameSourceId) =>
   SOURCES[source].enabled?.() ?? true;

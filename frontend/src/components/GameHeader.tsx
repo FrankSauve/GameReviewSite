@@ -6,6 +6,7 @@ interface GameHeaderProps {
   game: {
     title: string;
     coverUrl?: string | null;
+    bannerUrl?: string | null;
     genres?: string[] | undefined;
     releaseYear?: number | null;
     description?: string | null;
