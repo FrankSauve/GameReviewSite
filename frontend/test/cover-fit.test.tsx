@@ -1,6 +1,12 @@
 // @vitest-environment jsdom
-import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+} from "@testing-library/react";
 import { GameCover } from "../src/components/GameCover";
 import { cropsWell } from "../src/lib/coverFit";
 import { steamBannerUrl } from "../src/lib/steamBanner";
@@ -10,7 +16,7 @@ afterEach(cleanup);
 const STEAM_HEADER = { width: 460, height: 215 };
 const BOX_ART = { width: 1080, height: 1620 };
 
-function loadInto(
+function sized(
   img: HTMLElement,
   art: { width: number; height: number },
   slot: { width: number; height: number },
@@ -21,7 +27,15 @@ function loadInto(
     clientWidth: slot.width,
     clientHeight: slot.height,
   }))
-    Object.defineProperty(img, key, { value });
+    Object.defineProperty(img, key, { value, configurable: true });
+}
+
+function loadInto(
+  img: HTMLElement,
+  art: { width: number; height: number },
+  slot: { width: number; height: number },
+) {
+  sized(img, art, slot);
   fireEvent.load(img);
 }
 
@@ -41,7 +55,7 @@ describe("when art is cropped to fill its slot", () => {
     expect(cropsWell(BOX_ART, { width: 960, height: 288 })).toBe(false);
   });
 
-  it("crops what it could not measure, as before", () => {
+  it("crops what it could not measure", () => {
     expect(
       cropsWell({ width: 0, height: 0 }, { width: 960, height: 288 }),
     ).toBe(true);
@@ -61,6 +75,66 @@ describe("a cover in a slot of a different shape", () => {
     const imgs = screen.getAllByRole("img");
     expect(imgs).toHaveLength(1);
     expect(imgs[0]?.className).toContain("object-cover");
+  });
+
+  it("keeps the same image element when it switches to showing the art whole", () => {
+    render(<GameCover game={GAME} />);
+    const before = screen.getByRole("img");
+    loadInto(before, BOX_ART, { width: 960, height: 288 });
+    expect(screen.getByAltText("Hitman 3")).toBe(before);
+  });
+
+  it("measures again when its slot changes shape, as on a rotation", () => {
+    let resized = () => {};
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: () => void) {
+          resized = callback;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    try {
+      render(<GameCover game={GAME} />);
+      const img = screen.getByRole("img");
+      loadInto(img, STEAM_HEADER, { width: 812, height: 288 });
+      expect(img.className).toContain("object-cover");
+      sized(img, STEAM_HEADER, { width: 144, height: 180 });
+      act(() => resized());
+      expect(img.className).toContain("object-contain");
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it("does not measure new art by the old art's size before it loads", () => {
+    let resized = () => {};
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: () => void) {
+          resized = callback;
+        }
+        observe() {}
+        disconnect() {}
+      },
+    );
+    try {
+      const { rerender } = render(<GameCover game={GAME} />);
+      const img = screen.getByRole("img");
+      loadInto(img, BOX_ART, { width: 960, height: 288 });
+      rerender(
+        <GameCover
+          game={{ title: "Hades", coverUrl: "https://x.test/h.jpg" }}
+        />,
+      );
+      act(() => resized());
+      expect(img.className).toContain("object-cover");
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it("shows the art whole over a blurred copy when they are not", () => {

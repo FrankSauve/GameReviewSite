@@ -2,8 +2,8 @@
 const MIN_KEPT = 0.6;
 
 /**
- * Whether art cropped to fill its slot keeps enough of itself. Anything not
- * yet measured is cropped, as every cover was before.
+ * Whether art cropped to fill its slot keeps enough of itself. Art or a slot
+ * with no size yet counts as fitting, so nothing is shown whole by mistake.
  */
 export function cropsWell(
   art: { width: number; height: number },
