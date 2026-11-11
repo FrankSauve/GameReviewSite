@@ -31,6 +31,13 @@ describe("a game cover", () => {
     expect(screen.getByRole("presentation")).toBeDefined();
   });
 
+  it("names the site to the image host, which TheGamesDB requires", () => {
+    render(<GameCover game={WITH_COVER} />);
+    expect(screen.getByRole("img").getAttribute("referrerpolicy")).toBe(
+      "strict-origin",
+    );
+  });
+
   it("defers the fetch unless the caller is above the fold", () => {
     const { rerender } = render(<GameCover game={WITH_COVER} />);
     expect(screen.getByRole("img").getAttribute("loading")).toBe("lazy");
