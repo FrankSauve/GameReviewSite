@@ -1,5 +1,6 @@
 import { titleKey } from "../gameMatch.js";
 import { coverUrl, gameFields, yearOf } from "./fields.js";
+import { artOrNone, withArt } from "./art.js";
 import { getJson, requireList, sourceUnavailable } from "./http.js";
 import type { GameFields, GameHit, GameSource } from "./types.js";
 
@@ -210,11 +211,10 @@ export const tgdbSource: GameSource = {
       }),
     );
     if (!fields) return null;
-    // Art is a nicety: a game is still added without it.
-    const bannerUrl = await tgdbFanart([externalId]).then(
-      (found) => found.get(externalId) ?? null,
-      () => null,
+    const { art: bannerUrl, missed } = await artOrNone(
+      tgdbFanart([externalId]).then((found) => found.get(externalId) ?? null),
+      null,
     );
-    return { ...fields, bannerUrl };
+    return withArt({ ...fields, bannerUrl }, missed);
   },
 };

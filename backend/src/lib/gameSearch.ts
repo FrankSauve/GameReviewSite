@@ -1,3 +1,4 @@
+import { artMissed } from "./gameSources/art.js";
 import { sourceUnavailable } from "./gameSources/http.js";
 import type {
   GameFields,
@@ -124,7 +125,8 @@ export function createGameSearch(
       const cached = details.get(key);
       if (cached && cached.expires > now()) return cached.fields;
       const fields = await source.detail(externalId);
-      if (fields) remember(details, key, { fields, expires: now() + CACHE_MS });
+      if (fields && !artMissed(fields))
+        remember(details, key, { fields, expires: now() + CACHE_MS });
       return fields;
     },
 

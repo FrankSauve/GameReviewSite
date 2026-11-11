@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { withArt } from "../src/lib/gameSources/art.js";
 import { createGameSearch, type Lookup } from "../src/lib/gameSearch.js";
 import { GraphQLError } from "graphql";
 import type { GameSource } from "../src/lib/gameSources/types.js";
@@ -138,6 +139,27 @@ describe("searching across game sources", () => {
     await chain.detail(game, "2");
     await chain.detail(game, "2");
     expect(detail).toHaveBeenCalledTimes(3);
+  });
+
+  it("asks again for a game whose art lookup was down", async () => {
+    const detail = vi.fn<GameSource["detail"]>(async () =>
+      withArt(
+        {
+          title: "Game",
+          coverUrl: null,
+          posterUrl: null,
+          bannerUrl: null,
+          genres: [],
+          releaseYear: null,
+          description: null,
+        },
+        true,
+      ),
+    );
+    const game = { id: "STEAM", search: async () => [], detail } as GameSource;
+    await chain.detail(game, "1");
+    await chain.detail(game, "1");
+    expect(detail).toHaveBeenCalledTimes(2);
   });
 
   it("keeps Steam's results when searching everywhere, and adds the rest", async () => {

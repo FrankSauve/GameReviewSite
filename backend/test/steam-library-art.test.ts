@@ -10,8 +10,8 @@ import {
   vi,
 } from "vitest";
 import type { Express } from "express";
+import { artMissed } from "../src/lib/gameSources/art.js";
 import { steamArt, steamSource } from "../src/lib/gameSources/steam.js";
-import { tgdbFanart } from "../src/lib/gameSources/tgdb.js";
 import { prisma } from "../src/lib/prisma.js";
 import { publicQuery, resetDatabase, startApp } from "./helpers.js";
 
@@ -64,40 +64,37 @@ describe("Steam's library art", () => {
     expect(fetch).toHaveBeenCalledTimes(1);
   });
 
-  it("does not stop a game being added when the art cannot be had", async () => {
+  it("does not stop a game being added when the art lookup is down", async () => {
     vi.spyOn(globalThis, "fetch").mockImplementation(async (url) =>
       String(url).includes("appdetails")
         ? new Response(JSON.stringify(fixture("steam-app-game")))
         : new Response("", { status: 503 }),
     );
-    expect(await steamSource.detail("1145360")).toMatchObject({
+    const fields = await steamSource.detail("1145360");
+    expect(fields).toMatchObject({
       title: "Hades",
       posterUrl: null,
       bannerUrl: null,
     });
-  });
-});
-
-describe("TheGamesDB's fan art", () => {
-  beforeEach(() => {
-    vi.stubEnv("TGDB_API_KEY", "test-key");
-    vi.spyOn(console, "warn").mockImplementation(() => undefined);
-  });
-  afterEach(() => {
-    vi.unstubAllEnvs();
-    vi.restoreAllMocks();
+    // So the detail cache does not keep the game without art.
+    expect(fields && artMissed(fields)).toBe(true);
   });
 
-  it("is the first fan art uploaded, and none where there is none", async () => {
-    answer(fixture("tgdb-images"));
-    const fanart = await tgdbFanart(["70", "7752", "29221"]);
-    expect(fanart.get("70")).toBe(
-      "https://cdn.thegamesdb.net/images/large/fanart/70-1.jpg",
+  it("marks nothing missed when the art lookup answered", async () => {
+    vi.spyOn(globalThis, "fetch").mockImplementation(
+      async (url) =>
+        new Response(
+          JSON.stringify(
+            fixture(
+              String(url).includes("appdetails")
+                ? "steam-app-game"
+                : "steam-items",
+            ),
+          ),
+        ),
     );
-    expect(fanart.get("7752")).toBe(
-      "https://cdn.thegamesdb.net/images/large/fanart/7752-1.jpg",
-    );
-    expect(fanart.has("29221")).toBe(false);
+    const fields = await steamSource.detail("1145360");
+    expect(fields && artMissed(fields)).toBe(false);
   });
 });
 

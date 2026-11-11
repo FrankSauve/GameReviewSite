@@ -1,4 +1,5 @@
 import { coverUrl, decodeEntities, gameFields } from "./fields.js";
+import { artOrNone, withArt } from "./art.js";
 import { getJson, requireList, sourceUnavailable } from "./http.js";
 import {
   NO_ART,
@@ -65,10 +66,7 @@ interface StoreItem {
   };
 }
 
-/**
- * Library art for each app, from the one API that knows where it is: newer apps
- * hash their asset paths, and an app with no hero has none to guess at.
- */
+/** Library art for each app, at the paths Steam's store API gives. */
 export async function steamArt(
   appIds: string[],
 ): Promise<Map<string, GameArt>> {
@@ -86,7 +84,7 @@ export async function steamArt(
     const format = item.assets?.asset_url_format;
     const url = (file?: string) =>
       format && file
-        ? cover(STEAM_ASSETS + format.replace(/\$\{FILENAME\}/, file))
+        ? cover(STEAM_ASSETS + format.replace(/\$\{FILENAME\}/, () => file))
         : null;
     if (item.appid)
       art.set(String(item.appid), {
@@ -135,6 +133,11 @@ export const steamSource: GameSource = {
   search: (query) => search(query, CATEGORY_GAMES),
 
   async detail(externalId) {
+    // Asked alongside the details rather than after them.
+    const art = artOrNone(
+      steamArt([externalId]).then((found) => found.get(externalId) ?? NO_ART),
+      NO_ART,
+    );
     const params = new URLSearchParams({
       appids: externalId,
       l: "english",
@@ -153,13 +156,9 @@ export const steamSource: GameSource = {
     if (app.type !== "game" && app.type !== "dlc") return null;
 
     const year = app.release_date?.date?.match(/\b(?:19|20)\d{2}\b/)?.[0];
-    // Art is a nicety: a game is still added without it.
-    const art = await steamArt([externalId]).then(
-      (found) => found.get(externalId) ?? NO_ART,
-      () => NO_ART,
-    );
-    return gameFields({
-      ...art,
+    const { art: found, missed } = await art;
+    const fields = gameFields({
+      ...found,
       title: cleanTitle(app.name),
       // Taken from the answer: newer apps hash their asset paths, so a URL derived
       // from the app id 404s.
@@ -170,5 +169,6 @@ export const steamSource: GameSource = {
       releaseYear: year ? parseInt(year, 10) : null,
       description: decodeEntities(app.short_description ?? ""),
     });
+    return withArt(fields, missed);
   },
 };
