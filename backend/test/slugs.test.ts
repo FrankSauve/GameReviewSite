@@ -43,25 +43,28 @@ async function addGameAs(
   });
 }
 
-/** A game as the app names it: created by its first review, from RAWG. */
+/** A game as the app names it: created by its first review, from Steam. */
 async function firstReviewOf(
   app: Express,
   identity: typeof ALICE,
-  rawgId: number,
+  appId: number,
   title: string,
 ): Promise<GamePayload> {
   gameSearch.clear();
   const original = globalThis.fetch;
-  globalThis.fetch = vi.fn(
-    async () => new Response(JSON.stringify({ id: rawgId, name: title })),
-  ) as unknown as typeof globalThis.fetch;
-  process.env["RAWG_API_KEY"] = "test-key";
+  globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
+    const art = String(input).includes("IStoreBrowseService");
+    const body = art
+      ? { response: { store_items: [] } }
+      : { [appId]: { success: true, data: { type: "game", name: title } } };
+    return new Response(JSON.stringify(body));
+  }) as unknown as typeof globalThis.fetch;
   try {
     const res = await authedQuery<{ createReview: { game: GamePayload } }>(
       app,
       `mutation {
          createReview(input: {
-           source: RAWG, externalId: "${rawgId}", rating: 8, content: "Good", ${PLAYTIME_INPUT}
+           source: STEAM, externalId: "${appId}", rating: 8, content: "Good", ${PLAYTIME_INPUT}
          }) { game { id slug title } }
        }`,
       identity,
@@ -70,7 +73,6 @@ async function firstReviewOf(
     return res.data!.createReview.game;
   } finally {
     globalThis.fetch = original;
-    delete process.env["RAWG_API_KEY"];
   }
 }
 

@@ -40,15 +40,14 @@ const lookup = (source: GameSource): Lookup => ({
 
 const steam = lookup(steamSource);
 const tgdb = lookup(tgdbSource);
-const rawg = lookup(rawgSource);
 
 /** Steam leads because the library is nearly all PC. It answers a console title
  *  with the wrong games, not with nothing, which is why EVERYWHERE exists. */
 export const gameSearch = createGameSearch({
-  DEFAULT: { fallback: [steam, tgdb, rawg] },
+  DEFAULT: { fallback: [steam, tgdb] },
   EVERYWHERE: {
     lead: [steam],
-    fallback: [tgdb, rawg],
+    fallback: [tgdb],
     emptyFallsThrough: true,
     extra: [{ name: "STEAM_DLC", source: "STEAM", search: searchSteamDlc }],
   },

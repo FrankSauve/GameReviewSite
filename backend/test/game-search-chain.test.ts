@@ -65,7 +65,7 @@ describe("searching across game sources", () => {
     expect(tgdb.search).not.toHaveBeenCalled();
   });
 
-  it("falls through Steam to TheGamesDB to RAWG as each fails", async () => {
+  it("falls through each source in turn as each fails", async () => {
     down(steam);
     expect(await titles("DEFAULT", "a")).toEqual(["TGDB"]);
     down(tgdb);
@@ -170,12 +170,12 @@ describe("searching across game sources", () => {
     expect(rawg.search).not.toHaveBeenCalled();
   });
 
-  it("asks RAWG when TheGamesDB has nothing, if the reader asked to look further", async () => {
+  it("asks the next source when TheGamesDB has nothing, if the reader asked to look further", async () => {
     tgdb.search.mockResolvedValue([]);
     expect(await titles("EVERYWHERE")).toEqual(["STEAM", "RAWG", "Expansion"]);
   });
 
-  it("still answers with what it has when RAWG then fails", async () => {
+  it("still answers with what it has when the last source then fails", async () => {
     tgdb.search.mockResolvedValue([]);
     down(rawg);
     expect(await titles("EVERYWHERE")).toEqual(["STEAM", "Expansion"]);
