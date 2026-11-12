@@ -314,6 +314,15 @@ RAWG was the only game source until Steam and TheGamesDB joined it, and its API
 has since stopped answering. These are one-off moves, run in this order, and
 each is safe to re-run until it has finished.
 
+Finish both before upgrading past the release that stopped searching RAWG. Its
+CSP no longer allows RAWG's image host, so any cover still there goes blank.
+To check, count what is left:
+
+```bash
+docker compose exec gamereviews-db psql -U gamereview gamereview -c \
+  "SELECT count(*) FROM \"Game\" WHERE \"coverUrl\" LIKE 'https://media.rawg.io/%'"
+```
+
 ### Matching Steam ids
 
 Games added before Steam was a source have no `steamAppId`, so a Steam result
