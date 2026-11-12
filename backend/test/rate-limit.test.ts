@@ -57,8 +57,8 @@ describe("rate limiting", () => {
     const second = await lookup();
     const third = await lookup();
 
-    // The first two get through the limiter (and then fail on the missing key,
-    // which is fine — what matters is that the limiter let them past).
+    // The first two get through the limiter, then fail as anonymous; only the
+    // limiter's answer matters here.
     expect(first.status).not.toBe(429);
     expect(second.status).not.toBe(429);
     expect(third.status).toBe(429);
@@ -67,10 +67,8 @@ describe("rate limiting", () => {
   });
 
   /**
-   * Apollo answers a query sent as a GET with the document in the query string.
-   * The game-source limiter used to read only `req.body`, which `express.json()` leaves
-   * empty on a GET — so the same operation moved to the query string skipped the
-   * game-source bucket and fell back to the general limit, 300/min instead of 30/min.
+   * Apollo answers a query sent as a GET with the document in the query string,
+   * which `express.json()` leaves out of `req.body`: the limiter must read both.
    */
   it("counts a game-source query against its bucket when it arrives as a GET", async () => {
     const { createApp } = await import("../src/app.js");

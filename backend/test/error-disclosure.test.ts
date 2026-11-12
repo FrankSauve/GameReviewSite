@@ -3,14 +3,9 @@ import type { Express } from "express";
 import { ALICE, authedQuery, publicQuery, resetDatabase } from "./helpers.js";
 
 /**
- * Apollo Server does not mask error messages by default. It strips the stack
- * trace in production and leaves the message, so an unexpected throw reached the
- * client verbatim — a missing API key surfaced with the path of the .env file
- * to put it in, and a Prisma failure would have named tables, columns and
- * constraints the same way.
- *
- * A 401 from Steam is ours, not an outage, so it reaches the client as an
- * internal failure.
+ * Apollo Server does not mask error messages, so an internal failure's own
+ * message must be withheld in production: it can name a config file, a table
+ * or a constraint. A 401 from Steam is ours, not an outage, so it is one.
  */
 const INTERNAL_FAILURE =
   '{ externalGame(source: STEAM, id: "1") { externalId } }';
