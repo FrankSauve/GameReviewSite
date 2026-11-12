@@ -16,6 +16,10 @@ export interface GameHit {
 export interface GameFields {
   title: string;
   coverUrl: string | null;
+  /** Portrait art, about 2:3, for a thumbnail beside the title. */
+  posterUrl: string | null;
+  /** Wide art without a logo, for a banner the title is laid over. */
+  bannerUrl: string | null;
   genres: string[];
   releaseYear: number | null;
   description: string | null;
@@ -29,3 +33,7 @@ export interface GameSource {
   /** Null when the source has no game under that id; any other failure throws. */
   detail(externalId: string): Promise<GameFields | null>;
 }
+
+export type GameArt = Pick<GameFields, "posterUrl" | "bannerUrl">;
+
+export const NO_ART: GameArt = { posterUrl: null, bannerUrl: null };

@@ -52,6 +52,7 @@ export const SEARCH_GAMES_EXTERNAL = gql`
         id
         slug
         reviewCount
+        posterUrl
       }
     }
   }
@@ -65,6 +66,7 @@ export const GET_EXTERNAL_GAME = gql`
       externalId
       title
       coverUrl
+      posterUrl
       bannerUrl
       releaseYear
       genres
@@ -92,6 +94,7 @@ export const SEARCH_GAMES = gql`
       title
       genres
       coverUrl
+      posterUrl
       releaseYear
       averageRating
       reviewCount
@@ -110,6 +113,7 @@ export const GET_GAME = gql`
       communitySecondaryGenres
       description
       coverUrl
+      posterUrl
       bannerUrl
       releaseYear
       averageRating
@@ -172,6 +176,7 @@ export const GET_RECENT_REVIEWS = gql`
         title
         genres
         coverUrl
+        posterUrl
         releaseYear
       }
       reactions {
@@ -220,6 +225,7 @@ export const GET_REVIEW = gql`
         title
         reviewCount
         coverUrl
+        posterUrl
         bannerUrl
         releaseYear
         genres
@@ -295,6 +301,7 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
         slug
         title
         coverUrl
+        posterUrl
         releaseYear
         genres
         communityGenres

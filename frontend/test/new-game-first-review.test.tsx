@@ -49,6 +49,8 @@ function previewMock(game: { id: string; slug: string } | null) {
           externalId: "1",
           title: "Elden Ring",
           coverUrl: null,
+          posterUrl: null,
+          bannerUrl: null,
           releaseYear: 2022,
           genres: ["RPG"],
           description: "A game.",

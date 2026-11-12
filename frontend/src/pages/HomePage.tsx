@@ -76,7 +76,10 @@ function ReviewFeedCard({ review }: { review: Review }) {
       >
         {/* Cover art */}
         <div className="w-28 sm:w-36 shrink-0 relative overflow-hidden rounded-l-card">
-          <GameCover game={game} size="md" />
+          {/* Out of flow, so the card's text sets its height, not the art's shape. */}
+          <div className="absolute inset-0">
+            <GameCover game={game} size="md" art="poster" />
+          </div>
         </div>
 
         {/* Content */}

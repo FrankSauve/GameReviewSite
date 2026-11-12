@@ -53,6 +53,8 @@ export function gameFields(fields: GameFields): GameFields | null {
   return {
     title,
     coverUrl: fields.coverUrl,
+    posterUrl: fields.posterUrl,
+    bannerUrl: fields.bannerUrl,
     genres: validateLabels(
       fields.genres.filter((name) => name.trim().length <= LABEL_MAX_LENGTH),
       "genre",

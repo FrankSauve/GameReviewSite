@@ -22,7 +22,7 @@ import { ReactionBar } from "../components/ReactionBar";
 import type { ReactionSummary } from "../types";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { gamePath, reviewPath, userPath } from "../lib/links";
-import { GameCover } from "../components/GameCover";
+import { GameArtBand } from "../components/GameArtBand";
 import { useCanonicalPath } from "../hooks/useCanonicalPath";
 import { Avatar } from "../components/Avatar";
 
@@ -44,6 +44,7 @@ interface ReviewGame {
   slug?: string | null;
   title: string;
   coverUrl?: string | null;
+  posterUrl?: string | null;
   bannerUrl?: string | null;
   releaseYear?: number | null;
   genres?: string[];
@@ -249,27 +250,23 @@ export function ReviewDetailPage() {
         {/* ── Game banner ── */}
         {game && (
           <Link to={gamePath(game)} className="group block">
-            <div className="relative h-40 rounded-card overflow-hidden">
-              <GameCover game={game} size="lg" eager banner />
-              <div className="absolute inset-0 bg-gradient-to-t from-scrim/90 via-scrim/40 to-transparent" />
-              <div className="absolute bottom-4 left-4">
-                <h2 className="text-title font-bold text-content-on-art group-hover:text-accent-subtle-text transition-colors duration-theme">
-                  {game.title}
-                </h2>
-                <div className="flex items-center gap-2 mt-0.5">
-                  {game.releaseYear && (
-                    <span className="text-micro text-content-on-art/80">
-                      {game.releaseYear}
-                    </span>
-                  )}
-                  {game.genres && game.genres.length > 0 && (
-                    <span className="text-micro text-content-on-art/65">
-                      · {game.genres.join(", ")}
-                    </span>
-                  )}
-                </div>
+            <GameArtBand game={game} className="h-40 rounded-card" pad="p-4">
+              <h2 className="text-title font-bold text-content-on-art group-hover:text-accent-subtle-text transition-colors duration-theme">
+                {game.title}
+              </h2>
+              <div className="flex items-center gap-2 mt-0.5">
+                {game.releaseYear && (
+                  <span className="text-micro text-content-on-art/80">
+                    {game.releaseYear}
+                  </span>
+                )}
+                {game.genres && game.genres.length > 0 && (
+                  <span className="text-micro text-content-on-art/65">
+                    · {game.genres.join(", ")}
+                  </span>
+                )}
               </div>
-            </div>
+            </GameArtBand>
           </Link>
         )}
 

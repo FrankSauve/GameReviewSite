@@ -27,6 +27,7 @@ export interface GameSnippet {
   title: string;
   genres?: string[];
   coverUrl?: string | null;
+  posterUrl?: string | null;
   releaseYear?: number | null;
 }
 
@@ -60,6 +61,7 @@ export interface Game {
   communitySecondaryGenres?: string[];
   description?: string | null;
   coverUrl?: string | null;
+  posterUrl?: string | null;
   bannerUrl?: string | null;
   releaseYear?: number | null;
   averageRating?: number | null;
@@ -75,6 +77,7 @@ export interface ExternalGame {
   externalId: string;
   title: string;
   coverUrl?: string | null;
+  posterUrl?: string | null;
   bannerUrl?: string | null;
   releaseYear?: number | null;
   genres?: string[];
@@ -86,6 +89,7 @@ export interface ExternalGame {
     id: string;
     slug?: string | null;
     reviewCount?: number | null;
+    posterUrl?: string | null;
   } | null;
   /** Only from the single-game preview: the reader decides if it is this game. */
   libraryMatch?: {

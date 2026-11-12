@@ -92,7 +92,7 @@ export function FavoriteGamePicker({
                   className="w-full flex items-center gap-3 px-3 py-2 hover:bg-surface-raised disabled:opacity-50 transition-colors duration-theme text-left"
                 >
                   <div className="w-8 h-11 rounded-chip overflow-hidden bg-surface-raised shrink-0">
-                    <GameCover game={game} size="sm" decorative />
+                    <GameCover game={game} size="sm" art="poster" decorative />
                   </div>
                   <span className="text-meta text-content truncate">
                     {game.title}

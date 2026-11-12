@@ -139,7 +139,8 @@ export function AddGameButton() {
               {results.map((game) => (
                 <li key={`${game.source}:${game.externalId}`}>
                   <GameResultRow
-                    game={game}
+                    // A game already in the library shows the poster it has.
+                    game={{ ...game, posterUrl: game.game?.posterUrl ?? null }}
                     hint={game.game ? "View →" : "Add →"}
                     onClick={() => handleSelect(game)}
                   >

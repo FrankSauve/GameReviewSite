@@ -52,6 +52,7 @@ const summary = (
     slug: title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
     title,
     coverUrl: null,
+    posterUrl: null,
     releaseYear: 2015,
     genres,
     communityGenres: [],

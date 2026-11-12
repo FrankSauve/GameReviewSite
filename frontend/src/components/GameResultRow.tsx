@@ -8,7 +8,7 @@ export function GameResultRow({
   onClick,
   children,
 }: {
-  game: { title: string; coverUrl?: string | null };
+  game: { title: string; coverUrl?: string | null; posterUrl?: string | null };
   hint: string;
   onClick: () => void;
   children: ReactNode;
@@ -19,7 +19,7 @@ export function GameResultRow({
       onClick={onClick}
     >
       <div className="w-10 h-14 rounded-control overflow-hidden bg-surface-raised shrink-0">
-        <GameCover game={game} size="sm" decorative />
+        <GameCover game={game} size="sm" art="poster" decorative />
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-meta font-semibold text-content truncate">

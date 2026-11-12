@@ -1,0 +1,112 @@
+{
+  "code": 200,
+  "status": "Success",
+  "data": {
+    "count": 13,
+    "base_url": {
+      "original": "https://cdn.thegamesdb.net/images/original/",
+      "small": "https://cdn.thegamesdb.net/images/small/",
+      "thumb": "https://cdn.thegamesdb.net/images/thumb/",
+      "cropped_center_thumb": "https://cdn.thegamesdb.net/images/cropped_center_thumb/",
+      "medium": "https://cdn.thegamesdb.net/images/medium/",
+      "large": "https://cdn.thegamesdb.net/images/large/"
+    },
+    "images": {
+      "70": [
+        {
+          "id": 106,
+          "type": "fanart",
+          "side": null,
+          "filename": "fanart/70-1.jpg",
+          "resolution": "1920x1080"
+        },
+        {
+          "id": 456,
+          "type": "banner",
+          "side": null,
+          "filename": "graphical/70-g.jpg",
+          "resolution": null
+        },
+        {
+          "id": 457,
+          "type": "fanart",
+          "side": null,
+          "filename": "fanart/70-2.jpg",
+          "resolution": "1920x1080"
+        },
+        {
+          "id": 2156,
+          "type": "fanart",
+          "side": null,
+          "filename": "fanart/70-3.jpg",
+          "resolution": "1920x1080"
+        },
+        {
+          "id": 17081,
+          "type": "fanart",
+          "side": null,
+          "filename": "fanart/70-4.jpg",
+          "resolution": "1920x1080"
+        },
+        {
+          "id": 17082,
+          "type": "fanart",
+          "side": null,
+          "filename": "fanart/70-5.jpg",
+          "resolution": "1920x1080"
+        },
+        {
+          "id": 26236,
+          "type": "fanart",
+          "side": null,
+          "filename": "fanart/70-6.jpg",
+          "resolution": "1920x1080"
+        },
+        {
+          "id": 26237,
+          "type": "fanart",
+          "side": null,
+          "filename": "fanart/70-7.jpg",
+          "resolution": "1920x1080"
+        }
+      ],
+      "7752": [
+        {
+          "id": 20282,
+          "type": "fanart",
+          "side": null,
+          "filename": "fanart/7752-1.jpg",
+          "resolution": "1920x1080"
+        },
+        {
+          "id": 20419,
+          "type": "fanart",
+          "side": null,
+          "filename": "fanart/7752-2.jpg",
+          "resolution": "1920x1080"
+        },
+        {
+          "id": 20821,
+          "type": "fanart",
+          "side": null,
+          "filename": "fanart/7752-3.jpg",
+          "resolution": "1920x1080"
+        },
+        {
+          "id": 26394,
+          "type": "fanart",
+          "side": null,
+          "filename": "fanart/7752-4.jpg",
+          "resolution": "1920x1080"
+        },
+        {
+          "id": 42710,
+          "type": "fanart",
+          "side": null,
+          "filename": "fanart/7752-5.jpg",
+          "resolution": "1920x1080"
+        }
+      ]
+    }
+  }
+}

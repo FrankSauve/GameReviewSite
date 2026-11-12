@@ -11,14 +11,16 @@ const EMOJI: Record<CoverSize, string> = {
   lg: "text-4xl",
 };
 
-/** Banner art that failed once, so another mount goes straight to the cover. */
-const missingBanners = new Set<string>();
-
 interface GameCoverProps {
   // Required but nullable: every caller has a game to pass, and several
   // only know they have one after a query resolves.
   game:
-    | { title: string; coverUrl?: string | null; bannerUrl?: string | null }
+    | {
+        title: string;
+        coverUrl?: string | null;
+        posterUrl?: string | null;
+        bannerUrl?: string | null;
+      }
     | null
     | undefined;
   size?: CoverSize;
@@ -26,8 +28,14 @@ interface GameCoverProps {
   decorative?: boolean;
   /** Above the fold, where deferring the fetch would only delay the hero. */
   eager?: boolean;
-  /** A wide hero, which prefers the game's banner art to its cover. */
-  banner?: boolean;
+  /**
+   * Which of the game's art fits the slot: a portrait thumbnail wants the poster,
+   * a wide hero the banner. A poster falls back to the cover; a banner does not,
+   * since a caller with no banner art lays the page out differently.
+   */
+  art?: "cover" | "poster" | "banner";
+  /** Told when an image fails, for a caller that lays out around the art. */
+  onFail?: (url: string) => void;
 }
 
 /**
@@ -42,15 +50,18 @@ export function GameCover({
   size = "md",
   decorative = false,
   eager = false,
-  banner = false,
+  art = "cover",
+  onFail,
 }: GameCoverProps) {
-  const [failed, setFailed] = useState<string | null>(null);
+  const [failed, setFailed] = useState<string[]>([]);
   const title = game?.title ?? "";
-  const cover = game?.coverUrl ?? null;
-  const wanted = banner ? (game?.bannerUrl ?? null) : null;
-  const bannerArt =
-    wanted && wanted !== failed && !missingBanners.has(wanted) ? wanted : null;
-  const src = bannerArt ?? (cover !== failed ? cover : null);
+  const candidates =
+    art === "banner"
+      ? [game?.bannerUrl]
+      : art === "poster"
+        ? [game?.posterUrl, game?.coverUrl]
+        : [game?.coverUrl];
+  const src = candidates.find((url) => url && !failed.includes(url)) ?? null;
 
   // Keyed by url, so a reused component measures new art afresh.
   const [wholeFor, setWholeFor] = useState<string | null>(null);
@@ -60,13 +71,13 @@ export function GameCover({
   const measure = useCallback(() => {
     const img = imgRef.current;
     // Banner art is made to be cropped to any banner.
-    if (!img || !src || src === bannerArt || loaded.current !== src) return;
+    if (!img || !src || art === "banner" || loaded.current !== src) return;
     const fits = cropsWell(
       { width: img.naturalWidth, height: img.naturalHeight },
       { width: img.clientWidth, height: img.clientHeight },
     );
     setWholeFor(fits ? null : src);
-  }, [src, bannerArt]);
+  }, [src, art]);
 
   useEffect(() => {
     const img = imgRef.current;
@@ -118,8 +129,8 @@ export function GameCover({
           measure();
         }}
         onError={() => {
-          if (src === bannerArt) missingBanners.add(src);
-          setFailed(src);
+          setFailed((urls) => [...urls, src]);
+          onFail?.(src);
         }}
       />
     </div>

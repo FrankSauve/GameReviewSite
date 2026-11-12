@@ -75,6 +75,8 @@ model Game {
   genres      String[] @default([])
   description String?
   coverUrl    String?
+  posterUrl   String?
+  bannerUrl   String?
   releaseYear Int?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
