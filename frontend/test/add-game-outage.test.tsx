@@ -10,7 +10,7 @@ import { AddGameButton } from "../src/components/AddGameButton";
 /** See profile-views.test.tsx: vitest runs without globals, so this is manual. */
 afterEach(cleanup);
 
-const OUTAGE = "RAWG is unavailable right now. Try again shortly.";
+const OUTAGE = "Game search is unavailable right now. Try again shortly.";
 
 function searchFor(
   mock: { result: object } | { error: Error },
@@ -40,7 +40,7 @@ function searchFor(
 }
 
 describe("the Add game search", () => {
-  it("says RAWG is down rather than that the game does not exist", async () => {
+  it("says search is down rather than that the game does not exist", async () => {
     searchFor({ result: { errors: [new GraphQLError(OUTAGE)] } });
     expect(await screen.findByText(OUTAGE)).toBeTruthy();
     expect(screen.queryByText(/no games found/i)).toBeNull();

@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { Link, MemoryRouter, Route, Routes } from "react-router-dom";
 import { MockedProvider } from "@apollo/client/testing/react";
+import type { MockedResponse } from "@apollo/client/testing";
 import { GET_EXTERNAL_GAME } from "../src/graphql/queries";
 import { GET_ME } from "../src/graphql/mutations";
 import { AuthProvider } from "../src/contexts/AuthContext";
@@ -35,17 +36,20 @@ const signedOut = {
   result: { data: { me: null } },
 };
 
-function previewMock(game: { id: string; slug: string } | null) {
+function previewMock(
+  game: { id: string; slug: string } | null,
+  source = "TGDB",
+) {
   return {
     request: {
       query: GET_EXTERNAL_GAME,
-      variables: { source: "RAWG", id: "1" },
+      variables: { source, id: "1" },
     },
     result: {
       data: {
         externalGame: {
           __typename: "ExternalGame",
-          source: "RAWG",
+          source,
           externalId: "1",
           title: "Elden Ring",
           coverUrl: null,
@@ -66,7 +70,7 @@ function renderAt(game: { id: string; slug: string } | null) {
   render(
     <MockedProvider mocks={[meMock, previewMock(game)]}>
       <AuthProvider>
-        <MemoryRouter initialEntries={["/games/new/rawg/1"]}>
+        <MemoryRouter initialEntries={["/games/new/tgdb/1"]}>
           <Routes>
             <Route path="/games/new/:source/:id" element={<NewGamePage />} />
             <Route path="/games/:id" element={<p>game page</p>} />
@@ -78,7 +82,7 @@ function renderAt(game: { id: string; slug: string } | null) {
 }
 
 describe("a game's first review", () => {
-  it("shows the RAWG title above the review form", async () => {
+  it("shows the source's title above the review form", async () => {
     renderAt(null);
     expect(
       await screen.findByRole("heading", { name: "Elden Ring" }),
@@ -116,7 +120,7 @@ describe("a title that looks like a game already in the library", () => {
     render(
       <MockedProvider mocks={[meMock, mock]}>
         <AuthProvider>
-          <MemoryRouter initialEntries={["/games/new/rawg/1"]}>
+          <MemoryRouter initialEntries={["/games/new/tgdb/1"]}>
             <Routes>
               <Route path="/games/new/:source/:id" element={<NewGamePage />} />
               <Route path="/games/:id" element={<p>game page</p>} />
@@ -152,7 +156,7 @@ describe("moving from one new game to the next", () => {
     return {
       request: {
         query: GET_EXTERNAL_GAME,
-        variables: { source: "RAWG", id },
+        variables: { source: "TGDB", id },
       },
       result: {
         data: {
@@ -176,8 +180,8 @@ describe("moving from one new game to the next", () => {
     render(
       <MockedProvider mocks={[meMock, matched("1"), matched("2")]}>
         <AuthProvider>
-          <MemoryRouter initialEntries={["/games/new/rawg/1"]}>
-            <Link to="/games/new/rawg/2">next game</Link>
+          <MemoryRouter initialEntries={["/games/new/tgdb/1"]}>
+            <Link to="/games/new/tgdb/2">next game</Link>
             <Routes>
               <Route path="/games/new/:source/:id" element={<NewGamePage />} />
             </Routes>
@@ -238,7 +242,7 @@ describe("a new game link opened after the session ended", () => {
     const refused = {
       request: {
         query: GET_EXTERNAL_GAME,
-        variables: { source: "RAWG", id: "1" },
+        variables: { source: "TGDB", id: "1" },
       },
       result: {
         errors: [
@@ -252,7 +256,7 @@ describe("a new game link opened after the session ended", () => {
     render(
       <MockedProvider mocks={[meMock, refused]}>
         <AuthProvider>
-          <MemoryRouter initialEntries={["/games/new/rawg/1"]}>
+          <MemoryRouter initialEntries={["/games/new/tgdb/1"]}>
             <Routes>
               <Route path="/games/new/:source/:id" element={<NewGamePage />} />
             </Routes>
@@ -266,21 +270,37 @@ describe("a new game link opened after the session ended", () => {
 });
 
 describe("a link from before game sources", () => {
-  it("lands on the same game, as RAWG's", async () => {
+  function openOldLink(mocks: MockedResponse[]) {
     render(
-      <MockedProvider mocks={[meMock, previewMock(null)]}>
+      <MockedProvider mocks={[meMock, ...mocks]}>
         <AuthProvider>
           <MemoryRouter initialEntries={["/games/new/1"]}>
             <Routes>
               <Route path="/games/new/:id" element={<OldNewGamePath />} />
               <Route path="/games/new/:source/:id" element={<NewGamePage />} />
+              <Route path="/games/:id" element={<p>game page</p>} />
             </Routes>
           </MemoryRouter>
         </AuthProvider>
       </MockedProvider>,
     );
-    expect(
-      await screen.findByRole("heading", { name: "Elden Ring" }),
-    ).toBeTruthy();
+  }
+
+  it("lands on the game stored under that RAWG id", async () => {
+    openOldLink([previewMock({ id: "g1", slug: "elden-ring" }, "RAWG")]);
+    expect(await screen.findByText("game page")).toBeTruthy();
+  });
+
+  it("says the game is not found when the library never stored it", async () => {
+    openOldLink([
+      {
+        request: {
+          query: GET_EXTERNAL_GAME,
+          variables: { source: "RAWG", id: "1" },
+        },
+        result: { data: { externalGame: null } },
+      },
+    ]);
+    expect(await screen.findByText("Game not found.")).toBeTruthy();
   });
 });
