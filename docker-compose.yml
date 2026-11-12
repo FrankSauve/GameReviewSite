@@ -31,7 +31,6 @@ services:
       # Apollo sandbox and localhost CORS keep working.
       NODE_ENV: ${NODE_ENV:-development}
       DATABASE_URL: postgresql://gamereview:gamereview@db:5432/gamereview
-      RAWG_API_KEY: ${RAWG_API_KEY}
       TGDB_API_KEY: ${TGDB_API_KEY:-}
       # Optional locally. Set all four to exercise the real OIDC flow against
       # your authentik instance; leave them empty and AUTH_DEV_IDENTITY covers

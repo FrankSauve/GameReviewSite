@@ -283,14 +283,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Validate dev compose file
-        env:
-          RAWG_API_KEY: dummy
         run: docker compose -f docker-compose.yml config -q
 
       - name: Validate the deployment snippet
         env:
           GAMEREVIEWS_DB_PASSWORD: dummy
-          GAMEREVIEWS_RAWG_API_KEY: dummy
           GAMEREVIEWS_OIDC_ISSUER: dummy
           GAMEREVIEWS_OIDC_CLIENT_ID: dummy
           GAMEREVIEWS_OIDC_CLIENT_SECRET: dummy
@@ -300,7 +297,6 @@ jobs:
       - name: Assert the deployment publishes no ports and builds nothing
         env:
           GAMEREVIEWS_DB_PASSWORD: dummy
-          GAMEREVIEWS_RAWG_API_KEY: dummy
           GAMEREVIEWS_OIDC_ISSUER: dummy
           GAMEREVIEWS_OIDC_CLIENT_ID: dummy
           GAMEREVIEWS_OIDC_CLIENT_SECRET: dummy

@@ -1,7 +1,8 @@
 const linkClass =
   "underline underline-offset-2 hover:text-content-muted transition-colors duration-theme";
 
-/** On every page because RAWG's terms ask for a link wherever its data shows. */
+/** On every page: RAWG's terms ask for a link wherever its data shows, and
+ *  older games' descriptions are still RAWG's. */
 export function SiteFooter() {
   return (
     <footer className="max-w-6xl mx-auto px-4 pb-8 text-micro text-content-subtle">
