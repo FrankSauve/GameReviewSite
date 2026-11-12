@@ -25,7 +25,7 @@ describe("searching across game sources", () => {
   let clock: number;
   let steam: ReturnType<typeof source>;
   let tgdb: ReturnType<typeof source>;
-  let rawg: ReturnType<typeof source>;
+  let third: ReturnType<typeof source>;
   let dlc: ReturnType<typeof source>;
   let chain: ReturnType<typeof createGameSearch>;
 
@@ -34,14 +34,15 @@ describe("searching across game sources", () => {
     clock = 1_000_000;
     steam = source("STEAM");
     tgdb = source("TGDB");
-    rawg = source("RAWG");
+    // Any third id: the chain does not know which sources production plans.
+    third = source("RAWG", "THIRD");
     dlc = { ...source("STEAM", "Expansion"), name: "STEAM_DLC" as "STEAM" };
     chain = createGameSearch(
       {
-        DEFAULT: { fallback: [steam, tgdb, rawg] },
+        DEFAULT: { fallback: [steam, tgdb, third] },
         EVERYWHERE: {
           lead: [steam],
-          fallback: [tgdb, rawg],
+          fallback: [tgdb, third],
           emptyFallsThrough: true,
           extra: [dlc],
         },
@@ -69,7 +70,7 @@ describe("searching across game sources", () => {
     down(steam);
     expect(await titles("DEFAULT", "a")).toEqual(["TGDB"]);
     down(tgdb);
-    expect(await titles("DEFAULT", "b")).toEqual(["RAWG"]);
+    expect(await titles("DEFAULT", "b")).toEqual(["THIRD"]);
   });
 
   it("names the source of each hit", async () => {
@@ -80,7 +81,7 @@ describe("searching across game sources", () => {
   it("reports an outage when nothing answers", async () => {
     down(steam);
     down(tgdb);
-    down(rawg);
+    down(third);
     const err = await chain.search("a", "DEFAULT").catch((e: unknown) => e);
     expect(err).toBeInstanceOf(GraphQLError);
     expect((err as GraphQLError).extensions["code"]).toBe(
@@ -104,10 +105,10 @@ describe("searching across game sources", () => {
   it("skips a source that says it is off", async () => {
     const off = { ...tgdb, enabled: () => false };
     const search = createGameSearch({
-      DEFAULT: { fallback: [off, rawg] },
+      DEFAULT: { fallback: [off, third] },
       EVERYWHERE: { fallback: [] },
     });
-    expect((await search.search("a", "DEFAULT"))[0]?.title).toBe("RAWG");
+    expect((await search.search("a", "DEFAULT"))[0]?.title).toBe("THIRD");
     expect(tgdb.search).not.toHaveBeenCalled();
   });
 
@@ -167,17 +168,17 @@ describe("searching across game sources", () => {
 
   it("keeps Steam's results when searching everywhere, and adds the rest", async () => {
     expect(await titles("EVERYWHERE")).toEqual(["STEAM", "TGDB", "Expansion"]);
-    expect(rawg.search).not.toHaveBeenCalled();
+    expect(third.search).not.toHaveBeenCalled();
   });
 
   it("asks the next source when TheGamesDB has nothing, if the reader asked to look further", async () => {
     tgdb.search.mockResolvedValue([]);
-    expect(await titles("EVERYWHERE")).toEqual(["STEAM", "RAWG", "Expansion"]);
+    expect(await titles("EVERYWHERE")).toEqual(["STEAM", "THIRD", "Expansion"]);
   });
 
   it("still answers with what it has when the last source then fails", async () => {
     tgdb.search.mockResolvedValue([]);
-    down(rawg);
+    down(third);
     expect(await titles("EVERYWHERE")).toEqual(["STEAM", "Expansion"]);
   });
 
@@ -187,12 +188,12 @@ describe("searching across game sources", () => {
     clock += 60_001;
     dlc.search.mockResolvedValue([]);
     down(tgdb);
-    expect(await titles("EVERYWHERE", "b")).toEqual(["STEAM", "RAWG"]);
+    expect(await titles("EVERYWHERE", "b")).toEqual(["STEAM", "THIRD"]);
   });
 
   it("calls it an outage when the fallback fails and the rest found nothing", async () => {
     down(tgdb);
-    down(rawg);
+    down(third);
     steam.search.mockResolvedValue([]);
     dlc.search.mockResolvedValue([]);
     await expect(chain.search("a", "EVERYWHERE")).rejects.toThrow(

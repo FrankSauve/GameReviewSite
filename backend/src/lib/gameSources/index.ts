@@ -1,6 +1,5 @@
 import { badInput } from "../badInput.js";
 import { createGameSearch, type Lookup } from "../gameSearch.js";
-import { rawgSource } from "./rawg.js";
 import { searchSteamDlc, steamSource } from "./steam.js";
 import { tgdbSource } from "./tgdb.js";
 import type { GameSource, GameSourceId } from "./types.js";
@@ -25,10 +24,12 @@ export const gameIdentity = (
   externalId: string,
 ): GameIdentity => ({ [SOURCE_COLUMN[source]]: externalId }) as GameIdentity;
 
-const SOURCES: Record<GameSourceId, GameSource> = {
+/** RAWG's API is gone: its ids only name games already stored, found by column. */
+type LiveSourceId = Exclude<GameSourceId, "RAWG">;
+
+const SOURCES: Record<LiveSourceId, GameSource> = {
   STEAM: steamSource,
   TGDB: tgdbSource,
-  RAWG: rawgSource,
 };
 
 const lookup = (source: GameSource): Lookup => ({
@@ -53,10 +54,10 @@ export const gameSearch = createGameSearch({
   },
 });
 
-export const gameDetail = (source: GameSourceId, externalId: string) =>
-  gameSearch.detail(SOURCES[source], externalId);
+export const gameDetail = async (source: GameSourceId, externalId: string) =>
+  source === "RAWG" ? null : gameSearch.detail(SOURCES[source], externalId);
 
-export const sourceEnabled = (source: GameSourceId) =>
+export const sourceEnabled = (source: LiveSourceId) =>
   SOURCES[source].enabled?.() ?? true;
 
 /** Every source numbers its games. No leading zero: "07" would be a second row for 7. */
