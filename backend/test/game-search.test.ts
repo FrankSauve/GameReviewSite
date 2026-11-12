@@ -164,7 +164,6 @@ describe("searchGamesExternal", () => {
 
   beforeEach(async () => {
     await resetDatabase();
-    process.env["RAWG_API_KEY"] = "test-key";
     original = globalThis.fetch;
     gameSearch.clear();
     globalThis.fetch = vi.fn(async () => {
@@ -183,7 +182,6 @@ describe("searchGamesExternal", () => {
   });
   afterEach(() => {
     globalThis.fetch = original;
-    delete process.env["RAWG_API_KEY"];
   });
 
   it("is for signed-in readers, and asks no source otherwise", async () => {

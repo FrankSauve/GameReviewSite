@@ -25,17 +25,17 @@ import {
  * A game is written by the first review of it and never on its own, so the
  * library cannot hold a game nobody has reviewed.
  *
- * `fetch` is stubbed: these tests are about what gets written and whether RAWG
- * is asked at all, not about RAWG.
+ * `fetch` is stubbed: these tests are about what gets written and whether a
+ * source is asked at all, not about Steam.
  */
 
 const ELDEN_RING = {
-  id: 1,
+  type: "game",
   name: "Elden Ring",
-  released: "2022-02-25",
-  background_image: "https://media.rawg.io/elden-ring.jpg",
-  genres: [{ name: "RPG" }, { name: "Action" }],
-  description_raw: "A game.",
+  release_date: { date: "25 Feb, 2022" },
+  header_image: "https://shared.akamai.steamstatic.com/elden-ring.jpg",
+  genres: [{ description: "RPG" }, { description: "Action" }],
+  short_description: "A game.",
 };
 
 interface FetchStub {
@@ -43,13 +43,22 @@ interface FetchStub {
   restore: () => void;
 }
 
-function stubRawg(status = 200, body: object = ELDEN_RING): FetchStub {
+/** Answers Steam's app details with `app`, or `success: false` when null. */
+function stubSteam(status = 200, app: object | null = ELDEN_RING): FetchStub {
   const calls: string[] = [];
   const original = globalThis.fetch;
   globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
-    calls.push(String(input));
+    const url = new URL(String(input));
+    calls.push(url.toString());
+    const body = url.pathname.includes("IStoreBrowseService")
+      ? { response: { store_items: [] } }
+      : {
+          [url.searchParams.get("appids") ?? ""]: app
+            ? { success: true, data: app }
+            : { success: false },
+        };
     return new Response(JSON.stringify(body), {
-      status,
+      status: url.pathname.includes("appdetails") ? status : 200,
       headers: { "content-type": "application/json" },
     });
   }) as unknown as typeof globalThis.fetch;
@@ -66,10 +75,10 @@ const CREATE = `mutation Create($input: CreateReviewInput!) {
 }`;
 
 const PREVIEW = `query Preview($id: ID!) {
-  externalGame(source: RAWG, id: $id) { externalId title coverUrl genres releaseYear description game { id } }
+  externalGame(source: STEAM, id: $id) { externalId title coverUrl genres releaseYear description game { id } }
 }`;
 
-const review = {
+const REVIEW = {
   rating: 9,
   content: "Played it.",
   yearPlayed: 2024,
@@ -83,7 +92,7 @@ type Created = {
 describe("the first review of a game", () => {
   let app: Express;
   let stop: () => Promise<void>;
-  let rawg: FetchStub;
+  let steam: FetchStub;
 
   beforeAll(async () => {
     ({ app, stop } = await startApp());
@@ -95,33 +104,31 @@ describe("the first review of a game", () => {
   beforeEach(async () => {
     await resetDatabase();
     gameSearch.clear();
-    process.env["RAWG_API_KEY"] = "test-key";
-    rawg = stubRawg();
+    steam = stubSteam();
   });
   afterEach(() => {
-    rawg.restore();
-    delete process.env["RAWG_API_KEY"];
+    steam.restore();
   });
 
   const write = (identity: typeof ALICE, input: Record<string, unknown>) =>
     authedQuery<Created>(app, CREATE, identity, {}, { input });
 
-  it("creates the game from RAWG along with the review", async () => {
+  it("creates the game from Steam along with the review", async () => {
     const res = await write(ALICE, {
-      ...review,
-      source: "RAWG",
+      ...REVIEW,
+      source: "STEAM",
       externalId: "1",
     });
     expect(res.errors).toBeUndefined();
 
     const game = await prisma.game.findUnique({
-      where: { rawgId: "1" },
+      where: { steamAppId: "1" },
       include: { reviews: true, createdBy: true },
     });
     expect(game).toMatchObject({
       title: "Elden Ring",
       slug: "elden-ring",
-      coverUrl: "https://media.rawg.io/elden-ring.jpg",
+      coverUrl: "https://shared.akamai.steamstatic.com/elden-ring.jpg",
       genres: ["RPG", "Action"],
       releaseYear: 2022,
       description: "A game.",
@@ -130,39 +137,39 @@ describe("the first review of a game", () => {
     expect(game?.reviews.map((r) => r.id)).toEqual([res.data?.createReview.id]);
   });
 
-  it("reviews the game already there, without asking RAWG", async () => {
-    await write(ALICE, { ...review, source: "RAWG", externalId: "1" });
-    const before = rawg.calls.length;
+  it("reviews the game already there, without asking Steam", async () => {
+    await write(ALICE, { ...REVIEW, source: "STEAM", externalId: "1" });
+    const before = steam.calls.length;
 
     const res = await write(BOB, {
-      ...review,
-      source: "RAWG",
+      ...REVIEW,
+      source: "STEAM",
       externalId: "1",
     });
     expect(res.errors).toBeUndefined();
-    expect(rawg.calls).toHaveLength(before);
+    expect(steam.calls).toHaveLength(before);
     expect(await prisma.game.count()).toBe(1);
     expect(await prisma.review.count()).toBe(2);
   });
 
-  it("writes nothing when RAWG fails", async () => {
-    rawg.restore();
-    rawg = stubRawg(500);
+  it("writes nothing when Steam fails", async () => {
+    steam.restore();
+    steam = stubSteam(500);
     const res = await write(ALICE, {
-      ...review,
-      source: "RAWG",
+      ...REVIEW,
+      source: "STEAM",
       externalId: "1",
     });
     expect(res.errors).toBeDefined();
     expect(await prisma.game.count()).toBe(0);
   });
 
-  it("reports a RAWG id RAWG does not know as a missing game", async () => {
-    rawg.restore();
-    rawg = stubRawg(404, { detail: "Not found." });
+  it("reports an app Steam does not know as a missing game", async () => {
+    steam.restore();
+    steam = stubSteam(200, null);
     const res = await write(ALICE, {
-      ...review,
-      source: "RAWG",
+      ...REVIEW,
+      source: "STEAM",
       externalId: "999999999",
     });
     expect(errorCodes(res)).toContain("NOT_FOUND");
@@ -172,14 +179,14 @@ describe("the first review of a game", () => {
 
   it("writes no game when the review itself is refused", async () => {
     const res = await write(ALICE, {
-      ...review,
+      ...REVIEW,
       rating: 11,
-      source: "RAWG",
+      source: "STEAM",
       externalId: "1",
     });
     expect(errorCodes(res)).toContain("BAD_USER_INPUT");
     expect(await prisma.game.count()).toBe(0);
-    expect(rawg.calls).toHaveLength(0);
+    expect(steam.calls).toHaveLength(0);
   });
 
   it("asks for exactly one of gameId and a source id", async () => {
@@ -188,13 +195,13 @@ describe("the first review of a game", () => {
     });
     for (const target of [
       {},
-      { source: "RAWG" },
+      { source: "STEAM" },
       { externalId: "1" },
-      { gameId: game.id, source: "RAWG", externalId: "1" },
-      { gameId: game.id, source: "RAWG" },
+      { gameId: game.id, source: "STEAM", externalId: "1" },
+      { gameId: game.id, source: "STEAM" },
       { gameId: game.id, externalId: "1" },
     ]) {
-      const res = await write(ALICE, { ...review, ...target });
+      const res = await write(ALICE, { ...REVIEW, ...target });
       expect(errorCodes(res)).toContain("BAD_USER_INPUT");
     }
     expect(await prisma.review.count()).toBe(0);
@@ -203,7 +210,7 @@ describe("the first review of a game", () => {
   it("previews a game for signed-in readers only", async () => {
     const res = await publicQuery(app, PREVIEW, {}, { id: "1" });
     expect(errorCodes(res)).toEqual(["UNAUTHENTICATED"]);
-    expect(rawg.calls).toHaveLength(0);
+    expect(steam.calls).toHaveLength(0);
   });
 
   it("offers a same-titled library game for the reader to confirm", async () => {
@@ -219,7 +226,7 @@ describe("the first review of a game", () => {
       externalGame: { game: null; libraryMatch: { slug: string } };
     }>(
       app,
-      `{ externalGame(source: RAWG, id: "1") { game { id } libraryMatch { slug } } }`,
+      `{ externalGame(source: STEAM, id: "1") { game { id } libraryMatch { slug } } }`,
       ALICE,
     );
     expect(res.data?.externalGame.game).toBeNull();
@@ -228,36 +235,36 @@ describe("the first review of a game", () => {
 
   it("refuses a leading zero, which would be a second row for one id", async () => {
     const res = await write(ALICE, {
-      ...review,
-      source: "RAWG",
+      ...REVIEW,
+      source: "STEAM",
       externalId: "01",
     });
     expect(res.errors?.[0]?.message).toMatch(
       /externalId must be a positive integer/,
     );
-    expect(rawg.calls).toHaveLength(0);
+    expect(steam.calls).toHaveLength(0);
   });
 
-  it("refuses a source id that is not an integer before calling RAWG", async () => {
+  it("refuses a source id that is not an integer before calling a source", async () => {
     const res = await write(ALICE, {
-      ...review,
-      source: "RAWG",
+      ...REVIEW,
+      source: "STEAM",
       externalId: "../../etc/passwd",
     });
     expect(res.errors?.[0]?.message).toMatch(
       /externalId must be a positive integer/,
     );
-    expect(rawg.calls).toHaveLength(0);
+    expect(steam.calls).toHaveLength(0);
   });
 
   it("drops a cover that is not https", async () => {
-    rawg.restore();
-    rawg = stubRawg(200, {
+    steam.restore();
+    steam = stubSteam(200, {
       ...ELDEN_RING,
-      background_image: "http://media.rawg.io/elden-ring.jpg",
+      header_image: "http://shared.akamai.steamstatic.com/elden-ring.jpg",
     });
-    await write(ALICE, { ...review, source: "RAWG", externalId: "1" });
-    const game = await prisma.game.findUnique({ where: { rawgId: "1" } });
+    await write(ALICE, { ...REVIEW, source: "STEAM", externalId: "1" });
+    const game = await prisma.game.findUnique({ where: { steamAppId: "1" } });
     expect(game?.coverUrl).toBeNull();
   });
 });
@@ -265,7 +272,7 @@ describe("the first review of a game", () => {
 describe("previewing a game before its first review", () => {
   let app: Express;
   let stop: () => Promise<void>;
-  let rawg: FetchStub;
+  let steam: FetchStub;
 
   beforeAll(async () => {
     ({ app, stop } = await startApp());
@@ -277,15 +284,13 @@ describe("previewing a game before its first review", () => {
   beforeEach(async () => {
     await resetDatabase();
     gameSearch.clear();
-    process.env["RAWG_API_KEY"] = "test-key";
-    rawg = stubRawg();
+    steam = stubSteam();
   });
   afterEach(() => {
-    rawg.restore();
-    delete process.env["RAWG_API_KEY"];
+    steam.restore();
   });
 
-  it("shows what RAWG has, and writes nothing", async () => {
+  it("shows what Steam has, and writes nothing", async () => {
     const res = await authedQuery<{
       externalGame: { title: string; description: string; game: null };
     }>(app, PREVIEW, ALICE, {}, { id: "1" });
@@ -298,9 +303,9 @@ describe("previewing a game before its first review", () => {
     expect(await prisma.game.count()).toBe(0);
   });
 
-  it("is null for a RAWG id RAWG does not know", async () => {
-    rawg.restore();
-    rawg = stubRawg(404, { detail: "Not found." });
+  it("is null for an app Steam does not know", async () => {
+    steam.restore();
+    steam = stubSteam(200, null);
     const res = await authedQuery<{ externalGame: null }>(
       app,
       PREVIEW,
@@ -314,7 +319,7 @@ describe("previewing a game before its first review", () => {
 
   it("points at the game when it is already in the library", async () => {
     const game = await prisma.game.create({
-      data: { rawgId: "1", title: "Elden Ring", slug: "elden-ring" },
+      data: { steamAppId: "1", title: "Elden Ring", slug: "elden-ring" },
     });
     const res = await authedQuery<{ externalGame: { game: { id: string } } }>(
       app,
@@ -324,6 +329,65 @@ describe("previewing a game before its first review", () => {
       { id: "1" },
     );
     expect(res.data?.externalGame.game.id).toBe(game.id);
-    expect(rawg.calls).toHaveLength(0);
+    expect(steam.calls).toHaveLength(0);
+  });
+});
+
+describe("a link from when RAWG was a source", () => {
+  let app: Express;
+  let stop: () => Promise<void>;
+  let steam: FetchStub;
+
+  beforeAll(async () => {
+    ({ app, stop } = await startApp());
+  });
+  afterAll(async () => {
+    await stop();
+  });
+
+  beforeEach(async () => {
+    await resetDatabase();
+    gameSearch.clear();
+    steam = stubSteam();
+  });
+  afterEach(() => {
+    steam.restore();
+  });
+
+  const RAWG_PREVIEW = `{ externalGame(source: RAWG, id: "1") { game { id } } }`;
+
+  it("still reaches the game stored under that id, asking nobody", async () => {
+    const game = await prisma.game.create({
+      data: { rawgId: "1", title: "Elden Ring", slug: "elden-ring" },
+    });
+    const res = await authedQuery<{ externalGame: { game: { id: string } } }>(
+      app,
+      RAWG_PREVIEW,
+      ALICE,
+    );
+    expect(res.data?.externalGame.game.id).toBe(game.id);
+
+    const review = await authedQuery<Created>(
+      app,
+      CREATE,
+      BOB,
+      {},
+      {
+        input: { ...REVIEW, source: "RAWG", externalId: "1" },
+      },
+    );
+    expect(review.data?.createReview.game.id).toBe(game.id);
+    expect(steam.calls).toHaveLength(0);
+  });
+
+  it("finds nothing for an id the library never stored", async () => {
+    const res = await authedQuery<{ externalGame: null }>(
+      app,
+      RAWG_PREVIEW,
+      ALICE,
+    );
+    expect(res.errors).toBeUndefined();
+    expect(res.data?.externalGame).toBeNull();
+    expect(steam.calls).toHaveLength(0);
   });
 });

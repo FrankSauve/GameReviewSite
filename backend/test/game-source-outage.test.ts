@@ -19,10 +19,12 @@ import {
   startApp,
 } from "./helpers.js";
 
-const DETAIL = '{ externalGame(source: RAWG, id: "1") { externalId } }';
-const OUTAGE_MESSAGE = "RAWG is unavailable right now. Try again shortly.";
+/** TheGamesDB, because its key rides in the URL the outage log must not show. */
+const DETAIL = '{ externalGame(source: TGDB, id: "1") { externalId } }';
+const OUTAGE_MESSAGE =
+  "TheGamesDB is unavailable right now. Try again shortly.";
 
-describe("when RAWG is down", () => {
+describe("when a game source is down", () => {
   let app: Express;
   let stop: () => Promise<void>;
   const original = globalThis.fetch;
@@ -37,13 +39,13 @@ describe("when RAWG is down", () => {
   beforeEach(async () => {
     await resetDatabase();
     gameSearch.clear();
-    process.env["RAWG_API_KEY"] = "secret-key";
+    process.env["TGDB_API_KEY"] = "secret-key";
     globalThis.fetch = fetchStub;
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
   });
   afterEach(() => {
     globalThis.fetch = original;
-    delete process.env["RAWG_API_KEY"];
+    delete process.env["TGDB_API_KEY"];
     fetchStub.mockReset();
     vi.restoreAllMocks();
   });
@@ -129,13 +131,13 @@ describe("when every game source is down", () => {
   });
   afterEach(() => {
     globalThis.fetch = original;
-    delete process.env["RAWG_API_KEY"];
+    delete process.env["TGDB_API_KEY"];
     vi.restoreAllMocks();
     gameSearch.clear();
   });
 
   it("says game search is down once every source has failed", async () => {
-    process.env["RAWG_API_KEY"] = "secret-key";
+    process.env["TGDB_API_KEY"] = "secret-key";
     vi.spyOn(console, "warn").mockImplementation(() => undefined);
     const hosts: string[] = [];
     globalThis.fetch = vi.fn(async (input: RequestInfo | URL) => {
@@ -152,6 +154,6 @@ describe("when every game source is down", () => {
     expect(res.errors?.[0]?.message).toBe(
       "Game search is unavailable right now. Try again shortly.",
     );
-    expect(hosts).toEqual(["store.steampowered.com", "api.rawg.io"]);
+    expect(hosts).toEqual(["store.steampowered.com", "api.thegamesdb.net"]);
   });
 });

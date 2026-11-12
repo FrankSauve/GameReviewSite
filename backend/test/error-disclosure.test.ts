@@ -3,18 +3,19 @@ import type { Express } from "express";
 import { ALICE, authedQuery, publicQuery, resetDatabase } from "./helpers.js";
 
 /**
- * Apollo Server does not mask error messages by default. It strips the stack
- * trace in production and leaves the message, so an unexpected throw reached the
- * client verbatim — a resolver failure surfaced as
- * "RAWG_API_KEY is not configured. Get a free key at https://rawg.io/apidocs and
- * add it to backend/.env", and a Prisma failure would have named tables,
- * columns and constraints the same way.
- *
- * RAWG_API_KEY is unset in the test environment, so a RAWG detail fetch is a
- * genuine internal failure rather than a simulated one.
+ * Apollo Server does not mask error messages, so an internal failure's own
+ * message must be withheld in production: it can name a config file, a table
+ * or a constraint. A 401 from Steam is ours, not an outage, so it is one.
  */
 const INTERNAL_FAILURE =
-  '{ externalGame(source: RAWG, id: "1") { externalId } }';
+  '{ externalGame(source: STEAM, id: "1") { externalId } }';
+const INTERNAL_MESSAGE = /Steam API returned 401/;
+
+function refuseEveryFetch() {
+  vi.spyOn(globalThis, "fetch").mockImplementation(
+    async () => new Response("{}", { status: 401 }),
+  );
+}
 
 /**
  * `isProduction()` is read at call time, not at construction time — formatError
@@ -48,6 +49,7 @@ async function appFor(nodeEnv: string): Promise<{
 
 describe("error message disclosure", () => {
   afterEach(async () => {
+    vi.restoreAllMocks();
     await resetDatabase();
   });
 
@@ -56,12 +58,13 @@ describe("error message disclosure", () => {
     const logged = vi
       .spyOn(console, "error")
       .mockImplementation(() => undefined);
+    refuseEveryFetch();
     const { app, stop } = await appFor("production");
 
     const res = await authedQuery(app, INTERNAL_FAILURE, ALICE);
 
     expect(res.errors?.[0]?.message).toBe("Internal server error.");
-    expect(res.errors?.[0]?.message).not.toMatch(/RAWG_API_KEY|apidocs|\.env/);
+    expect(res.errors?.[0]?.message).not.toMatch(INTERNAL_MESSAGE);
     expect(res.errors?.[0]?.extensions?.code).toBe("INTERNAL_SERVER_ERROR");
 
     // Withheld from the client, but not from the operator.
@@ -72,9 +75,10 @@ describe("error message disclosure", () => {
   });
 
   it("keeps the real message outside production, where it is the point", async () => {
+    refuseEveryFetch();
     const { app, stop } = await appFor("test");
     const res = await authedQuery(app, INTERNAL_FAILURE, ALICE);
-    expect(res.errors?.[0]?.message).toMatch(/RAWG_API_KEY/);
+    expect(res.errors?.[0]?.message).toMatch(INTERNAL_MESSAGE);
     await stop();
   });
 
@@ -91,7 +95,7 @@ describe("error message disclosure", () => {
     // An authorization failure likewise.
     const anonWrite = await publicQuery(
       app,
-      'mutation { createReview(input: { source: RAWG, externalId: "1", rating: 8, content: "x", yearPlayed: 2024, hoursPlayed: 1 }) { id } }',
+      'mutation { createReview(input: { source: STEAM, externalId: "1", rating: 8, content: "x", yearPlayed: 2024, hoursPlayed: 1 }) { id } }',
     );
     expect(anonWrite.errors?.[0]?.extensions?.code).toBe("UNAUTHENTICATED");
     expect(anonWrite.errors?.[0]?.message).toMatch(/signed in/i);
@@ -111,7 +115,7 @@ describe("error message disclosure", () => {
 
     const res = await authedQuery(
       app,
-      'mutation { createReview(input: { source: RAWG, externalId: "1", rating: 8, content: "   ", yearPlayed: 2024, hoursPlayed: 1 }) { id } }',
+      'mutation { createReview(input: { source: STEAM, externalId: "1", rating: 8, content: "   ", yearPlayed: 2024, hoursPlayed: 1 }) { id } }',
       ALICE,
     );
 

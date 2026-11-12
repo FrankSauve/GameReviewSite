@@ -4,7 +4,7 @@ import type { Express } from "express";
 import { GRAPHQL_PATH } from "../src/app.js";
 
 /**
- * Rate limiting protects two things: the process, and the RAWG API quota. The
+ * Rate limiting protects two things: the process, and the game sources' quotas. The
  * limits are lowered here through the environment so the test stays fast.
  */
 describe("rate limiting", () => {
@@ -42,23 +42,23 @@ describe("rate limiting", () => {
     expect(codes.slice(5)).toEqual([429, 429]);
   });
 
-  it("limits RAWG-backed fields far more tightly than ordinary queries", async () => {
+  it("limits game-source fields far more tightly than ordinary queries", async () => {
     const { createApp } = await import("../src/app.js");
     const fresh = await createApp();
-    const rawg = () =>
+    const lookup = () =>
       request(fresh.app)
         .post(GRAPHQL_PATH)
         .set("content-type", "application/json")
         .send({
-          query: '{ externalGame(source: RAWG, id: "1") { externalId } }',
+          query: '{ externalGame(source: TGDB, id: "1") { externalId } }',
         });
 
-    const first = await rawg();
-    const second = await rawg();
-    const third = await rawg();
+    const first = await lookup();
+    const second = await lookup();
+    const third = await lookup();
 
-    // The first two get through the limiter (and then fail on the missing RAWG
-    // key, which is fine — what matters is that the limiter let them past).
+    // The first two get through the limiter, then fail as anonymous; only the
+    // limiter's answer matters here.
     expect(first.status).not.toBe(429);
     expect(second.status).not.toBe(429);
     expect(third.status).toBe(429);
@@ -67,15 +67,13 @@ describe("rate limiting", () => {
   });
 
   /**
-   * Apollo answers a query sent as a GET with the document in the query string.
-   * The RAWG limiter used to read only `req.body`, which `express.json()` leaves
-   * empty on a GET — so the same operation moved to the query string skipped the
-   * RAWG bucket and fell back to the general limit, 300/min instead of 30/min.
+   * Apollo answers a query sent as a GET with the document in the query string,
+   * which `express.json()` leaves out of `req.body`: the limiter must read both.
    */
-  it("counts a RAWG query against the RAWG bucket when it arrives as a GET", async () => {
+  it("counts a game-source query against its bucket when it arrives as a GET", async () => {
     const { createApp } = await import("../src/app.js");
     const fresh = await createApp();
-    const document = '{ externalGame(source: RAWG, id: "1") { externalId } }';
+    const document = '{ externalGame(source: TGDB, id: "1") { externalId } }';
 
     const get = () =>
       request(fresh.app)
@@ -97,10 +95,10 @@ describe("rate limiting", () => {
     await fresh.stop();
   });
 
-  it("shares one RAWG bucket across both methods", async () => {
+  it("shares one game-source bucket across both methods", async () => {
     const { createApp } = await import("../src/app.js");
     const fresh = await createApp();
-    const document = '{ externalGame(source: RAWG, id: "1") { externalId } }';
+    const document = '{ externalGame(source: TGDB, id: "1") { externalId } }';
 
     const posted = await request(fresh.app)
       .post(GRAPHQL_PATH)

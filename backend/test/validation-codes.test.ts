@@ -36,18 +36,18 @@ async function appFor(
  * the real message is forwarded deliberately, which is why a test that does not
  * force NODE_ENV cannot see this at all.
  *
- * A rawgId is validated before RAWG is called. Game fields are checked on
+ * An externalId is validated before any source is called. Game fields are checked on
  * updateGame, the one path that still takes them from the client.
  */
-const fromRawg = (rawgId: string) =>
-  `mutation { createReview(input: { source: RAWG, externalId: "${rawgId}", rating: 8, content: "ok", yearPlayed: 2024, hoursPlayed: 10 }) { id } }`;
+const fromSource = (externalId: string) =>
+  `mutation { createReview(input: { source: STEAM, externalId: "${externalId}", rating: 8, content: "ok", yearPlayed: 2024, hoursPlayed: 10 }) { id } }`;
 const update = (fields: string) => (gameId: string) =>
   `mutation { updateGame(id: "${gameId}", input: { ${fields} }) { id } }`;
 
 const CASES: Array<[string, (gameId: string) => string, string]> = [
   [
     "externalId",
-    () => fromRawg("abc"),
+    () => fromSource("abc"),
     "externalId must be a positive integer.",
   ],
   [

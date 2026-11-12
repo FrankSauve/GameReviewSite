@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { COVER_HOSTS as RAWG_HOSTS } from "../src/lib/gameSources/rawg.js";
 import { COVER_DOMAIN } from "../src/lib/gameSources/steam.js";
 import { COVER_HOSTS as TGDB_HOSTS } from "../src/lib/gameSources/tgdb.js";
 
@@ -14,7 +13,7 @@ const imgSrc =
   [];
 
 describe("the CSP's img-src", () => {
-  it.each([...RAWG_HOSTS, ...TGDB_HOSTS])("allows %s", (host) => {
+  it.each(TGDB_HOSTS)("allows %s", (host) => {
     expect(imgSrc).toContain(`https://${host}`);
   });
 

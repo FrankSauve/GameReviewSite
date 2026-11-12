@@ -20,12 +20,11 @@
 #
 # ── Environment ──────────────────────────────────────────────────────────────
 #
-# Six values in the compose project's .env. They are prefixed because that file
+# Five values in the compose project's .env. They are prefixed because that file
 # is shared with your other services, and a bare POSTGRES_PASSWORD would collide
 # with the database behind authentik:
 #
 #   GAMEREVIEWS_DB_PASSWORD=          # openssl rand -hex 24
-#   GAMEREVIEWS_RAWG_API_KEY=         # https://rawg.io/apidocs
 #   GAMEREVIEWS_TGDB_API_KEY=         # optional: forums.thegamesdb.net
 #   GAMEREVIEWS_OIDC_ISSUER=          # .../application/o/<slug>/
 #   GAMEREVIEWS_OIDC_CLIENT_ID=       # from the authentik provider
@@ -106,7 +105,6 @@ services:
       - gamereviews-internal
     environment:
       DATABASE_URL: postgresql://gamereview:${GAMEREVIEWS_DB_PASSWORD}@gamereviews-db:5432/gamereview
-      RAWG_API_KEY: ${GAMEREVIEWS_RAWG_API_KEY:?GAMEREVIEWS_RAWG_API_KEY must be set}
       TGDB_API_KEY: ${GAMEREVIEWS_TGDB_API_KEY:-}
       # This app is the OAuth2 client, so it needs its own credentials. All
       # four are required: the backend refuses to start in production without
