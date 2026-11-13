@@ -344,18 +344,21 @@ It takes about 3s per game. Check the plan before writing: a game can match its
 remaster, and only you can say whether that is the same game. Re-running skips
 games that are already linked.
 
-### Moving covers off RAWG
+### Moving covers to each game's source
 
-Covers stored before Steam and TheGamesDB were sources are hosted by RAWG,
-whose API has gone. This replaces every cover not already on Steam's or
-TheGamesDB's image hosts: from TheGamesDB when the game has a TheGamesDB id,
-and from Steam otherwise. It ships in the image, and needs the ids from the
-matching above.
+A game's cover comes from TheGamesDB when the game has a TheGamesDB id, and
+from Steam otherwise. This replaces every cover not from that source: the ones
+RAWG hosts, stored before Steam and TheGamesDB were sources, and the Steam
+cover of a game later given a TheGamesDB id. It ships in the image, and needs
+the ids from the matching above.
 
-Set the TheGamesDB id first on any game whose Steam page is a re-release with
-its own art, such as a remaster or a collection. The script takes that game's
-cover from TheGamesDB, and once a cover has moved it is never revisited, so
-setting the id afterwards does not change it.
+Set the TheGamesDB id on any game whose Steam page is a re-release with its own
+art, such as a remaster or a collection, or whose Steam art is not the game's,
+such as a poster Steam generated from the header. Setting it after the cover
+has moved works too: the next run moves it again. Check first that TheGamesDB
+has front box art under that id. Without it the game keeps its Steam cover,
+each run asks TheGamesDB again, and the poster and banner script leaves the
+game alone, so clear the id again rather than leave it.
 
 Nothing in the app sets that id on a game already in the library, so it is a
 statement in the database container. The id is unique, and the statement fails
@@ -400,7 +403,9 @@ Each game also stores a portrait poster, for thumbnails, and wide banner art,
 for the top of its page. Games added since then get both when they join the
 library. This fills them in for the rest, from the same source the cover came
 from: Steam's library art, or TheGamesDB's box art and first fan art. It ships
-in the image, and needs the moves above.
+in the image, and needs the moves above: a game whose cover is not yet from its
+source is left alone, so its art never comes from a different source than its
+cover.
 
 ```bash
 # Dry run: prints which games would change and which have no art, and writes nothing.

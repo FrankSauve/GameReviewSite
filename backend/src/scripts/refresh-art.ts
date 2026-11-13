@@ -7,7 +7,11 @@
  */
 import "dotenv/config";
 import { setTimeout as sleep } from "node:timers/promises";
-import { coverSource, failureReason } from "../lib/coverRefresh.js";
+import {
+  coverSource,
+  failureReason,
+  needsNewCover,
+} from "../lib/coverRefresh.js";
 import {
   ART_BATCH as STEAM_BATCH,
   steamArt,
@@ -67,10 +71,15 @@ async function main() {
     },
     orderBy: { title: "asc" },
   });
-  const planned = games.map((game) => ({ game, plan: coverSource(game) }));
+  const planned = games.map((game) => ({
+    game,
+    plan: coverSource(game),
+    // Art from one source beside a cover from another; refresh-covers moves it first.
+    elsewhere: !!game.coverUrl && needsNewCover(game),
+  }));
   const idsFrom = (source: "STEAM" | "TGDB") =>
-    planned.flatMap(({ plan }) =>
-      plan?.source === source ? [plan.externalId] : [],
+    planned.flatMap(({ plan, elsewhere }) =>
+      plan?.source === source && !elsewhere ? [plan.externalId] : [],
     );
 
   const steam = await inBatches(idsFrom("STEAM"), STEAM_BATCH, steamArt);
@@ -88,15 +97,20 @@ async function main() {
   const noPoster: string[] = [];
   const noBanner: string[] = [];
   const noSource: string[] = [];
+  const coverElsewhere: string[] = [];
   const failed: string[] = [];
   let unchanged = 0;
 
-  for (const { game, plan } of planned) {
+  for (const { game, plan, elsewhere } of planned) {
     if (!plan) {
       noSource.push(game.title);
       continue;
     }
     const label = `${game.title}  <-  ${plan.source} ${plan.externalId}`;
+    if (elsewhere) {
+      coverElsewhere.push(label);
+      continue;
+    }
     const failure = (plan.source === "STEAM" ? steam : tgdb).failed.get(
       plan.externalId,
     );
@@ -144,6 +158,10 @@ async function main() {
   section("No banner: the poster sits beside the title", noBanner);
   section("Steam returned nothing for that app: left alone", unanswered);
   section("No Steam or TheGamesDB id: left alone", noSource);
+  section(
+    "Cover not from that source yet: left alone, run refresh-covers",
+    coverElsewhere,
+  );
   section("Deleted during the run", gone);
   section("Failed: left alone, re-run later", failed);
   if (failed.length > 0) process.exitCode = 1;

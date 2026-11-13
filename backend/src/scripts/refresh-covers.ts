@@ -1,5 +1,6 @@
 /**
- * One-time move of covers off RAWG's image host, to Steam's or TheGamesDB's.
+ * Moves each cover to the game's source: off RAWG's image host, or to
+ * TheGamesDB for a game given a TheGamesDB id over Steam's art.
  * Prints a plan and writes nothing unless --write is passed. A game whose
  * source offers no cover keeps the one it has.
  *
@@ -51,7 +52,7 @@ async function main() {
       },
       orderBy: { title: "asc" },
     })
-  ).filter((game) => needsNewCover(game.coverUrl));
+  ).filter(needsNewCover);
   console.log(`${games.length} games need a new cover.\n`);
 
   const replaced: string[] = [];

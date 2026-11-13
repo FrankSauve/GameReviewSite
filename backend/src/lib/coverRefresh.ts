@@ -9,9 +9,20 @@ export interface CoverIdentity {
   tgdbId: string | null;
 }
 
-/** True for any cover not on Steam's or TheGamesDB's image hosts, RAWG's included. */
-export function needsNewCover(url: string | null): boolean {
-  return coverUrl(url, [STEAM_COVER_DOMAIN, ...TGDB_COVER_HOSTS]) === null;
+const SOURCE_HOSTS = {
+  STEAM: [STEAM_COVER_DOMAIN],
+  TGDB: TGDB_COVER_HOSTS,
+};
+
+/** A cover not from the game's own source; with none, one off every live source's hosts. */
+export function needsNewCover(
+  game: CoverIdentity & { coverUrl: string | null },
+): boolean {
+  const plan = coverSource(game);
+  const hosts = plan
+    ? SOURCE_HOSTS[plan.source]
+    : [...SOURCE_HOSTS.STEAM, ...SOURCE_HOSTS.TGDB];
+  return coverUrl(game.coverUrl, hosts) === null;
 }
 
 /**
