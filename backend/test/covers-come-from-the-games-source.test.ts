@@ -51,6 +51,10 @@ describe("which covers are replaced", () => {
     expect(needsNewCover(onTgdb(STEAM_COVER))).toBe(true);
   });
 
+  it("moves a TheGamesDB cover to Steam on a game with only a Steam id", () => {
+    expect(needsNewCover(onSteam(TGDB_COVER))).toBe(true);
+  });
+
   it("leaves either source's cover on a game with no id to look it up by", () => {
     expect(needsNewCover(unsourced(STEAM_COVER))).toBe(false);
     expect(needsNewCover(unsourced(TGDB_COVER))).toBe(false);

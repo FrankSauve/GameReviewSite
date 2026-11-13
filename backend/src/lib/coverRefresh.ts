@@ -14,11 +14,7 @@ const SOURCE_HOSTS = {
   TGDB: TGDB_COVER_HOSTS,
 };
 
-/**
- * True for a cover not from the source `coverSource` picks, so a TheGamesDB id
- * set on a Steam game moves its cover too. With no source, any cover not on a
- * live source's hosts, RAWG's included.
- */
+/** A cover not from the game's own source; with none, one off every live source's hosts. */
 export function needsNewCover(
   game: CoverIdentity & { coverUrl: string | null },
 ): boolean {
