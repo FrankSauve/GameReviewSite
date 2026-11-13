@@ -75,9 +75,10 @@ function ReviewFeedCard({ review }: { review: Review }) {
         className="flex gap-0 text-left group w-full"
       >
         {/* Cover art */}
-        <div className="w-28 sm:w-36 shrink-0 relative overflow-hidden rounded-l-card">
-          {/* Out of flow, so the card's text sets its height, not the art's shape. */}
-          <div className="absolute inset-0">
+        <div className="w-28 sm:w-36 shrink-0 self-start sm:self-stretch relative overflow-hidden rounded-tl-card sm:rounded-l-card">
+          {/* Poster-shaped on a phone, where the narrow text runs too tall for
+              a poster to crop into; from sm the card's text sets the height. */}
+          <div className="aspect-[2/3] sm:aspect-auto sm:absolute sm:inset-0">
             <GameCover game={game} size="md" art="poster" />
           </div>
         </div>
