@@ -54,6 +54,11 @@ const cover = (url?: string) => coverUrl(url, [COVER_DOMAIN]);
 const appIdOf = (logo?: string) => logo?.match(/\/steam\/apps\/(\d+)\//)?.[1];
 
 const STEAM_ASSETS = "https://shared.akamai.steamstatic.com/store_item_assets/";
+/**
+ * What Steam made for an app whose developer never uploaded library art: the
+ * wide header letterboxed onto a portrait canvas, so not a poster.
+ */
+const GENERATED_CAPSULE = "portrait.png";
 /** Steam's store API takes up to this many apps in one call. */
 export const ART_BATCH = 50;
 
@@ -87,10 +92,11 @@ export async function steamArt(
       format && file
         ? cover(STEAM_ASSETS + format.replace(/\$\{FILENAME\}/, () => file))
         : null;
+    const capsule = item.assets?.library_capsule;
     // An app Steam does not have answers with success other than 1, and no art.
     if (item.appid && item.success === 1)
       art.set(String(item.appid), {
-        posterUrl: url(item.assets?.library_capsule),
+        posterUrl: capsule === GENERATED_CAPSULE ? null : url(capsule),
         bannerUrl: url(item.assets?.library_hero),
       });
   }

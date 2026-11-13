@@ -52,10 +52,12 @@ describe("Steam's library art", () => {
 
   it("has no banner for an app with no hero, rather than a guess that 404s", async () => {
     answer(fixture("steam-items"));
-    expect((await steamArt(["256290"])).get("256290")).toEqual({
-      posterUrl: `${ASSETS}/256290/portrait.png?t=1777993974`,
-      bannerUrl: null,
-    });
+    expect((await steamArt(["256290"])).get("256290")?.bannerUrl).toBeNull();
+  });
+
+  it("has no poster where Steam only letterboxed the header into one", async () => {
+    answer(fixture("steam-items"));
+    expect((await steamArt(["256290"])).get("256290")?.posterUrl).toBeNull();
   });
 
   it("asks for every app in one call", async () => {
