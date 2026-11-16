@@ -1,5 +1,5 @@
 # ── Stage 1: Install → generate → build → prune ──────────────────────────────
-FROM node:22-alpine@sha256:0e1754758c2df4cfa3e68d59e2e1b7374bb7fd9ea6328eaaacf15cc934af8202 AS builder
+FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a AS builder
 
 WORKDIR /app
 
@@ -23,7 +23,7 @@ RUN npm run build
 RUN npm prune --omit=dev
 
 # ── Stage 2: Lean runtime image (no network calls) ────────────────────────────
-FROM node:22-alpine@sha256:0e1754758c2df4cfa3e68d59e2e1b7374bb7fd9ea6328eaaacf15cc934af8202
+FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a
 
 WORKDIR /app
 
