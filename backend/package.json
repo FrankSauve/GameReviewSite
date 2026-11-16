@@ -54,6 +54,9 @@
     "vitest": "^4.0.0",
     "yauzl": "^3.4.0"
   },
+  "overrides": {
+    "@graphql-tools/utils": "^12.0.3"
+  },
   "engines": {
     "node": ">=22"
   }
