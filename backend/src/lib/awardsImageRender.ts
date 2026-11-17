@@ -1,17 +1,9 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
-import { createRequire } from "node:module";
-import { dirname, join } from "node:path";
-import satori from "satori";
-import { renderAsync } from "@resvg/resvg-js";
+import { Worker } from "node:worker_threads";
 
-import {
-  IMAGE_SIZES,
-  awardsImageTree,
-  type AwardsImageData,
-  type ImageKind,
-} from "./awardsImage.js";
+import type { AwardsImageData, ImageKind } from "./awardsImage.js";
 import type { ImagePalette } from "./awardsImagePalettes.js";
+import type { DrawRequest, DrawResponse } from "./awardsImageWorker.js";
 import { coverUrl } from "./gameSources/fields.js";
 import { COVER_DOMAIN } from "./gameSources/steam.js";
 import { COVER_HOSTS as TGDB_HOSTS } from "./gameSources/tgdb.js";
@@ -21,42 +13,6 @@ const LAYOUT_VERSION = 1;
 
 const COVER_TIMEOUT_MS = 5_000;
 const COVER_MAX_BYTES = 2 * 1024 * 1024;
-
-/** Satori reads static TTF/OTF/WOFF only; the site's own fonts are variable WOFF2. */
-const FONT_WEIGHTS = [500, 600, 700, 800, 900] as const;
-/**
- * Satori falls back only across differently named fonts, so each subset past
- * latin gets a name of its own, or a title outside latin draws as nothing.
- */
-const FONT_SUBSETS = [
-  "latin",
-  "latin-ext",
-  "cyrillic",
-  "cyrillic-ext",
-  "greek",
-  "greek-ext",
-  "vietnamese",
-] as const;
-let fonts: Parameters<typeof satori>[1]["fonts"] | undefined;
-function loadFonts() {
-  if (fonts) return fonts;
-  const require = createRequire(import.meta.url);
-  const dir = join(
-    dirname(require.resolve("@fontsource/inter-tight/package.json")),
-    "files",
-  );
-  fonts = FONT_SUBSETS.flatMap((subset) =>
-    FONT_WEIGHTS.map((weight) => ({
-      name: subset === "latin" ? "Inter Tight" : `Inter Tight ${subset}`,
-      weight,
-      style: "normal" as const,
-      data: readFileSync(
-        join(dir, `inter-tight-${subset}-${weight}-normal.woff`),
-      ),
-    })),
-  );
-  return fonts;
-}
 
 export type AwardsImageSource = Omit<
   AwardsImageData,
@@ -182,6 +138,71 @@ async function withCovers(
   };
 }
 
+/**
+ * Run from source (tests, `npm run dev`), the worker is a .ts file and needs
+ * tsx's loader; built, it is plain .js beside this one.
+ */
+const FROM_SOURCE = import.meta.url.endsWith(".ts");
+const WORKER_URL = new URL(
+  `./awardsImageWorker.${FROM_SOURCE ? "ts" : "js"}`,
+  import.meta.url,
+);
+
+let worker: Worker | undefined;
+let nextId = 0;
+const waiting = new Map<
+  number,
+  { resolve: (png: Buffer) => void; reject: (err: Error) => void }
+>();
+
+function failAll(err: Error): void {
+  for (const pending of waiting.values()) pending.reject(err);
+  waiting.clear();
+}
+
+/** One worker, started on first use and again after it dies. */
+function drawWorker(): Worker {
+  if (worker) return worker;
+  const started = new Worker(WORKER_URL, {
+    execArgv: FROM_SOURCE ? ["--import", "tsx"] : [],
+  });
+  started.on("message", (response: DrawResponse) => {
+    const pending = waiting.get(response.id);
+    if (!pending) return;
+    waiting.delete(response.id);
+    if ("png" in response) pending.resolve(Buffer.from(response.png));
+    else pending.reject(new Error(response.error));
+    // Idle, it must not keep the process alive on its own.
+    if (waiting.size === 0) started.unref();
+  });
+  started.on("error", (err) => {
+    if (worker === started) worker = undefined;
+    failAll(err);
+  });
+  started.on("exit", (code) => {
+    if (worker === started) worker = undefined;
+    failAll(new Error(`awards image worker exited with code ${code}`));
+  });
+  worker = started;
+  return started;
+}
+
+/** Off the main thread: satori's layout would otherwise stall every request. */
+function drawInWorker(
+  kind: ImageKind,
+  data: AwardsImageData,
+  palette: ImagePalette,
+): Promise<Buffer> {
+  const target = drawWorker();
+  const id = nextId++;
+  return new Promise<Buffer>((resolve, reject) => {
+    waiting.set(id, { resolve, reject });
+    target.ref();
+    const request: DrawRequest = { id, kind, data, palette };
+    target.postMessage(request);
+  });
+}
+
 export interface RenderedAwardsImage {
   png: Buffer;
   /** False when drawn with a placeholder for a cover that may yet load. */
@@ -210,17 +231,7 @@ export function renderAwardsImage(
 
   const rendering = (async () => {
     const { data, complete } = await withCovers(source, fetchImpl);
-    const { width, height } = IMAGE_SIZES[kind];
-    const svg = await satori(awardsImageTree(kind, data, palette), {
-      width,
-      height,
-      fonts: loadFonts(),
-    });
-    // Off the event loop: a portrait takes long enough to stall other requests.
-    const image = await renderAsync(svg, {
-      fitTo: { mode: "width", value: width },
-    });
-    return { png: image.asPng(), complete };
+    return { png: await drawInWorker(kind, data, palette), complete };
   })();
   // Neither a failure nor a placeholder is kept, or one outage would stick until
   // eviction. Only this entry: a newer render may already hold the key.
