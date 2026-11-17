@@ -209,6 +209,32 @@ describe("the profile awards tab", () => {
     expect(runnersUp.textContent).not.toContain("Elden Ring");
   });
 
+  /** Played years are the owner's to fill in, not empty pages for a visitor. */
+  it("offers a visitor only the years that have awards", async () => {
+    renderAwards(`/users/${USER_SLUG}/awards`, [
+      meMock(null),
+      summariesMock(),
+      yearsMock([2022]),
+      awardsMock(2022, { ranking: [CELESTE] }),
+    ]);
+
+    const menu = await screen.findByLabelText("Awards year");
+    expect([...menu.querySelectorAll("option")].map((o) => o.value)).toEqual([
+      "2022",
+    ]);
+  });
+
+  it("tells a visitor there are no awards when no year has any", async () => {
+    renderAwards(`/users/${USER_SLUG}/awards`, [
+      meMock(null),
+      summariesMock(),
+      yearsMock([]),
+    ]);
+
+    expect(await screen.findByText("No awards yet.")).toBeDefined();
+    expect(screen.queryByLabelText("Awards year")).toBeNull();
+  });
+
   it("offers a visitor no way to edit", async () => {
     renderAwards(`/users/${USER_SLUG}/awards/2024`, [
       meMock(null),
@@ -225,12 +251,14 @@ describe("the profile awards tab", () => {
     renderAwards(`/users/${USER_SLUG}/awards/2024`, [
       meMock(null),
       summariesMock(),
-      yearsMock([2024]),
+      yearsMock([2024, 2022]),
       awardsMock(2024, { ranking: [ELDEN] }),
       awardsMock(2022, { ranking: [CELESTE] }),
     ]);
 
-    fireEvent.change(await screen.findByLabelText("Awards year"), {
+    // A visitor's years come from awardYears, so wait for it to arrive.
+    await screen.findByRole("option", { name: "2022" });
+    fireEvent.change(screen.getByLabelText("Awards year"), {
       target: { value: "2022" },
     });
     await waitFor(() => {

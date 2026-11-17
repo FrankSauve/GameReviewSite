@@ -310,7 +310,8 @@ export const typeDefs = `#graphql
   }
 
   # The whole year at once: ranking[0] is the game of the year. Every game must
-  # be one the account reviewed with that yearPlayed.
+  # be one the account reviewed with that yearPlayed, or one the year already
+  # awards.
   input SetYearAwardsInput {
     year: Int!
     ranking: [ID!]!

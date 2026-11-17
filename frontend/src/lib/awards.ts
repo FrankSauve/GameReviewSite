@@ -26,10 +26,7 @@ export function defaultAwardYear(
   awardYears: readonly number[],
 ): number | null {
   return (
-    awardYears.reduce<number | null>(
-      (max, y) => (max == null || y > max ? y : max),
-      null,
-    ) ??
+    awardableYears([], awardYears).at(0) ??
     awardableYears(summaries, []).at(0) ??
     null
   );

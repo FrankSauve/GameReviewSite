@@ -19,8 +19,9 @@ import {
 import {
   AWARD_CATEGORY_MAX,
   AWARD_RANK_MAX,
-  awardRowsByKey,
+  awardRowsByYear,
   awardYearsOf,
+  awardsKey,
 } from "./awards.js";
 import { FAVORITE_BOUNDS, LIST_BOUNDS, REACTION_BOUNDS } from "./pagination.js";
 
@@ -84,6 +85,9 @@ function groupBy<T>(
   }
   return ids.map((id) => buckets.get(id) ?? []);
 }
+
+const awardKeyOf = (row: { userId: string; year: number }) =>
+  awardsKey(row.userId, row.year);
 
 /** Re-orders a findMany result to line up with the keys DataLoader asked for. */
 function alignById<T extends { id: string }>(
@@ -189,31 +193,27 @@ export function createLoaders(viewerId: string | null): Loaders {
 
     awardYearsByUserId: new DataLoader(awardYearsOf),
 
-    awardRanksByKey: new DataLoader((keys) =>
-      awardRowsByKey(
-        keys,
-        (year, userIds) =>
-          prisma.awardRank.findMany({
-            where: { year, userId: { in: userIds } },
-            orderBy: { rank: "asc" },
-            take: AWARD_RANK_MAX * userIds.length,
-          }),
-        AWARD_RANK_MAX,
-      ),
-    ),
+    awardRanksByKey: new DataLoader(async (keys) => {
+      const ranks = await awardRowsByYear(keys, (year, userIds) =>
+        prisma.awardRank.findMany({
+          where: { year, userId: { in: userIds } },
+          orderBy: { rank: "asc" },
+          take: AWARD_RANK_MAX * userIds.length,
+        }),
+      );
+      return groupBy(ranks, awardKeyOf, keys, AWARD_RANK_MAX);
+    }),
 
-    awardCategoriesByKey: new DataLoader((keys) =>
-      awardRowsByKey(
-        keys,
-        (year, userIds) =>
-          prisma.awardCategory.findMany({
-            where: { year, userId: { in: userIds } },
-            orderBy: { position: "asc" },
-            take: AWARD_CATEGORY_MAX * userIds.length,
-          }),
-        AWARD_CATEGORY_MAX,
-      ),
-    ),
+    awardCategoriesByKey: new DataLoader(async (keys) => {
+      const categories = await awardRowsByYear(keys, (year, userIds) =>
+        prisma.awardCategory.findMany({
+          where: { year, userId: { in: userIds } },
+          orderBy: { position: "asc" },
+          take: AWARD_CATEGORY_MAX * userIds.length,
+        }),
+      );
+      return groupBy(categories, awardKeyOf, keys, AWARD_CATEGORY_MAX);
+    }),
 
     reviewsByGameId: new DataLoader(async (gameIds) => {
       const reviews = await prisma.review.findMany({

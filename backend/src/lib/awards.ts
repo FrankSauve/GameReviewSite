@@ -97,9 +97,9 @@ export async function replaceYearAwards(
 ): Promise<void> {
   const where = { userId, year: rows.year };
   await prisma.$transaction(async (tx) => {
-    // Locks the account, so two saves queue instead of the second tripping the
-    // unique rank the first inserted after its delete.
-    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR UPDATE`;
+    // Two saves queue here rather than trip the unique rank; NO KEY, so the
+    // account's other foreign-key inserts are not held up behind it.
+    await tx.$queryRaw`SELECT id FROM "User" WHERE id = ${userId} FOR NO KEY UPDATE`;
     await assertAwardable(tx, where, [
       ...rows.ranks.map((r) => r.gameId),
       ...rows.categories.map((c) => c.gameId),
@@ -138,17 +138,11 @@ export function awardsKey(userId: string, year: number): string {
   return `${userId}:${year}`;
 }
 
-/**
- * Rows for each `awardsKey`, one query per distinct year in the batch. Capped at
- * `cap` per key, which the write already enforces.
- */
-export async function awardRowsByKey<
-  T extends { userId: string; year: number },
->(
+/** The rows for a batch of `awardsKey`s, one query per distinct year. */
+export async function awardRowsByYear<T>(
   keys: readonly string[],
   find: (year: number, userIds: string[]) => Promise<T[]>,
-  cap: number,
-): Promise<T[][]> {
+): Promise<T[]> {
   const usersByYear = new Map<number, string[]>();
   for (const key of keys) {
     const at = key.lastIndexOf(":");
@@ -160,12 +154,5 @@ export async function awardRowsByKey<
   const found = await Promise.all(
     [...usersByYear].map(([year, userIds]) => find(year, userIds)),
   );
-  const buckets = new Map<string, T[]>();
-  for (const row of found.flat()) {
-    const key = awardsKey(row.userId, row.year);
-    const bucket = buckets.get(key) ?? [];
-    if (bucket.length < cap) bucket.push(row);
-    buckets.set(key, bucket);
-  }
-  return keys.map((key) => buckets.get(key) ?? []);
+  return found.flat();
 }

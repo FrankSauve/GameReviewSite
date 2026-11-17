@@ -43,7 +43,7 @@ export function YearAwardsEditor({
       key,
     })),
   }));
-  const [save, { loading: saving, error }] = useMutation<{
+  const [save, { loading: saving, error, reset }] = useMutation<{
     setYearAwards: YearAwardsData;
   }>(SET_YEAR_AWARDS, {
     onCompleted: onDone,
@@ -76,10 +76,15 @@ export function YearAwardsEditor({
   const unranked = [...known.values()].filter((g) => !ranked.has(g.id));
   const problem = draftProblem(draft);
 
+  // A failed save's message describes the draft it was sent with, not this one.
+  const edit = (change: (d: Draft) => Draft) => {
+    reset();
+    setDraft(change);
+  };
   const setRanking = (ranking: PickableGame[]) =>
-    setDraft((d) => ({ ...d, ranking }));
+    edit((d) => ({ ...d, ranking }));
   const setCategories = (categories: DraftCategory[]) =>
-    setDraft((d) => ({ ...d, categories }));
+    edit((d) => ({ ...d, categories }));
 
   const submit = () => {
     void save({

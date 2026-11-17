@@ -42,11 +42,14 @@ export function YearAwards({
   }>(GET_USER_AWARD_YEARS, { variables: { id: profile.id } });
 
   const awardYears = yearsData?.user?.awardYears ?? [];
+  // Played years are offered to the owner to fill in; a visitor is offered only
+  // years that have awards.
+  const played = isOwnProfile ? summaries : [];
   const year =
-    urlYear ?? (yearsData ? defaultAwardYear(summaries, awardYears) : null);
+    urlYear ?? (yearsData ? defaultAwardYear(played, awardYears) : null);
   // The URL's year is offered even when nothing was played then.
   const years = awardableYears(
-    summaries,
+    played,
     year == null ? awardYears : [...awardYears, year],
   );
 
