@@ -14,6 +14,7 @@ import { createMaxRowsRule } from "./lib/maxRows.js";
 import { collapseDuplicateErrors } from "./lib/collapseErrors.js";
 import { sanitizeError } from "./lib/sanitizeError.js";
 import { createAuthRouter } from "./routes/auth.js";
+import { createAwardsImageRouter } from "./routes/awardsImage.js";
 import { createEmbedRouter, createProfileEmbedRouter } from "./routes/embed.js";
 import { createExportRouter } from "./routes/export.js";
 import {
@@ -114,7 +115,13 @@ export async function createApp(): Promise<AppHandle> {
   // Shares a path with the SPA: the proxy sends crawler user agents here and
   // everyone else to the frontend container. See routes/embed.ts.
   app.use("/reviews", limiters.embeds, createEmbedRouter());
-  app.use("/users", limiters.embeds, createProfileEmbedRouter());
+  // The image router is first: its paths are served to every user agent.
+  app.use(
+    "/users",
+    limiters.embeds,
+    createAwardsImageRouter(),
+    createProfileEmbedRouter(),
+  );
 
   app.use(
     GRAPHQL_PATH,

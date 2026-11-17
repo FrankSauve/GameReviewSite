@@ -1,0 +1,61 @@
+import { describe, expect, it, vi } from "vitest";
+import { inlineCover } from "../src/lib/awardsImageRender.js";
+
+/** The server fetches these itself, so the host allowlist is checked again. */
+
+const STEAM =
+  "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1/header.jpg";
+
+function answering(body: string, type: string | null, status = 200) {
+  return vi.fn<typeof fetch>(async () => {
+    const headers = new Headers();
+    if (type) headers.set("content-type", type);
+    return new Response(body, { status, headers });
+  });
+}
+
+describe("fetching a cover for the awards image", () => {
+  it("inlines an image from a game source's CDN", async () => {
+    const fetchImpl = answering("jpegbytes", "image/jpeg");
+
+    const cover = await inlineCover(STEAM, fetchImpl);
+
+    expect(cover).toBe(
+      `data:image/jpeg;base64,${Buffer.from("jpegbytes").toString("base64")}`,
+    );
+    expect(fetchImpl.mock.calls[0]?.[1]?.redirect).toBe("error");
+  });
+
+  it.each([
+    ["another host", "https://example.com/header.jpg"],
+    ["plain http", STEAM.replace("https:", "http:")],
+    ["a lookalike host", "https://steamstatic.com.evil.test/header.jpg"],
+    ["a private address", "https://127.0.0.1/header.jpg"],
+  ])("never requests %s", async (_, url) => {
+    const fetchImpl = answering("x", "image/jpeg");
+
+    expect(await inlineCover(url, fetchImpl)).toBeNull();
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("draws the placeholder for no cover at all", async () => {
+    const fetchImpl = answering("x", "image/jpeg");
+    expect(await inlineCover(null, fetchImpl)).toBeNull();
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["an error status", answering("x", "image/jpeg", 404)],
+    ["something that is not an image", answering("<svg/>", "image/svg+xml")],
+    ["no content type", answering("x", null)],
+  ])("draws the placeholder for %s", async (_, fetchImpl) => {
+    expect(await inlineCover(STEAM, fetchImpl)).toBeNull();
+  });
+
+  it("draws the placeholder when the CDN is down", async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () => {
+      throw new TypeError("fetch failed");
+    });
+    expect(await inlineCover(STEAM, fetchImpl)).toBeNull();
+  });
+});
