@@ -25,7 +25,10 @@ import { awardYearsOf } from "../lib/awards.js";
 import { imageFile } from "../lib/awardsImage.js";
 import { loadAwardsImageSource } from "../lib/awardsImageData.js";
 import { imagePalette } from "../lib/awardsImagePalettes.js";
-import { awardsImageVersion } from "../lib/awardsImageRender.js";
+import {
+  awardsImageVersion,
+  renderAwardsImage,
+} from "../lib/awardsImageRender.js";
 import { publicOrigin } from "../lib/origin.js";
 
 /**
@@ -224,10 +227,8 @@ export function createProfileEmbedRouter(): Router {
 
         // An empty year falls through to the profile, as an empty grid does.
         if (source) {
-          const version = awardsImageVersion(
-            source,
-            imagePalette(user.palette),
-          );
+          const palette = imagePalette(user.palette);
+          const version = awardsImageVersion(source, palette);
           res.send(
             renderEmbed(PROFILE_EMBED, {
               title: embedAwardsTitle(user.username, source.year),
@@ -239,6 +240,13 @@ export function createProfileEmbedRouter(): Router {
               // Versioned, because chat clients cache an image by its URL.
               imageUrl: `${origin}/users/${user.slug}/${AWARDS_TAB}/${imageFile(source.year, "wide")}?v=${version}`,
             }),
+          );
+          // The crawler asks for the og:image next; started now, that request
+          // joins this render instead of beginning its own.
+          renderAwardsImage("wide", source, palette, version).catch(
+            (err: unknown) => {
+              console.error("Awards preview render failed:", err);
+            },
           );
           return;
         }
