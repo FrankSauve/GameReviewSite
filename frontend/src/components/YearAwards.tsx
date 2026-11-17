@@ -109,6 +109,7 @@ export function YearAwards({
         isOwnProfile={isOwnProfile}
         eligible={gamesPlayedIn(summaries, year)}
         pinYear={pinYear}
+        imagePath={userPath(profile, `awards/${year}.png`)}
       />
     </div>
   );
@@ -120,6 +121,8 @@ interface YearAwardsForYearProps {
   isOwnProfile: boolean;
   eligible: PickableGame[];
   pinYear: () => void;
+  /** Served by the backend, not the SPA: a plain link, never a router Link. */
+  imagePath: string;
 }
 
 function YearAwardsForYear({
@@ -128,6 +131,7 @@ function YearAwardsForYear({
   isOwnProfile,
   eligible,
   pinYear,
+  imagePath,
 }: YearAwardsForYearProps) {
   const [editing, setEditing] = useState(false);
   const { data, loading, error } = useQuery<{
@@ -187,7 +191,12 @@ function YearAwardsForYear({
 
   return (
     <div className="space-y-6">
-      {editButton && <div className="flex justify-end">{editButton}</div>}
+      <div className="flex justify-end gap-2">
+        <a href={imagePath} download className="btn-secondary text-meta">
+          Download image
+        </a>
+        {editButton}
+      </div>
 
       {goty && (
         <section aria-label={`Game of the Year ${year}`}>
