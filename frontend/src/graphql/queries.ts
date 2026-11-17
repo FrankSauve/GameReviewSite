@@ -271,12 +271,18 @@ export const GET_USERS = gql`
 `;
 
 /**
- * The profile page's whole review history. Bounded at 200 rather than the
- * nested 50 precisely by not asking for `content`. Grouping happens in the
- * browser; `order` only picks the axis the server sorts along.
+ * The profile page's whole review history, read a page at a time by
+ * useReviewSummaries until it is whole. Pages of 500 rather than the nested 50
+ * precisely by not asking for `content`. Grouping happens in the browser;
+ * `order` only picks the axis the server sorts along.
  */
 export const GET_USER_REVIEW_SUMMARIES = gql`
-  query GetUserReviewSummaries($id: ID!, $order: ReviewOrder!) {
+  query GetUserReviewSummaries(
+    $id: ID!
+    $order: ReviewOrder!
+    $limit: Int!
+    $offset: Int!
+  ) {
     user(id: $id) {
       id
       slug
@@ -285,8 +291,14 @@ export const GET_USER_REVIEW_SUMMARIES = gql`
       bio
       reviewCount
       averageRating
+      hoursPlayed
     }
-    reviewSummariesByUser(userId: $id, order: $order) {
+    reviewSummariesByUser(
+      userId: $id
+      order: $order
+      limit: $limit
+      offset: $offset
+    ) {
       id
       slug
       rating

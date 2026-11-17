@@ -74,7 +74,7 @@ function summariesMock() {
   return {
     request: {
       query: GET_USER_REVIEW_SUMMARIES,
-      variables: { id: USER_SLUG, order: "YEAR_DESC" },
+      variables: { id: USER_SLUG, order: "YEAR_DESC", limit: 500, offset: 0 },
     },
     result: {
       data: {
@@ -87,6 +87,7 @@ function summariesMock() {
           bio: null,
           reviewCount: 2,
           averageRating: 9,
+          hoursPlayed: 24,
         },
         reviewSummariesByUser: [
           summary("r1", "g1", "Elden Ring"),

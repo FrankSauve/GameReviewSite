@@ -63,7 +63,7 @@ const filedAs = (id: string, genre: string) => ({
 const summariesMock = {
   request: {
     query: GET_USER_REVIEW_SUMMARIES,
-    variables: { id: "alice", order: "RATING_DESC" },
+    variables: { id: "alice", order: "RATING_DESC", limit: 500, offset: 0 },
   },
   result: {
     data: {
@@ -76,6 +76,7 @@ const summariesMock = {
         bio: null,
         reviewCount: 3,
         averageRating: 8,
+        hoursPlayed: 24,
       },
       reviewSummariesByUser: [
         filedAs("hollow-knight", "Metroidvania"),
