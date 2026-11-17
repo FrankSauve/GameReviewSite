@@ -42,32 +42,34 @@ export function useReviewSummaries(
     fetchPolicy,
   });
   const { data, fetchMore } = result;
-  // An offset whose page came back empty: the count was ahead of the rows, so
-  // asking again would loop.
-  const [exhausted, setExhausted] = useState<number | null>(null);
-  const [failed, setFailed] = useState<number | null>(null);
+  // Pages that came back empty (the count was ahead of the rows, so asking
+  // again would loop) or failed. Keyed by list as well as offset: this hook
+  // outlives a change of account or order.
+  const [exhausted, setExhausted] = useState<string | null>(null);
+  const [failed, setFailed] = useState<string | null>(null);
   const next = data
     ? nextSummaryOffset(
         data.reviewSummariesByUser.length,
         data.user?.reviewCount ?? 0,
       )
     : null;
-  const pending = next != null && next !== exhausted;
+  const nextKey = next == null ? null : `${id}:${order}:${next}`;
+  const pending = nextKey != null && nextKey !== exhausted;
 
   useEffect(() => {
-    if (next == null || next === exhausted) return;
+    if (next == null || nextKey == null || nextKey === exhausted) return;
     fetchMore({ variables: { offset: next } }).then(
       ({ data: page }) => {
-        if (page.reviewSummariesByUser.length === 0) setExhausted(next);
+        if (page.reviewSummariesByUser.length === 0) setExhausted(nextKey);
       },
-      () => setFailed(next),
+      () => setFailed(nextKey),
     );
-  }, [next, exhausted, fetchMore]);
+  }, [next, nextKey, exhausted, fetchMore]);
 
   return {
     ...result,
     complete: data != null && !pending,
     /** A later page failed; what is shown is only part of the list. */
-    partial: pending && failed === next,
+    partial: pending && failed === nextKey,
   };
 }
