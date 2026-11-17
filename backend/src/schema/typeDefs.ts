@@ -20,6 +20,10 @@ export const typeDefs = `#graphql
     averageRating: Float
     # Bounded by the category list itself, so it takes no window.
     favorites: [FavoriteGame!]!
+    # Years with at least one award picked, newest first.
+    awardYears: [Int!]!
+    # Always an object; an unpicked year has empty lists.
+    awards(year: Int!): YearAwards!
   }
 
   # One game this account picked for one of the fixed categories in
@@ -28,6 +32,29 @@ export const typeDefs = `#graphql
     id: ID!
     # A key from that list, not a display label; the client draws the label.
     category: String!
+    game: Game!
+  }
+
+  # One account's awards for one year. The id is the account and year, so a
+  # save lands on the same cache entry the profile read.
+  type YearAwards {
+    id: ID!
+    year: Int!
+    # Rank 1 is the game of the year. At most AWARD_RANK_MAX.
+    ranking: [AwardRank!]!
+    # Named by the account, in its chosen order. At most AWARD_CATEGORY_MAX.
+    categories: [AwardCategory!]!
+  }
+
+  type AwardRank {
+    id: ID!
+    rank: Int!
+    game: Game!
+  }
+
+  type AwardCategory {
+    id: ID!
+    name: String!
     game: Game!
   }
 
@@ -277,6 +304,19 @@ export const typeDefs = `#graphql
     gameId: ID!
   }
 
+  input AwardCategoryInput {
+    name: String!
+    gameId: ID!
+  }
+
+  # The whole year at once: ranking[0] is the game of the year. Every game must
+  # be one the account reviewed with that yearPlayed.
+  input SetYearAwardsInput {
+    year: Int!
+    ranking: [ID!]!
+    categories: [AwardCategoryInput!]!
+  }
+
   input CreateCommentInput {
     reviewId: ID!
     content: String!
@@ -371,6 +411,8 @@ export const typeDefs = `#graphql
     # name a game it has reviewed. No id, for the same reason as updateProfile.
     setFavoriteGame(input: SetFavoriteGameInput!): User!
     clearFavoriteGame(category: String!): User!
+    # Replaces the signed-in account's awards for one year; empty lists clear it.
+    setYearAwards(input: SetYearAwardsInput!): YearAwards!
 
     updateGame(id: ID!, input: UpdateGameInput!): Game!
 

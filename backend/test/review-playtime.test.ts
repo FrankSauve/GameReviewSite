@@ -9,7 +9,8 @@ import {
   startApp,
 } from "./helpers.js";
 import { prisma } from "../src/lib/prisma.js";
-import { HOURS_PLAYED_MAX, YEAR_PLAYED_MIN } from "../src/resolvers/review.js";
+import { HOURS_PLAYED_MAX } from "../src/resolvers/review.js";
+import { YEAR_PLAYED_MIN } from "../src/lib/yearPlayed.js";
 
 /**
  * When a game was played, and for how long.

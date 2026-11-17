@@ -1,6 +1,8 @@
 import DataLoader from "dataloader";
 import {
   Prisma,
+  type AwardCategory,
+  type AwardRank,
   type Comment,
   type FavoriteGame,
   type Game,
@@ -14,6 +16,12 @@ import {
   type CommunityGenres,
   type GenreTally,
 } from "./communityGenres.js";
+import {
+  AWARD_CATEGORY_MAX,
+  AWARD_RANK_MAX,
+  awardRowsByKey,
+  awardYearsOf,
+} from "./awards.js";
 import { FAVORITE_BOUNDS, LIST_BOUNDS, REACTION_BOUNDS } from "./pagination.js";
 
 /**
@@ -28,6 +36,10 @@ export interface Loaders {
   reviewsByUserId: DataLoader<string, Review[]>;
   /** Bounded at FAVORITE_BOUNDS.max: one row per category, by the unique pair. */
   favoritesByUserId: DataLoader<string, FavoriteGame[]>;
+  awardYearsByUserId: DataLoader<string, number[]>;
+  /** Keyed by awardsKey; in rank and position order, capped as the write is. */
+  awardRanksByKey: DataLoader<string, AwardRank[]>;
+  awardCategoriesByKey: DataLoader<string, AwardCategory[]>;
   reviewsByGameId: DataLoader<string, Review[]>;
   communityGenresByGameId: DataLoader<string, CommunityGenres>;
   commentsByReviewId: DataLoader<string, Comment[]>;
@@ -174,6 +186,34 @@ export function createLoaders(viewerId: string | null): Loaders {
       });
       return groupBy(favorites, (f) => f.userId, userIds, FAVORITE_BOUNDS.max);
     }),
+
+    awardYearsByUserId: new DataLoader(awardYearsOf),
+
+    awardRanksByKey: new DataLoader((keys) =>
+      awardRowsByKey(
+        keys,
+        (year, userIds) =>
+          prisma.awardRank.findMany({
+            where: { year, userId: { in: userIds } },
+            orderBy: { rank: "asc" },
+            take: AWARD_RANK_MAX * userIds.length,
+          }),
+        AWARD_RANK_MAX,
+      ),
+    ),
+
+    awardCategoriesByKey: new DataLoader((keys) =>
+      awardRowsByKey(
+        keys,
+        (year, userIds) =>
+          prisma.awardCategory.findMany({
+            where: { year, userId: { in: userIds } },
+            orderBy: { position: "asc" },
+            take: AWARD_CATEGORY_MAX * userIds.length,
+          }),
+        AWARD_CATEGORY_MAX,
+      ),
+    ),
 
     reviewsByGameId: new DataLoader(async (gameIds) => {
       const reviews = await prisma.review.findMany({

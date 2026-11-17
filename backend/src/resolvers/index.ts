@@ -5,6 +5,7 @@ import { commentResolvers } from "./comment.js";
 import { articleResolvers } from "./article.js";
 import { reactionResolvers } from "./reaction.js";
 import { favoriteResolvers } from "./favorite.js";
+import { awardsResolvers } from "./awards.js";
 
 export const resolvers = {
   Query: {
@@ -23,8 +24,13 @@ export const resolvers = {
     ...articleResolvers.Mutation,
     ...reactionResolvers.Mutation,
     ...favoriteResolvers.Mutation,
+    ...awardsResolvers.Mutation,
   },
-  User: { ...userResolvers.User, ...favoriteResolvers.User },
+  User: {
+    ...userResolvers.User,
+    ...favoriteResolvers.User,
+    ...awardsResolvers.User,
+  },
   Game: gameResolvers.Game,
   Review: reviewResolvers.Review,
   // Its own entry rather than a spread of Review: ReviewSummary has no body, so
@@ -32,5 +38,8 @@ export const resolvers = {
   ReviewSummary: reviewResolvers.ReviewSummary,
   Comment: commentResolvers.Comment,
   FavoriteGame: favoriteResolvers.FavoriteGame,
+  YearAwards: awardsResolvers.YearAwards,
+  AwardRank: awardsResolvers.AwardRank,
+  AwardCategory: awardsResolvers.AwardCategory,
   Article: articleResolvers.Article,
 };

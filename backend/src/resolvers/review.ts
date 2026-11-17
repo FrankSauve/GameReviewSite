@@ -17,6 +17,7 @@ import {
 import { createReview, type ReviewTarget } from "../lib/createReview.js";
 import { validateString } from "../lib/validate.js";
 import { badInput } from "../lib/badInput.js";
+import { validateYearPlayed } from "../lib/yearPlayed.js";
 import { validatePlatform } from "../lib/platforms.js";
 import { validateGenre, validateSecondaryGenres } from "../lib/labels.js";
 import { notifyReviewPosted } from "../lib/discord.js";
@@ -75,18 +76,6 @@ function validateRating(rating: number): number {
     throw badInput(`rating must be between ${RATING_MIN} and ${RATING_MAX}.`);
   if (!Number.isInteger(num * 2))
     throw badInput("rating must be a whole or half point, such as 9 or 9.5.");
-  return num;
-}
-
-export const YEAR_PLAYED_MIN = 1970;
-
-function validateYearPlayed(year: number): number {
-  const num = Number(year);
-  const max = new Date().getFullYear() + 1;
-  if (!Number.isInteger(num) || num < YEAR_PLAYED_MIN || num > max)
-    throw badInput(
-      `yearPlayed must be a whole year between ${YEAR_PLAYED_MIN} and ${max}.`,
-    );
   return num;
 }
 
