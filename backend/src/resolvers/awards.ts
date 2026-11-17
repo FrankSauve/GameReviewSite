@@ -8,19 +8,11 @@ import {
   type YearAwardsInput,
 } from "../lib/awards.js";
 import { validateYearPlayed } from "../lib/yearPlayed.js";
+import { gameOf } from "./gameOf.js";
 
 interface YearAwardsParent {
   userId: string;
   year: number;
-}
-
-async function gameOf(
-  parent: { gameId: string },
-  _args: unknown,
-  { loaders }: Context,
-) {
-  const game = await loaders.gameById.load(parent.gameId);
-  return game ? serializeDates(game) : null;
 }
 
 export const awardsResolvers = {

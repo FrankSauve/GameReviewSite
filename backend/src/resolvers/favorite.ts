@@ -1,4 +1,4 @@
-import type { FavoriteGame, User } from "../generated/prisma/client.js";
+import type { User } from "../generated/prisma/client.js";
 import { prisma } from "../lib/prisma.js";
 import { serializeDates } from "../lib/serialize.js";
 import { requireAuth, type Context } from "../context.js";
@@ -7,6 +7,7 @@ import {
   validateFavoriteCategory,
 } from "../lib/favoriteCategories.js";
 import { assertReviewedByUser } from "../lib/favorites.js";
+import { gameOf } from "./gameOf.js";
 
 interface SetFavoriteGameInput {
   category: string;
@@ -71,13 +72,6 @@ export const favoriteResolvers = {
   },
 
   FavoriteGame: {
-    game: async (
-      parent: FavoriteGame,
-      _args: unknown,
-      { loaders }: Context,
-    ) => {
-      const game = await loaders.gameById.load(parent.gameId);
-      return game ? serializeDates(game) : null;
-    },
+    game: gameOf,
   },
 };

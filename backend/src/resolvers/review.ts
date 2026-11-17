@@ -22,6 +22,7 @@ import { validatePlatform } from "../lib/platforms.js";
 import { validateGenre, validateSecondaryGenres } from "../lib/labels.js";
 import { notifyReviewPosted } from "../lib/discord.js";
 import { pruneUnreviewedGames } from "../lib/pruneGames.js";
+import { gameOf } from "./gameOf.js";
 
 interface CreateReviewInput {
   gameId?: string | null;
@@ -306,10 +307,7 @@ export const reviewResolvers = {
    * `ReviewSummary` has no such field.
    */
   ReviewSummary: {
-    game: async (parent: Review, _args: unknown, { loaders }: Context) => {
-      const game = await loaders.gameById.load(parent.gameId);
-      return game ? serializeDates(game) : null;
-    },
+    game: gameOf,
 
     commentCount: async (
       parent: Review,
@@ -332,10 +330,7 @@ export const reviewResolvers = {
       return user ? serializeDates(user) : null;
     },
 
-    game: async (parent: Review, _args: unknown, { loaders }: Context) => {
-      const game = await loaders.gameById.load(parent.gameId);
-      return game ? serializeDates(game) : null;
-    },
+    game: gameOf,
 
     comments: async (
       parent: Review,
