@@ -38,7 +38,7 @@ const summary = (i: number, yearPlayed: number) => ({
   },
 });
 
-function page(offset: number, rows: unknown[]) {
+function page(offset: number, rows: unknown[], reviewCount = PAGE + 2) {
   return {
     request: {
       query: GET_USER_REVIEW_SUMMARIES,
@@ -53,7 +53,7 @@ function page(offset: number, rows: unknown[]) {
           username: "simon",
           avatarColor: null,
           bio: null,
-          reviewCount: PAGE + 2,
+          reviewCount,
           averageRating: 8,
           hoursPlayed: 1234,
         },
@@ -61,6 +61,18 @@ function page(offset: number, rows: unknown[]) {
       },
     },
   };
+}
+
+function renderProfile(mocks: readonly unknown[]) {
+  return render(
+    <MockedProvider cache={createCache()} mocks={mocks as never}>
+      <MemoryRouter initialEntries={[`/users/${USER_SLUG}`]}>
+        <Routes>
+          <Route path="/users/:id" element={<UserProfilePage tab="year" />} />
+        </Routes>
+      </MemoryRouter>
+    </MockedProvider>,
+  );
 }
 
 describe("a profile with more reviews than one page", () => {
@@ -90,4 +102,44 @@ describe("a profile with more reviews than one page", () => {
     // From the server, not the 502 hours the loaded rows would sum to.
     expect(screen.getByText("1,234h")).toBeDefined();
   }, 15000);
+
+  /** The server owns the page size; a lower clamp only costs another page. */
+  it("reads on when the server returns fewer rows than were asked for", async () => {
+    renderProfile([
+      page(0, [summary(0, 2024), summary(1, 2024), summary(2, 2024)], 5),
+      page(3, [summary(3, 2010), summary(4, 2010)], 5),
+    ]);
+    expect(await screen.findByText("Game 4")).toBeDefined();
+    await waitFor(() => {
+      expect(screen.queryByText("Loading older reviews…")).toBeNull();
+    });
+  });
+
+  /** A count ahead of the rows must end in an empty page, not a loop. */
+  it("stops when a page comes back empty, whatever the count says", async () => {
+    renderProfile([
+      page(0, [summary(0, 2024), summary(1, 2024)], 5),
+      page(2, [], 5),
+    ]);
+    expect(await screen.findByText("Game 1")).toBeDefined();
+    await waitFor(() => {
+      expect(screen.queryByText("Loading older reviews…")).toBeNull();
+    });
+  });
+
+  it("says so when a later page fails, rather than loading forever", async () => {
+    renderProfile([
+      page(0, [summary(0, 2024)], 5),
+      {
+        request: page(1, []).request,
+        error: new Error("network down"),
+      },
+    ]);
+    expect(
+      await screen.findByText(
+        "Couldn't load older reviews. Reload to try again.",
+      ),
+    ).toBeDefined();
+    expect(screen.getByText("Game 0")).toBeDefined();
+  });
 });

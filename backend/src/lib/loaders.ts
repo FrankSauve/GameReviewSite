@@ -45,7 +45,7 @@ export interface Loaders {
   communityGenresByGameId: DataLoader<string, CommunityGenres>;
   commentsByReviewId: DataLoader<string, Comment[]>;
   /** Aggregates, so a count or an average never loads the rows it summarises. */
-  reviewStatsByUserId: DataLoader<string, ReviewStats>;
+  reviewStatsByUserId: DataLoader<string, UserReviewStats>;
   reviewStatsByGameId: DataLoader<string, ReviewStats>;
   /** Counts per emoji, never the rows. Truncated to REACTION_BOUNDS.max. */
   reactionsByReviewId: DataLoader<string, ReactionSummary[]>;
@@ -62,11 +62,15 @@ export interface ReactionSummary {
 export interface ReviewStats {
   count: number;
   average: number | null;
+}
+
+export interface UserReviewStats extends ReviewStats {
   /** Summed over the reviews that record any; null when none do. */
   hours: number | null;
 }
 
-const NO_STATS: ReviewStats = { count: 0, average: null, hours: null };
+const NO_STATS: ReviewStats = { count: 0, average: null };
+const NO_USER_STATS: UserReviewStats = { ...NO_STATS, hours: null };
 
 /** Groups rows by a foreign key, truncating each group to the nested ceiling. */
 function groupBy<T>(
@@ -294,10 +298,10 @@ export function createLoaders(viewerId: string | null): Loaders {
             count: g._count._all,
             average: g._avg.rating,
             hours: g._sum.hoursPlayed,
-          } satisfies ReviewStats,
+          } satisfies UserReviewStats,
         ]),
       );
-      return userIds.map((id) => byId.get(id) ?? NO_STATS);
+      return userIds.map((id) => byId.get(id) ?? NO_USER_STATS);
     }),
 
     reviewStatsByGameId: new DataLoader(async (gameIds) => {
@@ -306,7 +310,6 @@ export function createLoaders(viewerId: string | null): Loaders {
         where: { gameId: { in: [...gameIds] } },
         _count: { _all: true },
         _avg: { rating: true },
-        _sum: { hoursPlayed: true },
       });
       const byId = new Map(
         grouped.map((g) => [
@@ -314,7 +317,6 @@ export function createLoaders(viewerId: string | null): Loaders {
           {
             count: g._count._all,
             average: g._avg.rating,
-            hours: g._sum.hoursPlayed,
           } satisfies ReviewStats,
         ]),
       );

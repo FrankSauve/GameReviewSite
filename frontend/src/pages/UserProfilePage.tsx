@@ -48,6 +48,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
     loading,
     error,
     complete,
+    partial,
   } = useReviewSummaries(id, ORDER_FOR[grouping]);
 
   // While another view of the same profile loads, the header and tabs stay up
@@ -236,7 +237,9 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
 
       {fresh && !complete && (
         <p aria-live="polite" className="text-micro text-content-subtle">
-          Loading older reviews…
+          {partial
+            ? "Couldn't load older reviews. Reload to try again."
+            : "Loading older reviews…"}
         </p>
       )}
 

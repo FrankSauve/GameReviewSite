@@ -21,9 +21,9 @@ describe("paging through a profile's reviews", () => {
     expect(nextSummaryOffset(0, 0)).toBeNull();
   });
 
-  /** The count can be stale; a short page is still the end, never a loop. */
-  it("stops after a short page even when the count says more", () => {
-    expect(nextSummaryOffset(PAGE - 1, PAGE + 10)).toBeNull();
+  /** The server owns the page size; a lower clamp must not end the list early. */
+  it("reads on after a page the server clamped below the size asked for", () => {
+    expect(nextSummaryOffset(400, 1000)).toBe(400);
   });
 
   it("appends a later page", () => {

@@ -1,16 +1,15 @@
-/** The server's ceiling for one page of reviewSummariesByUser (LIST_BOUNDS.reviewSummaries.max). */
+/** What each page asks for. The server may clamp it lower; that only costs pages. */
 export const REVIEW_SUMMARY_PAGE = 500;
 
 /**
- * Where the next page starts, or null once the list is whole. A short page ends
- * it even if `total` says otherwise, so a stale count cannot loop forever.
+ * Where the next page starts, or null once the list is whole. Judged by the
+ * count, never by page size, which the server owns.
  */
 export function nextSummaryOffset(
   loaded: number,
   total: number,
 ): number | null {
-  if (loaded === 0 || loaded >= total) return null;
-  return loaded % REVIEW_SUMMARY_PAGE === 0 ? loaded : null;
+  return loaded > 0 && loaded < total ? loaded : null;
 }
 
 /**
