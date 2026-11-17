@@ -24,6 +24,19 @@ const COVER_MAX_BYTES = 2 * 1024 * 1024;
 
 /** Satori reads static TTF/OTF/WOFF only; the site's own fonts are variable WOFF2. */
 const FONT_WEIGHTS = [500, 600, 700, 800, 900] as const;
+/**
+ * Satori falls back only across differently named fonts, so each subset past
+ * latin gets a name of its own, or a title outside latin draws as nothing.
+ */
+const FONT_SUBSETS = [
+  "latin",
+  "latin-ext",
+  "cyrillic",
+  "cyrillic-ext",
+  "greek",
+  "greek-ext",
+  "vietnamese",
+] as const;
 let fonts: Parameters<typeof satori>[1]["fonts"] | undefined;
 function loadFonts() {
   if (fonts) return fonts;
@@ -32,12 +45,16 @@ function loadFonts() {
     dirname(require.resolve("@fontsource/inter-tight/package.json")),
     "files",
   );
-  fonts = FONT_WEIGHTS.map((weight) => ({
-    name: "Inter Tight",
-    weight,
-    style: "normal" as const,
-    data: readFileSync(join(dir, `inter-tight-latin-${weight}-normal.woff`)),
-  }));
+  fonts = FONT_SUBSETS.flatMap((subset) =>
+    FONT_WEIGHTS.map((weight) => ({
+      name: subset === "latin" ? "Inter Tight" : `Inter Tight ${subset}`,
+      weight,
+      style: "normal" as const,
+      data: readFileSync(
+        join(dir, `inter-tight-${subset}-${weight}-normal.woff`),
+      ),
+    })),
+  );
   return fonts;
 }
 
@@ -52,83 +69,97 @@ export type AwardsImageSource = Omit<
   }[];
 };
 
-/** The ETag, and the `v` an `og:image` URL carries so a chat client refetches. */
+/**
+ * The ETag, and the `v` an `og:image` URL carries so a chat client refetches.
+ * The palette's colours, not its key: a recoloured palette is a new image.
+ */
 export function awardsImageVersion(
   source: AwardsImageSource,
-  paletteKey: string | null,
+  palette: ImagePalette,
 ): string {
   return createHash("sha256")
-    .update(JSON.stringify([LAYOUT_VERSION, paletteKey, source]))
+    .update(JSON.stringify([LAYOUT_VERSION, palette, source]))
     .digest("base64url")
     .slice(0, 16);
 }
 
+export interface InlinedCover {
+  /** A data URI, or null for the placeholder. */
+  cover: string | null;
+  /** The CDN was unreachable or failing, so the next attempt may succeed. */
+  transient: boolean;
+}
+
 /**
- * A cover as a data URI, or null for the placeholder. The host is checked again
- * here, not trusted from the row: this is the server making the request.
+ * The host is checked again here, not trusted from the row: this is the server
+ * making the request.
  */
 export async function inlineCover(
   url: string | null,
   fetchImpl: typeof fetch = fetch,
-): Promise<string | null> {
+): Promise<InlinedCover> {
+  const placeholder = (transient: boolean) => ({ cover: null, transient });
   const allowed = coverUrl(url, [COVER_DOMAIN, ...TGDB_HOSTS]);
-  if (!allowed) return null;
+  if (!allowed) return placeholder(false);
   try {
     const res = await fetchImpl(allowed, {
       redirect: "error",
       signal: AbortSignal.timeout(COVER_TIMEOUT_MS),
     });
+    if (!res.ok) return placeholder(res.status >= 500 || res.status === 429);
     const type = res.headers.get("content-type") ?? "";
-    if (!res.ok || !/^image\/(jpeg|png|webp)$/.test(type)) return null;
+    if (!/^image\/(jpeg|png|webp)$/.test(type)) return placeholder(false);
     if (Number(res.headers.get("content-length")) > COVER_MAX_BYTES)
-      return null;
+      return placeholder(false);
     const body = Buffer.from(await res.arrayBuffer());
-    if (body.length > COVER_MAX_BYTES) return null;
-    return `data:${type};base64,${body.toString("base64")}`;
+    if (body.length > COVER_MAX_BYTES) return placeholder(false);
+    return {
+      cover: `data:${type};base64,${body.toString("base64")}`,
+      transient: false,
+    };
   } catch {
-    return null;
+    return placeholder(true);
   }
 }
 
-/** `complete` is false when a cover that exists could not be fetched. */
+/** `complete` is false when a cover could not be fetched but may yet be. */
 async function withCovers(
   source: AwardsImageSource,
   fetchImpl: typeof fetch,
 ): Promise<{ data: AwardsImageData; complete: boolean }> {
-  const pending = new Map<string, Promise<string | null>>();
-  const resolve = async (game: { title: string; coverUrl: string | null }) => {
-    const key = game.coverUrl ?? "";
-    let cover = pending.get(key);
-    if (!cover) {
-      cover = inlineCover(game.coverUrl, fetchImpl);
-      pending.set(key, cover);
-    }
-    const inlined = await cover;
-    if (game.coverUrl && !inlined) complete = false;
-    return { title: game.title, cover: inlined };
-  };
-  let complete = true;
-  const data: AwardsImageData = {
-    ...source,
-    ranking: await Promise.all(
-      source.ranking.map(async (r) => ({
+  const urls = new Set(
+    [...source.ranking, ...source.categories].map((e) => e.game.coverUrl),
+  );
+  const covers = new Map(
+    await Promise.all(
+      [...urls].map(
+        async (url) => [url, await inlineCover(url, fetchImpl)] as const,
+      ),
+    ),
+  );
+  const game = (g: { title: string; coverUrl: string | null }) => ({
+    title: g.title,
+    cover: covers.get(g.coverUrl)?.cover ?? null,
+  });
+  return {
+    data: {
+      ...source,
+      ranking: source.ranking.map((r) => ({
         rank: r.rank,
-        game: await resolve(r.game),
+        game: game(r.game),
       })),
-    ),
-    categories: await Promise.all(
-      source.categories.map(async (c) => ({
+      categories: source.categories.map((c) => ({
         name: c.name,
-        game: await resolve(c.game),
+        game: game(c.game),
       })),
-    ),
+    },
+    complete: ![...covers.values()].some((c) => c.transient),
   };
-  return { data, complete };
 }
 
 export interface RenderedAwardsImage {
   png: Buffer;
-  /** False when drawn with a placeholder for a cover that exists. */
+  /** False when drawn with a placeholder for a cover that may yet load. */
   complete: boolean;
 }
 

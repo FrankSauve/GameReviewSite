@@ -55,7 +55,8 @@ export function createAwardsImageRouter(): Router {
         );
         if (!source) return missing();
 
-        const version = awardsImageVersion(source, user.palette);
+        const palette = imagePalette(user.palette);
+        const version = awardsImageVersion(source, palette);
         // Revalidated every time, so a download right after a save is current.
         res.setHeader("Cache-Control", "public, no-cache");
         res.setHeader("ETag", `"${version}-${parsed.kind}"`);
@@ -67,7 +68,7 @@ export function createAwardsImageRouter(): Router {
         const { png, complete } = await renderAwardsImage(
           parsed.kind,
           source,
-          imagePalette(user.palette),
+          palette,
           version,
         );
         // A placeholder shares the ETag of the finished image, so it is never

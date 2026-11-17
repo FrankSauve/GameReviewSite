@@ -24,6 +24,7 @@ import { inGridOrder } from "../lib/favoriteCategories.js";
 import { awardYearsOf } from "../lib/awards.js";
 import { imageFile } from "../lib/awardsImage.js";
 import { loadAwardsImageSource } from "../lib/awardsImageData.js";
+import { imagePalette } from "../lib/awardsImagePalettes.js";
 import { awardsImageVersion } from "../lib/awardsImageRender.js";
 import { publicOrigin } from "../lib/origin.js";
 
@@ -223,7 +224,10 @@ export function createProfileEmbedRouter(): Router {
 
         // An empty year falls through to the profile, as an empty grid does.
         if (source) {
-          const version = awardsImageVersion(source, user.palette);
+          const version = awardsImageVersion(
+            source,
+            imagePalette(user.palette),
+          );
           res.send(
             renderEmbed(PROFILE_EMBED, {
               title: embedAwardsTitle(user.username, source.year),

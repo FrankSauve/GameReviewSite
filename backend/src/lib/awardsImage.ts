@@ -438,7 +438,10 @@ export function awardsImageTree(
   return kind === "portrait" ? portrait(paint, data) : wide(paint, data);
 }
 
-/** `2026.png` is the download, `2026-wide.png` the preview. */
+/**
+ * `2026.png` is the download, `2026-wide.png` the preview. Authoritative over the
+ * copies of this pattern in frontend/vite.config.ts and the nginx .png location.
+ */
 export function parseImageFile(
   file: string,
 ): { year: number; kind: ImageKind } | null {

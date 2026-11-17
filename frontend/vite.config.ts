@@ -13,7 +13,8 @@ export default defineConfig({
       "/graphql": "http://localhost:4000",
       "/auth": "http://localhost:4000",
       "/export": "http://localhost:4000",
-      // The awards images; every other /users/ path is the SPA's.
+      // The awards images; every other /users/ path is the SPA's. Copied from
+      // parseImageFile in backend/src/lib/awardsImage.ts, which is authoritative.
       "^/users/[^/]+/awards/\\d{4}(-wide)?\\.png$": "http://localhost:4000",
     },
   },

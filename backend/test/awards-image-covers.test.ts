@@ -10,6 +10,8 @@ import { imagePalette } from "../src/lib/awardsImagePalettes.js";
 const STEAM =
   "https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/1/header.jpg";
 
+const FINAL_PLACEHOLDER = { cover: null, transient: false };
+
 function answering(body: string, type: string | null, status = 200) {
   return vi.fn<typeof fetch>(async () => {
     const headers = new Headers();
@@ -24,9 +26,10 @@ describe("fetching a cover for the awards image", () => {
 
     const cover = await inlineCover(STEAM, fetchImpl);
 
-    expect(cover).toBe(
-      `data:image/jpeg;base64,${Buffer.from("jpegbytes").toString("base64")}`,
-    );
+    expect(cover).toEqual({
+      cover: `data:image/jpeg;base64,${Buffer.from("jpegbytes").toString("base64")}`,
+      transient: false,
+    });
     expect(fetchImpl.mock.calls[0]?.[1]?.redirect).toBe("error");
   });
 
@@ -38,29 +41,33 @@ describe("fetching a cover for the awards image", () => {
   ])("never requests %s", async (_, url) => {
     const fetchImpl = answering("x", "image/jpeg");
 
-    expect(await inlineCover(url, fetchImpl)).toBeNull();
+    expect(await inlineCover(url, fetchImpl)).toEqual(FINAL_PLACEHOLDER);
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
   it("draws the placeholder for no cover at all", async () => {
     const fetchImpl = answering("x", "image/jpeg");
-    expect(await inlineCover(null, fetchImpl)).toBeNull();
+    expect(await inlineCover(null, fetchImpl)).toEqual(FINAL_PLACEHOLDER);
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
   it.each([
-    ["an error status", answering("x", "image/jpeg", 404)],
+    ["a cover that is gone", answering("x", "image/jpeg", 404)],
     ["something that is not an image", answering("<svg/>", "image/svg+xml")],
     ["no content type", answering("x", null)],
-  ])("draws the placeholder for %s", async (_, fetchImpl) => {
-    expect(await inlineCover(STEAM, fetchImpl)).toBeNull();
+  ])("draws the placeholder for good for %s", async (_, fetchImpl) => {
+    expect(await inlineCover(STEAM, fetchImpl)).toEqual(FINAL_PLACEHOLDER);
   });
 
-  it("draws the placeholder when the CDN is down", async () => {
-    const fetchImpl = vi.fn<typeof fetch>(async () => {
-      throw new TypeError("fetch failed");
+  it.each([
+    ["the CDN is unreachable", () => Promise.reject(new TypeError("down"))],
+    ["the CDN is failing", answering("x", "text/plain", 503)],
+  ])("draws the placeholder for now when %s", async (_, impl) => {
+    const fetchImpl = vi.fn<typeof fetch>(impl);
+    expect(await inlineCover(STEAM, fetchImpl)).toEqual({
+      cover: null,
+      transient: true,
     });
-    expect(await inlineCover(STEAM, fetchImpl)).toBeNull();
   });
 });
 
@@ -84,5 +91,26 @@ describe("an awards image drawn while a cover is unreachable", () => {
     await draw();
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("an awards image whose cover is gone for good", () => {
+  it("is complete, so it is kept", async () => {
+    const fetchImpl = answering("x", "text/html", 404);
+    const source = {
+      username: "alice",
+      slug: "alice",
+      year: 2026,
+      site: "reviews.example.com",
+      ranking: [{ rank: 1, game: { title: "Celeste", coverUrl: STEAM } }],
+      categories: [],
+    };
+    const draw = () =>
+      renderAwardsImage("wide", source, imagePalette(null), "gone", fetchImpl);
+
+    expect((await draw()).complete).toBe(true);
+    await draw();
+
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 });
