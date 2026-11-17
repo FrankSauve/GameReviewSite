@@ -62,9 +62,11 @@ export interface ReactionSummary {
 export interface ReviewStats {
   count: number;
   average: number | null;
+  /** Summed over the reviews that record any; null when none do. */
+  hours: number | null;
 }
 
-const NO_STATS: ReviewStats = { count: 0, average: null };
+const NO_STATS: ReviewStats = { count: 0, average: null, hours: null };
 
 /** Groups rows by a foreign key, truncating each group to the nested ceiling. */
 function groupBy<T>(
@@ -283,6 +285,7 @@ export function createLoaders(viewerId: string | null): Loaders {
         where: { userId: { in: [...userIds] } },
         _count: { _all: true },
         _avg: { rating: true },
+        _sum: { hoursPlayed: true },
       });
       const byId = new Map(
         grouped.map((g) => [
@@ -290,6 +293,7 @@ export function createLoaders(viewerId: string | null): Loaders {
           {
             count: g._count._all,
             average: g._avg.rating,
+            hours: g._sum.hoursPlayed,
           } satisfies ReviewStats,
         ]),
       );
@@ -302,6 +306,7 @@ export function createLoaders(viewerId: string | null): Loaders {
         where: { gameId: { in: [...gameIds] } },
         _count: { _all: true },
         _avg: { rating: true },
+        _sum: { hoursPlayed: true },
       });
       const byId = new Map(
         grouped.map((g) => [
@@ -309,6 +314,7 @@ export function createLoaders(viewerId: string | null): Loaders {
           {
             count: g._count._all,
             average: g._avg.rating,
+            hours: g._sum.hoursPlayed,
           } satisfies ReviewStats,
         ]),
       );

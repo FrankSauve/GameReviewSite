@@ -18,6 +18,8 @@ export const typeDefs = `#graphql
     reviews(limit: Int, offset: Int): [Review!]
     reviewCount: Int!
     averageRating: Float
+    # Total hours across the reviews that record any; null when none do.
+    hoursPlayed: Float
     # Bounded by the category list itself, so it takes no window.
     favorites: [FavoriteGame!]!
     # Years with at least one award picked, newest first.
@@ -375,6 +377,7 @@ export const typeDefs = `#graphql
     # Bounded higher than the body-carrying lists precisely because it carries no
     # body. Grouping is the client's job: buckets are presentation, and returning
     # groups of reviews would multiply out against the row budget for no gain.
+    # A profile with more than one page reads on by offset until a short page.
     reviewSummariesByUser(
       userId: ID!
       order: ReviewOrder

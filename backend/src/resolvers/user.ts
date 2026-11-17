@@ -154,5 +154,8 @@ export const userResolvers = {
 
     averageRating: async (parent: User, _args: unknown, { loaders }: Context) =>
       (await loaders.reviewStatsByUserId.load(parent.id)).average,
+
+    hoursPlayed: async (parent: User, _args: unknown, { loaders }: Context) =>
+      (await loaders.reviewStatsByUserId.load(parent.id)).hours,
   },
 };

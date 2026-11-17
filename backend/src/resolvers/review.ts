@@ -101,12 +101,14 @@ function validateHoursPlayed(hours: number): number {
  */
 type ReviewOrder = "RECENT" | "RATING_DESC" | "YEAR_DESC";
 
+/** `id` last in each: offset paging needs a total order, or a tie can repeat or skip a row between pages. */
 const ORDER_BY: Record<ReviewOrder, Prisma.ReviewOrderByWithRelationInput[]> = {
-  RECENT: [{ createdAt: "desc" }],
-  RATING_DESC: [{ rating: "desc" }, { createdAt: "desc" }],
+  RECENT: [{ createdAt: "desc" }, { id: "asc" }],
+  RATING_DESC: [{ rating: "desc" }, { createdAt: "desc" }, { id: "asc" }],
   YEAR_DESC: [
     { yearPlayed: { sort: "desc", nulls: "last" } },
     { createdAt: "desc" },
+    { id: "asc" },
   ],
 };
 
