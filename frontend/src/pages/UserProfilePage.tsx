@@ -1,6 +1,4 @@
 import { Link, useParams, useSearchParams } from "react-router-dom";
-import { useQuery } from "@apollo/client/react";
-import { GET_USER_REVIEW_SUMMARIES } from "../graphql/queries";
 import { useAuth } from "../contexts/AuthContext";
 import { formatRating, ratingColor } from "../lib/rating";
 import { formatHours } from "../lib/playtime";
@@ -9,8 +7,8 @@ import {
   genreFilterOptions,
   groupReviews,
   type Grouping,
-  type ReviewSummary,
 } from "../lib/grouping";
+import { useReviewSummaries } from "../hooks/useReviewSummaries";
 import { GroupedReviewList } from "../components/GroupedReviewList";
 import { FavoritesGrid } from "../components/FavoritesGrid";
 import { YearAwards } from "../components/YearAwards";
@@ -28,21 +26,6 @@ import {
   type ProfileTab,
 } from "../lib/profileViews";
 
-interface ProfileUser {
-  id: string;
-  slug?: string | null;
-  username: string;
-  avatarColor?: string | null;
-  bio?: string | null;
-  reviewCount: number;
-  averageRating?: number | null;
-}
-
-interface ProfileData {
-  user: ProfileUser | null;
-  reviewSummariesByUser: ReviewSummary[];
-}
-
 interface UserProfilePageProps {
   /** Which view this route renders; see PROFILE_ROUTES. */
   tab?: ProfileTab;
@@ -54,8 +37,8 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
   const [params, setParams] = useSearchParams();
   const genreFilter = params.get("genre")?.trim() ?? "";
 
-  // Favorites and Awards still need the summaries: the header's totals come
-  // from them, and the pickers offer exactly the games they name. Borrowing the
+  // Favorites and Awards still need the summaries: the header comes from the
+  // same query, and the pickers offer exactly the games they name. Borrowing the
   // default tab's ordering shares its cache entry rather than adding a fourth.
   const grouping: Grouping = isReviewTab(tab) ? tab : "year";
 
@@ -64,10 +47,9 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
     previousData,
     loading,
     error,
-  } = useQuery<ProfileData>(GET_USER_REVIEW_SUMMARIES, {
-    variables: { id, order: ORDER_FOR[grouping] },
-    skip: !id,
-  });
+    complete,
+    partial,
+  } = useReviewSummaries(id, ORDER_FOR[grouping]);
 
   // While another view of the same profile loads, the header and tabs stay up
   // from the last result, so focus and a bio draft survive; only the list
@@ -131,10 +113,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
   };
   const isOwnProfile = me?.id === profile.id;
 
-  const totalHours = reviews
-    .map((r) => r.hoursPlayed)
-    .filter((h): h is number => h != null)
-    .reduce((sum, h) => sum + h, 0);
+  const totalHours = profile.hoursPlayed ?? 0;
 
   return (
     <div className="space-y-6 page-column">
@@ -254,6 +233,14 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
             ))}
           </select>
         </div>
+      )}
+
+      {fresh && !complete && (
+        <p aria-live="polite" className="text-micro text-content-subtle">
+          {partial
+            ? "Couldn't load older reviews. Reload to try again."
+            : "Loading older reviews…"}
+        </p>
       )}
 
       {/* ── Favorites, awards, or the review list in the chosen view ── */}

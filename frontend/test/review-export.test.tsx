@@ -44,7 +44,7 @@ function profileMock(username: string, reviewCount: number) {
   return {
     request: {
       query: GET_USER_REVIEW_SUMMARIES,
-      variables: { id: username, order: ORDER_FOR.year },
+      variables: { id: username, order: ORDER_FOR.year, limit: 500, offset: 0 },
     },
     result: {
       data: {
@@ -57,6 +57,7 @@ function profileMock(username: string, reviewCount: number) {
           bio: null,
           reviewCount,
           averageRating: 8,
+          hoursPlayed: 24,
         },
         reviewSummariesByUser: [],
       },

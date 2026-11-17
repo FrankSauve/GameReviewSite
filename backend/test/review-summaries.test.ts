@@ -233,6 +233,50 @@ describe("reviewSummariesByUser", () => {
     });
   });
 
+  /**
+   * The profile reads every page by offset, so ties must not move between them.
+   * Small pages over many rows: Postgres then sorts with a bounded heap, which
+   * orders ties differently per limit, so a missing tiebreaker shows here.
+   */
+  it.each(["RECENT", "RATING_DESC", "YEAR_DESC"])(
+    "pages through %s ties without repeating or skipping a review",
+    async (order) => {
+      await seed(
+        Array.from({ length: 60 }, () => [8, 2024] as [number, number]),
+      );
+      await prisma.review.updateMany({
+        data: { createdAt: new Date("2025-01-01T00:00:00.000Z") },
+      });
+
+      const seen: unknown[] = [];
+      for (let offset = 0; offset < 60; offset += 5) {
+        const res = await query(
+          `order: ${order}, limit: 5, offset: ${offset}`,
+          "id",
+        );
+        expect(res.errors).toBeUndefined();
+        seen.push(
+          ...(res.data?.reviewSummariesByUser ?? []).map((r) => r["id"]),
+        );
+      }
+      expect(seen).toHaveLength(60);
+      expect(new Set(seen).size).toBe(60);
+    },
+  );
+
+  it("totals the hours on the user, however many pages the list takes", async () => {
+    await seed([
+      [8, 2024],
+      [9, 2023],
+      [7, null],
+    ]);
+    const res = await publicQuery<{ user: { hoursPlayed: number | null } }>(
+      app,
+      `{ user(id: "${userId}") { hoursPlayed } }`,
+    );
+    expect(res.data?.user.hoursPlayed).toBe(30);
+  });
+
   it("returns nothing for a user with no reviews", async () => {
     const user = await prisma.user.create({
       data: { authentikUid: "ak-empty", username: "empty", slug: "empty" },

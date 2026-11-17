@@ -77,7 +77,7 @@ function mockFor(order: string, id: string = USER_ID, delay = 0) {
     delay,
     request: {
       query: GET_USER_REVIEW_SUMMARIES,
-      variables: { id, order },
+      variables: { id, order, limit: 500, offset: 0 },
     },
     result: {
       data: {
@@ -93,6 +93,7 @@ function mockFor(order: string, id: string = USER_ID, delay = 0) {
           bio: null,
           reviewCount: 3,
           averageRating: 9.5,
+          hoursPlayed: 24,
         },
         reviewSummariesByUser: ROWS,
       },

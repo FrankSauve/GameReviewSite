@@ -18,6 +18,8 @@ export const typeDefs = `#graphql
     reviews(limit: Int, offset: Int): [Review!]
     reviewCount: Int!
     averageRating: Float
+    # Total hours across the reviews that record any; null when none do.
+    hoursPlayed: Float
     # Bounded by the category list itself, so it takes no window.
     favorites: [FavoriteGame!]!
     # Years with at least one award picked, newest first.
