@@ -5,7 +5,7 @@ import { GET_USER_AWARD_YEARS, GET_USER_AWARDS } from "../graphql/queries";
 import type { ReviewSummary } from "../lib/grouping";
 import type { PickableGame } from "../lib/favorites";
 import { awardableYears, defaultAwardYear, gamesPlayedIn } from "../lib/awards";
-import { gamePath, userPath } from "../lib/links";
+import { awardsImagePath, gamePath, userPath } from "../lib/links";
 import { GameCover } from "./GameCover";
 import { YearAwardsEditor } from "./YearAwardsEditor";
 
@@ -109,7 +109,7 @@ export function YearAwards({
         isOwnProfile={isOwnProfile}
         eligible={gamesPlayedIn(summaries, year)}
         pinYear={pinYear}
-        imagePath={userPath(profile, `awards/${year}.png`)}
+        imagePath={awardsImagePath(profile, year)}
       />
     </div>
   );

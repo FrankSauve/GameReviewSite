@@ -22,7 +22,7 @@ import {
 } from "../lib/embed.js";
 import { inGridOrder } from "../lib/favoriteCategories.js";
 import { awardYearsOf, parseAwardYear } from "../lib/awards.js";
-import { imageFile } from "../lib/awardsImage.js";
+import { awardsImagePath } from "../lib/awardsImage.js";
 import { loadAwardsImage } from "../lib/awardsImageData.js";
 import { renderAwardsImage } from "../lib/awardsImageRender.js";
 import { publicOrigin } from "../lib/origin.js";
@@ -231,7 +231,7 @@ export function createProfileEmbedRouter(): Router {
               ),
               url: `${origin}/users/${user.slug}/${AWARDS_TAB}/${source.year}`,
               // Versioned, because chat clients cache an image by its URL.
-              imageUrl: `${origin}/users/${user.slug}/${AWARDS_TAB}/${imageFile(source.year, "wide")}?v=${version}`,
+              imageUrl: `${origin}${awardsImagePath(user.slug, source.year, "wide")}?v=${version}`,
             }),
           );
           // The crawler asks for the og:image next; started now, that request

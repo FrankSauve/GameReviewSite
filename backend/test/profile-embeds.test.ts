@@ -537,7 +537,7 @@ describe("awards link previews", () => {
     );
     expect(meta(res.text, "og:image")).toMatch(
       new RegExp(
-        `^http://${host}/users/${slug}/awards/2026-wide\\.png\\?v=[\\w-]+$`,
+        `^http://${host}/images/awards/${slug}/2026-wide\\.png\\?v=[\\w-]+$`,
       ),
     );
     expect(meta(res.text, "twitter:card")).toBe("summary_large_image");

@@ -438,10 +438,7 @@ export function awardsImageTree(
   return kind === "portrait" ? portrait(paint, data) : wide(paint, data);
 }
 
-/**
- * `2026.png` is the download, `2026-wide.png` the preview. Authoritative over the
- * copies of this pattern in frontend/vite.config.ts and the nginx .png location.
- */
+/** `2026.png` is the download, `2026-wide.png` the preview. */
 export function parseImageFile(
   file: string,
 ): { year: number; kind: ImageKind } | null {
@@ -451,6 +448,18 @@ export function parseImageFile(
     year: Number(match[1]),
     kind: match[2] ? "wide" : "portrait",
   };
+}
+
+/** Served only by the backend, so the proxy needs no pattern to route it. */
+export const AWARDS_IMAGE_PREFIX = "/images/awards";
+
+/** Mirrored by awardsImagePath in frontend/src/lib/links.ts; this copy is authoritative. */
+export function awardsImagePath(
+  slug: string,
+  year: number,
+  kind: ImageKind,
+): string {
+  return `${AWARDS_IMAGE_PREFIX}/${encodeURIComponent(slug)}/${imageFile(year, kind)}`;
 }
 
 export function imageFile(year: number, kind: ImageKind): string {

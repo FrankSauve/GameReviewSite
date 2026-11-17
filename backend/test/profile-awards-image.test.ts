@@ -38,7 +38,7 @@ describe("a year's awards as an image", () => {
       awards: [["Best Soundtrack", "Celeste"]],
     });
 
-    const res = await get(`/users/${user.slug}/awards/2026.png`);
+    const res = await get(`/images/awards/${user.slug}/2026.png`);
 
     expect(res.status).toBe(200);
     expect(res.headers["content-type"]).toBe("image/png");
@@ -52,7 +52,7 @@ describe("a year's awards as an image", () => {
   it("draws the preview at 1200×630", async () => {
     await seedAwardYear(user.id, 2026, { ranked: ["Hollow Knight"] });
 
-    const res = await get(`/users/${user.slug}/awards/2026-wide.png`);
+    const res = await get(`/images/awards/${user.slug}/2026-wide.png`);
 
     expect(res.status).toBe(200);
     expect(pngSize(res.body as Buffer)).toEqual({ width: 1200, height: 630 });
@@ -67,7 +67,7 @@ describe("a year's awards as an image", () => {
         .map((title, i): [string, string] => [`Award number ${i}`, title]),
     });
 
-    const res = await get(`/users/${user.slug}/awards/2026.png`);
+    const res = await get(`/images/awards/${user.slug}/2026.png`);
 
     expect(res.status).toBe(200);
     expect(pngSize(res.body as Buffer)).toEqual({ width: 1080, height: 1350 });
@@ -77,7 +77,7 @@ describe("a year's awards as an image", () => {
     await seedAwardYear(user.id, 2026, { awards: [["Best Story", "OMORI"]] });
 
     for (const file of ["2026.png", "2026-wide.png"]) {
-      const res = await get(`/users/${user.slug}/awards/${file}`);
+      const res = await get(`/images/awards/${user.slug}/${file}`);
       expect(res.status).toBe(200);
     }
   });
@@ -85,20 +85,20 @@ describe("a year's awards as an image", () => {
   it("has no image for a year with nothing in it", async () => {
     await seedAwardYear(user.id, 2025, { ranked: ["Hollow Knight"] });
 
-    const res = await get(`/users/${user.slug}/awards/2026.png`);
+    const res = await get(`/images/awards/${user.slug}/2026.png`);
 
     expect(res.status).toBe(404);
   });
 
   it("has no image for an account that does not exist", async () => {
-    const res = await get("/users/nobody/awards/2026.png");
+    const res = await get("/images/awards/nobody/2026.png");
 
     expect(res.status).toBe(404);
   });
 
   it("answers a repeat request with 304 until the year changes", async () => {
     await seedAwardYear(user.id, 2026, { ranked: ["Hollow Knight"] });
-    const path = `/users/${user.slug}/awards/2026.png`;
+    const path = `/images/awards/${user.slug}/2026.png`;
 
     const first = await get(path);
     const etag = first.headers["etag"];
@@ -116,7 +116,7 @@ describe("a year's awards as an image", () => {
 
   it("is redrawn when the owner changes palette", async () => {
     await seedAwardYear(user.id, 2026, { ranked: ["Hollow Knight"] });
-    const path = `/users/${user.slug}/awards/2026.png`;
+    const path = `/images/awards/${user.slug}/2026.png`;
     const before = await get(path);
 
     await prisma.user.update({
@@ -134,16 +134,27 @@ describe("a year's awards as an image", () => {
   it("gives the two sizes different ETags", async () => {
     await seedAwardYear(user.id, 2026, { ranked: ["Hollow Knight"] });
 
-    const portrait = await get(`/users/${user.slug}/awards/2026.png`);
-    const wide = await get(`/users/${user.slug}/awards/2026-wide.png`);
+    const portrait = await get(`/images/awards/${user.slug}/2026.png`);
+    const wide = await get(`/images/awards/${user.slug}/2026-wide.png`);
 
     expect(portrait.headers["etag"]).not.toBe(wide.headers["etag"]);
   });
 
-  it("leaves a path that is not an image to the link preview", async () => {
+  it.each(["2026", "2026.jpg", "2026-tall.png"])(
+    "has nothing at %s",
+    async (file) => {
+      await seedAwardYear(user.id, 2026, { ranked: ["Hollow Knight"] });
+
+      const res = await get(`/images/awards/${user.slug}/${file}`);
+
+      expect(res.status).toBe(404);
+    },
+  );
+
+  it("leaves the awards tab itself to the link preview", async () => {
     await seedAwardYear(user.id, 2026, { ranked: ["Hollow Knight"] });
 
-    const res = await get(`/users/${user.slug}/awards/2026`);
+    const res = await get(`/users/${user.slug}/awards/2026.png`);
 
     expect(res.headers["content-type"]).toContain("text/html");
   });

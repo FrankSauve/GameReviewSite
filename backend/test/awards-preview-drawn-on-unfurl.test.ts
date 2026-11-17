@@ -54,7 +54,7 @@ describe("the awards preview, drawn when a link is unfurled", () => {
 
     // The crawler's fetch is served from that render.
     const image = await request(app)
-      .get(`/users/${user.slug}/awards/2026-wide.png`)
+      .get(`/images/awards/${user.slug}/2026-wide.png`)
       .set("Host", HOST);
     expect(image.status).toBe(200);
     expect(draws).toHaveBeenCalledTimes(2);

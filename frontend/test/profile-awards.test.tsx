@@ -204,7 +204,7 @@ describe("the profile awards tab", () => {
 
     const link = await screen.findByRole("link", { name: "Download image" });
     expect(link.getAttribute("href")).toBe(
-      `/users/${USER_SLUG}/awards/2022.png`,
+      `/images/awards/${USER_SLUG}/2022.png`,
     );
     expect(link.hasAttribute("download")).toBe(true);
   });
