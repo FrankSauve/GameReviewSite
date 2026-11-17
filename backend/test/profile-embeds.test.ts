@@ -5,6 +5,7 @@ import type { Express } from "express";
 import { prisma } from "../src/lib/prisma.js";
 import { slugify } from "../src/lib/slug.js";
 import {
+  embedAwardsDescription,
   embedFavoritesDescription,
   embedFavoritesTitle,
   embedProfileDescription,
@@ -492,5 +493,159 @@ describe("labelFor", () => {
     for (const [key, label] of pairs) {
       expect(labelFor(key ?? "")).toBe(label);
     }
+  });
+});
+
+describe("awards link previews", () => {
+  let app: Express;
+  let stop: () => Promise<void>;
+
+  beforeAll(async () => {
+    ({ app, stop } = await startApp());
+  });
+  afterAll(async () => {
+    await stop();
+  });
+  beforeEach(resetDatabase);
+
+  async function seedAwards(
+    userId: string,
+    year: number,
+    ranked: string[],
+    awards: [string, string][] = [],
+  ): Promise<void> {
+    const gameId = async (title: string) =>
+      (
+        await prisma.game.upsert({
+          where: { slug: slugify(title, "game") },
+          create: { title, slug: slugify(title, "game") },
+          update: {},
+        })
+      ).id;
+    for (const [i, title] of ranked.entries()) {
+      await prisma.awardRank.create({
+        data: { userId, year, rank: i + 1, gameId: await gameId(title) },
+      });
+    }
+    for (const [position, [name, title]] of awards.entries()) {
+      await prisma.awardCategory.create({
+        data: { userId, year, position, name, gameId: await gameId(title) },
+      });
+    }
+  }
+
+  const host = "reviews.example.com";
+
+  it("unfurls a year as its awards, with the wide image", async () => {
+    const { slug, id } = await seedProfile({});
+    await seedAwards(
+      id,
+      2026,
+      ["Hollow Knight", "Shogun Showdown"],
+      [["Best Soundtrack", "Celeste"]],
+    );
+
+    const res = await request(app)
+      .get(`/users/${slug}/awards/2026`)
+      .set("Host", host);
+
+    expect(res.status).toBe(200);
+    expect(meta(res.text, "og:title")).toBe("alice&#39;s 2026 Game Awards");
+    expect(meta(res.text, "og:description")).toBe(
+      "Game of the Year: Hollow Knight · Best Soundtrack: Celeste · #2: Shogun Showdown",
+    );
+    expect(meta(res.text, "og:url")).toBe(
+      `http://${host}/users/${slug}/awards/2026`,
+    );
+    expect(meta(res.text, "og:image")).toMatch(
+      new RegExp(
+        `^http://${host}/users/${slug}/awards/2026-wide\\.png\\?v=[\\w-]+$`,
+      ),
+    );
+    expect(meta(res.text, "twitter:card")).toBe("summary_large_image");
+  });
+
+  it("points the image at a new URL once the year changes", async () => {
+    const { slug, id } = await seedProfile({});
+    await seedAwards(id, 2026, ["Hollow Knight"]);
+    const before = await request(app).get(`/users/${slug}/awards/2026`);
+
+    await seedAwards(id, 2026, [], [["Best Story", "OMORI"]]);
+    const after = await request(app).get(`/users/${slug}/awards/2026`);
+
+    expect(meta(after.text, "og:image")).not.toBe(
+      meta(before.text, "og:image"),
+    );
+  });
+
+  it("opens the bare tab on the newest year with awards", async () => {
+    const { slug, id } = await seedProfile({});
+    await seedAwards(id, 2024, ["Celeste"]);
+    await seedAwards(id, 2025, ["Hollow Knight"]);
+
+    const res = await request(app).get(`/users/${slug}/awards`);
+
+    expect(meta(res.text, "og:title")).toBe("alice&#39;s 2025 Game Awards");
+  });
+
+  it("falls back to the profile embed for an empty year", async () => {
+    const { slug, id } = await seedProfile({ bio: "Hello." });
+    await seedAwards(id, 2025, ["Hollow Knight"]);
+
+    const awards = await request(app)
+      .get(`/users/${slug}/awards/2026`)
+      .set("Host", host);
+    const profile = await request(app).get(`/users/${slug}`).set("Host", host);
+
+    expect(awards.status).toBe(200);
+    expect(awards.text).toBe(profile.text);
+  });
+
+  it("falls back to the profile embed with no awards at all", async () => {
+    const { slug } = await seedProfile({ bio: "Hello." });
+
+    const awards = await request(app)
+      .get(`/users/${slug}/awards`)
+      .set("Host", host);
+    const profile = await request(app).get(`/users/${slug}`).set("Host", host);
+
+    expect(awards.text).toBe(profile.text);
+  });
+
+  it("has no third segment on any other tab", async () => {
+    const { slug } = await seedProfile({});
+
+    const res = await request(app).get(`/users/${slug}/favorites/2026`);
+
+    expect(res.status).toBe(404);
+  });
+});
+
+describe("embedAwardsDescription", () => {
+  const game = (title: string) => ({ game: { title } });
+
+  it("leads with the game of the year, then the awards, then the ranks", () => {
+    expect(
+      embedAwardsDescription(
+        [game("A"), game("B")],
+        [{ name: "Best Story", ...game("C") }],
+      ),
+    ).toBe("Game of the Year: A · Best Story: C · #2: B");
+  });
+
+  it("starts with the awards when nothing is ranked", () => {
+    expect(
+      embedAwardsDescription([], [{ name: "Best Story", ...game("C") }]),
+    ).toBe("Best Story: C");
+  });
+
+  it("drops whole entries past the limit", () => {
+    expect(
+      embedAwardsDescription(
+        [game("Hollow Knight"), game("Shogun Showdown")],
+        [],
+        40,
+      ),
+    ).toBe("Game of the Year: Hollow Knight …");
   });
 });

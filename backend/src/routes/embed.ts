@@ -3,9 +3,12 @@ import { Router, type Request, type Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { byIdOrSlug } from "../lib/slug.js";
 import {
+  AWARDS_TAB,
   FAVORITES_TAB,
   PROFILE_EMBED,
   REVIEW_EMBED,
+  embedAwardsDescription,
+  embedAwardsTitle,
   embedDescription,
   embedFavoritesDescription,
   embedFavoritesTitle,
@@ -18,6 +21,10 @@ import {
   type EmbedKind,
 } from "../lib/embed.js";
 import { inGridOrder } from "../lib/favoriteCategories.js";
+import { awardYearsOf } from "../lib/awards.js";
+import { imageFile } from "../lib/awardsImage.js";
+import { loadAwardsImageSource } from "../lib/awardsImageData.js";
+import { awardsImageVersion } from "../lib/awardsImageRender.js";
 import { publicOrigin } from "../lib/origin.js";
 
 /**
@@ -127,7 +134,7 @@ export function createEmbedRouter(): Router {
  * it differ: a profile is one segment, optionally followed by the tab the SPA
  * renders. `/by-score`, `/by-genre`, `/recent` and `/by-year` unfurl as the
  * profile, being the same reviews in another order; `/favorites` unfurls as
- * the picks.
+ * the picks, and `/awards[/<year>]` as that year's image.
  */
 export function createProfileEmbedRouter(): Router {
   const router = Router();
@@ -148,6 +155,7 @@ export function createProfileEmbedRouter(): Router {
           slug: true,
           username: true,
           bio: true,
+          palette: true,
           _count: { select: { reviews: true } },
         },
       });
@@ -201,6 +209,37 @@ export function createProfileEmbedRouter(): Router {
         }
       }
 
+      if (req.params["tab"] === AWARDS_TAB) {
+        // The year the SPA would open on: the URL's, or the newest with awards.
+        const segment = req.params["year"];
+        const year =
+          typeof segment === "string" && /^\d{4}$/.test(segment)
+            ? Number(segment)
+            : (await awardYearsOf([user.id]))[0]?.[0];
+        const source =
+          year === undefined
+            ? null
+            : await loadAwardsImageSource(user, year, new URL(origin).host);
+
+        // An empty year falls through to the profile, as an empty grid does.
+        if (source) {
+          const version = awardsImageVersion(source, user.palette);
+          res.send(
+            renderEmbed(PROFILE_EMBED, {
+              title: embedAwardsTitle(user.username, source.year),
+              description: embedAwardsDescription(
+                source.ranking,
+                source.categories,
+              ),
+              url: `${origin}/users/${user.slug}/${AWARDS_TAB}/${source.year}`,
+              // Versioned, because chat clients cache an image by its URL.
+              imageUrl: `${origin}/users/${user.slug}/${AWARDS_TAB}/${imageFile(source.year, "wide")}?v=${version}`,
+            }),
+          );
+          return;
+        }
+      }
+
       res.send(
         renderEmbed(PROFILE_EMBED, {
           title: embedProfileTitle(user.username, user._count.reviews),
@@ -225,6 +264,11 @@ export function createProfileEmbedRouter(): Router {
 
   router.get("/:key", handler);
   router.get("/:key/:tab", handler);
+  router.get("/:key/:tab/:year", (req, res, next) => {
+    // Only the awards tab has a third segment in the SPA.
+    if (req.params.tab === AWARDS_TAB) return handler(req, res);
+    next();
+  });
 
   router.use(notFound(PROFILE_EMBED));
 
