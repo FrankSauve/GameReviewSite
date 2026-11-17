@@ -5,6 +5,7 @@ import { byIdOrSlug } from "../lib/slug.js";
 import {
   AWARDS_TAB,
   FAVORITES_TAB,
+  wantsPreviewImage,
   PROFILE_EMBED,
   REVIEW_EMBED,
   embedAwardsDescription,
@@ -234,13 +235,15 @@ export function createProfileEmbedRouter(): Router {
               imageUrl: `${origin}${awardsImagePath(user.slug, source.year, "wide")}?v=${version}`,
             }),
           );
-          // The crawler asks for the og:image next; started now, that request
-          // joins this render instead of beginning its own.
-          renderAwardsImage("wide", source, palette, version).catch(
-            (err: unknown) => {
-              console.error("Awards preview render failed:", err);
-            },
-          );
+          // A chat client asks for the og:image next; started now, that
+          // request joins this render instead of beginning its own.
+          if (wantsPreviewImage(req.get("user-agent"))) {
+            renderAwardsImage("wide", source, palette, version).catch(
+              (err: unknown) => {
+                console.error("Awards preview render failed:", err);
+              },
+            );
+          }
           return;
         }
       }

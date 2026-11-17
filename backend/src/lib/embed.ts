@@ -133,6 +133,15 @@ export function embedFavoritesDescription(
 
 export const AWARDS_TAB = "awards";
 
+/** The search engines in the proxy's crawler map: they index the page and do
+ *  not fetch its og:image to show a preview. */
+const SEARCH_CRAWLER = /googlebot|bingbot|applebot/i;
+
+/** Whether this unfurl will be followed by a request for its og:image. */
+export function wantsPreviewImage(userAgent: string | undefined): boolean {
+  return !SEARCH_CRAWLER.test(userAgent ?? "");
+}
+
 export function embedAwardsTitle(username: string, year: number): string {
   return `${username}'s ${year} Game Awards`;
 }

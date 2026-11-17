@@ -78,6 +78,37 @@ describe("the awards preview, drawn when a link is unfurled", () => {
     expect(draws).not.toHaveBeenCalled();
   });
 
+  it.each([
+    "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)",
+    "Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)",
+    "Mozilla/5.0 (Macintosh) AppleWebKit/605.1.15 (KHTML, like Gecko) Applebot/0.1",
+  ])("draws nothing for a search engine: %s", async (agent) => {
+    await seedAwardYear(user.id, 2026, { ranked: ["Hollow Knight"] });
+
+    const page = await request(app)
+      .get(`/users/${user.slug}/awards/2026`)
+      .set("Host", HOST)
+      .set("User-Agent", agent);
+
+    // The page still names the image; it is only not drawn ahead.
+    expect(page.text).toContain("2026-wide.png?v=");
+    expect(draws).not.toHaveBeenCalled();
+  });
+
+  it("draws ahead for a chat client", async () => {
+    await seedAwardYear(user.id, 2026, { ranked: ["Hollow Knight"] });
+
+    await request(app)
+      .get(`/users/${user.slug}/awards/2026`)
+      .set("Host", HOST)
+      .set(
+        "User-Agent",
+        "Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)",
+      );
+
+    expect(draws).toHaveBeenCalledTimes(1);
+  });
+
   it("never draws the download from an unfurl", async () => {
     await seedAwardYear(user.id, 2026, { ranked: ["Hollow Knight"] });
 
