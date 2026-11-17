@@ -13,7 +13,9 @@ import {
 } from "../lib/grouping";
 import { GroupedReviewList } from "../components/GroupedReviewList";
 import { FavoritesGrid } from "../components/FavoritesGrid";
+import { YearAwards } from "../components/YearAwards";
 import { pickableGames } from "../lib/favorites";
+import { parseAwardYear } from "../lib/awards";
 import { ProfileBio } from "../components/ProfileBio";
 import { Avatar } from "../components/Avatar";
 import { AvatarColorPicker } from "../components/AvatarColorPicker";
@@ -22,6 +24,7 @@ import { useCanonicalPath } from "../hooks/useCanonicalPath";
 import {
   PROFILE_TAB_PATH,
   PROFILE_TABS,
+  isReviewTab,
   type ProfileTab,
 } from "../lib/profileViews";
 
@@ -46,15 +49,15 @@ interface UserProfilePageProps {
 }
 
 export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
-  const { id } = useParams<{ id: string }>();
+  const { id, year: yearParam } = useParams<{ id: string; year: string }>();
   const { user: me } = useAuth();
   const [params, setParams] = useSearchParams();
   const genreFilter = params.get("genre")?.trim() ?? "";
 
-  // Favorites still needs the summaries: the header's totals come from them,
-  // and the picker offers exactly the games they name. Borrowing the default
-  // tab's ordering shares its cache entry rather than adding a fourth.
-  const grouping: Grouping = tab === "favorites" ? "year" : tab;
+  // Favorites and Awards still need the summaries: the header's totals come
+  // from them, and the pickers offer exactly the games they name. Borrowing the
+  // default tab's ordering shares its cache entry rather than adding a fourth.
+  const grouping: Grouping = isReviewTab(tab) ? tab : "year";
 
   const {
     data: fresh,
@@ -73,7 +76,11 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
   const data =
     fresh ?? (prevUser && isKeyOf(prevUser, id) ? previousData : undefined);
 
-  const tabPath = PROFILE_TAB_PATH[tab];
+  const awardYear = tab === "awards" ? parseAwardYear(yearParam) : null;
+  const tabPath =
+    awardYear != null
+      ? `${PROFILE_TAB_PATH.awards}/${awardYear}`
+      : PROFILE_TAB_PATH[tab];
   useCanonicalPath(fresh?.user ? userPath(fresh.user, tabPath) : null);
 
   if (loading && !data) {
@@ -209,9 +216,9 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
               key={entry.tab}
               to={{
                 pathname: userPath(profile, PROFILE_TAB_PATH[entry.tab]),
-                // The filter carries across the review tabs; favourites ignores it.
+                // The filter carries across the review tabs only.
                 search:
-                  genreFilter && entry.tab !== "favorites"
+                  genreFilter && isReviewTab(entry.tab)
                     ? `?${new URLSearchParams({ genre: genreFilter })}`
                     : "",
               }}
@@ -228,7 +235,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
         })}
       </nav>
 
-      {tab !== "favorites" && (genreOptions.length > 0 || genreFilter) && (
+      {isReviewTab(tab) && (genreOptions.length > 0 || genreFilter) && (
         <div className="flex items-center gap-2">
           <select
             aria-label="Filter by genre"
@@ -249,7 +256,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
         </div>
       )}
 
-      {/* ── Favorites, or the review list in the chosen view ── */}
+      {/* ── Favorites, awards, or the review list in the chosen view ── */}
       {!fresh ? (
         <div aria-busy="true" className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -261,6 +268,13 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
           userId={profile.id}
           isOwnProfile={isOwnProfile}
           pickable={pickableGames(reviews)}
+        />
+      ) : tab === "awards" ? (
+        <YearAwards
+          profile={profile}
+          isOwnProfile={isOwnProfile}
+          summaries={reviews}
+          urlYear={awardYear}
         />
       ) : groups.length === 0 && genreFilter ? (
         <div className="card p-10 text-center space-y-2">

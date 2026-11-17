@@ -1,6 +1,6 @@
 /**
- * Both bounds mirror backend/src/resolvers/review.ts, the side that enforces
- * them; these only stop the form offering a value the API would refuse.
+ * Both bounds mirror the backend (lib/yearPlayed.ts, resolvers/review.ts),
+ * which enforces them; these only stop the form offering a value it would refuse.
  */
 export const YEAR_PLAYED_MIN = 1970;
 export const HOURS_PLAYED_MAX = 10000;

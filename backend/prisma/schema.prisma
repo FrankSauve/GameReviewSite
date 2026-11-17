@@ -39,6 +39,8 @@ model User {
   articles  Article[]
   reactions Reaction[]
   favorites FavoriteGame[]
+  awardRanks AwardRank[]
+  awardCategories AwardCategory[]
 }
 
 /// A signed-in browser.
@@ -84,6 +86,8 @@ model Game {
   createdBy   User?    @relation("GameCreator", fields: [createdById], references: [id], onDelete: SetNull)
   reviews     Review[]
   favorites   FavoriteGame[]
+  awardRanks  AwardRank[]
+  awardCategories AwardCategory[]
 }
 
 model Review {
@@ -186,5 +190,40 @@ model FavoriteGame {
   /// The pair is what makes re-picking a category a replace rather than a
   /// second row.
   @@unique([userId, category])
+  @@index([gameId])
+}
+
+/// One place in a person's ranked list for a year; rank 1 is their game of the
+/// year. Written a whole year at a time by replaceYearAwards in lib/awards.ts.
+model AwardRank {
+  id        String   @id @default(uuid())
+  year      Int
+  /// 1-based and contiguous: the write numbers rows from the submitted order.
+  rank      Int
+  createdAt DateTime @default(now())
+  userId    String
+  gameId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, year, rank])
+  @@unique([userId, year, gameId])
+  @@index([gameId])
+}
+
+/// An award a person named themselves for a year, and the game that won it.
+model AwardCategory {
+  id        String   @id @default(uuid())
+  year      Int
+  /// Display order within the year, 0-based, from the submitted order.
+  position  Int
+  name      String
+  createdAt DateTime @default(now())
+  userId    String
+  gameId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, year, position])
   @@index([gameId])
 }

@@ -1,4 +1,5 @@
 import { gql } from "@apollo/client";
+import { YEAR_AWARDS_FIELDS } from "./queries";
 
 export const CREATE_REVIEW = gql`
   mutation CreateReview($input: CreateReviewInput!) {
@@ -163,5 +164,11 @@ export const SET_FAVORITE_GAME = gql`
 export const CLEAR_FAVORITE_GAME = gql`
   mutation ClearFavoriteGame($category: String!) {
     clearFavoriteGame(category: $category) { ${FAVORITES_RESULT} }
+  }
+`;
+
+export const SET_YEAR_AWARDS = gql`
+  mutation SetYearAwards($input: SetYearAwardsInput!) {
+    setYearAwards(input: $input) { ${YEAR_AWARDS_FIELDS} }
   }
 `;

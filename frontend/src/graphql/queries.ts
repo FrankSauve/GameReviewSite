@@ -369,6 +369,35 @@ export const GET_USER_FAVORITES = gql`
   }
 `;
 
+const AWARD_GAME = `game { id slug title coverUrl posterUrl }`;
+
+/** Selection set shared with SET_YEAR_AWARDS, so a save lands in the cache. */
+export const YEAR_AWARDS_FIELDS = `
+  id
+  year
+  ranking { id rank ${AWARD_GAME} }
+  categories { id name ${AWARD_GAME} }
+`;
+
+/** Which years to offer, before a year's awards are fetched. */
+export const GET_USER_AWARD_YEARS = gql`
+  query GetUserAwardYears($id: ID!) {
+    user(id: $id) {
+      id
+      awardYears
+    }
+  }
+`;
+
+export const GET_USER_AWARDS = gql`
+  query GetUserAwards($id: ID!, $year: Int!) {
+    user(id: $id) {
+      id
+      awards(year: $year) { ${YEAR_AWARDS_FIELDS} }
+    }
+  }
+`;
+
 /**
  * Who reacted with one emoji, for the hover card. Its own query, fetched when a
  * chip is hovered rather than with the review: a feed page carries hundreds of

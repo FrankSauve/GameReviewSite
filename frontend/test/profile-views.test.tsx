@@ -19,7 +19,11 @@ afterEach(cleanup);
 import { MockedProvider } from "@apollo/client/testing/react";
 import { GET_USER_REVIEW_SUMMARIES } from "../src/graphql/queries";
 import { UserProfilePage } from "../src/pages/UserProfilePage";
-import { PROFILE_ROUTES, PROFILE_TABS } from "../src/lib/profileViews";
+import {
+  PROFILE_ROUTES,
+  PROFILE_TABS,
+  isReviewTab,
+} from "../src/lib/profileViews";
 
 /**
  * Several routes render one component with a different `tab` prop, which is
@@ -125,7 +129,7 @@ function renderAt(path: string, { slowScore = false } = {}) {
         <Pathname />
         {/* The app's own route table, so a view missing from it fails here. */}
         <Routes>
-          {PROFILE_ROUTES.filter(({ tab }) => tab !== "favorites").map(
+          {PROFILE_ROUTES.filter(({ tab }) => isReviewTab(tab)).map(
             ({ path: route, tab }) => (
               <Route
                 key={route}
@@ -228,6 +232,7 @@ describe("profile grouped views", () => {
       "Genre",
       "Recent",
       "Favourites",
+      "Awards",
     ]);
     expect(tabs.map((a) => a.getAttribute("href"))).toEqual([
       `/users/${USER_SLUG}`,
@@ -235,6 +240,7 @@ describe("profile grouped views", () => {
       `/users/${USER_SLUG}/by-genre`,
       `/users/${USER_SLUG}/recent`,
       `/users/${USER_SLUG}/favorites`,
+      `/users/${USER_SLUG}/awards`,
     ]);
   });
 
@@ -369,7 +375,7 @@ describe("filtering a profile by genre", () => {
     );
   });
 
-  it("carries the filter to the other review tabs, not to favourites", async () => {
+  it("carries the filter to the other review tabs, not to favourites or awards", async () => {
     renderAt(`/users/${USER_SLUG}/by-score?genre=Action`);
     await expectHeadings(["10", "8.5"]);
     const hrefs = screen
@@ -382,6 +388,7 @@ describe("filtering a profile by genre", () => {
       `/users/${USER_SLUG}/by-genre?genre=Action`,
       `/users/${USER_SLUG}/recent?genre=Action`,
       `/users/${USER_SLUG}/favorites`,
+      `/users/${USER_SLUG}/awards`,
     ]);
     fireEvent.click(screen.getByRole("link", { name: "Year" }));
     await expectHeadings(["2024", "2019"]);
