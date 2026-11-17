@@ -19,7 +19,8 @@ name: Publish images
 # with a read:packages token. See docs/deployment.md.
 #
 # workflow_dispatch is deliberate: it publishes from whatever ref it is run on,
-# which is how you deploy a branch that has not been merged yet.
+# which is how you deploy a branch that has not been merged yet. Off the default
+# branch it pushes only the sha- tag, so `latest` never points at unmerged code.
 
 on:
   push:
@@ -73,7 +74,7 @@ jobs:
         with:
           images: ${{ steps.image.outputs.name }}
           tags: |
-            type=raw,value=latest
+            type=raw,value=latest,enable={{is_default_branch}}
             type=sha,prefix=sha-,format=short
 
       - name: Build
@@ -90,7 +91,7 @@ jobs:
 
       - name: Assert the image does not run as root
         run: |
-          uid=$(docker run --rm --entrypoint id "${{ steps.image.outputs.name }}:latest" -u)
+          uid=$(docker run --rm --entrypoint id "${{ steps.image.outputs.name }}:${{ steps.meta.outputs.version }}" -u)
           echo "${{ matrix.component }} uid=$uid"
           test "$uid" -ne 0 || { echo "image runs as root"; exit 1; }
 
