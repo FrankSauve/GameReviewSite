@@ -1,14 +1,24 @@
 import { prisma } from "./prisma.js";
-import type { AwardsImageSource } from "./awardsImageRender.js";
+import { imagePalette, type ImagePalette } from "./awardsImagePalettes.js";
+import {
+  awardsImageVersion,
+  type AwardsImageSource,
+} from "./awardsImageRender.js";
 
 const GAME = { select: { title: true, coverUrl: true } } as const;
 
+export interface AwardsImage {
+  source: AwardsImageSource;
+  palette: ImagePalette;
+  version: string;
+}
+
 /** Null for a year with nothing in it: an empty year has no image. */
-export async function loadAwardsImageSource(
-  user: { id: string; username: string; slug: string },
+export async function loadAwardsImage(
+  user: { id: string; username: string; slug: string; palette: string | null },
   year: number,
   site: string,
-): Promise<AwardsImageSource | null> {
+): Promise<AwardsImage | null> {
   const where = { userId: user.id, year };
   const [ranking, categories] = await Promise.all([
     prisma.awardRank.findMany({
@@ -23,7 +33,7 @@ export async function loadAwardsImageSource(
     }),
   ]);
   if (ranking.length === 0 && categories.length === 0) return null;
-  return {
+  const source: AwardsImageSource = {
     username: user.username,
     slug: user.slug,
     year,
@@ -31,4 +41,6 @@ export async function loadAwardsImageSource(
     ranking,
     categories,
   };
+  const palette = imagePalette(user.palette);
+  return { source, palette, version: awardsImageVersion(source, palette) };
 }

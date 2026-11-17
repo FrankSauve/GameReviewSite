@@ -30,7 +30,7 @@ describe("fetching a cover for the awards image", () => {
       cover: `data:image/jpeg;base64,${Buffer.from("jpegbytes").toString("base64")}`,
       transient: false,
     });
-    expect(fetchImpl.mock.calls[0]?.[1]?.redirect).toBe("error");
+    expect(fetchImpl.mock.calls[0]?.[1]?.redirect).toBe("manual");
   });
 
   it.each([
@@ -55,6 +55,12 @@ describe("fetching a cover for the awards image", () => {
     ["a cover that is gone", answering("x", "image/jpeg", 404)],
     ["something that is not an image", answering("<svg/>", "image/svg+xml")],
     ["no content type", answering("x", null)],
+    ["a WebP, which resvg cannot draw", answering("x", "image/webp")],
+    ["a redirect", answering("", null, 302)],
+    [
+      "a body past the cap with no content-length",
+      answering("x".repeat(2 * 1024 * 1024 + 1), "image/jpeg"),
+    ],
   ])("draws the placeholder for good for %s", async (_, fetchImpl) => {
     expect(await inlineCover(STEAM, fetchImpl)).toEqual(FINAL_PLACEHOLDER);
   });
@@ -62,6 +68,7 @@ describe("fetching a cover for the awards image", () => {
   it.each([
     ["the CDN is unreachable", () => Promise.reject(new TypeError("down"))],
     ["the CDN is failing", answering("x", "text/plain", 503)],
+    ["the CDN is rate-limiting", answering("x", "text/plain", 403)],
   ])("draws the placeholder for now when %s", async (_, impl) => {
     const fetchImpl = vi.fn<typeof fetch>(impl);
     expect(await inlineCover(STEAM, fetchImpl)).toEqual({

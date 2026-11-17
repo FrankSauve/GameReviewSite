@@ -133,6 +133,16 @@ export async function awardYearsOf(
   return userIds.map((id) => [...(byUser.get(id) ?? [])].sort((a, b) => b - a));
 }
 
+/** A `:year` URL segment, or null when a save would refuse it; the SPA's copy mirrors this. */
+export function parseAwardYear(segment: unknown): number | null {
+  if (typeof segment !== "string" || !/^\d{4}$/.test(segment)) return null;
+  try {
+    return validateYearPlayed(Number(segment), "year");
+  } catch {
+    return null;
+  }
+}
+
 /** `${userId}:${year}`, the key a year's awards are batched and cached under. */
 export function awardsKey(userId: string, year: number): string {
   return `${userId}:${year}`;

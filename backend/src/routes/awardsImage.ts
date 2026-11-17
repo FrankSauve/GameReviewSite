@@ -8,12 +8,8 @@ import {
 import { prisma } from "../lib/prisma.js";
 import { byIdOrSlug } from "../lib/slug.js";
 import { parseImageFile } from "../lib/awardsImage.js";
-import { loadAwardsImageSource } from "../lib/awardsImageData.js";
-import { imagePalette } from "../lib/awardsImagePalettes.js";
-import {
-  awardsImageVersion,
-  renderAwardsImage,
-} from "../lib/awardsImageRender.js";
+import { loadAwardsImage } from "../lib/awardsImageData.js";
+import { renderAwardsImage } from "../lib/awardsImageRender.js";
 import { publicOrigin } from "../lib/origin.js";
 
 /**
@@ -48,18 +44,20 @@ export function createAwardsImageRouter(): Router {
         });
         if (!user) return missing();
 
-        const source = await loadAwardsImageSource(
+        const image = await loadAwardsImage(
           user,
           parsed.year,
           new URL(publicOrigin(req)).host,
         );
-        if (!source) return missing();
+        if (!image) return missing();
+        const { source, palette, version } = image;
 
-        const palette = imagePalette(user.palette);
-        const version = awardsImageVersion(source, palette);
         // Revalidated every time, so a download right after a save is current.
         res.setHeader("Cache-Control", "public, no-cache");
         res.setHeader("ETag", `"${version}-${parsed.kind}"`);
+        // Meant to be embedded elsewhere. Set before the 304 too, whose headers
+        // replace the cached response's.
+        res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
         if (req.fresh) {
           res.status(304).end();
           return;
@@ -77,8 +75,6 @@ export function createAwardsImageRouter(): Router {
           res.removeHeader("ETag");
           res.setHeader("Cache-Control", "no-store");
         }
-        // Meant to be posted elsewhere, so other sites may embed it.
-        res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
         res.setHeader(
           "Content-Disposition",
           `inline; filename="${user.slug}-${parsed.year}-awards.png"`,

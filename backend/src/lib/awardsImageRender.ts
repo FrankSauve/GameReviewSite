@@ -102,23 +102,48 @@ export async function inlineCover(
   const allowed = coverUrl(url, [COVER_DOMAIN, ...TGDB_HOSTS]);
   if (!allowed) return placeholder(false);
   try {
+    // Manual, so a redirect is a final placeholder rather than a thrown, and
+    // so transient, failure that would keep every render of it uncached.
     const res = await fetchImpl(allowed, {
-      redirect: "error",
+      redirect: "manual",
       signal: AbortSignal.timeout(COVER_TIMEOUT_MS),
     });
-    if (!res.ok) return placeholder(res.status >= 500 || res.status === 429);
+    // 403 is how the CDNs rate-limit, as in gameSources/http.ts.
+    if (!res.ok)
+      return placeholder(
+        res.status >= 500 || res.status === 429 || res.status === 403,
+      );
     const type = res.headers.get("content-type") ?? "";
-    if (!/^image\/(jpeg|png|webp)$/.test(type)) return placeholder(false);
+    // Only what resvg can decode: a WebP cover would draw as an empty box.
+    if (!/^image\/(jpeg|png)$/.test(type)) return placeholder(false);
     if (Number(res.headers.get("content-length")) > COVER_MAX_BYTES)
       return placeholder(false);
-    const body = Buffer.from(await res.arrayBuffer());
-    if (body.length > COVER_MAX_BYTES) return placeholder(false);
+    const body = await readCapped(res, COVER_MAX_BYTES);
+    if (!body) return placeholder(false);
     return {
       cover: `data:${type};base64,${body.toString("base64")}`,
       transient: false,
     };
   } catch {
     return placeholder(true);
+  }
+}
+
+/** Null past `max` bytes, stopping there: a missing content-length is no cap. */
+async function readCapped(res: Response, max: number): Promise<Buffer | null> {
+  if (!res.body) return Buffer.alloc(0);
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) return Buffer.concat(chunks);
+    size += value.byteLength;
+    if (size > max) {
+      await reader.cancel().catch(() => undefined);
+      return null;
+    }
+    chunks.push(value);
   }
 }
 

@@ -21,14 +21,10 @@ import {
   type EmbedKind,
 } from "../lib/embed.js";
 import { inGridOrder } from "../lib/favoriteCategories.js";
-import { awardYearsOf } from "../lib/awards.js";
+import { awardYearsOf, parseAwardYear } from "../lib/awards.js";
 import { imageFile } from "../lib/awardsImage.js";
-import { loadAwardsImageSource } from "../lib/awardsImageData.js";
-import { imagePalette } from "../lib/awardsImagePalettes.js";
-import {
-  awardsImageVersion,
-  renderAwardsImage,
-} from "../lib/awardsImageRender.js";
+import { loadAwardsImage } from "../lib/awardsImageData.js";
+import { renderAwardsImage } from "../lib/awardsImageRender.js";
 import { publicOrigin } from "../lib/origin.js";
 
 /**
@@ -215,20 +211,17 @@ export function createProfileEmbedRouter(): Router {
 
       if (req.params["tab"] === AWARDS_TAB) {
         // The year the SPA would open on: the URL's, or the newest with awards.
-        const segment = req.params["year"];
         const year =
-          typeof segment === "string" && /^\d{4}$/.test(segment)
-            ? Number(segment)
-            : (await awardYearsOf([user.id]))[0]?.[0];
-        const source =
+          parseAwardYear(req.params["year"]) ??
+          (await awardYearsOf([user.id]))[0]?.[0];
+        const image =
           year === undefined
             ? null
-            : await loadAwardsImageSource(user, year, new URL(origin).host);
+            : await loadAwardsImage(user, year, new URL(origin).host);
 
         // An empty year falls through to the profile, as an empty grid does.
-        if (source) {
-          const palette = imagePalette(user.palette);
-          const version = awardsImageVersion(source, palette);
+        if (image) {
+          const { source, palette, version } = image;
           res.send(
             renderEmbed(PROFILE_EMBED, {
               title: embedAwardsTitle(user.username, source.year),
