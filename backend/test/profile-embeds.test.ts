@@ -13,7 +13,13 @@ import {
 } from "../src/lib/embed.js";
 import { labelFor } from "../src/lib/favoriteCategories.js";
 import { provisionUser } from "../src/lib/identity.js";
-import { ALICE, type Identity, resetDatabase, startApp } from "./helpers.js";
+import {
+  ALICE,
+  type Identity,
+  resetDatabase,
+  seedAwardYear,
+  startApp,
+} from "./helpers.js";
 
 /**
  * Link previews for user profiles, the counterpart to review-embeds.ts. The
@@ -508,42 +514,14 @@ describe("awards link previews", () => {
   });
   beforeEach(resetDatabase);
 
-  async function seedAwards(
-    userId: string,
-    year: number,
-    ranked: string[],
-    awards: [string, string][] = [],
-  ): Promise<void> {
-    const gameId = async (title: string) =>
-      (
-        await prisma.game.upsert({
-          where: { slug: slugify(title, "game") },
-          create: { title, slug: slugify(title, "game") },
-          update: {},
-        })
-      ).id;
-    for (const [i, title] of ranked.entries()) {
-      await prisma.awardRank.create({
-        data: { userId, year, rank: i + 1, gameId: await gameId(title) },
-      });
-    }
-    for (const [position, [name, title]] of awards.entries()) {
-      await prisma.awardCategory.create({
-        data: { userId, year, position, name, gameId: await gameId(title) },
-      });
-    }
-  }
-
   const host = "reviews.example.com";
 
   it("unfurls a year as its awards, with the wide image", async () => {
     const { slug, id } = await seedProfile({});
-    await seedAwards(
-      id,
-      2026,
-      ["Hollow Knight", "Shogun Showdown"],
-      [["Best Soundtrack", "Celeste"]],
-    );
+    await seedAwardYear(id, 2026, {
+      ranked: ["Hollow Knight", "Shogun Showdown"],
+      awards: [["Best Soundtrack", "Celeste"]],
+    });
 
     const res = await request(app)
       .get(`/users/${slug}/awards/2026`)
@@ -567,10 +545,10 @@ describe("awards link previews", () => {
 
   it("points the image at a new URL once the year changes", async () => {
     const { slug, id } = await seedProfile({});
-    await seedAwards(id, 2026, ["Hollow Knight"]);
+    await seedAwardYear(id, 2026, { ranked: ["Hollow Knight"] });
     const before = await request(app).get(`/users/${slug}/awards/2026`);
 
-    await seedAwards(id, 2026, [], [["Best Story", "OMORI"]]);
+    await seedAwardYear(id, 2026, { awards: [["Best Story", "OMORI"]] });
     const after = await request(app).get(`/users/${slug}/awards/2026`);
 
     expect(meta(after.text, "og:image")).not.toBe(
@@ -580,8 +558,8 @@ describe("awards link previews", () => {
 
   it("opens the bare tab on the newest year with awards", async () => {
     const { slug, id } = await seedProfile({});
-    await seedAwards(id, 2024, ["Celeste"]);
-    await seedAwards(id, 2025, ["Hollow Knight"]);
+    await seedAwardYear(id, 2024, { ranked: ["Celeste"] });
+    await seedAwardYear(id, 2025, { ranked: ["Hollow Knight"] });
 
     const res = await request(app).get(`/users/${slug}/awards`);
 
@@ -590,7 +568,7 @@ describe("awards link previews", () => {
 
   it("falls back to the profile embed for an empty year", async () => {
     const { slug, id } = await seedProfile({ bio: "Hello." });
-    await seedAwards(id, 2025, ["Hollow Knight"]);
+    await seedAwardYear(id, 2025, { ranked: ["Hollow Knight"] });
 
     const awards = await request(app)
       .get(`/users/${slug}/awards/2026`)
@@ -623,13 +601,14 @@ describe("awards link previews", () => {
 
 describe("embedAwardsDescription", () => {
   const game = (title: string) => ({ game: { title } });
+  const ranked = (...titles: string[]) =>
+    titles.map((title, i) => ({ rank: i + 1, ...game(title) }));
 
   it("leads with the game of the year, then the awards, then the ranks", () => {
     expect(
-      embedAwardsDescription(
-        [game("A"), game("B")],
-        [{ name: "Best Story", ...game("C") }],
-      ),
+      embedAwardsDescription(ranked("A", "B"), [
+        { name: "Best Story", ...game("C") },
+      ]),
     ).toBe("Game of the Year: A · Best Story: C · #2: B");
   });
 
@@ -642,7 +621,7 @@ describe("embedAwardsDescription", () => {
   it("drops whole entries past the limit", () => {
     expect(
       embedAwardsDescription(
-        [game("Hollow Knight"), game("Shogun Showdown")],
+        ranked("Hollow Knight", "Shogun Showdown"),
         [],
         40,
       ),

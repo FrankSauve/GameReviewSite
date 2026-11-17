@@ -139,7 +139,7 @@ export function embedAwardsTitle(username: string, year: number): string {
 
 /** Plain text for the same reason as the favourites line: names are the user's. */
 export function embedAwardsDescription(
-  ranking: readonly { game: { title: string } }[],
+  ranking: readonly { rank: number; game: { title: string } }[],
   categories: readonly { name: string; game: { title: string } }[],
   limit = DESCRIPTION_MAX,
 ): string {
@@ -148,7 +148,7 @@ export function embedAwardsDescription(
     [
       ...(goty ? [`Game of the Year: ${oneLine(goty.game.title)}`] : []),
       ...categories.map((c) => `${oneLine(c.name)}: ${oneLine(c.game.title)}`),
-      ...rest.map((r, i) => `#${i + 2}: ${oneLine(r.game.title)}`),
+      ...rest.map((r) => `#${r.rank}: ${oneLine(r.game.title)}`),
     ],
     limit,
   );

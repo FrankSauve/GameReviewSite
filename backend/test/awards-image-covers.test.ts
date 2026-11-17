@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { inlineCover } from "../src/lib/awardsImageRender.js";
+import {
+  inlineCover,
+  renderAwardsImage,
+} from "../src/lib/awardsImageRender.js";
+import { imagePalette } from "../src/lib/awardsImagePalettes.js";
 
 /** The server fetches these itself, so the host allowlist is checked again. */
 
@@ -57,5 +61,28 @@ describe("fetching a cover for the awards image", () => {
       throw new TypeError("fetch failed");
     });
     expect(await inlineCover(STEAM, fetchImpl)).toBeNull();
+  });
+});
+
+describe("an awards image drawn while a cover is unreachable", () => {
+  it("is marked incomplete and drawn again next time", async () => {
+    const fetchImpl = vi.fn<typeof fetch>(async () => {
+      throw new TypeError("fetch failed");
+    });
+    const source = {
+      username: "alice",
+      slug: "alice",
+      year: 2026,
+      site: "reviews.example.com",
+      ranking: [{ rank: 1, game: { title: "Celeste", coverUrl: STEAM } }],
+      categories: [],
+    };
+    const draw = () =>
+      renderAwardsImage("wide", source, imagePalette(null), "v", fetchImpl);
+
+    expect((await draw()).complete).toBe(false);
+    await draw();
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });

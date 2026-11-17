@@ -46,6 +46,8 @@ const COVER_RATIO = 215 / 460;
 
 /** Past this many entries below the hero, tiles switch to compact rows. */
 const CROWDED_AT = 12;
+/** Two rows of full award tiles is all the portrait height holds beside the hero. */
+const FULL_TILES_MAX = 6;
 
 function h(
   style: Style,
@@ -176,7 +178,8 @@ function portrait(paint: Paint, data: AwardsImageData): ImageNode {
   const GAP = 14;
   const [goty, ...rest] = data.ranking;
   const cats = data.categories;
-  const crowded = rest.length + cats.length > CROWDED_AT;
+  const crowded =
+    rest.length + cats.length > CROWDED_AT || cats.length > FULL_TILES_MAX;
   const few = rest.length <= 3 && !crowded;
 
   const hero =
@@ -224,7 +227,7 @@ function portrait(paint: Paint, data: AwardsImageData): ImageNode {
             },
             String(r.rank),
           ),
-          cover(paint, r.game, crowded ? 96 : few ? 200 : 120, 6),
+          cover(paint, r.game, crowded ? 96 : few ? 140 : 120, 6),
           h(
             {
               flex: 1,
@@ -242,7 +245,8 @@ function portrait(paint: Paint, data: AwardsImageData): ImageNode {
   let awards: ImageNode | null = null;
   if (cats.length > 0) {
     const cols = crowded ? 3 : Math.min(3, Math.max(2, cats.length));
-    const width = (INNER - GAP * (cols - 1)) / cols;
+    const gap = crowded ? 10 : GAP;
+    const width = (INNER - gap * (cols - 1)) / cols;
     const tile = (c: AwardsImageData["categories"][number]) =>
       crowded
         ? h(
@@ -294,18 +298,24 @@ function portrait(paint: Paint, data: AwardsImageData): ImageNode {
                 fontWeight: 700,
                 lineHeight: 1.15,
                 color: paint("warning-text"),
+                ...clamp(2),
               },
               c.name,
             ),
             h(
-              { fontSize: 16, fontWeight: 500, color: paint("text-muted") },
+              {
+                fontSize: 16,
+                fontWeight: 500,
+                color: paint("text-muted"),
+                ...ONE_LINE,
+              },
               c.game.title,
             ),
           );
     awards = h(
       { flexDirection: "column", gap: 14 },
       label("Awards", paint("text-subtle"), 16),
-      h({ flexWrap: "wrap", gap: crowded ? 10 : GAP }, cats.map(tile)),
+      h({ flexWrap: "wrap", gap }, cats.map(tile)),
     );
   }
 

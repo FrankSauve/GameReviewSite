@@ -14,7 +14,7 @@ export default defineConfig({
       "/auth": "http://localhost:4000",
       "/export": "http://localhost:4000",
       // The awards images; every other /users/ path is the SPA's.
-      "^/users/[^/]+/awards/[^/]+\\.png$": "http://localhost:4000",
+      "^/users/[^/]+/awards/\\d{4}(-wide)?\\.png$": "http://localhost:4000",
     },
   },
 });

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import satori from "satori";
-import { Resvg } from "@resvg/resvg-js";
+import { renderAsync } from "@resvg/resvg-js";
 
 import {
   IMAGE_SIZES,
@@ -80,6 +80,8 @@ export async function inlineCover(
     });
     const type = res.headers.get("content-type") ?? "";
     if (!res.ok || !/^image\/(jpeg|png|webp)$/.test(type)) return null;
+    if (Number(res.headers.get("content-length")) > COVER_MAX_BYTES)
+      return null;
     const body = Buffer.from(await res.arrayBuffer());
     if (body.length > COVER_MAX_BYTES) return null;
     return `data:${type};base64,${body.toString("base64")}`;
@@ -124,9 +126,15 @@ async function withCovers(
   return { data, complete };
 }
 
-/** Rendered images by version and kind. Small: each is a few hundred KiB. */
+export interface RenderedAwardsImage {
+  png: Buffer;
+  /** False when drawn with a placeholder for a cover that exists. */
+  complete: boolean;
+}
+
+/** Rendered images by version and kind. */
 const CACHE_MAX = 24;
-const cache = new Map<string, Promise<Buffer>>();
+const cache = new Map<string, Promise<RenderedAwardsImage>>();
 
 export function renderAwardsImage(
   kind: ImageKind,
@@ -134,7 +142,7 @@ export function renderAwardsImage(
   palette: ImagePalette,
   version: string,
   fetchImpl: typeof fetch = fetch,
-): Promise<Buffer> {
+): Promise<RenderedAwardsImage> {
   const key = `${version}:${kind}`;
   const hit = cache.get(key);
   if (hit) {
@@ -146,20 +154,26 @@ export function renderAwardsImage(
 
   const rendering = (async () => {
     const { data, complete } = await withCovers(source, fetchImpl);
-    // Drawn with a placeholder for a cover that exists: serve it, keep trying.
-    if (!complete) cache.delete(key);
     const { width, height } = IMAGE_SIZES[kind];
     const svg = await satori(awardsImageTree(kind, data, palette), {
       width,
       height,
       fonts: loadFonts(),
     });
-    return new Resvg(svg, { fitTo: { mode: "width", value: width } })
-      .render()
-      .asPng();
+    // Off the event loop: a portrait takes long enough to stall other requests.
+    const image = await renderAsync(svg, {
+      fitTo: { mode: "width", value: width },
+    });
+    return { png: image.asPng(), complete };
   })();
-  // A failed render is not kept, or one outage would stick until eviction.
-  rendering.catch(() => cache.delete(key));
+  // Neither a failure nor a placeholder is kept, or one outage would stick until
+  // eviction. Only this entry: a newer render may already hold the key.
+  const drop = () => {
+    if (cache.get(key) === rendering) cache.delete(key);
+  };
+  rendering.then(({ complete }) => {
+    if (!complete) drop();
+  }, drop);
 
   cache.set(key, rendering);
   if (cache.size > CACHE_MAX) {

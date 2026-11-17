@@ -128,3 +128,29 @@ export async function seedGame(title = "Test Game"): Promise<string> {
  * its own values instead.
  */
 export const PLAYTIME_INPUT = "yearPlayed: 2024, hoursPlayed: 12";
+
+/** Covers are left null, so nothing that draws these years reaches a CDN. */
+export async function seedAwardYear(
+  userId: string,
+  year: number,
+  entries: { ranked?: string[]; awards?: [string, string][] },
+): Promise<void> {
+  const gameId = async (title: string) =>
+    (
+      await prisma.game.upsert({
+        where: { slug: slugify(title, "game") },
+        create: { title, slug: slugify(title, "game") },
+        update: {},
+      })
+    ).id;
+  for (const [i, title] of (entries.ranked ?? []).entries()) {
+    await prisma.awardRank.create({
+      data: { userId, year, rank: i + 1, gameId: await gameId(title) },
+    });
+  }
+  for (const [position, [name, title]] of (entries.awards ?? []).entries()) {
+    await prisma.awardCategory.create({
+      data: { userId, year, position, name, gameId: await gameId(title) },
+    });
+  }
+}

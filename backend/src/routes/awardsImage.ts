@@ -17,10 +17,8 @@ import {
 import { publicOrigin } from "../lib/origin.js";
 
 /**
- * `/users/<slug>/awards/<year>.png` and `<year>-wide.png`: a year's awards as
- * an image, for the download button and for the awards tab's `og:image`. Every
- * user agent comes here, not only crawlers; see the `.png` location in
- * deploy/swag/gamereviews.subdomain.conf. Anonymous, like the embeds.
+ * `/users/<slug>/awards/<year>.png` and `<year>-wide.png`, for every user agent
+ * (see the `.png` location in deploy/swag/gamereviews.subdomain.conf).
  */
 export function createAwardsImageRouter(): Router {
   const router = Router();
@@ -58,8 +56,7 @@ export function createAwardsImageRouter(): Router {
         if (!source) return missing();
 
         const version = awardsImageVersion(source, user.palette);
-        // Revalidated every time, so a download right after a save is current;
-        // a match costs two reads and no render.
+        // Revalidated every time, so a download right after a save is current.
         res.setHeader("Cache-Control", "public, no-cache");
         res.setHeader("ETag", `"${version}-${parsed.kind}"`);
         if (req.fresh) {
@@ -67,12 +64,18 @@ export function createAwardsImageRouter(): Router {
           return;
         }
 
-        const png = await renderAwardsImage(
+        const { png, complete } = await renderAwardsImage(
           parsed.kind,
           source,
           imagePalette(user.palette),
           version,
         );
+        // A placeholder shares the ETag of the finished image, so it is never
+        // kept: a 304 would pin it for good.
+        if (!complete) {
+          res.removeHeader("ETag");
+          res.setHeader("Cache-Control", "no-store");
+        }
         // Meant to be posted elsewhere, so other sites may embed it.
         res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
         res.setHeader(
@@ -82,6 +85,7 @@ export function createAwardsImageRouter(): Router {
         res.type("png").send(png);
       } catch (err: unknown) {
         console.error("Awards image render failed:", err);
+        res.removeHeader("ETag");
         res.setHeader("Cache-Control", "no-store");
         res.status(503).type("text/plain").send("Could not draw the image.\n");
       }
