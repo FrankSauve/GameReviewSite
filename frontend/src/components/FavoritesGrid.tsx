@@ -60,6 +60,7 @@ export function FavoritesGrid({
   }
 
   // The image draws only these, so a pick in a retired category offers none.
+  // Mirrors loadFavoritesImage in backend/src/lib/favoritesImageData.ts, which is authoritative.
   const anyPicked = FAVORITE_CATEGORIES.some((c) => picks.has(c.key));
 
   return (

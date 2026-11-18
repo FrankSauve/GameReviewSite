@@ -96,8 +96,14 @@ function portrait(paint: Paint, data: FavoritesImageData): ImageNode {
   );
 }
 
+/** The picks a layout draws: a cover it leaves out is never fetched. */
+export function drawnPicks<P>(kind: ImageKind, picks: readonly P[]): P[] {
+  return kind === "wide" ? picks.slice(0, STRIP_MAX + 1) : [...picks];
+}
+
 function wide(paint: Paint, data: FavoritesImageData): ImageNode {
-  const [lead, ...rest] = data.picks;
+  const [lead, ...strip] = drawnPicks("wide", data.picks);
+  const more = data.picks.length - 1;
   return wideCard(paint, {
     username: data.username,
     title: TITLE,
@@ -105,12 +111,9 @@ function wide(paint: Paint, data: FavoritesImageData): ImageNode {
     lead: lead && {
       caption: lead.label,
       game: lead.game,
-      more:
-        rest.length > 0
-          ? `+ ${rest.length} more pick${rest.length === 1 ? "" : "s"}`
-          : null,
+      more: more > 0 ? `+ ${more} more pick${more === 1 ? "" : "s"}` : null,
     },
-    strip: rest.slice(0, STRIP_MAX).map((p) => ({ game: p.game })),
+    strip: strip.map((p) => ({ game: p.game })),
   });
 }
 

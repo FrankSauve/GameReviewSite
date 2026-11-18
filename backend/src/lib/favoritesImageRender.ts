@@ -1,4 +1,5 @@
 import {
+  drawnPicks,
   favoritesImageTree,
   type FavoritesImageData,
 } from "./favoritesImage.js";
@@ -39,7 +40,7 @@ export function renderFavoritesImage(
   return renderImage(
     `favorites:${version}:${kind}`,
     kind,
-    source.picks.map((p) => p.game.coverUrl),
+    drawnPicks(kind, source.picks).map((p) => p.game.coverUrl),
     (covers) =>
       favoritesImageTree(
         kind,

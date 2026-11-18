@@ -17,7 +17,8 @@ export interface FavoritesImage {
   version: string;
 }
 
-/** Null for an empty grid: nothing should be drawn to show there is nothing. */
+/** Null for an empty grid: nothing should be drawn to show there is nothing.
+ *  Authoritative over anyPicked in frontend/src/components/FavoritesGrid.tsx. */
 export async function loadFavoritesImage(
   user: ImageOwner,
   site: string,
