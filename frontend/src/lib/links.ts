@@ -53,6 +53,12 @@ export function awardsImagePath(user: Slugged, year: number): string {
   return `/images/awards/${encodeURIComponent(user.slug ?? user.id)}/${year}.png`;
 }
 
+/** The favourites grid as an image, for download. Mirrors favoritesImagePath in
+ *  backend/src/lib/favoritesImage.ts, which is authoritative. */
+export function favoritesImagePath(user: Slugged): string {
+  return `/images/favorites/${encodeURIComponent(user.slug ?? user.id)}/favorites.png`;
+}
+
 /** `/articles/our-manifesto`. The index itself is at `/articles`. */
 export function articlePath(article: Slugged): string {
   return `/articles/${article.slug ?? article.id}`;

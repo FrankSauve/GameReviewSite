@@ -23,12 +23,15 @@ interface FavoritesGridProps {
   isOwnProfile: boolean;
   /** The games this account has reviewed; the only ones it may pick. */
   pickable: PickableGame[];
+  /** Served by the backend, not the SPA: a plain link, never a router Link. */
+  imagePath: string;
 }
 
 export function FavoritesGrid({
   userId,
   isOwnProfile,
   pickable,
+  imagePath,
 }: FavoritesGridProps) {
   const [openCategory, setOpenCategory] = useState<string | null>(null);
   // Stable, because useDismiss takes it as a listener dependency.
@@ -56,80 +59,92 @@ export function FavoritesGrid({
     );
   }
 
+  // The image draws only these, so a pick in a retired category offers none.
+  const anyPicked = FAVORITE_CATEGORIES.some((c) => picks.has(c.key));
+
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-      {FAVORITE_CATEGORIES.map(({ key, label }) => {
-        const pick = picks.get(key);
-        const tile = (
-          <div className="relative aspect-video rounded-control overflow-hidden border border-line bg-surface">
-            {pick ? (
-              <>
-                <GameCover game={pick.game} size="md" decorative />
-                {/* The scrim is what makes the title readable over box art of
+    <div className="space-y-3">
+      {anyPicked && (
+        <div className="flex justify-end">
+          <a href={imagePath} download className="btn-secondary text-meta">
+            Download image
+          </a>
+        </div>
+      )}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+        {FAVORITE_CATEGORIES.map(({ key, label }) => {
+          const pick = picks.get(key);
+          const tile = (
+            <div className="relative aspect-video rounded-control overflow-hidden border border-line bg-surface">
+              {pick ? (
+                <>
+                  <GameCover game={pick.game} size="md" decorative />
+                  {/* The scrim is what makes the title readable over box art of
                     any brightness; the title is why the tile is identifiable. */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-scrim/95 via-scrim/70 to-transparent px-1.5 pb-1 pt-5">
-                  <p className="text-[11px] font-semibold text-content leading-tight line-clamp-2">
-                    {pick.game.title}
-                  </p>
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-scrim/95 via-scrim/70 to-transparent px-1.5 pb-1 pt-5">
+                    <p className="text-[11px] font-semibold text-content leading-tight line-clamp-2">
+                      {pick.game.title}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-micro text-content-subtle">
+                  {isOwnProfile ? "Select" : "—"}
                 </div>
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-micro text-content-subtle">
-                {isOwnProfile ? "Select" : "—"}
-              </div>
-            )}
-          </div>
-        );
+              )}
+            </div>
+          );
 
-        return (
-          <div
-            key={key}
-            ref={openCategory === key ? anchorRef : null}
-            className="space-y-1.5"
-          >
-            {isOwnProfile ? (
-              <button
-                type="button"
-                // Opens only; useDismiss inside the picker does the closing,
-                // and it fires first on a click back onto this button.
-                onClick={() => setOpenCategory(key)}
-                aria-expanded={openCategory === key}
-                // Filled tiles stay clickable so a pick can be changed, which
-                // is the whole point of the grid.
-                aria-label={
-                  pick
-                    ? `Change ${label}: ${pick.game.title}`
-                    : `Select ${label}`
-                }
-                className="block w-full group focus:outline-none focus:ring-2 focus:ring-accent-hover rounded-control"
-              >
-                {tile}
-              </button>
-            ) : pick ? (
-              <Link to={gamePath(pick.game)} className="block">
-                {tile}
-              </Link>
-            ) : (
-              tile
-            )}
+          return (
+            <div
+              key={key}
+              ref={openCategory === key ? anchorRef : null}
+              className="space-y-1.5"
+            >
+              {isOwnProfile ? (
+                <button
+                  type="button"
+                  // Opens only; useDismiss inside the picker does the closing,
+                  // and it fires first on a click back onto this button.
+                  onClick={() => setOpenCategory(key)}
+                  aria-expanded={openCategory === key}
+                  // Filled tiles stay clickable so a pick can be changed, which
+                  // is the whole point of the grid.
+                  aria-label={
+                    pick
+                      ? `Change ${label}: ${pick.game.title}`
+                      : `Select ${label}`
+                  }
+                  className="block w-full group focus:outline-none focus:ring-2 focus:ring-accent-hover rounded-control"
+                >
+                  {tile}
+                </button>
+              ) : pick ? (
+                <Link to={gamePath(pick.game)} className="block">
+                  {tile}
+                </Link>
+              ) : (
+                tile
+              )}
 
-            <p className="text-micro text-content-muted leading-tight">
-              {label}
-            </p>
+              <p className="text-micro text-content-muted leading-tight">
+                {label}
+              </p>
 
-            {isOwnProfile && openCategory === key && (
-              <FavoriteGamePicker
-                category={key}
-                label={label}
-                games={pickable}
-                filled={pick != null}
-                anchorRef={anchorRef}
-                onClose={close}
-              />
-            )}
-          </div>
-        );
-      })}
+              {isOwnProfile && openCategory === key && (
+                <FavoriteGamePicker
+                  category={key}
+                  label={label}
+                  games={pickable}
+                  filled={pick != null}
+                  anchorRef={anchorRef}
+                  onClose={close}
+                />
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

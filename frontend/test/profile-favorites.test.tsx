@@ -158,6 +158,42 @@ describe("the profile favorites grid", () => {
     }
   });
 
+  it("offers the grid as an image to download", async () => {
+    renderFavorites([
+      meMock(null),
+      summariesMock(),
+      favoritesMock([favorite("favorite-game", game("g1", "Elden Ring"))]),
+    ]);
+
+    const link = await screen.findByRole("link", { name: "Download image" });
+    expect(link.getAttribute("href")).toBe(
+      `/images/favorites/${USER_SLUG}/favorites.png`,
+    );
+    expect(link.hasAttribute("download")).toBe(true);
+  });
+
+  it("offers no image for an empty grid", async () => {
+    renderFavorites([meMock(null), summariesMock(), favoritesMock([])]);
+
+    await waitFor(() => {
+      expect(screen.getByText("Favourite Game")).toBeDefined();
+    });
+    expect(screen.queryByRole("link", { name: "Download image" })).toBeNull();
+  });
+
+  it("offers no image when the only pick is in a retired category", async () => {
+    renderFavorites([
+      meMock(null),
+      summariesMock(),
+      favoritesMock([favorite("favorite-racing-game", game("g1", "Wipeout"))]),
+    ]);
+
+    await waitFor(() => {
+      expect(screen.getByText("Favourite Game")).toBeDefined();
+    });
+    expect(screen.queryByRole("link", { name: "Download image" })).toBeNull();
+  });
+
   /** Box art alone is not identifiable; the tile has to say which game it is. */
   it("names the picked game on the tile itself", async () => {
     renderFavorites([
