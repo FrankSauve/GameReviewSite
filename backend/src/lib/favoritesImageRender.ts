@@ -2,7 +2,6 @@ import {
   favoritesImageTree,
   type FavoritesImageData,
 } from "./favoritesImage.js";
-import { labelFor } from "./favoriteCategories.js";
 import type { ImageKind } from "./shareImage.js";
 import type { ImagePalette } from "./shareImagePalettes.js";
 import {
@@ -14,9 +13,11 @@ import {
 /** Bump when the layout changes, so a cached image or ETag is not reused. */
 const LAYOUT_VERSION = 1;
 
+/** Carries the label, not only the key, so renaming a label is a new version. */
 export type FavoritesImageSource = Omit<FavoritesImageData, "picks"> & {
   picks: {
     category: string;
+    label: string;
     game: { title: string; coverUrl: string | null };
   }[];
 };
@@ -45,7 +46,7 @@ export function renderFavoritesImage(
         {
           ...source,
           picks: source.picks.map((p) => ({
-            label: labelFor(p.category),
+            label: p.label,
             game: { title: p.game.title, cover: covers(p.game.coverUrl) },
           })),
         },

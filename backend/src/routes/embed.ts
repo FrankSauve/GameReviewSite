@@ -132,6 +132,15 @@ export function createEmbedRouter(): Router {
   return router;
 }
 
+/** A chat client asks for the og:image next; started now, that request joins
+ *  this render instead of beginning its own. */
+function warmPreview(req: Request, render: () => Promise<unknown>): void {
+  if (!wantsPreviewImage(req.get("user-agent"))) return;
+  render().catch((err: unknown) => {
+    console.error("Preview render failed:", err);
+  });
+}
+
 /**
  * The same thing for `/users/<slug>`. Separate router because the paths below
  * it differ: a profile is one segment, optionally followed by the tab the SPA
@@ -197,13 +206,9 @@ export function createProfileEmbedRouter(): Router {
               imageUrl: `${origin}${favoritesImagePath(user.slug, "wide")}?v=${version}`,
             }),
           );
-          if (wantsPreviewImage(req.get("user-agent"))) {
-            renderFavoritesImage("wide", source, palette, version).catch(
-              (err: unknown) => {
-                console.error("Favourites preview render failed:", err);
-              },
-            );
-          }
+          warmPreview(req, () =>
+            renderFavoritesImage("wide", source, palette, version),
+          );
           return;
         }
       }
@@ -233,15 +238,9 @@ export function createProfileEmbedRouter(): Router {
               imageUrl: `${origin}${awardsImagePath(user.slug, source.year, "wide")}?v=${version}`,
             }),
           );
-          // A chat client asks for the og:image next; started now, that
-          // request joins this render instead of beginning its own.
-          if (wantsPreviewImage(req.get("user-agent"))) {
-            renderAwardsImage("wide", source, palette, version).catch(
-              (err: unknown) => {
-                console.error("Awards preview render failed:", err);
-              },
-            );
-          }
+          warmPreview(req, () =>
+            renderAwardsImage("wide", source, palette, version),
+          );
           return;
         }
       }

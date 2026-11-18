@@ -2,22 +2,22 @@ import { Router, type Request, type Response } from "express";
 
 import { prisma } from "../lib/prisma.js";
 import { byIdOrSlug } from "../lib/slug.js";
-import type { ImageKind } from "../lib/shareImage.js";
+import {
+  SHARE_IMAGE_PREFIX,
+  type ImageKind,
+  type ImageOwner,
+} from "../lib/shareImage.js";
 import type { RenderedImage } from "../lib/shareImageRender.js";
-import { parseImageFile } from "../lib/awardsImage.js";
+import { AWARDS_IMAGE_PREFIX, parseImageFile } from "../lib/awardsImage.js";
 import { loadAwardsImage } from "../lib/awardsImageData.js";
 import { renderAwardsImage } from "../lib/awardsImageRender.js";
-import { parseFavoritesImageFile } from "../lib/favoritesImage.js";
+import {
+  FAVORITES_IMAGE_PREFIX,
+  parseFavoritesImageFile,
+} from "../lib/favoritesImage.js";
 import { loadFavoritesImage } from "../lib/favoritesImageData.js";
 import { renderFavoritesImage } from "../lib/favoritesImageRender.js";
 import { publicOrigin } from "../lib/origin.js";
-
-interface Owner {
-  id: string;
-  username: string;
-  slug: string;
-  palette: string | null;
-}
 
 /** What one image route has found to draw. */
 interface FoundImage {
@@ -27,14 +27,19 @@ interface FoundImage {
   render: () => Promise<RenderedImage>;
 }
 
-type Find = (
-  owner: Owner,
-  file: string,
-  site: string,
-) => Promise<FoundImage | null>;
+interface ImageRoute<Parsed> {
+  /** Null for a file name the route never serves, before any query runs. */
+  parse: (file: string) => Parsed | null;
+  find: (
+    owner: ImageOwner,
+    file: Parsed,
+    site: string,
+  ) => Promise<FoundImage | null>;
+  missingText: string;
+}
 
 /** `<prefix>/<slug>/<file>`, for every user agent. */
-function serve(find: Find, missingText: string) {
+function serve<Parsed>({ parse, find, missingText }: ImageRoute<Parsed>) {
   return async (req: Request, res: Response) => {
     const key = typeof req.params["key"] === "string" ? req.params["key"] : "";
     const file =
@@ -44,6 +49,9 @@ function serve(find: Find, missingText: string) {
       res.status(404).type("text/plain").send(`${missingText}\n`);
     };
 
+    const parsed = parse(file);
+    if (parsed === null) return missing();
+
     try {
       const owner = await prisma.user.findFirst({
         where: byIdOrSlug(key),
@@ -51,7 +59,7 @@ function serve(find: Find, missingText: string) {
       });
       if (!owner) return missing();
 
-      const image = await find(owner, file, new URL(publicOrigin(req)).host);
+      const image = await find(owner, parsed, new URL(publicOrigin(req)).host);
       if (!image) return missing();
 
       // Revalidated every time, so a download right after a save is current.
@@ -86,44 +94,47 @@ function serve(find: Find, missingText: string) {
   };
 }
 
-const findAwards: Find = async (owner, file, site) => {
-  const parsed = parseImageFile(file);
-  if (!parsed) return null;
-  const image = await loadAwardsImage(owner, parsed.year, site);
-  if (!image) return null;
-  const { source, palette, version } = image;
-  return {
-    version,
-    kind: parsed.kind,
-    filename: `${owner.slug}-${parsed.year}-awards.png`,
-    render: () => renderAwardsImage(parsed.kind, source, palette, version),
-  };
+const awards: ImageRoute<{ year: number; kind: ImageKind }> = {
+  parse: parseImageFile,
+  find: async (owner, { year, kind }, site) => {
+    const image = await loadAwardsImage(owner, year, site);
+    if (!image) return null;
+    const { source, palette, version } = image;
+    return {
+      version,
+      kind,
+      filename: `${owner.slug}-${year}-awards.png`,
+      render: () => renderAwardsImage(kind, source, palette, version),
+    };
+  },
+  missingText: "No awards for that year.",
 };
 
-const findFavorites: Find = async (owner, file, site) => {
-  const kind = parseFavoritesImageFile(file);
-  if (!kind) return null;
-  const image = await loadFavoritesImage(owner, site);
-  if (!image) return null;
-  const { source, palette, version } = image;
-  return {
-    version,
-    kind,
-    filename: `${owner.slug}-favourites.png`,
-    render: () => renderFavoritesImage(kind, source, palette, version),
-  };
+const favorites: ImageRoute<ImageKind> = {
+  parse: parseFavoritesImageFile,
+  find: async (owner, kind, site) => {
+    const image = await loadFavoritesImage(owner, site);
+    if (!image) return null;
+    const { source, palette, version } = image;
+    return {
+      version,
+      kind,
+      filename: `${owner.slug}-favourites.png`,
+      render: () => renderFavoritesImage(kind, source, palette, version),
+    };
+  },
+  missingText: "No favourites picked.",
 };
+
+/** A lib prefix, relative to SHARE_IMAGE_PREFIX where this router is mounted. */
+function under(prefix: string): string {
+  return `${prefix.slice(SHARE_IMAGE_PREFIX.length)}/:key/:file`;
+}
 
 /** Mounted at SHARE_IMAGE_PREFIX, which only the backend serves. */
 export function createShareImageRouter(): Router {
   const router = Router();
-  router.get(
-    "/awards/:key/:file",
-    serve(findAwards, "No awards for that year."),
-  );
-  router.get(
-    "/favorites/:key/:file",
-    serve(findFavorites, "No favourites picked."),
-  );
+  router.get(under(AWARDS_IMAGE_PREFIX), serve(awards));
+  router.get(under(FAVORITES_IMAGE_PREFIX), serve(favorites));
   return router;
 }

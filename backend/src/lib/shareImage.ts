@@ -12,6 +12,14 @@ export const IMAGE_SIZES: Record<ImageKind, { width: number; height: number }> =
 /** Served only by the backend, so the proxy needs no pattern to route it. */
 export const SHARE_IMAGE_PREFIX = "/images";
 
+/** The account an image is of: its name, its link, and its palette. */
+export interface ImageOwner {
+  id: string;
+  username: string;
+  slug: string;
+  palette: string | null;
+}
+
 export interface ImageGame {
   title: string;
   /** Already fetched and inlined, or null to draw the titled placeholder. */

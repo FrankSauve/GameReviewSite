@@ -1,6 +1,11 @@
 import { prisma } from "./prisma.js";
+import type { ImageOwner } from "./shareImage.js";
 import { imagePalette, type ImagePalette } from "./shareImagePalettes.js";
-import { inGridOrder, isFavoriteCategory } from "./favoriteCategories.js";
+import {
+  inGridOrder,
+  isFavoriteCategory,
+  labelFor,
+} from "./favoriteCategories.js";
 import {
   favoritesImageVersion,
   type FavoritesImageSource,
@@ -14,7 +19,7 @@ export interface FavoritesImage {
 
 /** Null for an empty grid: nothing should be drawn to show there is nothing. */
 export async function loadFavoritesImage(
-  user: { id: string; username: string; slug: string; palette: string | null },
+  user: ImageOwner,
   site: string,
 ): Promise<FavoritesImage | null> {
   const rows = await prisma.favoriteGame.findMany({
@@ -25,7 +30,9 @@ export async function loadFavoritesImage(
     },
   });
   // Only what the grid draws: a retired category's pick is stored but unseen.
-  const picks = inGridOrder(rows.filter((r) => isFavoriteCategory(r.category)));
+  const picks = inGridOrder(
+    rows.filter((r) => isFavoriteCategory(r.category)),
+  ).map((r) => ({ ...r, label: labelFor(r.category) }));
   if (picks.length === 0) return null;
   const source: FavoritesImageSource = {
     username: user.username,

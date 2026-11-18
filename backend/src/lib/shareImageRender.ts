@@ -13,7 +13,6 @@ const COVER_MAX_BYTES = 2 * 1024 * 1024;
 
 /**
  * The ETag, and the `v` an `og:image` URL carries so a chat client refetches.
- * `layout` is bumped when a layout changes, so a cached image is not reused.
  * The palette's colours, not its key: a recoloured palette is a new image.
  */
 export function imageVersion(

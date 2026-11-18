@@ -9,7 +9,6 @@ import {
   h,
   heading,
   imageFile,
-  ONE_LINE,
   painter,
   wideCard,
   type ImageGame,
@@ -68,7 +67,8 @@ function portrait(paint: Paint, data: FavoritesImageData): ImageNode {
           letterSpacing: 1.5,
           textTransform: "uppercase",
           color: paint("warning-text"),
-          ...ONE_LINE,
+          // Two lines, not one: at four columns the longest labels do not fit.
+          ...clamp(2),
         },
         pick.label,
       ),
