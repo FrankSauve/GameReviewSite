@@ -1,5 +1,5 @@
 import { prisma } from "./prisma.js";
-import { imagePalette, type ImagePalette } from "./awardsImagePalettes.js";
+import { imagePalette, type ImagePalette } from "./shareImagePalettes.js";
 import {
   awardsImageVersion,
   type AwardsImageSource,

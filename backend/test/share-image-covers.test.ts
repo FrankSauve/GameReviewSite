@@ -1,9 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  inlineCover,
-  renderAwardsImage,
-} from "../src/lib/awardsImageRender.js";
-import { imagePalette } from "../src/lib/awardsImagePalettes.js";
+import { inlineCover } from "../src/lib/shareImageRender.js";
+import { renderAwardsImage } from "../src/lib/awardsImageRender.js";
+import { imagePalette } from "../src/lib/shareImagePalettes.js";
 
 /** The server fetches these itself, so the host allowlist is checked again. */
 
@@ -20,7 +18,7 @@ function answering(body: string, type: string | null, status = 200) {
   });
 }
 
-describe("fetching a cover for the awards image", () => {
+describe("fetching a cover for a shared image", () => {
   it("inlines an image from a game source's CDN", async () => {
     const fetchImpl = answering("jpegbytes", "image/jpeg");
 

@@ -1,14 +1,12 @@
 import { parentPort } from "node:worker_threads";
 
-import type { AwardsImageData, ImageKind } from "./awardsImage.js";
-import type { ImagePalette } from "./awardsImagePalettes.js";
-import { drawAwardsImage } from "./awardsImageDraw.js";
+import type { ImageKind, ImageNode } from "./shareImage.js";
+import { drawImage } from "./shareImageDraw.js";
 
 export interface DrawRequest {
   id: number;
   kind: ImageKind;
-  data: AwardsImageData;
-  palette: ImagePalette;
+  tree: ImageNode;
 }
 
 export type DrawResponse =
@@ -25,11 +23,7 @@ async function draw(request: DrawRequest): Promise<void> {
   const port = parentPort;
   if (!port) return;
   try {
-    const png = await drawAwardsImage(
-      request.kind,
-      request.data,
-      request.palette,
-    );
+    const png = await drawImage(request.kind, request.tree);
     const done: DrawResponse = { id: request.id, png };
     port.postMessage(done, [png.buffer]);
   } catch (err: unknown) {

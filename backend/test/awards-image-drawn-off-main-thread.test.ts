@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { renderAwardsImage } from "../src/lib/awardsImageRender.js";
-import { imagePalette } from "../src/lib/awardsImagePalettes.js";
+import { imagePalette } from "../src/lib/shareImagePalettes.js";
 
 /** No covers, so nothing here reaches a CDN and the time is all drawing. */
 function fullYear(tag: string) {

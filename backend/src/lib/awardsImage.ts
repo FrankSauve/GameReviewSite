@@ -1,19 +1,23 @@
-import type { ImagePalette, ImageToken } from "./awardsImagePalettes.js";
-
-export type ImageKind = "portrait" | "wide";
-
-/** Portrait is the download; wide is the `og:image`, at the 1.91:1 previews crop to. */
-export const IMAGE_SIZES: Record<ImageKind, { width: number; height: number }> =
-  {
-    portrait: { width: 1080, height: 1350 },
-    wide: { width: 1200, height: 630 },
-  };
-
-export interface ImageGame {
-  title: string;
-  /** Already fetched and inlined, or null to draw the titled placeholder. */
-  cover: string | null;
-}
+import type { ImagePalette } from "./shareImagePalettes.js";
+import {
+  IMAGE_SIZES,
+  SHARE_IMAGE_PREFIX,
+  clamp,
+  cover,
+  footer,
+  frame,
+  h,
+  heading,
+  imageFile,
+  label,
+  ONE_LINE,
+  painter,
+  wideCard,
+  type ImageGame,
+  type ImageKind,
+  type ImageNode,
+  type Paint,
+} from "./shareImage.js";
 
 export interface AwardsImageData {
   username: string;
@@ -25,152 +29,10 @@ export interface AwardsImageData {
   categories: { name: string; game: ImageGame }[];
 }
 
-type Style = Record<string, string | number>;
-type Child = ImageNode | string;
-
-/** Shaped like a React element, which is all satori reads: no React needed. */
-export interface ImageNode {
-  type: string;
-  key: null;
-  props: {
-    style: Style;
-    children?: Child | Child[];
-    src?: string;
-    width?: number;
-    height?: number;
-  };
-}
-
-/** Steam's header art, which is most of the catalogue. */
-const COVER_RATIO = 215 / 460;
-
 /** Past this many entries below the hero, tiles switch to compact rows. */
 const CROWDED_AT = 12;
 /** Two rows of full award tiles is all the portrait height holds beside the hero. */
 const FULL_TILES_MAX = 6;
-
-function h(
-  style: Style,
-  ...children: (Child | Child[] | null | false | undefined)[]
-): ImageNode {
-  const kids = children
-    .flat()
-    .filter((c): c is Child => c !== null && c !== false && c !== undefined);
-  return {
-    type: "div",
-    key: null,
-    // Satori lays out every div as flex and adds padding outside the width
-    // unless told otherwise.
-    props: {
-      style: { display: "flex", boxSizing: "border-box", ...style },
-      children: kids.length === 1 && kids[0] !== undefined ? kids[0] : kids,
-    },
-  };
-}
-
-function painter(palette: ImagePalette) {
-  return (token: ImageToken, alpha = 1): string => {
-    const rgb = palette[token].split(" ").join(", ");
-    return alpha === 1 ? `rgb(${rgb})` : `rgba(${rgb}, ${alpha})`;
-  };
-}
-type Paint = ReturnType<typeof painter>;
-
-function cover(paint: Paint, game: ImageGame, width: number, radius: number) {
-  const height = Math.round(width * COVER_RATIO);
-  if (game.cover) {
-    return {
-      type: "img",
-      key: null,
-      props: {
-        src: game.cover,
-        width,
-        height,
-        style: { width, height, objectFit: "cover", borderRadius: radius },
-      },
-    } satisfies ImageNode;
-  }
-  return h(
-    {
-      width,
-      height,
-      borderRadius: radius,
-      background: paint("surface-raised"),
-      alignItems: "center",
-      justifyContent: "center",
-      padding: 8,
-      color: paint("text-subtle"),
-      fontSize: Math.max(12, Math.round(width / 14)),
-      fontWeight: 600,
-      textAlign: "center",
-      overflow: "hidden",
-    },
-    game.title,
-  );
-}
-
-const ONE_LINE: Style = {
-  display: "block",
-  whiteSpace: "nowrap",
-  overflow: "hidden",
-  textOverflow: "ellipsis",
-};
-const clamp = (lines: number): Style => ({
-  display: "block",
-  lineClamp: lines,
-});
-
-function label(text: string, color: string, size: number): ImageNode {
-  return h(
-    {
-      fontSize: size,
-      fontWeight: 700,
-      letterSpacing: 3,
-      color,
-      textTransform: "uppercase",
-    },
-    text,
-  );
-}
-
-function heading(paint: Paint, data: AwardsImageData, size: number) {
-  return h(
-    { flexDirection: "column" },
-    label(`${data.username}'s`, paint("accent-subtle-text"), size * 0.3),
-    h(
-      {
-        fontSize: size,
-        fontWeight: 900,
-        letterSpacing: -1.5,
-        lineHeight: 1,
-        marginTop: 6,
-      },
-      `${data.year} Game Awards`,
-    ),
-  );
-}
-
-function frame(
-  paint: Paint,
-  kind: ImageKind,
-  style: Style,
-  ...children: (ImageNode | null | false | undefined)[]
-) {
-  const { width, height } = IMAGE_SIZES[kind];
-  return h(
-    {
-      width,
-      height,
-      flexDirection: "column",
-      background: paint("bg"),
-      backgroundImage: `radial-gradient(circle at 88% 0%, ${paint("accent-subtle-bg")}, ${paint("bg")} 58%)`,
-      color: paint("text"),
-      fontFamily: "Inter Tight",
-      ...style,
-    },
-    ...children,
-  );
-}
 
 function portrait(paint: Paint, data: AwardsImageData): ImageNode {
   const PAD = 56;
@@ -323,7 +185,7 @@ function portrait(paint: Paint, data: AwardsImageData): ImageNode {
     paint,
     "portrait",
     { padding: PAD },
-    heading(paint, data, 72),
+    heading(paint, data.username, `${data.year} Game Awards`, 72),
     h(
       {
         flexDirection: "column",
@@ -335,98 +197,32 @@ function portrait(paint: Paint, data: AwardsImageData): ImageNode {
       ranks,
       awards,
     ),
-    h(
-      {
-        justifyContent: "space-between",
-        alignItems: "center",
-        borderTop: `1px solid ${paint("line")}`,
-        paddingTop: 18,
-        fontSize: 18,
-        fontWeight: 500,
-        color: paint("text-subtle"),
-      },
-      // Separate boxes: adjacent strings would be laid out as one run of text.
-      h({}, data.site),
-      h({}, `/users/${data.slug}/awards/${data.year}`),
-    ),
+    footer(paint, data.site, `/users/${data.slug}/awards/${data.year}`),
   );
 }
 
 function wide(paint: Paint, data: AwardsImageData): ImageNode {
-  const PAD = 44;
-  const INNER = IMAGE_SIZES.wide.width - PAD * 2;
-  const GAP = 10;
   const [goty, ...rest] = data.ranking;
   const n = data.categories.length;
-  const stripWidth = Math.min(
-    200,
-    Math.floor((INNER - GAP * (rest.length - 1)) / Math.max(1, rest.length)),
-  );
+  const awards = (more: number) =>
+    more > 0 ? `+ ${more} award${more === 1 ? "" : "s"}` : null;
 
   // A year of named awards and no ranking leads with its first award.
   const lead = goty
-    ? { caption: "Game of the Year", game: goty.game, more: n }
+    ? { caption: "Game of the Year", game: goty.game, more: awards(n) }
     : data.categories[0] && {
         caption: data.categories[0].name,
         game: data.categories[0].game,
-        more: n - 1,
+        more: awards(n - 1),
       };
 
-  return frame(
-    paint,
-    "wide",
-    { padding: PAD, justifyContent: "space-between" },
-    h(
-      { justifyContent: "space-between", alignItems: "flex-start" },
-      heading(paint, data, 52),
-      h(
-        { fontSize: 18, fontWeight: 500, color: paint("text-subtle") },
-        data.site,
-      ),
-    ),
-    lead &&
-      h(
-        { gap: 32, alignItems: "center" },
-        cover(paint, lead.game, rest.length > 0 ? 440 : 520, 12),
-        h(
-          { flexDirection: "column", flex: 1, gap: 10 },
-          label(lead.caption, paint("warning-text"), 18),
-          h(
-            { fontSize: 46, fontWeight: 800, lineHeight: 1.08, ...clamp(3) },
-            lead.game.title,
-          ),
-          lead.more > 0 &&
-            h(
-              { fontSize: 20, color: paint("text-muted"), marginTop: 6 },
-              `+ ${lead.more} award${lead.more === 1 ? "" : "s"}`,
-            ),
-        ),
-      ),
-    rest.length > 0 &&
-      h(
-        { gap: GAP },
-        rest.map((r) =>
-          h(
-            { position: "relative" },
-            cover(paint, r.game, stripWidth, 6),
-            h(
-              {
-                position: "absolute",
-                left: 0,
-                top: 0,
-                padding: "2px 7px",
-                borderRadius: "6px 0 6px 0",
-                background: paint("bg", 0.85),
-                color: paint("text"),
-                fontSize: 15,
-                fontWeight: 800,
-              },
-              `#${r.rank}`,
-            ),
-          ),
-        ),
-      ),
-  );
+  return wideCard(paint, {
+    username: data.username,
+    title: `${data.year} Game Awards`,
+    site: data.site,
+    lead,
+    strip: rest.map((r) => ({ game: r.game, badge: `#${r.rank}` })),
+  });
 }
 
 export function awardsImageTree(
@@ -450,8 +246,7 @@ export function parseImageFile(
   };
 }
 
-/** Served only by the backend, so the proxy needs no pattern to route it. */
-export const AWARDS_IMAGE_PREFIX = "/images/awards";
+export const AWARDS_IMAGE_PREFIX = `${SHARE_IMAGE_PREFIX}/awards`;
 
 /** Mirrored by awardsImagePath in frontend/src/lib/links.ts; this copy is authoritative. */
 export function awardsImagePath(
@@ -459,9 +254,5 @@ export function awardsImagePath(
   year: number,
   kind: ImageKind,
 ): string {
-  return `${AWARDS_IMAGE_PREFIX}/${encodeURIComponent(slug)}/${imageFile(year, kind)}`;
-}
-
-export function imageFile(year: number, kind: ImageKind): string {
-  return `${year}${kind === "wide" ? "-wide" : ""}.png`;
+  return `${AWARDS_IMAGE_PREFIX}/${encodeURIComponent(slug)}/${imageFile(String(year), kind)}`;
 }
