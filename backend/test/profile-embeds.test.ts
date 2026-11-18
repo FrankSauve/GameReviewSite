@@ -18,6 +18,7 @@ import {
   type Identity,
   resetDatabase,
   seedAwardYear,
+  seedFavorites,
   startApp,
 } from "./helpers.js";
 
@@ -62,25 +63,6 @@ async function seedProfile(options: {
     });
   }
   return { slug: user.slug, id: user.id };
-}
-
-/** Straight to the table: the "only a game you reviewed" rule is the mutation's. */
-async function seedFavorites(
-  userId: string,
-  picks: { category: string; title: string; coverUrl?: string }[],
-): Promise<void> {
-  for (const pick of picks) {
-    const game = await prisma.game.create({
-      data: {
-        title: pick.title,
-        slug: slugify(pick.title, "game"),
-        ...(pick.coverUrl === undefined ? {} : { coverUrl: pick.coverUrl }),
-      },
-    });
-    await prisma.favoriteGame.create({
-      data: { userId, category: pick.category, gameId: game.id },
-    });
-  }
 }
 
 /** The `content` of a `<meta>` identified by either attribute name. */

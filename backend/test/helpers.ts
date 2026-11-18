@@ -154,3 +154,22 @@ export async function seedAwardYear(
     });
   }
 }
+
+/** Straight to the table: the "only a game you reviewed" rule is the mutation's. */
+export async function seedFavorites(
+  userId: string,
+  picks: { category: string; title: string; coverUrl?: string }[],
+): Promise<void> {
+  for (const pick of picks) {
+    const game = await prisma.game.create({
+      data: {
+        title: pick.title,
+        slug: slugify(pick.title, "game"),
+        ...(pick.coverUrl === undefined ? {} : { coverUrl: pick.coverUrl }),
+      },
+    });
+    await prisma.favoriteGame.create({
+      data: { userId, category: pick.category, gameId: game.id },
+    });
+  }
+}

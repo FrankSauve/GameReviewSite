@@ -7,6 +7,9 @@ import type { RenderedImage } from "../lib/shareImageRender.js";
 import { parseImageFile } from "../lib/awardsImage.js";
 import { loadAwardsImage } from "../lib/awardsImageData.js";
 import { renderAwardsImage } from "../lib/awardsImageRender.js";
+import { parseFavoritesImageFile } from "../lib/favoritesImage.js";
+import { loadFavoritesImage } from "../lib/favoritesImageData.js";
+import { renderFavoritesImage } from "../lib/favoritesImageRender.js";
 import { publicOrigin } from "../lib/origin.js";
 
 interface Owner {
@@ -97,12 +100,30 @@ const findAwards: Find = async (owner, file, site) => {
   };
 };
 
+const findFavorites: Find = async (owner, file, site) => {
+  const kind = parseFavoritesImageFile(file);
+  if (!kind) return null;
+  const image = await loadFavoritesImage(owner, site);
+  if (!image) return null;
+  const { source, palette, version } = image;
+  return {
+    version,
+    kind,
+    filename: `${owner.slug}-favourites.png`,
+    render: () => renderFavoritesImage(kind, source, palette, version),
+  };
+};
+
 /** Mounted at SHARE_IMAGE_PREFIX, which only the backend serves. */
 export function createShareImageRouter(): Router {
   const router = Router();
   router.get(
     "/awards/:key/:file",
     serve(findAwards, "No awards for that year."),
+  );
+  router.get(
+    "/favorites/:key/:file",
+    serve(findFavorites, "No favourites picked."),
   );
   return router;
 }
