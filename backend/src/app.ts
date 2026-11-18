@@ -14,6 +14,8 @@ import { createMaxRowsRule } from "./lib/maxRows.js";
 import { collapseDuplicateErrors } from "./lib/collapseErrors.js";
 import { sanitizeError } from "./lib/sanitizeError.js";
 import { createAuthRouter } from "./routes/auth.js";
+import { createAwardsImageRouter } from "./routes/awardsImage.js";
+import { AWARDS_IMAGE_PREFIX } from "./lib/awardsImage.js";
 import { createEmbedRouter, createProfileEmbedRouter } from "./routes/embed.js";
 import { createExportRouter } from "./routes/export.js";
 import {
@@ -115,6 +117,8 @@ export async function createApp(): Promise<AppHandle> {
   // everyone else to the frontend container. See routes/embed.ts.
   app.use("/reviews", limiters.embeds, createEmbedRouter());
   app.use("/users", limiters.embeds, createProfileEmbedRouter());
+  // Not under /users/: that prefix is the SPA's for everyone but crawlers.
+  app.use(AWARDS_IMAGE_PREFIX, limiters.embeds, createAwardsImageRouter());
 
   app.use(
     GRAPHQL_PATH,

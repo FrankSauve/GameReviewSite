@@ -17,6 +17,8 @@ reviews, and comment on other people's. Sign-in is delegated to your own
 - Reviewers leaderboard and a paginated recent-reviews feed
 - Review links unfurl in Discord and elsewhere, with the game's cover, score
   and the first lines of the review (spoilers redacted)
+- Yearly awards on profiles, downloadable as an image in the owner's palette;
+  an awards link unfurls with that image
 - New reviews announced in a Discord channel through a webhook, as the same card
 - Reviews readable without an account; writing needs one
 - OIDC sign-in with 2FA, handled entirely by authentik

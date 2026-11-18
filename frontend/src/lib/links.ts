@@ -47,6 +47,12 @@ export function userPath(user?: Slugged | null, tab = ""): string {
   return `/users/${user.slug ?? user.id}${tab ? `/${tab}` : ""}`;
 }
 
+/** A year's awards as an image, for download. Mirrors awardsImagePath in
+ *  backend/src/lib/awardsImage.ts, which is authoritative. */
+export function awardsImagePath(user: Slugged, year: number): string {
+  return `/images/awards/${encodeURIComponent(user.slug ?? user.id)}/${year}.png`;
+}
+
 /** `/articles/our-manifesto`. The index itself is at `/articles`. */
 export function articlePath(article: Slugged): string {
   return `/articles/${article.slug ?? article.id}`;

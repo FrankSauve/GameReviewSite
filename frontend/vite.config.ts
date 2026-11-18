@@ -13,6 +13,7 @@ export default defineConfig({
       "/graphql": "http://localhost:4000",
       "/auth": "http://localhost:4000",
       "/export": "http://localhost:4000",
+      "/images/awards": "http://localhost:4000",
     },
   },
 });

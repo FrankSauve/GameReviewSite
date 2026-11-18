@@ -125,14 +125,53 @@ export function embedFavoritesDescription(
   picks: readonly FavoritePick[],
   limit = DESCRIPTION_MAX,
 ): string {
-  const entries = picks.map(
-    (p) =>
-      `${labelFor(p.category)}: ${p.gameTitle.replace(/\s+/g, " ").trim()}`,
+  return joinEntries(
+    picks.map((p) => `${labelFor(p.category)}: ${oneLine(p.gameTitle)}`),
+    limit,
   );
+}
+
+export const AWARDS_TAB = "awards";
+
+/** The search engines in the proxy's crawler map: they index the page and do
+ *  not fetch its og:image to show a preview. */
+const SEARCH_CRAWLER = /googlebot|bingbot|applebot/i;
+
+/** Whether this unfurl will be followed by a request for its og:image. */
+export function wantsPreviewImage(userAgent: string | undefined): boolean {
+  return !SEARCH_CRAWLER.test(userAgent ?? "");
+}
+
+export function embedAwardsTitle(username: string, year: number): string {
+  return `${username}'s ${year} Game Awards`;
+}
+
+/** Plain text for the same reason as the favourites line: names are the user's. */
+export function embedAwardsDescription(
+  ranking: readonly { rank: number; game: { title: string } }[],
+  categories: readonly { name: string; game: { title: string } }[],
+  limit = DESCRIPTION_MAX,
+): string {
+  const [goty, ...rest] = ranking;
+  return joinEntries(
+    [
+      ...(goty ? [`Game of the Year: ${oneLine(goty.game.title)}`] : []),
+      ...categories.map((c) => `${oneLine(c.name)}: ${oneLine(c.game.title)}`),
+      ...rest.map((r) => `#${r.rank}: ${oneLine(r.game.title)}`),
+    ],
+    limit,
+  );
+}
+
+function oneLine(text: string): string {
+  return text.replace(/\s+/g, " ").trim();
+}
+
+/** Whole entries, because half a game title reads as a bug. */
+function joinEntries(entries: readonly string[], limit: number): string {
   const joined = entries.join(" · ");
   if (joined.length <= limit) return joined;
 
-  // Whole entries, because half a game title reads as a bug.
   const kept: string[] = [];
   for (const entry of entries) {
     const next = [...kept, entry].join(" · ");

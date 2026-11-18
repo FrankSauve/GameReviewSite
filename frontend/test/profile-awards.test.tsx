@@ -194,6 +194,33 @@ describe("the profile awards tab", () => {
     ).toBe("2022");
   });
 
+  it("offers the year as an image to download", async () => {
+    renderAwards(`/users/${USER_SLUG}/awards/2022`, [
+      meMock(null),
+      summariesMock(),
+      yearsMock([2022]),
+      awardsMock(2022, { ranking: [CELESTE] }),
+    ]);
+
+    const link = await screen.findByRole("link", { name: "Download image" });
+    expect(link.getAttribute("href")).toBe(
+      `/images/awards/${USER_SLUG}/2022.png`,
+    );
+    expect(link.hasAttribute("download")).toBe(true);
+  });
+
+  it("offers no image for a year with nothing in it", async () => {
+    renderAwards(`/users/${USER_SLUG}/awards/2024`, [
+      meMock(null),
+      summariesMock(),
+      yearsMock([]),
+      awardsMock(2024, {}),
+    ]);
+
+    expect(await screen.findByText("No awards for 2024.")).toBeDefined();
+    expect(screen.queryByRole("link", { name: "Download image" })).toBeNull();
+  });
+
   it("numbers the runners-up after the game of the year", async () => {
     renderAwards(`/users/${USER_SLUG}/awards/2024`, [
       meMock(null),
