@@ -178,8 +178,8 @@ export interface RenderedImage {
   complete: boolean;
 }
 
-/** Rendered images of every layout, by the caller's key. */
-const CACHE_MAX = 24;
+/** Rendered images of every layout, by the caller's key: 24 for each of the two. */
+const CACHE_MAX = 48;
 const cache = new Map<string, Promise<RenderedImage>>();
 
 /**

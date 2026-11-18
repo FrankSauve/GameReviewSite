@@ -201,18 +201,33 @@ function portrait(paint: Paint, data: AwardsImageData): ImageNode {
   );
 }
 
+/** The entries a layout draws: a cover it leaves out is never fetched. */
+export function drawnEntries<R, C>(
+  kind: ImageKind,
+  data: { ranking: readonly R[]; categories: readonly C[] },
+): { ranking: R[]; categories: C[] } {
+  if (kind === "portrait")
+    return { ranking: [...data.ranking], categories: [...data.categories] };
+  // A year of named awards and no ranking leads with its first award.
+  return {
+    ranking: [...data.ranking],
+    categories: data.ranking.length > 0 ? [] : data.categories.slice(0, 1),
+  };
+}
+
 function wide(paint: Paint, data: AwardsImageData): ImageNode {
-  const [goty, ...rest] = data.ranking;
+  const drawn = drawnEntries("wide", data);
+  const [goty, ...rest] = drawn.ranking;
+  const first = drawn.categories[0];
   const n = data.categories.length;
   const awards = (more: number) =>
     more > 0 ? `+ ${more} award${more === 1 ? "" : "s"}` : null;
 
-  // A year of named awards and no ranking leads with its first award.
   const lead = goty
     ? { caption: "Game of the Year", game: goty.game, more: awards(n) }
-    : data.categories[0] && {
-        caption: data.categories[0].name,
-        game: data.categories[0].game,
+    : first && {
+        caption: first.name,
+        game: first.game,
         more: awards(n - 1),
       };
 
@@ -246,7 +261,9 @@ export function parseImageFile(
   };
 }
 
-export const AWARDS_IMAGE_PREFIX = `${SHARE_IMAGE_PREFIX}/awards`;
+/** Under SHARE_IMAGE_PREFIX, where the image router is mounted. */
+export const AWARDS_IMAGE_SEGMENT = "/awards";
+export const AWARDS_IMAGE_PREFIX = `${SHARE_IMAGE_PREFIX}${AWARDS_IMAGE_SEGMENT}`;
 
 /** Mirrored by awardsImagePath in frontend/src/lib/links.ts; this copy is authoritative. */
 export function awardsImagePath(

@@ -195,12 +195,7 @@ export function createProfileEmbedRouter(): Router {
           res.send(
             renderEmbed(PROFILE_EMBED, {
               title: embedFavoritesTitle(user.username, source.picks.length),
-              description: embedFavoritesDescription(
-                source.picks.map((p) => ({
-                  category: p.category,
-                  gameTitle: p.game.title,
-                })),
-              ),
+              description: embedFavoritesDescription(source.picks),
               url: `${origin}/users/${user.slug}/${FAVORITES_TAB}`,
               // Versioned, because chat clients cache an image by its URL.
               imageUrl: `${origin}${favoritesImagePath(user.slug, "wide")}?v=${version}`,

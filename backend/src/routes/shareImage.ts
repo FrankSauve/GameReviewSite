@@ -2,17 +2,13 @@ import { Router, type Request, type Response } from "express";
 
 import { prisma } from "../lib/prisma.js";
 import { byIdOrSlug } from "../lib/slug.js";
-import {
-  SHARE_IMAGE_PREFIX,
-  type ImageKind,
-  type ImageOwner,
-} from "../lib/shareImage.js";
+import type { ImageKind, ImageOwner } from "../lib/shareImage.js";
 import type { RenderedImage } from "../lib/shareImageRender.js";
-import { AWARDS_IMAGE_PREFIX, parseImageFile } from "../lib/awardsImage.js";
+import { AWARDS_IMAGE_SEGMENT, parseImageFile } from "../lib/awardsImage.js";
 import { loadAwardsImage } from "../lib/awardsImageData.js";
 import { renderAwardsImage } from "../lib/awardsImageRender.js";
 import {
-  FAVORITES_IMAGE_PREFIX,
+  FAVORITES_IMAGE_SEGMENT,
   parseFavoritesImageFile,
 } from "../lib/favoritesImage.js";
 import { loadFavoritesImage } from "../lib/favoritesImageData.js";
@@ -126,15 +122,10 @@ const favorites: ImageRoute<ImageKind> = {
   missingText: "No favourites picked.",
 };
 
-/** A lib prefix, relative to SHARE_IMAGE_PREFIX where this router is mounted. */
-function under(prefix: string): string {
-  return `${prefix.slice(SHARE_IMAGE_PREFIX.length)}/:key/:file`;
-}
-
 /** Mounted at SHARE_IMAGE_PREFIX, which only the backend serves. */
 export function createShareImageRouter(): Router {
   const router = Router();
-  router.get(under(AWARDS_IMAGE_PREFIX), serve(awards));
-  router.get(under(FAVORITES_IMAGE_PREFIX), serve(favorites));
+  router.get(`${AWARDS_IMAGE_SEGMENT}/:key/:file`, serve(awards));
+  router.get(`${FAVORITES_IMAGE_SEGMENT}/:key/:file`, serve(favorites));
   return router;
 }

@@ -91,6 +91,12 @@ export function cover(
       },
     } satisfies ImageNode;
   }
+  const PAD = 8;
+  const fontSize = Math.max(12, Math.round(width / 14));
+  const LINE = 1.2;
+  // As many lines as the box holds, so a long title ends in an ellipsis
+  // instead of being cut off top and bottom.
+  const lines = Math.max(1, Math.floor((height - PAD * 2) / (fontSize * LINE)));
   return h(
     {
       width,
@@ -99,14 +105,16 @@ export function cover(
       background: paint("surface-raised"),
       alignItems: "center",
       justifyContent: "center",
-      padding: 8,
+      padding: PAD,
       color: paint("text-subtle"),
-      fontSize: Math.max(12, Math.round(width / 14)),
+      fontSize,
       fontWeight: 600,
-      textAlign: "center",
       overflow: "hidden",
     },
-    game.title,
+    h(
+      { width: "100%", textAlign: "center", lineHeight: LINE, ...clamp(lines) },
+      game.title,
+    ),
   );
 }
 

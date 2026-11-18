@@ -1,4 +1,8 @@
-import { awardsImageTree, type AwardsImageData } from "./awardsImage.js";
+import {
+  awardsImageTree,
+  drawnEntries,
+  type AwardsImageData,
+} from "./awardsImage.js";
 import type { ImageKind } from "./shareImage.js";
 import type { ImagePalette } from "./shareImagePalettes.js";
 import {
@@ -8,7 +12,7 @@ import {
 } from "./shareImageRender.js";
 
 /** Bump when the layout changes, so a cached image or ETag is not reused. */
-const LAYOUT_VERSION = 1;
+const LAYOUT_VERSION = 2;
 
 type SourceGame = { title: string; coverUrl: string | null };
 
@@ -34,7 +38,8 @@ export function renderAwardsImage(
   version: string,
   fetchImpl: typeof fetch = fetch,
 ): Promise<RenderedImage> {
-  const entries = [...source.ranking, ...source.categories];
+  const drawn = drawnEntries(kind, source);
+  const entries = [...drawn.ranking, ...drawn.categories];
   return renderImage(
     `awards:${version}:${kind}`,
     kind,

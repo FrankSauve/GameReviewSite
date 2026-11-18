@@ -5,6 +5,7 @@ import { GET_USER_FAVORITES } from "../graphql/queries";
 import { FAVORITE_CATEGORIES } from "../lib/favoriteCategories";
 import type { PickableGame } from "../lib/favorites";
 import { FavoriteGamePicker } from "./FavoriteGamePicker";
+import { DownloadImageLink } from "./DownloadImageLink";
 import { GameCover } from "./GameCover";
 import { gamePath } from "../lib/links";
 
@@ -23,7 +24,6 @@ interface FavoritesGridProps {
   isOwnProfile: boolean;
   /** The games this account has reviewed; the only ones it may pick. */
   pickable: PickableGame[];
-  /** Served by the backend, not the SPA: a plain link, never a router Link. */
   imagePath: string;
 }
 
@@ -67,9 +67,7 @@ export function FavoritesGrid({
     <div className="space-y-3">
       {anyPicked && (
         <div className="flex justify-end">
-          <a href={imagePath} download className="btn-secondary text-meta">
-            Download image
-          </a>
+          <DownloadImageLink href={imagePath} />
         </div>
       )}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">

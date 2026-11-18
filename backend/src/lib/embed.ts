@@ -4,7 +4,6 @@
  */
 
 import { formatScore } from "./exportMarkdown.js";
-import { labelFor } from "./favoriteCategories.js";
 
 /** Roughly two lines in a Discord embed before it is truncated for us. */
 export const DESCRIPTION_MAX = 300;
@@ -109,11 +108,6 @@ export function embedProfileDescription(
 /** The key is American behind a British label, and gets "fixed" into a 404. */
 export const FAVORITES_TAB = "favorites";
 
-export interface FavoritePick {
-  category: string;
-  gameTitle: string;
-}
-
 export function embedFavoritesTitle(username: string, picks: number): string {
   return `${username}'s favourites — ${picks} ${picks === 1 ? "pick" : "picks"}`;
 }
@@ -122,11 +116,11 @@ export function embedFavoritesTitle(username: string, picks: number): string {
  *  title like `*Hack`. Escaping happens once, in renderEmbed. A title is still
  *  flattened to one line, because `og:description` is one line everywhere. */
 export function embedFavoritesDescription(
-  picks: readonly FavoritePick[],
+  picks: readonly { label: string; game: { title: string } }[],
   limit = DESCRIPTION_MAX,
 ): string {
   return joinEntries(
-    picks.map((p) => `${labelFor(p.category)}: ${oneLine(p.gameTitle)}`),
+    picks.map((p) => `${p.label}: ${oneLine(p.game.title)}`),
     limit,
   );
 }

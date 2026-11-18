@@ -135,7 +135,9 @@ export function parseFavoritesImageFile(file: string): ImageKind | null {
   return null;
 }
 
-export const FAVORITES_IMAGE_PREFIX = `${SHARE_IMAGE_PREFIX}/favorites`;
+/** Under SHARE_IMAGE_PREFIX, where the image router is mounted. */
+export const FAVORITES_IMAGE_SEGMENT = "/favorites";
+export const FAVORITES_IMAGE_PREFIX = `${SHARE_IMAGE_PREFIX}${FAVORITES_IMAGE_SEGMENT}`;
 
 /** Mirrored by favoritesImagePath in frontend/src/lib/links.ts; this copy is authoritative. */
 export function favoritesImagePath(slug: string, kind: ImageKind): string {

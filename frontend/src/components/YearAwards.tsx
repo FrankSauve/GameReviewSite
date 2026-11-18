@@ -6,6 +6,7 @@ import type { ReviewSummary } from "../lib/grouping";
 import type { PickableGame } from "../lib/favorites";
 import { awardableYears, defaultAwardYear, gamesPlayedIn } from "../lib/awards";
 import { awardsImagePath, gamePath, userPath } from "../lib/links";
+import { DownloadImageLink } from "./DownloadImageLink";
 import { GameCover } from "./GameCover";
 import { YearAwardsEditor } from "./YearAwardsEditor";
 
@@ -121,7 +122,6 @@ interface YearAwardsForYearProps {
   isOwnProfile: boolean;
   eligible: PickableGame[];
   pinYear: () => void;
-  /** Served by the backend, not the SPA: a plain link, never a router Link. */
   imagePath: string;
 }
 
@@ -192,9 +192,7 @@ function YearAwardsForYear({
   return (
     <div className="space-y-6">
       <div className="flex justify-end gap-2">
-        <a href={imagePath} download className="btn-secondary text-meta">
-          Download image
-        </a>
+        <DownloadImageLink href={imagePath} />
         {editButton}
       </div>
 

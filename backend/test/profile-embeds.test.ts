@@ -416,9 +416,9 @@ describe("embedFavoritesTitle", () => {
 });
 
 describe("embedFavoritesDescription", () => {
-  const pick = (category: string, gameTitle: string) => ({
-    category,
-    gameTitle,
+  const pick = (category: string, title: string) => ({
+    label: labelFor(category),
+    game: { title },
   });
 
   it("labels each pick and joins them", () => {
