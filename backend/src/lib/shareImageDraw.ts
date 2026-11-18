@@ -4,13 +4,7 @@ import { dirname, join } from "node:path";
 import satori from "satori";
 import { Resvg } from "@resvg/resvg-js";
 
-import {
-  IMAGE_SIZES,
-  awardsImageTree,
-  type AwardsImageData,
-  type ImageKind,
-} from "./awardsImage.js";
-import type { ImagePalette } from "./awardsImagePalettes.js";
+import { IMAGE_SIZES, type ImageKind, type ImageNode } from "./shareImage.js";
 
 /** Satori reads static TTF/OTF/WOFF only; the site's own fonts are variable WOFF2. */
 const FONT_WEIGHTS = [500, 600, 700, 800, 900] as const;
@@ -48,14 +42,13 @@ function loadFonts() {
   return fonts;
 }
 
-/** Holds its thread for the whole draw, so it runs only in awardsImageWorker.ts. */
-export async function drawAwardsImage(
+/** Holds its thread for the whole draw, so it runs only in shareImageWorker.ts. */
+export async function drawImage(
   kind: ImageKind,
-  data: AwardsImageData,
-  palette: ImagePalette,
+  tree: ImageNode,
 ): Promise<Uint8Array<ArrayBuffer>> {
   const { width, height } = IMAGE_SIZES[kind];
-  const svg = await satori(awardsImageTree(kind, data, palette), {
+  const svg = await satori(tree, {
     width,
     height,
     fonts: loadFonts(),

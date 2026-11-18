@@ -18,6 +18,7 @@ import {
   type Identity,
   resetDatabase,
   seedAwardYear,
+  seedFavorites,
   startApp,
 } from "./helpers.js";
 
@@ -62,25 +63,6 @@ async function seedProfile(options: {
     });
   }
   return { slug: user.slug, id: user.id };
-}
-
-/** Straight to the table: the "only a game you reviewed" rule is the mutation's. */
-async function seedFavorites(
-  userId: string,
-  picks: { category: string; title: string; coverUrl?: string }[],
-): Promise<void> {
-  for (const pick of picks) {
-    const game = await prisma.game.create({
-      data: {
-        title: pick.title,
-        slug: slugify(pick.title, "game"),
-        ...(pick.coverUrl === undefined ? {} : { coverUrl: pick.coverUrl }),
-      },
-    });
-    await prisma.favoriteGame.create({
-      data: { userId, category: pick.category, gameId: game.id },
-    });
-  }
 }
 
 /** The `content` of a `<meta>` identified by either attribute name. */
@@ -247,8 +229,8 @@ describe("profile link previews", () => {
       "Favourite Game: Elden Ring · Best Story: Disco Elysium",
     );
     expect(meta(res.text, "og:type")).toBe("profile");
-    expect(meta(res.text, "og:image")).toBe(
-      "https://media.rawg.io/elden-ring.jpg",
+    expect(meta(res.text, "og:image")).toMatch(
+      new RegExp(`/images/favorites/${slug}/favorites-wide\\.png\\?v=[\\w-]+$`),
     );
     expect(meta(res.text, "twitter:card")).toBe("summary_large_image");
     expect(meta(res.text, "og:url")).toContain(`/users/${slug}/favorites`);
@@ -269,32 +251,54 @@ describe("profile link previews", () => {
     );
   });
 
-  it("takes the cover from the first pick that has one", async () => {
+  it("unfurls with the drawn grid even when no pick has a cover", async () => {
     const { slug, id } = await seedProfile({});
     await seedFavorites(id, [
       { category: "favorite-game", title: "Hand Added Game" },
-      {
-        category: "best-story",
-        title: "Disco Elysium",
-        coverUrl: "https://media.rawg.io/disco.jpg",
-      },
     ]);
 
-    const res = await request(app).get(`/users/${slug}/favorites`);
+    const res = await request(app)
+      .get(`/users/${slug}/favorites`)
+      .set("Host", "reviews.example.com");
 
-    expect(meta(res.text, "og:image")).toBe("https://media.rawg.io/disco.jpg");
+    expect(meta(res.text, "og:image")).toMatch(
+      `http://reviews.example.com/images/favorites/${slug}/favorites-wide.png?v=`,
+    );
+    expect(meta(res.text, "twitter:card")).toBe("summary_large_image");
   });
 
-  it("carries no image tags when no pick has a cover", async () => {
+  it("names a new image URL when a pick changes", async () => {
     const { slug, id } = await seedProfile({});
     await seedFavorites(id, [
-      { category: "favorite-game", title: "Hand Added Game" },
+      { category: "favorite-game", title: "Elden Ring" },
+    ]);
+    const before = meta(
+      (await request(app).get(`/users/${slug}/favorites`)).text,
+      "og:image",
+    );
+
+    await seedFavorites(id, [
+      { category: "best-story", title: "Disco Elysium" },
+    ]);
+    const after = meta(
+      (await request(app).get(`/users/${slug}/favorites`)).text,
+      "og:image",
+    );
+
+    expect(after).not.toBe(before);
+  });
+
+  it("counts only the categories the grid draws", async () => {
+    const { slug, id } = await seedProfile({});
+    await seedFavorites(id, [
+      { category: "favorite-game", title: "Elden Ring" },
+      { category: "favorite-racing-game", title: "Wipeout" },
     ]);
 
     const res = await request(app).get(`/users/${slug}/favorites`);
 
-    expect(res.text).not.toContain("og:image");
-    expect(meta(res.text, "twitter:card")).toBe("summary");
+    expect(meta(res.text, "og:title")).toBe("alice&#39;s favourites — 1 pick");
+    expect(meta(res.text, "og:description")).toBe("Favourite Game: Elden Ring");
   });
 
   it("falls back to the profile embed when the grid is empty", async () => {
@@ -412,9 +416,9 @@ describe("embedFavoritesTitle", () => {
 });
 
 describe("embedFavoritesDescription", () => {
-  const pick = (category: string, gameTitle: string) => ({
-    category,
-    gameTitle,
+  const pick = (category: string, title: string) => ({
+    label: labelFor(category),
+    game: { title },
   });
 
   it("labels each pick and joins them", () => {

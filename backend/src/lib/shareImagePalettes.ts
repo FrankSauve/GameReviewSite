@@ -1,9 +1,9 @@
 import { PALETTES } from "./theme.js";
 
 /**
- * The tokens the awards image paints with, copied from the [data-palette]
+ * The tokens the shared images paint with, copied from the [data-palette]
  * blocks in frontend/src/index.css. That file is authoritative;
- * awards-image-palettes.test.ts fails when the two drift.
+ * share-image-palettes.test.ts fails when the two drift.
  */
 export const IMAGE_TOKENS = [
   "bg",

@@ -4,7 +4,7 @@ import {
   IMAGE_PALETTES,
   IMAGE_TOKENS,
   imagePalette,
-} from "../src/lib/awardsImagePalettes.js";
+} from "../src/lib/shareImagePalettes.js";
 import { PALETTES } from "../src/lib/theme.js";
 
 /** Read as text: the frontend is outside this compilation. */
@@ -20,7 +20,7 @@ function block(palette: string): string {
   return css.slice(open, css.indexOf("}", open));
 }
 
-describe("the awards image's palettes", () => {
+describe("the shared images' palettes", () => {
   it.each(PALETTES)("paint %s with the site's own colours", (palette) => {
     const body = block(palette);
     expect(body).not.toBe("");

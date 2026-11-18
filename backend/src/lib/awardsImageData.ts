@@ -1,5 +1,6 @@
 import { prisma } from "./prisma.js";
-import { imagePalette, type ImagePalette } from "./awardsImagePalettes.js";
+import type { ImageOwner } from "./shareImage.js";
+import { imagePalette, type ImagePalette } from "./shareImagePalettes.js";
 import {
   awardsImageVersion,
   type AwardsImageSource,
@@ -15,7 +16,7 @@ export interface AwardsImage {
 
 /** Null for a year with nothing in it: an empty year has no image. */
 export async function loadAwardsImage(
-  user: { id: string; username: string; slug: string; palette: string | null },
+  user: ImageOwner,
   year: number,
   site: string,
 ): Promise<AwardsImage | null> {

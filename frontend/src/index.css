@@ -312,8 +312,8 @@
    * lets a swatch re-scope the ramp onto itself, as every other palette's block
    * does. RGB channel triplets so Tailwind's <alpha-value> works; every other
    * palette restates this whole set rather than inheriting part of it.
-   * The awards image copies some tokens from here; this file is authoritative
-   * over backend/src/lib/awardsImagePalettes.ts.
+   * The shared images copy some tokens from here; this file is authoritative
+   * over backend/src/lib/shareImagePalettes.ts.
    */
   [data-palette="midnight"],
   :root {

@@ -17,7 +17,12 @@ import { parseAwardYear } from "../lib/awards";
 import { ProfileBio } from "../components/ProfileBio";
 import { Avatar } from "../components/Avatar";
 import { AvatarColorPicker } from "../components/AvatarColorPicker";
-import { EXPORT_REVIEWS_PATH, isKeyOf, userPath } from "../lib/links";
+import {
+  EXPORT_REVIEWS_PATH,
+  favoritesImagePath,
+  isKeyOf,
+  userPath,
+} from "../lib/links";
 import { useCanonicalPath } from "../hooks/useCanonicalPath";
 import {
   PROFILE_TAB_PATH,
@@ -255,6 +260,7 @@ export function UserProfilePage({ tab = "year" }: UserProfilePageProps) {
           userId={profile.id}
           isOwnProfile={isOwnProfile}
           pickable={pickableGames(reviews)}
+          imagePath={favoritesImagePath(profile)}
         />
       ) : tab === "awards" ? (
         <YearAwards

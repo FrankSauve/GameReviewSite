@@ -1,9 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  inlineCover,
-  renderAwardsImage,
-} from "../src/lib/awardsImageRender.js";
-import { imagePalette } from "../src/lib/awardsImagePalettes.js";
+import { inlineCover } from "../src/lib/shareImageRender.js";
+import { renderAwardsImage } from "../src/lib/awardsImageRender.js";
+import { renderFavoritesImage } from "../src/lib/favoritesImageRender.js";
+import { imagePalette } from "../src/lib/shareImagePalettes.js";
 
 /** The server fetches these itself, so the host allowlist is checked again. */
 
@@ -20,7 +19,7 @@ function answering(body: string, type: string | null, status = 200) {
   });
 }
 
-describe("fetching a cover for the awards image", () => {
+describe("fetching a cover for a shared image", () => {
   it("inlines an image from a game source's CDN", async () => {
     const fetchImpl = answering("jpegbytes", "image/jpeg");
 
@@ -119,5 +118,61 @@ describe("an awards image whose cover is gone for good", () => {
     await draw();
 
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("a wide preview", () => {
+  const cover = (n: number) => STEAM.replace("/1/", `/${n}/`);
+
+  it("fetches only the favourites covers it draws", async () => {
+    const fetchImpl = answering("x", "text/html", 404);
+    const source = {
+      username: "alice",
+      slug: "alice",
+      site: "reviews.example.com",
+      picks: Array.from({ length: 20 }, (_, n) => ({
+        category: `c${n}`,
+        label: `Category ${n}`,
+        game: { title: `Game ${n}`, coverUrl: cover(n) },
+      })),
+    };
+
+    await renderFavoritesImage(
+      "wide",
+      source,
+      imagePalette(null),
+      "drawn-only",
+      fetchImpl,
+    );
+
+    // The lead and a strip of nine.
+    expect(fetchImpl).toHaveBeenCalledTimes(10);
+  });
+
+  it("fetches no award covers beside a game of the year", async () => {
+    const fetchImpl = answering("x", "text/html", 404);
+    const source = {
+      username: "alice",
+      slug: "alice",
+      year: 2026,
+      site: "reviews.example.com",
+      ranking: [{ rank: 1, game: { title: "Celeste", coverUrl: cover(100) } }],
+      categories: Array.from({ length: 5 }, (_, n) => ({
+        name: `Award ${n}`,
+        game: { title: `Game ${n}`, coverUrl: cover(n) },
+      })),
+    };
+
+    await renderAwardsImage(
+      "wide",
+      source,
+      imagePalette(null),
+      "drawn-only",
+      fetchImpl,
+    );
+
+    expect(fetchImpl.mock.calls.map(([url]) => String(url))).toEqual([
+      cover(100),
+    ]);
   });
 });

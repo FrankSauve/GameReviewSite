@@ -34,6 +34,11 @@ export const FAVORITE_CATEGORIES = [
 
 const KNOWN = new Set<string>(FAVORITE_CATEGORIES);
 
+/** A category the grid draws; a retired one's picks stay stored but unseen. */
+export function isFavoriteCategory(key: string): boolean {
+  return KNOWN.has(key);
+}
+
 /**
  * Matched exactly, unlike a platform: these are slugs the client never types,
  * so a case fold would only let two spellings write to the same row.

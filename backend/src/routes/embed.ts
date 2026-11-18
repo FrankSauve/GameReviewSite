@@ -21,11 +21,13 @@ import {
   renderEmbed,
   type EmbedKind,
 } from "../lib/embed.js";
-import { inGridOrder } from "../lib/favoriteCategories.js";
 import { awardYearsOf, parseAwardYear } from "../lib/awards.js";
 import { awardsImagePath } from "../lib/awardsImage.js";
 import { loadAwardsImage } from "../lib/awardsImageData.js";
 import { renderAwardsImage } from "../lib/awardsImageRender.js";
+import { favoritesImagePath } from "../lib/favoritesImage.js";
+import { loadFavoritesImage } from "../lib/favoritesImageData.js";
+import { renderFavoritesImage } from "../lib/favoritesImageRender.js";
 import { publicOrigin } from "../lib/origin.js";
 
 /**
@@ -130,12 +132,21 @@ export function createEmbedRouter(): Router {
   return router;
 }
 
+/** A chat client asks for the og:image next; started now, that request joins
+ *  this render instead of beginning its own. */
+function warmPreview(req: Request, render: () => Promise<unknown>): void {
+  if (!wantsPreviewImage(req.get("user-agent"))) return;
+  render().catch((err: unknown) => {
+    console.error("Preview render failed:", err);
+  });
+}
+
 /**
  * The same thing for `/users/<slug>`. Separate router because the paths below
  * it differ: a profile is one segment, optionally followed by the tab the SPA
  * renders. `/by-score`, `/by-genre`, `/recent` and `/by-year` unfurl as the
  * profile, being the same reviews in another order; `/favorites` unfurls as
- * the picks, and `/awards[/<year>]` as that year's image.
+ * the picks' image, and `/awards[/<year>]` as that year's image.
  */
 export function createProfileEmbedRouter(): Router {
   const router = Router();
@@ -175,36 +186,23 @@ export function createProfileEmbedRouter(): Router {
 
       if (req.params["tab"] === FAVORITES_TAB) {
         // Its own query, so the other tabs do not pay for rows they never render.
-        const picks = inGridOrder(
-          await prisma.favoriteGame.findMany({
-            where: { userId: user.id },
-            // A category a release retires sorts past every known one, so the
-            // tie has to break on something stable: the cover and the tail of
-            // the description are picked off this order.
-            orderBy: { category: "asc" },
-            select: {
-              category: true,
-              game: { select: { title: true, coverUrl: true } },
-            },
-          }),
-        );
+        const image = await loadFavoritesImage(user, new URL(origin).host);
 
         // An empty grid falls through: nothing should unfurl to advertise that
         // there is nothing there.
-        if (picks.length > 0) {
+        if (image) {
+          const { source, palette, version } = image;
           res.send(
             renderEmbed(PROFILE_EMBED, {
-              title: embedFavoritesTitle(user.username, picks.length),
-              description: embedFavoritesDescription(
-                picks.map((p) => ({
-                  category: p.category,
-                  gameTitle: p.game.title,
-                })),
-              ),
+              title: embedFavoritesTitle(user.username, source.picks.length),
+              description: embedFavoritesDescription(source.picks),
               url: `${origin}/users/${user.slug}/${FAVORITES_TAB}`,
-              imageUrl:
-                picks.find((p) => p.game.coverUrl)?.game.coverUrl ?? null,
+              // Versioned, because chat clients cache an image by its URL.
+              imageUrl: `${origin}${favoritesImagePath(user.slug, "wide")}?v=${version}`,
             }),
+          );
+          warmPreview(req, () =>
+            renderFavoritesImage("wide", source, palette, version),
           );
           return;
         }
@@ -235,15 +233,9 @@ export function createProfileEmbedRouter(): Router {
               imageUrl: `${origin}${awardsImagePath(user.slug, source.year, "wide")}?v=${version}`,
             }),
           );
-          // A chat client asks for the og:image next; started now, that
-          // request joins this render instead of beginning its own.
-          if (wantsPreviewImage(req.get("user-agent"))) {
-            renderAwardsImage("wide", source, palette, version).catch(
-              (err: unknown) => {
-                console.error("Awards preview render failed:", err);
-              },
-            );
-          }
+          warmPreview(req, () =>
+            renderAwardsImage("wide", source, palette, version),
+          );
           return;
         }
       }
