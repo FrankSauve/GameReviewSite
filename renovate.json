@@ -29,7 +29,7 @@
 
   "packageRules": [
     {
-      "description": "Everything that may land unattended rides in one PR; CI is the gate.",
+      "description": "Everything that may land unattended rides in one PR for npm and one for the rest; CI is the gate.",
       "matchUpdateTypes": ["minor", "patch", "digest"],
       "groupName": "all non-major",
       "automerge": true,

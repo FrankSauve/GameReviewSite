@@ -183,9 +183,12 @@ jobs:
       # empty database and can query it. /health alone never touches Postgres.
       - name: Assert the backend starts against an empty database
         run: |
-          db_image=$(docker compose config --format json | jq -er .services.db.image)
+          db_image=$(docker compose -f deploy/gamereviews.yml config --no-interpolate --format json \
+            | jq -er '.services["gamereviews-db"].image')
           docker network create smoke
           docker run -d --name smoke-db --network smoke \
+            --cap-drop ALL --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER \
+            --cap-add SETGID --cap-add SETUID --security-opt no-new-privileges:true \
             -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=test \
             "$db_image"
           for _ in $(seq 1 30); do
