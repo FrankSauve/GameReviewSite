@@ -9,6 +9,7 @@
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["* 0-6 * * 0"],
+    "minimumReleaseAgeBehaviour": "timestamp-optional",
     "automerge": true
   },
 
@@ -17,6 +18,8 @@
     "dependencyDashboardApproval": false,
     "labels": ["security"],
     "schedule": ["at any time"],
+    "minimumReleaseAge": null,
+    "rangeStrategy": "bump",
     "automerge": true
   },
 
@@ -26,12 +29,23 @@
 
   "packageRules": [
     {
-      "description": "Everything that may land unattended rides in one PR; CI is the gate.",
+      "description": "Everything that may land unattended rides in one PR for npm and one for the rest; CI is the gate.",
       "matchUpdateTypes": ["minor", "patch", "digest"],
       "groupName": "all non-major",
       "automerge": true,
       "automergeType": "pr",
       "platformAutomerge": true
+    },
+    {
+      "description": "Most malicious releases are pulled within days. Renovate also passes this to npm as --before, which holds back new transitive versions.",
+      "matchManagers": ["npm"],
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Images and actions, apart from npm: a branch has one release age, and image digests have no timestamp to wait on.",
+      "matchManagers": ["!npm"],
+      "matchUpdateTypes": ["minor", "patch", "digest"],
+      "groupName": "all non-major (not npm)"
     },
     {
       "description": "An action's SHA pin is only worth something if a moved tag is read before it lands. Never automerged.",

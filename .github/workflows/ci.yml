@@ -105,8 +105,10 @@ jobs:
       - run: npm run build
         working-directory: backend
 
+      # Reports only: an advisory already on main must not hold back other updates.
       - name: Audit production dependencies
         working-directory: backend
+        continue-on-error: true
         run: npm audit --omit=dev --audit-level=high
 
   frontend:
@@ -133,8 +135,10 @@ jobs:
       - run: npm run build
         working-directory: frontend
 
+      # Reports only: an advisory already on main must not hold back other updates.
       - name: Audit production dependencies
         working-directory: frontend
+        continue-on-error: true
         run: npm audit --omit=dev --audit-level=high
 
   images:
@@ -174,6 +178,50 @@ jobs:
           echo "backend uid=$backend_uid frontend uid=$frontend_uid"
           test "$backend_uid" -ne 0 || { echo "backend runs as root"; exit 1; }
           test "$frontend_uid" -ne 0 || { echo "frontend runs as root"; exit 1; }
+
+      # Automerge lands updates nobody has run, so prove the image migrates an
+      # empty database and can query it. /health alone never touches Postgres.
+      - name: Assert the backend starts against an empty database
+        run: |
+          db_image=$(docker compose -f deploy/gamereviews.yml config --no-interpolate --format json \
+            | jq -er '.services["gamereviews-db"].image')
+          docker network create smoke
+          docker run -d --name smoke-db --network smoke --memory 512m \
+            --cap-drop ALL --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER \
+            --cap-add SETGID --cap-add SETUID --security-opt no-new-privileges:true \
+            -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=test \
+            "$db_image"
+          for _ in $(seq 1 30); do
+            docker exec smoke-db pg_isready -q -h 127.0.0.1 -U test -d test && break
+            sleep 1
+          done
+
+          docker run -d --name smoke-api --network smoke --memory 512m -p 4000:4000 \
+            --read-only --tmpfs /tmp --cap-drop ALL \
+            --security-opt no-new-privileges:true \
+            -e DATABASE_URL=postgresql://test:test@smoke-db:5432/test \
+            -e OIDC_ISSUER=https://auth.example.com/ -e OIDC_CLIENT_ID=ci \
+            -e OIDC_CLIENT_SECRET=ci -e OIDC_REDIRECT_URI=https://example.com/auth/callback \
+            gamereviews-backend:ci
+
+          body=""
+          for _ in $(seq 1 60); do
+            body=$(curl -s --fail-with-body --max-time 5 http://127.0.0.1:4000/graphql \
+              -H 'content-type: application/json' \
+              -d '{"query":"{ recentReviewsCount }"}') && break
+            # A failed migration exits the container, so there is nothing to wait for.
+            test "$(docker inspect -f '{{.State.Running}}' smoke-api)" = true || break
+            sleep 1
+          done
+
+          echo "response: $body"
+          if ! printf '%s' "$body" | jq -e '.data.recentReviewsCount == 0' >/dev/null; then
+            docker logs smoke-db
+            docker logs smoke-api
+            exit 1
+          fi
+          docker rm -f smoke-api smoke-db >/dev/null
+          docker network rm smoke >/dev/null
 
       - name: Assert the SPA serves its security headers
         run: |
