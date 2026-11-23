@@ -105,8 +105,11 @@ jobs:
       - run: npm run build
         working-directory: backend
 
+      # Reports only. Blocking an update over an advisory already on main keeps
+      # main vulnerable; Dependabot alerts track what is open.
       - name: Audit production dependencies
         working-directory: backend
+        continue-on-error: true
         run: npm audit --omit=dev --audit-level=high
 
   frontend:
@@ -133,8 +136,11 @@ jobs:
       - run: npm run build
         working-directory: frontend
 
+      # Reports only. Blocking an update over an advisory already on main keeps
+      # main vulnerable; Dependabot alerts track what is open.
       - name: Audit production dependencies
         working-directory: frontend
+        continue-on-error: true
         run: npm audit --omit=dev --audit-level=high
 
   images:
