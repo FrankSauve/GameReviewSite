@@ -105,8 +105,7 @@ jobs:
       - run: npm run build
         working-directory: backend
 
-      # Reports only. Blocking an update over an advisory already on main keeps
-      # main vulnerable; Dependabot alerts track what is open.
+      # Reports only: an advisory already on main must not hold back other updates.
       - name: Audit production dependencies
         working-directory: backend
         continue-on-error: true
@@ -136,8 +135,7 @@ jobs:
       - run: npm run build
         working-directory: frontend
 
-      # Reports only. Blocking an update over an advisory already on main keeps
-      # main vulnerable; Dependabot alerts track what is open.
+      # Reports only: an advisory already on main must not hold back other updates.
       - name: Audit production dependencies
         working-directory: frontend
         continue-on-error: true
@@ -185,10 +183,11 @@ jobs:
       # empty database and can query it. /health alone never touches Postgres.
       - name: Assert the backend starts against an empty database
         run: |
+          db_image=$(docker compose config --format json | jq -er .services.db.image)
           docker network create smoke
           docker run -d --name smoke-db --network smoke \
             -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=test \
-            "$(docker compose config --format json | jq -r .services.db.image)"
+            "$db_image"
           for _ in $(seq 1 30); do
             docker exec smoke-db pg_isready -q -h 127.0.0.1 -U test -d test && break
             sleep 1
@@ -196,6 +195,7 @@ jobs:
 
           docker run -d --name smoke-api --network smoke -p 4000:4000 \
             --read-only --tmpfs /tmp --cap-drop ALL \
+            --security-opt no-new-privileges:true \
             -e DATABASE_URL=postgresql://test:test@smoke-db:5432/test \
             -e OIDC_ISSUER=https://auth.example.com/ -e OIDC_CLIENT_ID=ci \
             -e OIDC_CLIENT_SECRET=ci -e OIDC_REDIRECT_URI=https://example.com/auth/callback \
@@ -203,18 +203,22 @@ jobs:
 
           body=""
           for _ in $(seq 1 60); do
-            body=$(curl -fsS http://127.0.0.1:4000/graphql \
+            body=$(curl -s --fail-with-body --max-time 5 http://127.0.0.1:4000/graphql \
               -H 'content-type: application/json' \
-              -d '{"query":"{ recentReviewsCount }"}' 2>/dev/null) && break
+              -d '{"query":"{ recentReviewsCount }"}') && break
+            # A failed migration exits the container, so there is nothing to wait for.
+            test "$(docker inspect -f '{{.State.Running}}' smoke-api)" = true || break
             sleep 1
           done
 
           echo "response: $body"
           if ! printf '%s' "$body" | jq -e '.data.recentReviewsCount == 0' >/dev/null; then
+            docker logs smoke-db
             docker logs smoke-api
             exit 1
           fi
           docker rm -f smoke-api smoke-db >/dev/null
+          docker network rm smoke >/dev/null
 
       - name: Assert the SPA serves its security headers
         run: |

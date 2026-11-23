@@ -9,7 +9,6 @@
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["* 0-6 * * 0"],
-    "minimumReleaseAge": "7 days",
     "minimumReleaseAgeBehaviour": "timestamp-optional",
     "automerge": true
   },
@@ -20,6 +19,7 @@
     "labels": ["security"],
     "schedule": ["at any time"],
     "minimumReleaseAge": null,
+    "rangeStrategy": "bump",
     "automerge": true
   },
 
@@ -42,10 +42,10 @@
       "minimumReleaseAge": "7 days"
     },
     {
-      "description": "Apart from npm: a branch has one release age, and image digests have no timestamp to wait on.",
+      "description": "Images and actions, apart from npm: a branch has one release age, and image digests have no timestamp to wait on.",
       "matchManagers": ["!npm"],
       "matchUpdateTypes": ["minor", "patch", "digest"],
-      "groupName": "all non-major (images)"
+      "groupName": "all non-major (not npm)"
     },
     {
       "description": "An action's SHA pin is only worth something if a moved tag is read before it lands. Never automerged.",

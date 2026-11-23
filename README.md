@@ -110,6 +110,7 @@ cd frontend && npm test
 ```
 
 CI runs typecheck, tests and build for both workspaces on every pull request,
-plus a Prisma schema-drift check, container image builds and a backend startup test. Merging to `main`
-publishes both images to GHCR. Renovate auto-merges patch, minor and image digest
-updates once CI is green; majors and GitHub Action SHA moves wait for a human.
+plus a Prisma schema-drift check, container image builds and a backend startup
+test. Merging to `main` publishes both images to GHCR. Renovate auto-merges
+patch, minor and image digest updates once CI is green; majors and GitHub Action
+SHA moves wait for a human.
