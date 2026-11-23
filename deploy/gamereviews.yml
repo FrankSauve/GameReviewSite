@@ -51,7 +51,7 @@ services:
   # run: an isolated volume is a clean unit to snapshot and restore, and a major
   # upgrade here then has nothing to do with your other services.
   gamereviews-db:
-    image: postgres:16-alpine@sha256:81e77a4833487b8132fe4b00bedd39dc3f74b8641e387f19312a48f7de218c2e
+    image: postgres:16-alpine@sha256:f2f98726820d0342055351c6e9d36e705f5bfffb3dd53ff556325114b08afb6d
     container_name: gamereviews-db
     restart: unless-stopped
     # The only service that is not on the default network, so the proxy — and
