@@ -181,6 +181,41 @@ jobs:
           test "$backend_uid" -ne 0 || { echo "backend runs as root"; exit 1; }
           test "$frontend_uid" -ne 0 || { echo "frontend runs as root"; exit 1; }
 
+      # Automerge lands updates nobody has run, so prove the image migrates an
+      # empty database and can query it. /health alone never touches Postgres.
+      - name: Assert the backend starts against an empty database
+        run: |
+          docker network create smoke
+          docker run -d --name smoke-db --network smoke \
+            -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=test \
+            "$(docker compose config --format json | jq -r .services.db.image)"
+          for _ in $(seq 1 30); do
+            docker exec smoke-db pg_isready -q -h 127.0.0.1 -U test -d test && break
+            sleep 1
+          done
+
+          docker run -d --name smoke-api --network smoke -p 4000:4000 \
+            --read-only --tmpfs /tmp --cap-drop ALL \
+            -e DATABASE_URL=postgresql://test:test@smoke-db:5432/test \
+            -e OIDC_ISSUER=https://auth.example.com/ -e OIDC_CLIENT_ID=ci \
+            -e OIDC_CLIENT_SECRET=ci -e OIDC_REDIRECT_URI=https://example.com/auth/callback \
+            gamereviews-backend:ci
+
+          body=""
+          for _ in $(seq 1 60); do
+            body=$(curl -fsS http://127.0.0.1:4000/graphql \
+              -H 'content-type: application/json' \
+              -d '{"query":"{ recentReviewsCount }"}' 2>/dev/null) && break
+            sleep 1
+          done
+
+          echo "response: $body"
+          if ! printf '%s' "$body" | jq -e '.data.recentReviewsCount == 0' >/dev/null; then
+            docker logs smoke-api
+            exit 1
+          fi
+          docker rm -f smoke-api smoke-db >/dev/null
+
       - name: Assert the SPA serves its security headers
         run: |
           docker run -d --name hdr -p 8080:8080 gamereviews-frontend:ci
