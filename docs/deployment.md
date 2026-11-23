@@ -223,6 +223,11 @@ in no particular order. Both are stateless.
 
 Majors are held back for a human: Renovate labels them `needs-review`.
 
+npm releases wait seven days before Renovate takes them, so a compromised one
+has time to be caught; security fixes skip the wait. `npm audit` reports in CI
+but does not block. Open advisories are under the repository's **Security →
+Dependabot**; one with no fix in range stays there until upstream releases it.
+
 ## Rolling back
 
 Change `latest` to an immutable tag and bring it up:
