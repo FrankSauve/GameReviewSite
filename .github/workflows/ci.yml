@@ -186,7 +186,7 @@ jobs:
           db_image=$(docker compose -f deploy/gamereviews.yml config --no-interpolate --format json \
             | jq -er '.services["gamereviews-db"].image')
           docker network create smoke
-          docker run -d --name smoke-db --network smoke \
+          docker run -d --name smoke-db --network smoke --memory 512m \
             --cap-drop ALL --cap-add CHOWN --cap-add DAC_OVERRIDE --cap-add FOWNER \
             --cap-add SETGID --cap-add SETUID --security-opt no-new-privileges:true \
             -e POSTGRES_USER=test -e POSTGRES_PASSWORD=test -e POSTGRES_DB=test \
@@ -196,7 +196,7 @@ jobs:
             sleep 1
           done
 
-          docker run -d --name smoke-api --network smoke -p 4000:4000 \
+          docker run -d --name smoke-api --network smoke --memory 512m -p 4000:4000 \
             --read-only --tmpfs /tmp --cap-drop ALL \
             --security-opt no-new-privileges:true \
             -e DATABASE_URL=postgresql://test:test@smoke-db:5432/test \
